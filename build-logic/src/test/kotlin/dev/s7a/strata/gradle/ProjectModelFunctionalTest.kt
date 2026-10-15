@@ -46,7 +46,7 @@ internal class ProjectModelFunctionalTest {
         }
         Files.createDirectories(directory.resolve("gradle"))
         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
-        listOf("runtime/core", "integration/api").forEach { project ->
+        listOf("runtime/core", "integration/api", "velocity-api", "runtime/velocity").forEach { project ->
             val sources = directory.resolve("$project/src/test/java/model")
             Files.createDirectories(sources)
             Files.writeString(
@@ -90,6 +90,24 @@ internal class ProjectModelFunctionalTest {
     }
 
     @Test
+    fun `Velocity archive and owner tasks use the scoped JVM model`() {
+        assertEquals(
+            jvmProjects,
+            included(
+                "-Pstrata.jvmOnly=true",
+                ":velocity-api:jar",
+                ":runtime:velocity:jar",
+                ":runtime:velocity:testClasses",
+                ":runtime:velocity:test",
+                "--tests",
+                "model.FilterTest.selected",
+            ),
+        )
+        assertJUnit("runtime/velocity", "test")
+        assertTrue(Files.readAllLines(directory.resolve("executed-tasks.txt")).contains(":runtime:velocity:koverFindJar"))
+    }
+
+    @Test
     fun `native Test options preserve exact executed JUnit counts`() {
         assertEquals(
             jvmProjects,
@@ -115,6 +133,8 @@ internal class ProjectModelFunctionalTest {
             ":check",
             ":quality:component-benchmarks:check",
             ":runtime:minecraft-fonts-lwjgl:check",
+            ":runtime:velocity:check",
+            ":velocity-api:publishToMavenLocal",
             ":verifyPublishedPerformanceInventory",
             ":quality:component-benchmarks:verifyPublishedHostInventory",
             ":quality:component-benchmarks:capturePublishedHostInventory",
@@ -188,10 +208,74 @@ internal class ProjectModelFunctionalTest {
     }
 
     @Test
-    fun `Web model retains its original project set and acceptance boundary`() {
+    fun `Web model retains source checks and refuses implicit coverage acceptance`() {
         assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents"))
-        rejected("component check", true, "-Pstrata.webOnly=true", ":quality:component-benchmarks:check")
-        rejected("component check", true, "-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents", ":quality:component-benchmarks:check")
+        assertEquals(
+            sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"),
+            included("-Pstrata.webOnly=true", ":runtime:web:check", ":performance-testkit:publishToMavenLocal"),
+        )
+        rejected("complete build", false, "-Pstrata.webOnly=true", ":integration:web:check")
+        assertEquals(69, included(":integration:web:check").size)
+        assertTrue(
+            Files.readAllLines(directory.resolve("executed-tasks.txt")).containsAll(
+                listOf(":integration:web:check", ":integration:web:koverVerify", ":integration:web:koverCachedVerify"),
+            ),
+        )
+        rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:check")
+        rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents", ":quality:component-benchmarks:check")
+    }
+
+    @Test
+    fun `Web source tasks use the complete scoped workspace without a CLI allowlist`() {
+        val tasks =
+            arrayOf(
+                ":runtime:web:compileKotlinJs",
+                ":runtime:web:compileTestKotlinJs",
+                ":runtime:web:checkKotlinAbi",
+                ":runtime:web:lintKotlin",
+                ":runtime:web:detekt",
+                ":integration:web:compileKotlinJs",
+                ":integration:web:lintKotlin",
+                ":integration:web:detekt",
+            )
+        assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", *tasks))
+        assertEquals(tasks.toSet(), Files.readAllLines(directory.resolve("executed-tasks.txt")).toSet())
+        assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", "lintKotlin"))
+    }
+
+    @Test
+    fun `Web model preserves native Test options and rejects resolved complete acceptance`() {
+        included("-Pstrata.webOnly=true", ":runtime:core:jvmTest", "--tests", "model.FilterTest.selected")
+        assertJUnit("runtime/core", "jvmTest")
+        listOf(
+            ":check",
+            ":quality:component-benchmarks:che",
+            ":verifyPublishedPerformanceInventory",
+            ":quality:component-benchmarks:verifyPublishedHostInventory",
+            ":quality:component-benchmarks:capturePublishedHostInventory",
+            ":runtime:web:publishToMavenLocal",
+            ":performance-testkit:publish",
+            ":koverHtmlReport",
+            ":koverXmlReport",
+            ":ciMinecraftCheck",
+            ":benchmarkMinecraftQuick",
+        ).forEach { task ->
+            rejected("complete build", false, "-Pstrata.webOnly=true", ":runtime:web:compileKotlinJs", task)
+        }
+        val unknown = runner("-Pstrata.webOnly=true", ":runtime:web:missingTask").buildAndFail()
+        assertTrue(unknown.output.contains("not found"), unknown.output)
+        val excluded = runner("-Pstrata.webOnly=true", ":runtime:minecraft-fabric-1.20:jar").buildAndFail()
+        assertTrue(excluded.output.contains("not found"), excluded.output)
+    }
+
+    @Test
+    fun `Web configuration cache preserves source admission and complete acceptance refusal`() {
+        val source = arrayOf("-Pstrata.webOnly=true", "--configuration-cache", ":runtime:web:compileKotlinJs")
+        val stored = runner(*source).build()
+        assertTrue(stored.output.contains("Configuration cache entry stored."), stored.output)
+        val reused = runner(*source).build()
+        assertTrue(reused.output.contains("Configuration cache entry reused."), reused.output)
+        repeat(2) { rejected("complete build", false, *source, ":quality:component-benchmarks:check") }
     }
 
     @Test
@@ -215,6 +299,71 @@ internal class ProjectModelFunctionalTest {
         }
         val selected = included(":ciMinecraftCheck", "-Pstrata.minecraftVersions=1.20")
         assertEquals(setOf(":runtime:minecraft-fabric-1.20", ":integration:minecraft-fabric-1.20"), selected.filter { ":minecraft-fabric-" in it }.toSet())
+    }
+
+    @Test
+    fun `Minecraft source scope retains selected project dependencies and native Test options`() {
+        val full = included("check")
+        val common = full.filter { it.contains(":minecraft-fabric-").not() && it != ":integration:docs" }.toSet()
+        listOf("1.20", "26.3").forEach { version ->
+            val selected = setOf(":runtime:minecraft-fabric-$version", ":integration:minecraft-fabric-$version")
+            assertEquals(
+                common + selected,
+                included(
+                    "-Pstrata.minecraftSourceOnly=true",
+                    "-Pstrata.minecraftVersions=$version",
+                    ":runtime:core:jvmTest",
+                    "--tests",
+                    "model.FilterTest.selected",
+                    ":runtime:minecraft-fabric-$version:jar",
+                    ":integration:minecraft-fabric-$version:gametestClasses",
+                ),
+            )
+            assertJUnit("runtime/core", "jvmTest")
+        }
+        assertEquals(
+            common + setOf(":runtime:minecraft-fabric-1.20", ":integration:minecraft-fabric-1.20", ":runtime:minecraft-fabric-26.3", ":integration:minecraft-fabric-26.3"),
+            included("-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=1.20,26.3", ":runtime:core:classes"),
+        )
+        val unknown = runner("-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", ":runtime:minecraft-fabric-1.20:jar").buildAndFail()
+        assertTrue(unknown.output.contains("not found"), unknown.output)
+    }
+
+    @Test
+    fun `Minecraft source scope rejects incompatible selections before tasks execute`() {
+        listOf("", "1.20,", "1.20,,26.3", "1.20,1.20").forEach { versions ->
+            rejected("nonempty distinct", true, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=$versions", ":runtime:core:classes")
+        }
+        rejected("Unsupported source-preparation", true, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=1.19", ":runtime:core:classes")
+        listOf("-Pstrata.jvmOnly=true", "-Pstrata.webOnly=true").forEach { incompatible ->
+            rejected(
+                "Choose one",
+                true,
+                "-Pstrata.minecraftSourceOnly=true",
+                "-Pstrata.minecraftVersions=26.3",
+                incompatible,
+                ":runtime:core:classes",
+            )
+        }
+        listOf("-Pstrata.completeIdeaModel=true", "-Didea.sync.active=true").forEach { incompatible ->
+            rejected("IDE/Qodana", true, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", incompatible, ":runtime:core:classes")
+        }
+        listOf(":check", ":koverHtmlReport", ":performance-testkit:publishToMavenLocal", ":ciMinecraftCheck", ":benchmarkMinecraftQuick", ":integration:minecraft-fabric-26.3:runClientGameTest", ":integration:minecraft-fabric-26.3:runProductionClientGameTest").forEach { complete ->
+            rejected("complete build", false, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", ":runtime:core:classes", complete)
+        }
+    }
+
+    @Test
+    fun `Minecraft source configuration cache cannot narrow complete acceptance`() {
+        val source = arrayOf("-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", "--configuration-cache", ":runtime:core:classes")
+        val stored = runner(*source).build()
+        assertTrue(stored.output.contains("Configuration cache entry stored."), stored.output)
+        val reused = runner(*source).build()
+        assertTrue(reused.output.contains("Configuration cache entry reused."), reused.output)
+        repeat(2) { rejected("complete build", false, *source, ":check") }
+        val full = included(":check", "-Pstrata.minecraftVersions=26.3")
+        assertEquals(22, full.count { it.startsWith(":runtime:minecraft-fabric-") })
+        assertEquals(22, full.count { it.startsWith(":integration:minecraft-fabric-") })
     }
 
     /** Reads actual fresh JUnit output, proving the option selected one of the two real tests. */
@@ -288,10 +437,12 @@ internal class ProjectModelFunctionalTest {
             ":quality:component-benchmarks",
             ":quality:remote-benchmarks",
         )
-    private val jvmProjects = sharedJvmProjects + ":integration:api"
+    private val jvmProjects = sharedJvmProjects + setOf(":integration:api", ":velocity-api", ":runtime:velocity")
 
     private val fixtureBuild =
         """
+        import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
+        import org.gradle.api.tasks.JavaExec
         import org.gradle.api.tasks.SourceSetContainer
         import org.gradle.api.tasks.testing.Test
         import org.gradle.language.base.plugins.LifecycleBasePlugin
@@ -300,7 +451,7 @@ internal class ProjectModelFunctionalTest {
         val junitLauncher = libs.junit.platform.launcher
         allprojects {
             apply(plugin = "base")
-            val fixtureTests = path in setOf(":runtime:core", ":integration:api")
+            val fixtureTests = path in setOf(":runtime:core", ":integration:api", ":velocity-api", ":runtime:velocity")
             if (fixtureTests) {
                 apply(plugin = "java")
                 repositories { mavenCentral() }
@@ -325,17 +476,33 @@ internal class ProjectModelFunctionalTest {
                     }
                 }
             }
-            val available = listOf("formatKotlin", "lintKotlin", "detekt", "classes", "jar", "test", "jvmJar", "checkKotlinAbi",
+            val available = listOf("formatKotlin", "lintKotlin", "detekt", "classes", "jar", "test", "jvmJar", "checkKotlinAbi", "compileKotlinJs", "compileTestKotlinJs",
                 "jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses", "jmhHistorical", "jmhComponents", "jmhRemote",
                 "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "processEvidence", "checkApiOnlyClasspath",
                 "verifyPublishedPerformanceInventory", "verifyPublishedHostInventory", "capturePublishedHostInventory",
-                "verifyOfflineFontParity", "ciMinecraftCheck", "idea", "benchmarkMinecraftQuick")
+                "verifyOfflineFontParity", "ciMinecraftCheck", "idea", "benchmarkMinecraftQuick", "gametestClasses")
             available.filter { tasks.names.contains(it).not() }.forEach { name -> tasks.register(name) }
-            listOf("koverHtmlReport", "koverXmlReport", "koverBinaryReport", "koverVerify", "koverLog", "koverJvmTests", "koverHtmlReportJvm").forEach { name ->
+            listOf("koverHtmlReport", "koverXmlReport", "koverBinaryReport", "koverVerify", "koverCachedVerify", "koverLog", "koverJvmTests", "koverHtmlReportJvm").forEach { name ->
                 tasks.register(name) { group = LifecycleBasePlugin.VERIFICATION_GROUP }
             }
+            if (path == ":integration:web") {
+                tasks.named("koverVerify") { dependsOn("koverCachedVerify") }
+                tasks.named("check") { dependsOn("koverVerify") }
+            }
             if (tasks.names.contains("jvmTest").not()) tasks.register("jvmTest")
+            if (path.startsWith(":integration:minecraft-fabric-")) {
+                tasks.register<JavaExec>("runClientGameTest")
+                tasks.register("runProductionClientGameTest")
+            }
             tasks.register("publishToMavenLocal") { group = "publishing" }
+            tasks.register("publish") { group = "publishing" }
+            if (path == ":performance-testkit") {
+                val localPublication = tasks.register<PublishToMavenLocal>("publishTestkitPublicationToMavenLocal") {
+                    group = "publishing"
+                    enabled = false
+                }
+                tasks.named("publishToMavenLocal") { dependsOn(localPublication) }
+            }
             val executedTasks = rootProject.file("executed-tasks.txt")
             tasks.configureEach {
                 val taskPath = path

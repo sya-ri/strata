@@ -12,21 +12,26 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * An uncommitted Canvas remains transparent in the native display list, but immutable readiness metadata prevents an incomplete portable capture.
  * Read access and portable capture are safe from any thread; native submission and consumption remain device-thread operations.
  * Retaining this object cannot keep a native target alive after its device has retired the generation.
+ * The internal constructor takes completed detached lists with no mutable construction alias; callers relinquish all mutation rights.
+ * General caller-owned command lists enter through [NativeCanvasDevice.prepare], which first maps their membership into fresh storage.
+ *
+ * @param ownedCommands completed display-list membership transferred without another copy.
+ * @param ownedSnapshots completed immutable capture receipts transferred without another copy.
  */
 @InternalStrataRuntimeApi
 public class NativeCanvasPresentation internal constructor(
     internal val deviceId: Long,
     internal val batchId: Long,
-    commands: List<DrawCommand>,
-    snapshots: List<NativeCanvasSnapshot>,
+    ownedCommands: List<DrawCommand>,
+    ownedSnapshots: List<NativeCanvasSnapshot>,
     private val hasUncommittedCanvases: Boolean = false,
 ) {
     /**
      * Read-only display-list snapshot in the exact original portable/native and clip order, with uncommitted Canvas requests omitted as transparent.
      */
-    public val drawCommands: List<DrawCommand> = commands.toList()
+    public val drawCommands: List<DrawCommand> = ownedCommands
 
-    private val snapshots = snapshots.toList()
+    private val snapshots = ownedSnapshots
 
     /**
      * Creates a portable command list using only this presentation's matching immutable capture receipts.
