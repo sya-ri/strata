@@ -254,6 +254,48 @@ class PairedBrowserTest(unittest.TestCase):
         auxiliary.update(processCreationEvents=32, debugEventCounts={"3": 32, "5": 32},
                          notificationDuplicateSuccesses=32, notificationImageSuccesses=32, notificationMetadataSuccesses=32)
         boundary.validate_immediate_history(auxiliary, actual, 64)
+        leased = copy.deepcopy(created)
+        leased.update(processCreationCapture="debug-before-continue-v2", processCreationHandleSource="debug-event-lease-with-exit-duplicate",
+                      creationLeaseTransfers=96, exitDuplicateSuccesses=96, exitDuplicateFailures=0)
+        leased["processAcquisition"]["maximumPhysicalHandles"] = 97
+        for histories in leased["members"].values():
+            histories[0]["exitDuplicateBeforeContinue"] = True
+        boundary.validate_immediate_history(leased, actual, 64)
+        leased_auxiliary = copy.deepcopy(auxiliary)
+        leased_auxiliary.update(processCreationCapture="debug-before-continue-v2", processCreationHandleSource="debug-event-lease-with-exit-duplicate",
+                                creationLeaseTransfers=32, exitDuplicateSuccesses=32, exitDuplicateFailures=0)
+        for histories in leased_auxiliary["members"].values():
+            if histories[0].get("creationEventBeforeContinue") is True:
+                histories[0]["exitDuplicateBeforeContinue"] = True
+        boundary.validate_immediate_history(leased_auxiliary, actual, 64)
+        for mode in ("missing-exit-duplicate-witness", "untyped-exit-witness", "wrong-lease-count", "wrong-exit-count",
+                     "exit-duplicate-failure", "untyped-exit-counter", "missing-exit-counter", "wrong-owned-handle-source",
+                     "actual264-over-cap", "dangling-auto-handle", "exit-without-creation"):
+            changed = copy.deepcopy(leased)
+            if mode == "missing-exit-duplicate-witness":
+                changed["members"]["1"][0].pop("exitDuplicateBeforeContinue")
+            elif mode == "untyped-exit-witness":
+                changed["members"]["1"][0]["exitDuplicateBeforeContinue"] = 1
+            elif mode == "wrong-lease-count":
+                changed["creationLeaseTransfers"] -= 1
+            elif mode == "wrong-exit-count":
+                changed["exitDuplicateSuccesses"] -= 1
+            elif mode == "exit-duplicate-failure":
+                changed["exitDuplicateFailures"] = 1
+            elif mode == "untyped-exit-counter":
+                changed["exitDuplicateFailures"] = False
+            elif mode == "missing-exit-counter":
+                changed.pop("exitDuplicateSuccesses")
+            elif mode == "wrong-owned-handle-source":
+                changed["processCreationHandleSource"] = "duplicate-debug-event-handle"
+            elif mode == "actual264-over-cap":
+                changed["processAcquisition"]["maximumPhysicalHandles"] = 264
+            elif mode == "exit-without-creation":
+                changed["members"]["1"][0].pop("creationEventBeforeContinue")
+            else:
+                changed["processAcquisition"]["debugProcessHandles"] = 1
+            with self.subTest(lease_mode=mode), self.assertRaises(ValueError):
+                boundary.validate_immediate_history(changed, actual, 64)
         for mode in ("missing-generation", "missing-witness", "wrong-event-count", "open-failure", "capture-error",
                      "after-failure", "missing-debug-handles", "unclosed-debug-handles", "unknown-protocol", "wrong-abi", "missing-exit-event", "terminal-error", "duplicate-failure", "handle-source"):
             changed = copy.deepcopy(created)

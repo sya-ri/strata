@@ -515,7 +515,7 @@ def class_loads(directory):
 def verify_generation_accounting(terminal):
     """Reconcile every closed physical PID/birth history with actual terminal Job accounting."""
     creation_capture = terminal.get("processCreationCapture")
-    require(creation_capture in (None, "debug-before-continue-v1"), "Unknown owned process creation capture")
+    require(creation_capture in (None, "debug-before-continue-v1", "debug-before-continue-v2"), "Unknown owned process creation capture")
     if creation_capture is not None:
         require(isinstance(terminal.get("processAcquisition"), dict), "Creation capture lacks its physical handle inventory")
     accounting = terminal.get("generationAccounting", {})
@@ -535,6 +535,11 @@ def verify_generation_accounting(terminal):
             if creation_capture is not None:
                 require("creationEventBeforeContinue" not in member or type(member["creationEventBeforeContinue"]) is bool,
                         "Malformed actual creation-event witness")
+                if creation_capture == "debug-before-continue-v2":
+                    require("exitDuplicateBeforeContinue" not in member or type(member["exitDuplicateBeforeContinue"]) is bool,
+                            "Malformed actual pre-continuation exit duplicate")
+                    require((member.get("creationEventBeforeContinue") is True) == (member.get("exitDuplicateBeforeContinue") is True),
+                            "Creation lease lacks its same-generation duplicate before exit continuation")
             require(type(member.get("pid")) is int and member["pid"] == int(pid) and type(member.get("creationFileTime")) is int
                     and type(member.get("exitFileTime")) is int and member["creationFileTime"] <= member["exitFileTime"]
                     and 0 < member["creationFileTime"]
@@ -584,11 +589,16 @@ def verify_generation_accounting(terminal):
                     and counts.get("3") == counts.get("5") == delivered,
                     "Creation capture lacks its actual ABI or complete native create/exit event counts")
             witnessed = sum(member.get("creationEventBeforeContinue") is True for histories in terminal["members"].values() for member in histories)
+            if creation_capture == "debug-before-continue-v2":
+                counters += ("creationLeaseTransfers", "exitDuplicateSuccesses", "exitDuplicateFailures")
+                require(terminal.get("creationLeaseTransfers") == terminal.get("exitDuplicateSuccesses") == delivered
+                        and terminal.get("exitDuplicateFailures") == 0, "Creation leases lack complete owned exit duplicates")
+            handle_source = "debug-event-lease-with-exit-duplicate" if creation_capture == "debug-before-continue-v2" else "duplicate-debug-event-handle"
             require(type(delivered) is int and 0 < delivered == witnessed <= terminal["totalProcesses"]
                     and type(terminal.get("creationEventsAfterFailure")) is int and terminal["creationEventsAfterFailure"] == 0
                     and "creationCaptureError" not in terminal
                     and type(acquisition.get("debugProcessHandles")) is int and acquisition["debugProcessHandles"] == 0
-                    and terminal.get("processCreationHandleSource") == "duplicate-debug-event-handle"
+                    and terminal.get("processCreationHandleSource") == handle_source
                     and terminal.get("notificationOpenSuccesses") == terminal.get("notificationOpenFailures") == acquisition_failures == 0,
                     "Creation events do not reconcile with actual closed Job generations")
         require(all(type(terminal.get(key)) is int and 0 <= terminal[key] for key in counters)

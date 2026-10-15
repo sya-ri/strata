@@ -95,7 +95,7 @@ public static class StrataPerformanceProcess {
         public long unpublishedBytes, publishedBytes;
         public long newNotifications, exitNotifications;
         public bool captureFailed;
-        public readonly HashSet<uint> debugProcesses = new HashSet<uint>();
+        public readonly Dictionary<uint, IntPtr> debugProcesses = new Dictionary<uint, IntPtr>();
         public readonly HashSet<uint> initialBreakpoints = new HashSet<uint>();
     }
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool GlobalMemoryStatusEx(ref Memory memory);
@@ -202,6 +202,8 @@ public static class StrataPerformanceProcess {
         List<KeyValuePair<uint, IntPtr>> snapshot;
         lock (gate) snapshot = new List<KeyValuePair<uint, IntPtr>>(handles);
         foreach (var item in snapshot) {
+            IntPtr borrowed;
+            lock (gate) if (acquisitions.debugProcesses.TryGetValue(item.Key, out borrowed) && borrowed == item.Value) continue;
             uint wait = WaitForSingleObject(item.Value, 0);
             if (wait == 0x102) continue;
             Require(wait == 0);
@@ -398,6 +400,62 @@ public static class StrataPerformanceProcess {
         }
     }
 
+    // Keep one live handle: Windows owns the creation handle until EXIT_PROCESS is continued.
+    static void UseCreationLease(uint pid, IntPtr borrowed, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> capture, object gate, Acquisitions acquisitions) {
+        lock (gate) {
+            IntPtr owned;
+            if (handles.TryGetValue(pid, out owned) == false || owned == borrowed)
+                throw new InvalidOperationException("Creation lease lacks its separately acquired generation.");
+            var history = records[pid];
+            var record = history[history.Count - 1];
+            if (record.ContainsKey("creationEventBeforeContinue") == false || (bool)record["creationEventBeforeContinue"] == false)
+                throw new InvalidOperationException("Creation lease lacks its gated metadata witness.");
+            CloseTracked(owned, acquisitions);
+            handles[pid] = borrowed;
+            capture["creationLeaseTransfers"] = (long)capture["creationLeaseTransfers"] + 1;
+        }
+    }
+
+    // Duplicate the same borrowed object before EXIT continuation closes it; only the owned copy is retired.
+    static void DuplicateExitLease(uint pid, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> capture, object gate, Acquisitions acquisitions) {
+        IntPtr borrowed, retained;
+        Dictionary<string, object> record;
+        lock (gate) {
+            if (acquisitions.debugProcesses.TryGetValue(pid, out borrowed) == false)
+                throw new InvalidOperationException("Exit lacks its actual creation handle.");
+            if (handles.TryGetValue(pid, out retained) == false || retained != borrowed) return;
+            var history = records[pid];
+            record = history[history.Count - 1];
+        }
+        ReserveHandle(acquisitions);
+        IntPtr duplicate = IntPtr.Zero;
+        bool transferred = false;
+        try {
+            bool success = DuplicateHandle(GetCurrentProcess(), borrowed, GetCurrentProcess(), out duplicate, 0, false, 2);
+            int error = success ? 0 : Marshal.GetLastWin32Error();
+            lock (gate) {
+                string counter = success ? "exitDuplicateSuccesses" : "exitDuplicateFailures";
+                capture[counter] = (long)capture[counter] + 1;
+            }
+            if (success == false) { duplicate = IntPtr.Zero; throw new Win32Exception(error); }
+            long created, exited, kernel, user;
+            Require(GetProcessTimes(duplicate, out created, out exited, out kernel, out user));
+            if (created != (long)record["creationFileTime"])
+                throw new InvalidOperationException("Exit duplicate changed the captured physical generation.");
+            lock (gate) {
+                if (handles[pid] != borrowed) throw new InvalidOperationException("Exit lease changed during duplication.");
+                handles[pid] = duplicate;
+                transferred = true;
+                record["exitDuplicateBeforeContinue"] = true;
+            }
+        } finally {
+            if (transferred == false) {
+                if (duplicate == IntPtr.Zero) ReleaseReservation(acquisitions);
+                else CloseTracked(duplicate, acquisitions);
+            }
+        }
+    }
+
     // Run only on the CreateProcess thread, including cleanup. Job messages remain advisory diagnostics.
     static void CaptureCreations(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> capture, object gate, Acquisitions acquisitions, Stopwatch clock, double seconds, uint waitMilliseconds = 0) {
         while (clock.Elapsed.TotalSeconds < seconds) {
@@ -422,18 +480,22 @@ public static class StrataPerformanceProcess {
                     lock (gate) capture["processCreationEvents"] = (long)capture["processCreationEvents"] + 1;
                     if (observed.info.creation.process == IntPtr.Zero || observed.info.creation.thread == IntPtr.Zero)
                         throw new InvalidOperationException("Creation event lacks its actual physical process or thread handle.");
-                    if (acquisitions.debugProcesses.Add(observed.pid) == false) throw new InvalidOperationException("Duplicate live debug process identity.");
+                    if (acquisitions.debugProcesses.ContainsKey(observed.pid)) throw new InvalidOperationException("Duplicate live debug process identity.");
+                    acquisitions.debugProcesses.Add(observed.pid, observed.info.creation.process);
                     // Windows owns this event handle until EXIT_PROCESS is continued; include it in the same bound.
                     ReserveHandle(acquisitions, true);
                     if (acquisitions.captureFailed == false) {
                         AcquireCreatedProcess(job, observed.pid, observed.info.creation.process, capture, gate, acquisitions);
                         DrainPending(job, handles, records, capture, gate, acquisitions, true);
+                        UseCreationLease(observed.pid, observed.info.creation.process, handles, records, capture, gate, acquisitions);
                         // Preserve physical snapshots for Job members outside this debugging chain, while the new child is gated.
                         Capture(job, handles, records, capture, clock, seconds, gate, acquisitions, false);
                     } else {
                         // A fatal refusal cannot grow the bounded history during termination; actual Job totals remain unreconciled.
                         lock (gate) capture["creationEventsAfterFailure"] = (long)capture["creationEventsAfterFailure"] + 1;
                     }
+                } else if (exited) {
+                    DuplicateExitLease(observed.pid, handles, records, capture, gate, acquisitions);
                 } else if (observed.kind == 1) {
                     continuation = 0x80010001; // Pass application exceptions to their normal handler.
                     if (observed.info.exception.firstChance == 1 && observed.info.exception.exception.code == 0x80000003
@@ -443,6 +505,12 @@ public static class StrataPerformanceProcess {
                 }
             } catch (Exception failure) {
                 acquisitions.captureFailed = true;
+                // An unacquired exit copy is fatal; do not leave a map entry that Windows is about to close.
+                if (exited) lock (gate) {
+                    IntPtr borrowed, retained;
+                    if (acquisitions.debugProcesses.TryGetValue(observed.pid, out borrowed)
+                        && handles.TryGetValue(observed.pid, out retained) && retained == borrowed) handles.Remove(observed.pid);
+                }
                 lock (gate) if (capture.ContainsKey("creationCaptureError") == false) capture["creationCaptureError"] = failure.Message;
                 throw;
             } finally {
@@ -606,8 +674,9 @@ public static class StrataPerformanceProcess {
             {"notificationDuplicateFailures", 0L}, {"notificationDuplicateSuccesses", 0L},
             {"notificationImageFailures", 0L}, {"notificationImageSuccesses", 0L},
             {"notificationMetadataFailures", 0L}, {"notificationMetadataSuccesses", 0L},
-            {"processCreationCapture", "debug-before-continue-v1"}, {"processCreationEvents", 0L}, {"creationEventsAfterFailure", 0L},
-            {"processCreationHandleSource", "duplicate-debug-event-handle"},
+            {"processCreationCapture", "debug-before-continue-v2"}, {"processCreationEvents", 0L}, {"creationEventsAfterFailure", 0L},
+            {"creationLeaseTransfers", 0L}, {"exitDuplicateSuccesses", 0L}, {"exitDuplicateFailures", 0L},
+            {"processCreationHandleSource", "debug-event-lease-with-exit-duplicate"},
             {"debugEventCounts", new Dictionary<string, long>()}
         };
         try {
@@ -784,6 +853,8 @@ public static class StrataPerformanceProcess {
                         && acquisitions.debugProcesses.Count == 0 && beforeContinue == (long)capture["processCreationEvents"]
                         && (long)capture["processCreationEvents"] <= finalAccounting.totalProcesses
                         && (long)capture["creationEventsAfterFailure"] == 0 && capture.ContainsKey("creationCaptureError") == false
+                        && (long)capture["creationLeaseTransfers"] == (long)capture["processCreationEvents"]
+                        && (long)capture["exitDuplicateSuccesses"] == (long)capture["processCreationEvents"] && (long)capture["exitDuplicateFailures"] == 0
                         && (long)capture["notificationMetadataFailures"] == 0;
                     result["generationAccounting"] = new Dictionary<string, object> {{"schema", "strata-owned-generation-accounting-v1"}, {"totalProcesses", finalAccounting.totalProcesses}, {"capturedGenerations", captured}, {"closedGenerations", completed}, {"complete", complete}};
                     if ((bool)result["naturalRelease"] && complete == false && result.ContainsKey("error") == false)
@@ -815,6 +886,7 @@ public static class StrataPerformanceProcess {
                 foreach (var item in capture) result[item.Key] = item.Value;
             }
             foreach (var handle in remainingHandles) {
+                if (acquisitions.debugProcesses.ContainsValue(handle)) { closed = false; continue; }
                 if (CloseHandle(handle)) ReleaseReservation(acquisitions);
                 else closed = false;
             }
