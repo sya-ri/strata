@@ -19,6 +19,8 @@ dependencies {
     add("jmh", project(":performance-testkit"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:headless"))
+    add("jmh", project(":runtime:minecraft"))
+    add("jmh", project(":runtime:minecraft-fonts-lwjgl"))
 }
 
 jmh {

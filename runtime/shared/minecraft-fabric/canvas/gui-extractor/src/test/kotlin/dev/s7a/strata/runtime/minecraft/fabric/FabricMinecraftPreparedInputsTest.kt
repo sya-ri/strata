@@ -45,7 +45,16 @@ internal class FabricMinecraftPreparedInputsTest {
         val separate = FabricMinecraftFrameInputs.prepare(nextLayers, 1, true)
         assertNotSame(maps.first(), separate.portable.first().composition)
         assertNotSame(maps.first().factors, checkNotNull(separate.portable.first().composition).factors)
-        assertArrayEquals(first.portable.first().rasterize().copyArgb(), next.portable.first().rasterize().copyArgb())
+        assertArrayEquals(
+            first.portable
+                .first()
+                .rasterize()
+                .copyArgb(),
+            next.portable
+                .first()
+                .rasterize()
+                .copyArgb(),
+        )
     }
 
     @Test
@@ -137,7 +146,16 @@ internal class FabricMinecraftPreparedInputsTest {
             assertNotSame(previousMap, next.portable.single().composition)
             assertEquals(first.portable.single().samePreparedAxes(next.portable.single()), checkNotNull(next.portable.single().composition).axisEntriesWritten == 0L)
             assertTrue(checkNotNull(next.portable.single().composition).equivalent(checkNotNull(fresh.portable.single().composition)))
-            assertArrayEquals(fresh.portable.single().rasterize().copyArgb(), next.portable.single().rasterize().copyArgb())
+            assertArrayEquals(
+                fresh.portable
+                    .single()
+                    .rasterize()
+                    .copyArgb(),
+                next.portable
+                    .single()
+                    .rasterize()
+                    .copyArgb(),
+            )
         }
         val scaled = FabricMinecraftFrameInputs.prepare(listOf(original), 2, true, first)
         assertNotSame(previousMap, scaled.portable.single().composition)
@@ -242,8 +260,16 @@ internal class FabricMinecraftPreparedInputsTest {
             current = FabricMinecraftFrameInputs.prepare(listOf(layer(image, 0)), 1, true, current)
             assertSame(map, current.portable.single().composition)
         }
-        assertTrue(current.javaClass.declaredFields.filter { Modifier.isStatic(it.modifiers).not() }.none { it.type == FabricMinecraftFrameInputs::class.java })
-        assertTrue(map.javaClass.declaredFields.filter { Modifier.isStatic(it.modifiers).not() }.none { it.type == FabricMinecraftFrameInputs::class.java })
+        assertTrue(
+            current.javaClass.declaredFields
+                .filter { Modifier.isStatic(it.modifiers).not() }
+                .none { it.type == FabricMinecraftFrameInputs::class.java },
+        )
+        assertTrue(
+            map.javaClass.declaredFields
+                .filter { Modifier.isStatic(it.modifiers).not() }
+                .none { it.type == FabricMinecraftFrameInputs::class.java },
+        )
         assertFalse(first.portable.single().samePreparedInputs(FabricMinecraftPortableImage(commands, IntSize(64, 64), 1, IntOffset(1, 0))))
     }
 
