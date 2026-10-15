@@ -1,0 +1,11 @@
+{
+  "schema": "strata-freetype-trace-independent-controls-v1",
+  "prior_execution_claimed": false,
+  "scope": "Definitions for independent actual observer qualification; this file contains no executed or passed claim.",
+  "controls": [
+    {"id": "QZero", "direct_buffer_reads": 0, "native_load_calls": 0, "complete_boundary": true},
+    {"id": "QOne", "direct_buffer_reads": 1, "native_load_calls": 1, "complete_boundary": true},
+    {"id": "QThree", "direct_buffer_reads": 3, "native_load_calls": 3, "complete_boundary": true},
+    {"id": "QMissingEnd", "direct_buffer_reads": 0, "native_load_calls": 0, "complete_boundary": false}
+  ]
+}
