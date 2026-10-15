@@ -56,7 +56,7 @@ internal object MinecraftCanvasVulkanRetirementValidation : MinecraftCanvasInput
     private fun captureOrigins(context: MinecraftCanvasTestContext) {
         val report =
             context.onClient {
-                LoadedArtifactMetadata
+                MinecraftNativeArtifactOrigins
                     .capture(
                         javaClass.classLoader,
                         mapOf(
@@ -66,7 +66,6 @@ internal object MinecraftCanvasVulkanRetirementValidation : MinecraftCanvasInput
                             "nativeTexture" to VulkanGpuTexture::class.java.name,
                             "nativeView" to VulkanGpuTextureView::class.java.name,
                         ),
-                        emptySet(),
                     ).apply {
                         addProperty("max_heap_bytes", Runtime.getRuntime().maxMemory())
                         addProperty("native_driver", RenderSystem.getDevice().deviceInfo.toString())
