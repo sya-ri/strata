@@ -24,7 +24,10 @@ public object UnihexOverrideOperationReport : JvmOperationReportAdapter {
     // Both font corpora consume the same registered component control files and original external inputs.
     override val inputs: Map<String, Path> get() = FontFallbackOperationReport.inputs
 
-    private enum class Operation(val method: String, val boundary: String) {
+    private enum class Operation(
+        val method: String,
+        val boundary: String,
+    ) {
         Glyphs("glyphs", "Resolve the complete prepared scalar batch in its original order."),
         Warm("warm", "Resolve the first prepared scalar once."),
         FirstUse("firstUse", "Open an engine, resolve the first scalar and close the engine."),
@@ -48,9 +51,10 @@ public object UnihexOverrideOperationReport : JvmOperationReportAdapter {
 
     override fun collect(plan: PerformancePlan): Map<String, JsonObject> {
         verifyInventory()
-        return Operation.entries.flatMap { operation ->
-            UnihexOverrideScenario.entries.map { scenario -> row(operation, scenario).id to collectRow(operation, scenario, plan) }
-        }.toMap()
+        return Operation.entries
+            .flatMap { operation ->
+                UnihexOverrideScenario.entries.map { scenario -> row(operation, scenario).id to collectRow(operation, scenario, plan) }
+            }.toMap()
     }
 
     private fun collectRow(
@@ -64,26 +68,36 @@ public object UnihexOverrideOperationReport : JvmOperationReportAdapter {
             val trace = owner.trace()
             val reversed = pixels(owner.dirtyFrame())
             val original = pixels(owner.dirtyFrame())
-            JvmPerformanceRunner.measure(
-                row(operation, scenario).id,
-                plan,
-                afterOperation = { index, result ->
-                    when (result) {
-                        is MinecraftFontGlyph -> equalGlyph(if (operation == Operation.Warm || operation == Operation.FirstUse) trace.first() else trace.last(), result)
-                        is MinecraftFontSnapshot -> check(result.diagnostics.isEmpty())
-                        is RuntimeUiFrame -> {
-                            val expected = if (operation == Operation.DirtyFrame && (plan.warmup + index) % 2 == 0) reversed else original
-                            check(pixels(result).contentEquals(expected))
+            JvmPerformanceRunner
+                .measure(
+                    row(operation, scenario).id,
+                    plan,
+                    afterOperation = { index, result ->
+                        when (result) {
+                            is MinecraftFontGlyph -> {
+                                equalGlyph(if (operation == Operation.Warm || operation == Operation.FirstUse) trace.first() else trace.last(), result)
+                            }
+
+                            is MinecraftFontSnapshot -> {
+                                check(result.diagnostics.isEmpty())
+                            }
+
+                            is RuntimeUiFrame -> {
+                                val expected = if (operation == Operation.DirtyFrame && (plan.warmup + index) % 2 == 0) reversed else original
+                                check(pixels(result).contentEquals(expected))
+                            }
+
+                            else -> {
+                                error("Unexpected original Unihex operation result")
+                            }
                         }
-                        else -> error("Unexpected original Unihex operation result")
-                    }
-                    val retained = owner.retained
-                    check(retained[0] <= scenario.cacheEntries && retained[1] <= 1024 * 1024L && retained[2] == 0L)
-                    check(owner.subscriptions == 1)
-                },
-            ) {
-                invoke(operation, owner)
-            }.evidence
+                        val retained = owner.retained
+                        check(retained[0] <= scenario.cacheEntries && retained[1] <= 1024 * 1024L && retained[2] == 0L)
+                        check(owner.subscriptions == 1)
+                    },
+                ) {
+                    invoke(operation, owner)
+                }.evidence
         } finally {
             owner.close()
             UnihexOverrideWorkEvidence.verifyTerminalOwner(owner)
