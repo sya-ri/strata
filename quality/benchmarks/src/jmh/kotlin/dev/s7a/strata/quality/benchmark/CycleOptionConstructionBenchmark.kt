@@ -72,7 +72,10 @@ public open class CycleOptionConstructionBenchmark {
     @Benchmark
     public fun outsideInitialRejected(): IllegalArgumentException = rejected(validOptions, 3)
 
-    private fun rejected(values: Collection<Int>, selected: Int): IllegalArgumentException =
+    private fun rejected(
+        values: Collection<Int>,
+        selected: Int,
+    ): IllegalArgumentException =
         try {
             CycleButtonState(values, selected, numberFormat)
             error("The rejected input unexpectedly constructed a state.")

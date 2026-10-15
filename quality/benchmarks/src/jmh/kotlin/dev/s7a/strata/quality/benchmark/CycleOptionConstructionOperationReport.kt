@@ -17,7 +17,8 @@ public object CycleOptionConstructionOperationReport : JvmOperationReportAdapter
     private val constructors = listOf("listFactory" to false, "directListControl" to true, "collectionControl" to true)
     private val independent = listOf("enumFactory" to false, "enumControl" to true, "emptyListRejected" to true, "emptyCollectionRejected" to true, "duplicateRejected" to true, "outsideInitialRejected" to true)
 
-    override val inputs: Map<String, Path> get() = JmhFixtureSelection.inputs()
+    override val inputs: Map<String, Path>
+        get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))
 
     override val rows: List<JvmOperationReportRow> =
         lengths.flatMap { length -> constructors.map { (method, control) -> row("$method-$length", method, mapOf("length" to length.toString()), control) } } +
