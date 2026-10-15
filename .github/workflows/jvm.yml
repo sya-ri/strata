@@ -510,8 +510,9 @@ jobs:
         name: minecraft-loaded-client-evidence-${{ matrix.id }}
         path: |
           build/github-actions/
-          integration/*/build/libs/*.jar
-          runtime/minecraft-fabric-*/build/libs/*.jar
+          **/build/libs/*.jar
+          **/build/test-results/
+          **/build/*-offline*/
           integration/*/build/minecraft-verification/
           integration/*/build/minecraft-production-verification/
           integration/*/build/minecraft-*parity*/
