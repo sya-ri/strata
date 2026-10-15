@@ -160,6 +160,21 @@ The supplemental `GridTrackBenchmark` selects seven empty/single, one-column, pa
 Its four separate boundaries are a primed clean frame, one retained leaf size mutation plus frame, actual constraint change plus frame, and default-alignment publication plus declaration rebuild and frame; preparation, oracle checks and terminal cleanup are untimed.
 Source-derived C + R retained Int values and two avoided layout track-array constructions are primitive-payload and operation estimates, not observed heap savings.
 Compare the same frozen fixture/collector with three independent Standard baseline and candidate runs, report actual AverageTime and normalized allocation for every case, and disclose controls and regressions without a fixed time threshold.
+### Small local semantics collection
+
+`SemanticsPipeline` checks the current node capability before constructing a callback collector, while refreshed nonparticipants still validate the execution owner and publish an empty local payload.
+Every actual semantics callback receives its own guarded scope, including zero-emission callbacks, and closes it in `finally` after success or failure.
+A scalar first-value slot handles zero and one emission; only the second emission creates the growable buffer.
+Snapshots keep the existing empty/singleton representations and a compact defensive copy for larger payloads; the mutable buffer and scalar slot are cleared after scope close, including when a caller captures the closed scope.
+This changes collection bookkeeping without additional caching, skipped callbacks, cross-frame scope reuse or spare retained buffer capacity.
+
+Common JVM/JavaScript tests cover ordered unresolved values and bounds, nonparticipants, zero/one/many callbacks, virtual ancestry, unplaced children, input ownership, paint-only payload reuse, geometry, self-invalidation, keyed reorder/removal, old-frame immutability and failure/terminal cleanup.
+JVM tests additionally verify wrong-thread ownership precedence, captured-scope closure, detached source-list membership and deterministic null-reference release.
+`SmallSemanticsBenchmark` provides thirteen actual-session cases with both ordinary and captured scopes: fixed-cardinality refresh, initial mixed collection, broad/deep mixtures, paint-only/local/geometry changes, clean-frame reuse and keyed reorder/removal.
+Its generic static verifier checks output and callback work and observes buffer presence outside timings; such construction-site observations do not establish which objects survive JVM escape analysis.
+Keep many-emission and complete clean-frame controls in the paired result, including regressions, and record zero/singleton producer and published-entry counts separately.
+Native upload and GPU intervals are inapplicable to this CPU-only collection corpus.
+
 ### Current-tree frame callbacks
 
 State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.
