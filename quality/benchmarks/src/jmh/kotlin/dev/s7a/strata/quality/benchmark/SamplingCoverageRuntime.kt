@@ -191,11 +191,11 @@ public class SamplingCoverageRuntime {
         owner: Class<*>,
         property: String,
     ): Method = owner.declaredMethods.single { it.name.substringBefore('$').contentEquals("get$property") }
-
-    private inline fun originalFailure(block: () -> Any): Any =
-        try {
-            block()
-        } catch (failure: InvocationTargetException) {
-            throw failure.cause ?: failure
-        }
 }
+
+private inline fun originalFailure(block: () -> Any): Any =
+    try {
+        block()
+    } catch (failure: InvocationTargetException) {
+        throw failure.cause ?: failure
+    }
