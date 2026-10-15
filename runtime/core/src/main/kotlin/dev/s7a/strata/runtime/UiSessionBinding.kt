@@ -28,13 +28,15 @@ internal class UiSessionBinding<T>(
     private val monitor: Any = Any(),
     private var onPending: ((UiSessionBinding<T>) -> Unit)? = null,
     private var onIdle: ((UiSessionBinding<T>) -> Unit)? = null,
-) : ReadOnlyProperty<Any?, T> {
+) : ReadOnlyProperty<Any?, T>, PendingBindingTarget {
     private var committed: StateSnapshot<T>? = null
     private var pending: StateSnapshot<T>? = null
     private var captured: StateSnapshot<T>? = null
     private var subscription: StateSubscription<T>? = null
     private var closeRequested: Boolean = false
     private var disabled: Boolean = false
+
+    override var pendingInQueue: Boolean = false
 
     /**
      * Declaration order assigned before subscription; queue selection preserves the original commit order.

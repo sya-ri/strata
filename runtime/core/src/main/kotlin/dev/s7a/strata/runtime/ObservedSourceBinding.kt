@@ -15,7 +15,7 @@ internal class ObservedSourceBinding(
     val source: StateSource<*>,
     pending: PendingBindingQueue<ObservedSourceBinding>,
     val upstream: ObservedSourceBinding? = null,
-) : AutoCloseable {
+) : AutoCloseable, PendingBindingTarget {
     private val derivation = source as? DerivedStateSource<*>
     private val binding =
         if (derivation == null) {
@@ -31,6 +31,8 @@ internal class ObservedSourceBinding(
             null
         }
     private var derivedValue: Any? = null
+
+    override var pendingInQueue: Boolean = false
 
     /**
      * Current identity-map traversal order, refreshed by the owner only after graph membership changes.

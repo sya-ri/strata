@@ -7,17 +7,17 @@ import dev.s7a.strata.runtime.platform.synchronized
  * Binding callbacks use [monitor] for snapshot updates and enqueue/remove; capture freezes the complete selection under that same lock.
  * [order] compares only owner-maintained traversal order, and [capture] callbacks cannot compare values or run application code.
  * At most one pending and one captured reference per current binding is retained; owner cleanup calls [clear].
- * Each nonempty cutoff replaces its pending set; removal rebuilds after its tracked peak exceeds twice current membership.
- * Empty frames therefore retain neither historical entries nor a historical pending-set peak.
+ * Each nonempty cutoff detaches its pending list; removal rebuilds after its tracked peak exceeds twice current membership.
+ * Empty frames therefore retain neither historical entries nor a historical pending-list peak.
  */
-internal class PendingBindingQueue<T : Any>(
+internal class PendingBindingQueue<T : PendingBindingTarget>(
     private val order: Comparator<T>,
 ) {
     /**
      * Shared lock for queue membership and each participating binding's revision snapshots.
      */
     val monitor = Any()
-    private var pending = LinkedHashSet<T>()
+    private var pending = ArrayList<T>()
     private var pendingPeak = 0
     private var captured: List<T> = emptyList()
 
@@ -26,7 +26,9 @@ internal class PendingBindingQueue<T : Any>(
      * Runtime binding identities use ordinary reference equality without application equality code.
      */
     fun enqueue(binding: T) {
+        if (binding.pendingInQueue) return
         pending.add(binding)
+        binding.pendingInQueue = true
         if (pendingPeak < pending.size) pendingPeak = pending.size
     }
 
@@ -35,8 +37,13 @@ internal class PendingBindingQueue<T : Any>(
      * An already captured target remains valid only until owner commit or terminal [clear].
      */
     fun remove(binding: T) {
-        if (pending.remove(binding) && (pending.isEmpty() || pending.size.toLong() * 2 < pendingPeak.toLong())) {
-            pending = LinkedHashSet(pending)
+        if (binding.pendingInQueue.not()) return
+        val index = pending.indexOfFirst { it === binding }
+        check(0 <= index) { "A pending binding belongs to another queue." }
+        pending.removeAt(index)
+        binding.pendingInQueue = false
+        if (pending.isEmpty() || pending.size.toLong() * 2 < pendingPeak.toLong()) {
+            pending = ArrayList(pending)
             pendingPeak = pending.size
         }
     }
@@ -51,9 +58,11 @@ internal class PendingBindingQueue<T : Any>(
                 if (pending.isEmpty()) {
                     emptyList()
                 } else {
-                    pending.sortedWith(order).also {
-                        pending = LinkedHashSet()
+                    pending.also { selected ->
+                        pending = ArrayList()
                         pendingPeak = 0
+                        selected.forEach { it.pendingInQueue = false }
+                        selected.sortWith(order)
                     }
                 }
             captured.forEach(freeze)
@@ -72,7 +81,8 @@ internal class PendingBindingQueue<T : Any>(
      */
     fun clear() {
         synchronized(monitor) {
-            pending = LinkedHashSet()
+            pending.forEach { it.pendingInQueue = false }
+            pending = ArrayList()
             pendingPeak = 0
             captured = emptyList()
         }

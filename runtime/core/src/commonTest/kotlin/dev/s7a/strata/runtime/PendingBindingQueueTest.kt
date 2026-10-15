@@ -15,6 +15,56 @@ import kotlin.test.assertTrue
  */
 internal class PendingBindingQueueTest {
     @Test
+    fun removingARequeuedTargetPreservesTheDetachedCutoffAndLatestSurvivor() {
+        val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
+        val first = binding(queue, 0, 0)
+        val second = binding(queue, 1, 0)
+        try {
+            first.enqueue(StateSnapshot(StateRevision(1), 1))
+            second.enqueue(StateSnapshot(StateRevision(1), 1))
+            queue.capture(UiSessionBinding<*>::capturePending)
+            first.enqueue(StateSnapshot(StateRevision(2), 2))
+            second.enqueue(StateSnapshot(StateRevision(2), 2))
+            first.disable()
+            val selected = queue.takeCaptured()
+            assertEquals(listOf(first, second), selected)
+            assertFalse(first.applyPending())
+            assertTrue(second.applyPending())
+            assertEquals(1, second.committedValue)
+            second.enqueue(StateSnapshot(StateRevision(3), 3))
+            queue.capture(UiSessionBinding<*>::capturePending)
+            assertEquals(listOf(second), queue.takeCaptured().also { assertTrue(it.single().applyPending()) })
+            assertEquals(3, second.committedValue)
+            queue.capture(UiSessionBinding<*>::capturePending)
+            assertEquals(emptyList(), queue.takeCaptured())
+        } finally {
+            first.disable()
+            second.disable()
+            queue.clear()
+        }
+    }
+
+    @Test
+    fun removingMostPendingBindingsKeepsOnlyTheLatestCurrentSurvivor() {
+        val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
+        val bindings = List(1_024) { index -> binding(queue, index.toLong(), 0) }
+        try {
+            bindings.forEach { it.enqueue(StateSnapshot(StateRevision(1), 1)) }
+            bindings.drop(1).forEach(UiSessionBinding<*>::disable)
+            val survivor = bindings.first()
+            survivor.enqueue(StateSnapshot(StateRevision(2), 2))
+            queue.capture(UiSessionBinding<*>::capturePending)
+            assertEquals(listOf(survivor), queue.takeCaptured().also { assertTrue(it.single().applyPending()) })
+            assertEquals(2, survivor.committedValue)
+            queue.capture(UiSessionBinding<*>::capturePending)
+            assertEquals(emptyList(), queue.takeCaptured())
+        } finally {
+            bindings.forEach(UiSessionBinding<*>::disable)
+            queue.clear()
+        }
+    }
+
+    @Test
     fun currentLongOrderPreservesEqualOrderAndDuplicatePublicationMembership() {
         val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val minimum = binding(queue, Long.MIN_VALUE, 0)
