@@ -8,12 +8,117 @@ import dev.s7a.strata.state.mutableStateOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 /**
  * Verifies that nested evaluations restore dependency tracking and mutation guards after application failures.
  */
 internal class StateObservationContextTest {
+    @Test
+    fun readCapturePreservesNestedDependencyOwnership() {
+        val outerState = mutableStateOf(0)
+        val innerState = mutableStateOf(0)
+        var outerInvalidations = 0
+        var innerInvalidations = 0
+        val outer = StateObservation({}, {}, { outerInvalidations += 1 }, {})
+        val inner = StateObservation({}, {}, { innerInvalidations += 1 }, {})
+        try {
+            outer.evaluate {
+                val (result, read) =
+                    StateObservation.captureReads {
+                        outerState.value
+                        inner.evaluate {
+                            val (value, nestedRead) = StateObservation.captureReads { innerState.value }
+                            assertEquals(0, value)
+                            assertTrue(nestedRead)
+                        }
+                        42
+                    }
+                assertEquals(42, result)
+                assertTrue(read)
+            }
+            innerState.value = 1
+            assertEquals(0, outerInvalidations)
+            assertEquals(1, innerInvalidations)
+            outerState.value = 1
+            assertEquals(1, outerInvalidations)
+        } finally {
+            inner.close()
+            outer.close()
+        }
+    }
+
+    @Test
+    fun failedReadCaptureRestoresItsCallerWithoutRetainingState() {
+        val state = mutableStateOf(0)
+        val failure = IllegalStateException("Read callback failed")
+        val (_, enclosingRead) =
+            StateObservation.captureReads {
+                assertSame(
+                    failure,
+                    assertFailsWith<IllegalStateException> {
+                        StateObservation.captureReads {
+                            state.value
+                            throw failure
+                        }
+                    },
+                )
+            }
+        assertTrue(enclosingRead)
+        assertFalse(StateObservation.captureReads { 42 }.second)
+        state.value = 1
+        assertEquals(1 to true, StateObservation.captureReads { state.value })
+        assertFalse(StateObservation.captureReads { 42 }.second)
+    }
+
+    @Test
+    fun nestedReadCaptureFailurePreservesOperationOrderingAndRelease() {
+        val calls = ArrayList<Int>()
+        val state = mutableStateOf(0)
+        val outer = StateObservation({}, {}, {}, { calls.add(0) })
+        val inner = StateObservation({}, {}, {}, { calls.add(1) })
+        val failure = IllegalStateException("Nested capture failed")
+        try {
+            outer.enterOperation()
+            try {
+                inner.enterOperation()
+                try {
+                    val (_, read) =
+                        StateObservation.captureReads {
+                            assertSame(
+                                failure,
+                                assertFailsWith<IllegalStateException> {
+                                    StateObservation.captureReads {
+                                        state.value
+                                        throw failure
+                                    }
+                                },
+                            )
+                            state.value = 1
+                        }
+                    assertTrue(read)
+                    assertEquals(listOf(0, 1), calls)
+                    assertFalse(StateObservation.captureReads { 42 }.second)
+                } finally {
+                    inner.leaveOperation()
+                }
+                calls.clear()
+                state.value = 2
+                assertEquals(listOf(0), calls)
+            } finally {
+                outer.leaveOperation()
+            }
+            calls.clear()
+            state.value = 3
+            assertEquals(emptyList(), calls)
+        } finally {
+            inner.close()
+            outer.close()
+        }
+    }
+
     @Test
     fun failedNestedEvaluationRestoresOuterTrackingAndReleasesItsMutationGuard() {
         val before = mutableStateOf(0)

@@ -104,7 +104,7 @@ internal class FreeTypeGlyphOwner(
         }
     }
 
-    private fun host(factory: MinecraftFontBackendFactory = LwjglMinecraftFontBackendFactory): MinecraftUiHost = createMinecraftUiHost(UiDefinition("FreeType grayscale Text") { Text(text) }, profile, factory)
+    private fun host(factory: MinecraftFontBackendFactory = LwjglMinecraftFontBackendFactory): MinecraftUiHost = createMinecraftUiHost(UiDefinition("FreeType grayscale Text") { Text(text) }, profile, fontBackend = factory)
 
     /**
      * Closes the trial face and backend; returned images and frame commands retain detached pixels only.
