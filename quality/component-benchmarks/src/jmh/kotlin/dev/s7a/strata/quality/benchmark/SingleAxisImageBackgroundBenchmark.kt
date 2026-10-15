@@ -273,7 +273,7 @@ public open class SingleAxisImageBackgroundBenchmark {
                 monitor?.close()
             } finally {
                 monitor = null
-                host.close()
+                if (::host.isInitialized) host.close()
             }
         }
     }

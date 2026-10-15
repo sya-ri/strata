@@ -27,22 +27,26 @@ public object SingleAxisImageBackgroundOperationReport : JvmOperationReportAdapt
         }
 
     override fun collect(plan: PerformancePlan): Map<String, JsonObject> =
-        buildMap {
-            SingleAxisImageTileWorkload.entries.forEach { workload ->
-                Boundary.entries.forEach { boundary ->
-                    val state = TileSession().apply { this.workload = workload }
-                    state.setup()
-                    try {
-                        val operation = operation(boundary, state)
-                        val id = "${workload.name}-${boundary.name}"
-                        val sampled = JvmPerformanceRunner.measure(id, plan) { operation() }
-                        put(id, sampled.evidence)
-                    } finally {
-                        state.close()
-                    }
-                }
-            }
+        SingleAxisImageTileWorkload.entries.flatMap { workload ->
+            Boundary.entries.map { boundary -> collectRow(workload, boundary, plan) }
+        }.toMap()
+
+    private fun collectRow(
+        workload: SingleAxisImageTileWorkload,
+        boundary: Boundary,
+        plan: PerformancePlan,
+    ): Pair<String, JsonObject> {
+        val state = TileSession().apply { this.workload = workload }
+        try {
+            state.setup()
+            val operation = operation(boundary, state)
+            val id = "${workload.name}-${boundary.name}"
+            val sampled = JvmPerformanceRunner.measure(id, plan) { operation() }
+            return id to sampled.evidence
+        } finally {
+            state.close()
         }
+    }
 
     private fun operation(
         boundary: Boundary,
