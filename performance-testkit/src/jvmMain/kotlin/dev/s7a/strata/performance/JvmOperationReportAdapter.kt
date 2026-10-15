@@ -27,4 +27,18 @@ public interface JvmOperationReportAdapter {
      * Every row must contain exactly [PerformancePlan.samples] successful samples.
      */
     public fun collect(plan: PerformancePlan): Map<String, JsonObject>
+
+    /**
+     * Verifies complete fixture work before collecting by default.
+     * A fixture with a permanently terminal owner may override this boundary to run its original complete verification and collection inside one owner lifetime instead.
+     * Such an override must retain every original control and release the owner before returning; failed verification or cleanup must propagate without a successful report.
+     * [verifyWork] is a synchronous borrowed callback and must never be retained.
+     */
+    public fun collectVerified(
+        plan: PerformancePlan,
+        verifyWork: () -> Unit,
+    ): Map<String, JsonObject> {
+        verifyWork()
+        return collect(plan)
+    }
 }
