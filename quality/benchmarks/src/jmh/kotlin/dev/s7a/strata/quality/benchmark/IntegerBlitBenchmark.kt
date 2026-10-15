@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
@@ -215,11 +216,18 @@ public open class IntegerBlitBenchmark {
      */
     public companion object {
         /**
+         * Supplements the unchanged JMH boundary with shared owner-thread counters for every scene.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = IntegerBlitOperationReport
+
+        /**
          * Requires all 84 generated cases and complete independent pixels outside timing.
          */
         @JvmStatic
         public fun verifyWork() {
             check(JmhWorkloadInventory.capture(listOf(IntegerBlitBenchmark::class.java), setOf("avgt")).size == 84)
+            check(IntegerBlitOperationReport.rows.size == 84)
             for (path in Path.entries) {
                 for (scenario in Scenario.entries) {
                     IntegerBlitScene.create(path, scenario).verify()
