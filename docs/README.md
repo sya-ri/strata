@@ -14,7 +14,7 @@ For published artifacts, use the documentation at the matching [release tag](htt
 | [Screens and state](guides/screens-and-state.md) | Declare a UI, switch Screen/HUD presentation, control input, own state, and connect resources. |
 | [Paper and Folia screens](guides/paper.md) | Install the server plugin, open player screens, and register matching client extensions. |
 | [Velocity screens](guides/velocity.md) | Own screens on a proxy, queue UI state changes, and coexist with Paper backends. |
-| [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, and alignment. |
+| [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, alignment, and responsive panels. |
 | [Modifiers](guides/modifiers.md) | Add sizing, backgrounds, input, focus, and parent-scope behavior. |
 | [Authoring checks](guides/authoring-checks.md) | Install opt-in Detekt checks and understand each rule's examples and limits. |
 | [Text and editing](guides/text.md) | Display labels, edit single-line or multiline values, and select fonts. |

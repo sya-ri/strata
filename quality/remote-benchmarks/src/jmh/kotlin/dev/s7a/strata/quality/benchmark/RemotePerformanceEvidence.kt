@@ -50,21 +50,7 @@ public object RemotePerformanceEvidence {
                 emptyMap()
             }
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
-        val includes =
-            if (selected) {
-                if (requested == null) JmhFixtureSelection.includes(fixtures) else JmhFixtureSelection.methods(fixtures, requested).map { "^${Regex.escape(it)}$" }
-            } else if (sessions || requested == null) {
-                listOf(args[2])
-            } else {
-                val fixture = RemoteProtocolBenchmark::class.java
-                val methods =
-                    fixture.declaredMethods
-                        .filter { it.isAnnotationPresent(Benchmark::class.java) }
-                        .map { "${fixture.simpleName}.${it.name}" }
-                        .sorted()
-                        .toSet()
-                PerformanceSelection(methods, requested).ids.map { Regex.escape("${fixture.packageName}.$it") }
-            }
+        val includes = includes(args[2], fixtures, selected, sessions, requested)
         val options = includes + args.drop(3) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }
         JmhFixtureSelection.verifyWork(fixtures)
         val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, includes)
@@ -80,6 +66,28 @@ public object RemotePerformanceEvidence {
             inputs,
         )
     }
+
+    private fun includes(
+        fallback: String,
+        fixtures: List<Class<*>>,
+        selected: Boolean,
+        sessions: Boolean,
+        requested: String?,
+    ): List<String> =
+        if (selected) {
+            if (requested == null) JmhFixtureSelection.includes(fixtures) else JmhFixtureSelection.methods(fixtures, requested).map { "^${Regex.escape(it)}$" }
+        } else if (sessions || requested == null) {
+            listOf(fallback)
+        } else {
+            val fixture = RemoteProtocolBenchmark::class.java
+            val methods =
+                fixture.declaredMethods
+                    .filter { it.isAnnotationPresent(Benchmark::class.java) }
+                    .map { "${fixture.simpleName}.${it.name}" }
+                    .sorted()
+                    .toSet()
+            PerformanceSelection(methods, requested).ids.map { Regex.escape("${fixture.packageName}.$it") }
+        }
 
     private fun inputs(): Map<String, Path> {
         val required = JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI()))
