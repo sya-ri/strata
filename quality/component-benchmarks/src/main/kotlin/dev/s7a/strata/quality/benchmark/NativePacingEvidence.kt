@@ -87,9 +87,12 @@ internal object NativePacingEvidence {
                 verify(report)
                 verifyCollectionElapsed(report)
                 require(enumValue<Inactivity>(report, "inactivity_mode") == requested) { "Unexpected pacing policy comparison side" }
-                val observations = report.getAsJsonArray("phases").flatMap { phase ->
-                    phase.asJsonObject.getAsJsonObject("pacing").getAsJsonArray("boundaries").map { boundary(it.asJsonObject) }
-                }
+                val phases = report.getAsJsonArray("phases")
+                val observations =
+                    phases.flatMap { phase ->
+                        val pacing = phase.asJsonObject.getAsJsonObject("pacing")
+                        pacing.getAsJsonArray("boundaries").map { boundary(it.asJsonObject) }
+                    }
                 require(observations.all { it.inactivity == requested && it.reason != Reason.UNAVAILABLE }) { "Pacing policy comparison requires actual supported policy and throttle reasons" }
                 if (requested == Inactivity.AFK) {
                     require(observations.any { it.reason == Reason.SHORT_AFK || it.reason == Reason.LONG_AFK }) { "Baseline never observed actual AFK throttling" }
