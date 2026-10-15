@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("plan_ci", Path(__file__).parents[1] / "plan-ci.py")
 planner = importlib.util.module_from_spec(spec)
@@ -13,6 +14,61 @@ spec.loader.exec_module(planner)
 
 
 class PlanCiTest(unittest.TestCase):
+    def test_workflow_isolates_selected_client_concurrency_and_paired_intent(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
+        group = next(line.removeprefix("  group: ") for line in workflow.splitlines() if line.startswith("  group: "))
+        self.assertEqual("${{ github.workflow }}-${{ github.ref }}"
+                         "${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}", group)
+        self.assertIn("  cancel-in-progress: true\n", workflow)
+        self.assertIn("    - name: Select opt-in paired JVM measurement\n      if: inputs.subject_ref == ''\n", workflow)
+        minecraft = workflow.split("\n  minecraft:\n", 1)[1].split("\n  documentation:", 1)[0]
+        checkout_ref = next(line.removeprefix("        ref: ") for line in minecraft.splitlines() if line.startswith("        ref: "))
+        # Empty input preserves checkout's event-ref and event-SHA default; a selected SHA remains explicit.
+        self.assertEqual("${{ needs.plan.outputs.subject_ref }}", checkout_ref)
+
+    def test_default_full_plan_keeps_every_existing_gate(self):
+        result = planner.plan([], full=True)
+        self.assertEqual([], result.pop("minecraft"))
+        self.assertTrue(all(result.values()))
+
+    def test_selected_clients_bind_the_subject_and_declared_backend_contract(self):
+        subject = "a" * 40
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for version in ("26.2", "26.3"):
+                for kind in ("runtime", "integration"):
+                    directory = root / kind / f"minecraft-fabric-{version}"
+                    directory.mkdir(parents=True)
+                    # Use the real build declarations, rather than inventing another backend inventory.
+                    source = Path(__file__).parents[2] / kind / f"minecraft-fabric-{version}" / "build.gradle.kts"
+                    (directory / "build.gradle.kts").write_bytes(source.read_bytes())
+            with patch.object(planner.subprocess, "check_output", side_effect=lambda args, **kwargs: subject + "\n" if args[1] == "rev-parse" else b""):
+                for backend in ("opengl", "vulkan"):
+                    with self.subTest(backend=backend):
+                        result = planner.client_plan(root, "26.3,26.2", backend, subject)
+                        self.assertEqual(["26.2", "26.3"], result["minecraft"])
+                        self.assertEqual(subject, result["subject_ref"])
+                        self.assertFalse(result["common"] or result["all_minecraft"] or result["preflight"])
+                        for entry in result["client_matrix"]["include"]:
+                            self.assertIn(":runClientGameTest ", entry["gradle_arguments"])
+                            self.assertIn(":runProductionClientGameTest ", entry["gradle_arguments"])
+                            self.assertIn(f"-Pstrata.canvas.backend={backend} -Pstrata.canvas.scope=full", entry["gradle_arguments"])
+                            self.assertFalse(entry["documentation"])
+                self.assertEqual(["26.3"], planner.client_plan(root, "26.3", "vulkan", subject)["minecraft"])
+                for versions, backend, ref in (("", "vulkan", subject), ("26.3,", "vulkan", subject),
+                                               ("26.3,26.3", "vulkan", subject), ("26.3;whoami", "vulkan", subject),
+                                               ("26.9", "vulkan", subject), ("26.3", "default", subject),
+                                               ("26.3", "shell", subject), ("26.3", "vulkan", "master"),
+                                               ("26.3", "vulkan", "b" * 40)):
+                    with self.subTest(versions=versions, backend=backend, ref=ref), self.assertRaises(ValueError):
+                        planner.client_plan(root, versions, backend, ref)
+                (root / "integration/minecraft-fabric-26.2/build.gradle.kts").write_text('tasks.named("runClientGameTest")')
+                with self.assertRaisesRegex(ValueError, "does not declare"):
+                    planner.client_plan(root, "26.2", "vulkan", subject)
+                with patch.object(planner.subprocess, "check_output", side_effect=[subject + "\n", b" M build.gradle.kts"]):
+                    with self.assertRaisesRegex(ValueError, "modified tracked"):
+                        planner.client_plan(root, "26.3", "vulkan", subject)
+
     def test_git_rename_diff_keeps_both_source_owners(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
