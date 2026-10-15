@@ -61,7 +61,7 @@ public class MinecraftFontEngine
         private val owner = Thread.currentThread()
         private var snapshot: MinecraftFontSnapshot? = snapshot
         private var backend: MinecraftFontBackend?
-        private val rasters = LinkedHashMap<RasterKey, RasterValue>(16, 0.75f, true)
+        private val rasters = LinkedHashMap<FontRasterKey, FontRasterValue>(16, 0.75f, true)
         private var rasterBytes = 0L
         private val resolutions = LinkedHashMap<ResolutionKey, Resolution>(16, 0.75f, true)
         private val resolutionLimit = minOf(cacheEntries, 4096)
@@ -184,7 +184,7 @@ public class MinecraftFontEngine
             if (unchangedRasters(epoch, rasterEntries).not()) return walkGlyph(null, codePoint, providers, current, firstIndex + 1)
             val key = ResolutionKey(selected, codePoint)
             resolutions[key]?.let { resolution ->
-                val firstMiss = missingRasterKey(first, codePoint)
+                val firstMiss = missingFontRasterKey(first, codePoint)
                 touchResolutionMisses(resolution, firstMiss)
                 return resolution.provider?.let { cachedGlyph(it, codePoint) } ?: missingGlyph
             }
@@ -196,7 +196,7 @@ public class MinecraftFontEngine
          */
         private fun touchResolutionMisses(
             resolution: Resolution,
-            firstMiss: RasterKey?,
+            firstMiss: FontRasterKey?,
         ) {
             for (index in resolution.misses.indices) {
                 val miss = resolution.misses[index]
@@ -215,10 +215,10 @@ public class MinecraftFontEngine
             startIndex: Int = 0,
             epoch: Any = rasterEpoch,
         ): MinecraftFontGlyph {
-            var misses: MutableList<RasterKey>? = null
+            var misses: MutableList<FontRasterKey>? = null
             var canAdmit = key != null && epoch === rasterEpoch
             if (canAdmit && 0 < startIndex) {
-                missingRasterKey(providers[startIndex - 1], codePoint)?.let { firstMiss ->
+                missingFontRasterKey(providers[startIndex - 1], codePoint)?.let { firstMiss ->
                     misses = appendResolutionMiss(null, firstMiss)
                     canAdmit = misses != null
                 }
@@ -237,7 +237,7 @@ public class MinecraftFontEngine
                     return glyph
                 }
                 if (canAdmit) {
-                    missingRasterKey(entry, codePoint)?.let { miss ->
+                    missingFontRasterKey(entry, codePoint)?.let { miss ->
                         misses = appendResolutionMiss(misses, miss)
                         canAdmit = misses != null
                     }
@@ -259,9 +259,9 @@ public class MinecraftFontEngine
          * Creates transient prefix storage only when needed; null cancels admission that cannot fit the existing bound.
          */
         private fun appendResolutionMiss(
-            misses: MutableList<RasterKey>?,
-            miss: RasterKey,
-        ): MutableList<RasterKey>? {
+            misses: MutableList<FontRasterKey>?,
+            miss: FontRasterKey,
+        ): MutableList<FontRasterKey>? {
             if (resolutionLimit <= 1 + (misses?.size ?: 0)) return null
             return (misses ?: ArrayList()).also { it.add(miss) }
         }
@@ -405,21 +405,21 @@ public class MinecraftFontEngine
             if (provider is FontProvider.TrueType && codePoint in provider.skipped) return null
             val key =
                 if (provider is FontProvider.TrueType) {
-                    RasterKey.TrueTypeGlyph(FontFaceKey(provider.resource, provider.settings), codePoint)
+                    FontRasterKey.TrueTypeGlyph(FontFaceKey(provider.resource, provider.settings), codePoint)
                 } else {
-                    RasterKey.Glyph(entry.identity, codePoint)
+                    FontRasterKey.Glyph(entry.identity, codePoint)
                 }
             val cached = rasters[key]
-            if (cached is RasterValue.Glyph) return cached.value
-            if (cached is RasterValue.GlyphFailure) throw MinecraftFontLoadLimitException(cached.message)
+            if (cached is FontRasterValue.Glyph) return cached.value
+            if (cached is FontRasterValue.GlyphFailure) throw MinecraftFontLoadLimitException(cached.message)
             val glyph =
                 try {
                     resolveGlyph(entry, codePoint)?.let { resolved -> checkedGlyph(provider, resolved) }
                 } catch (failure: MinecraftFontLoadLimitException) {
-                    putRaster(key, RasterValue.GlyphFailure(failure.message ?: "Font glyph allocation limit exceeded."))
+                    putRaster(key, FontRasterValue.GlyphFailure(failure.message ?: "Font glyph allocation limit exceeded."))
                     throw failure
                 }
-            putRaster(key, RasterValue.Glyph(glyph))
+            putRaster(key, FontRasterValue.Glyph(glyph))
             return glyph
         }
 
@@ -475,8 +475,8 @@ public class MinecraftFontEngine
         }
 
         private fun bitmap(provider: FontProvider.Bitmap): DrawImage {
-            val key = RasterKey.Bitmap(provider.resource)
-            (rasters[key] as? RasterValue.Bitmap)?.let { return it.value }
+            val key = FontRasterKey.Bitmap(provider.resource)
+            (rasters[key] as? FontRasterValue.Bitmap)?.let { return it.value }
             bitmapFailures[provider.resource]?.let { message -> throw IllegalArgumentException(message) }
             val image =
                 runCatching { decodeBitmap(provider.resource) }.getOrElse { failure ->
@@ -484,7 +484,7 @@ public class MinecraftFontEngine
                     throw failure
                 }
             if (closed.not()) bitmapSizes[provider.resource] = image.size
-            putRaster(key, RasterValue.Bitmap(image))
+            putRaster(key, FontRasterValue.Bitmap(image))
             return image
         }
 
@@ -503,12 +503,12 @@ public class MinecraftFontEngine
             codePoint: Int,
         ): MinecraftFontGlyph? {
             val cell = provider.cells[codePoint] ?: return null
-            val key = RasterKey.BitmapCell(provider.resource, provider.columns, provider.rows, cell)
-            val cached = rasters[key] as? RasterValue.BitmapCell
+            val key = FontRasterKey.BitmapCell(provider.resource, provider.columns, provider.rows, cell)
+            val cached = rasters[key] as? FontRasterValue.BitmapCell
             if (cached != null && cached.height == provider.height && cached.ascent == provider.ascent) return cached.glyph
             val pixels = cached?.pixels ?: readBitmapCell(provider, cell)
             val glyph = bakedGlyph(bitmapMetrics(provider, pixels))
-            putRaster(key, RasterValue.BitmapCell(pixels, provider.height, provider.ascent, glyph))
+            putRaster(key, FontRasterValue.BitmapCell(pixels, provider.height, provider.ascent, glyph))
             return glyph
         }
 
@@ -665,8 +665,8 @@ public class MinecraftFontEngine
         }
 
         private fun putRaster(
-            key: RasterKey,
-            value: RasterValue,
+            key: FontRasterKey,
+            value: FontRasterValue,
         ) {
             if (closed) return
             val size = value.bytes()
@@ -688,7 +688,7 @@ public class MinecraftFontEngine
         private fun putResolution(
             key: ResolutionKey,
             provider: FontProviderEntry?,
-            misses: List<RasterKey>,
+            misses: List<FontRasterKey>,
             epoch: Any,
         ) {
             if (closed || misses.isEmpty()) return
@@ -712,21 +712,21 @@ public class MinecraftFontEngine
             resolutionUnits += units
         }
 
-        private fun missingRasterKey(
+        private fun missingFontRasterKey(
             entry: FontProviderEntry,
             codePoint: Int,
-        ): RasterKey? =
+        ): FontRasterKey? =
             when (val provider = entry.provider) {
                 is FontProvider.Bitmap -> {
                     null
                 }
 
                 is FontProvider.TrueType -> {
-                    if (codePoint in provider.skipped) null else RasterKey.TrueTypeGlyph(FontFaceKey(provider.resource, provider.settings), codePoint)
+                    if (codePoint in provider.skipped) null else FontRasterKey.TrueTypeGlyph(FontFaceKey(provider.resource, provider.settings), codePoint)
                 }
 
                 else -> {
-                    RasterKey.Glyph(entry.identity, codePoint)
+                    FontRasterKey.Glyph(entry.identity, codePoint)
                 }
             }
 
@@ -765,7 +765,7 @@ public class MinecraftFontEngine
 
         private data class Resolution(
             val provider: FontProviderEntry?,
-            val misses: List<RasterKey>,
+            val misses: List<FontRasterKey>,
         )
 
         /**
@@ -791,60 +791,6 @@ public class MinecraftFontEngine
                 } else {
                     throw IllegalArgumentException(message)
                 }
-        }
-
-        private sealed interface RasterKey {
-            data class Glyph(
-                val provider: Int,
-                val codePoint: Int,
-            ) : RasterKey
-
-            data class Bitmap(
-                val resource: FontResource,
-            ) : RasterKey
-
-            data class BitmapCell(
-                val resource: FontResource,
-                val columns: Int,
-                val rows: Int,
-                val cell: Int,
-            ) : RasterKey
-
-            data class TrueTypeGlyph(
-                val face: FontFaceKey,
-                val codePoint: Int,
-            ) : RasterKey
-        }
-
-        private sealed interface RasterValue {
-            fun bytes(): Long
-
-            data class Glyph(
-                val value: MinecraftFontGlyph?,
-            ) : RasterValue {
-                override fun bytes(): Long = value?.image?.let { image -> image.size.width.toLong() * image.size.height * 4L } ?: 0L
-            }
-
-            data class GlyphFailure(
-                val message: String,
-            ) : RasterValue {
-                override fun bytes(): Long = 0L
-            }
-
-            data class Bitmap(
-                val value: DrawImage,
-            ) : RasterValue {
-                override fun bytes(): Long = value.size.width.toLong() * value.size.height * 4L
-            }
-
-            data class BitmapCell(
-                val pixels: FontBitmapCell,
-                val height: Int,
-                val ascent: Int,
-                val glyph: MinecraftFontGlyph,
-            ) : RasterValue {
-                override fun bytes(): Long = glyph.image?.let { image -> image.size.width.toLong() * image.size.height * 4L } ?: 0L
-            }
         }
 
         private companion object {
