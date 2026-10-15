@@ -85,6 +85,15 @@ Independent Minecraft jobs read Gradle dependency caches but do not each save an
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
 Acceptance evidence is generated for the selected revision.
+
+For loaded client verification alone, dispatch `jvm.yml` with `minecraft_versions` as comma-separated exact paired targets, `minecraft_backend` as `opengl` or `vulkan`, and `subject_ref` as the full lowercase public commit SHA in this repository.
+The planner reads each selected subject's existing backend and full-suite declarations; targets without that contract fail admission.
+Both `runClientGameTest` and `runProductionClientGameTest` run with `strata.canvas.scope=full`, retaining their pixel, input, lifecycle, terminal, and resource gates.
+The shared driver is independent of the subject revision, so an older open PR can be verified without copying workflow changes into it.
+The loaded-client artifact includes source/tree identity, a source-archive digest, built JAR digests and native origins, complete parity outputs, and the Gradle log, including failures.
+Vulkan jobs install Mesa's software driver and record actual device capabilities; these are correctness results for that environment and make no hardware GPU performance claim.
+An unavailable backend or incomplete suite remains a failed gate.
+Selected client verification cannot be combined with `paired_manifest`; leaving the client inputs at their defaults preserves manual full CI and ordinary PR selection.
 A signed release's prepared artifacts are immutable publication inputs, as defined in [release publication](release.md).
 Superseded JVM and Qodana runs on the same ref are cancelled.
 
