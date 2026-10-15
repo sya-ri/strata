@@ -841,6 +841,15 @@ The default adds no provisioning invocations, and a failed provisioning gate pre
 Dependency cache provisioning does not enable Gradle task-result or configuration caches: all invocations keep `--rerun-tasks`, `--no-build-cache` and `--no-configuration-cache`.
 Audit the retained setup and task logs for the requested cache context before accepting a Source comparison.
 Controlled discovery comparisons supply both `toolchain_binding` and `preparations`.
+When hosted installation inputs do not yet exist, the separate opt-in `capture_toolchain_inputs=true` acquires them once through the same owned Gradle phase and finite resource profile.
+It declares the complete intended preparation/test/output inventory, uses one repetition without dependency provisioning or existing `toolchain_binding`, and executes only the ordinary `help` task with a frozen metadata init.
+The init requests the original model's language versions and records actual Gradle selection, daemon, distribution and user-home metadata; closed VM XML and fresh same-home diagnostics bind every observed selected or unused Java home.
+The frozen subject's existing installation/profile validator snapshots complete installation bytes and inherited properties, and rejects incomplete metadata or a prebounded discovery baseline before exporting immutable profile/inventory pins.
+Acquisition refuses inherited `ORG_GRADLE_PROJECT_org.gradle.java.*` overrides before execution and again before export, including case variants normalized by Windows.
+Its generated metadata init is hashed immediately after creation and checked before and after the owned invocation; changed bytes cannot export pins.
+Acquisition byte snapshots describe the closed acquisition output and grant no pre-invocation byte or performance credit.
+Its status is `toolchain-inputs-prepared`; original Source preparations and runtime measurement remain `UNRUN`, with no prepared compiled pins or measured attempts.
+After reviewing the actual archive, freeze these files in new immutable producer inputs and use the ordinary controlled route, which checks every installation and both original file pins before and after every formal phase.
 The binding contains immutable `profile` and `installations` file pins; the profile follows the frozen subject's controlled-toolchain binder contract, and the finite installation inventory binds every observed selected or unused Java home through its complete tree, executable, optional release-file digest and independently observed VM vendor/runtime/JVM metadata.
 The frozen common subject owns the binder and selection init; both sides verify actual selected metadata, while the baseline retains default discovery and the candidate disables discovery through the bound standard properties.
 Every preparation verifies both original declared profile and installation-inventory file pins before binding and after execution; a changed input fails instead of rebinding a later phase to new bytes.

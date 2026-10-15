@@ -125,11 +125,16 @@ def load_source_manifest(shared, root, data):
     """Admit complete finite Source invocations; actual output pins are captured only after ownership closes."""
     require = shared.require
     fields = {"schema", "sources", "source_files", "inputs", "tasks", "arguments", "repetitions", "artifacts", "test_gate"}
-    require(fields <= set(data) <= fields | {"provision_dependency_caches", "preparations", "toolchain_binding", "resource_profile"}, "Invalid Source preparation fields")
+    require(fields <= set(data) <= fields | {"provision_dependency_caches", "preparations", "toolchain_binding", "resource_profile", "capture_toolchain_inputs"}, "Invalid Source preparation fields")
     require(type(data.get("provision_dependency_caches", False)) is bool, "Dependency cache provisioning must be an explicit boolean")
     source_resources(shared, root, data)
     controlled = "toolchain_binding" in data
-    require(controlled == ("preparations" in data), "Bind complete preparations and toolchain inputs together")
+    capture = data.get("capture_toolchain_inputs", False)
+    require(type(capture) is bool and not (capture and controlled), "Toolchain input acquisition cannot consume or rebind existing frozen toolchain inputs")
+    require((controlled or capture) == ("preparations" in data), "Bind complete preparations and toolchain inputs together")
+    if capture:
+        require(data["repetitions"] == 1 and not data.get("provision_dependency_caches", False)
+                and data["arguments"]["baseline"] in ([], ["-Pstrata.jvmOnly=true"]), "Acquire toolchain inputs once outside complete preparation and timing")
     if controlled:
         require(set(data["toolchain_binding"]) == {"profile", "installations"}, "Pin the selected profile and complete observed discovery inventory")
         for item in data["toolchain_binding"].values():
@@ -156,7 +161,7 @@ def load_source_manifest(shared, root, data):
     endings = {"compileKotlinJs", "compileKotlinJvm", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt", "jsBrowserDistribution", "jvmTest", "installWebBrowsers", "jsJar", "verifyBrowserPerformanceDriver", "captureRuntimeSurfaceInventory", "captureRemoteInventory", "jvmJar", "jar", "jmhClasses", "jmhCompileGeneratedClasses", "lintKotlinJmh", "detektJmh", "test", "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "verifyRemoteWorkloads"}
     for task in tasks:
         require(isinstance(task, str) and re.fullmatch(r"(?::[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)+:[A-Za-z0-9]+", task)
-                and (controlled or task.rsplit(":", 1)[1] in endings), "Use existing Source preparation tasks")
+                and (controlled or capture or task.rsplit(":", 1)[1] in endings), "Use existing Source preparation tasks")
     require(set(data["arguments"]) == {"baseline", "candidate"}, "Supply both Source argument lists")
     for arguments in data["arguments"].values():
         require(arguments in ([], ["-Pstrata.webOnly=true"], ["-Pstrata.jvmOnly=true"]), "Source arguments cannot change ownership, task or sampling bounds")
@@ -175,7 +180,7 @@ def load_source_manifest(shared, root, data):
         require(isinstance(tests, list) and tests and len(tests) == len(set(tests))
                 and all(re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_.$]*#[^#\r\n\x00]+", item) for item in tests), "Declare exact Source JVM parity tests")
     require(sum(task.endswith((":test", ":jvmTest")) for task in tasks) == int(gate is not None), "Every Source JVM test invocation requires its full gate")
-    if controlled:
+    if controlled or capture:
         preparations = data["preparations"]
         require(isinstance(preparations, list) and 0 < len(preparations) <= 16, "Declare complete ordered preparations")
         require(all(isinstance(item, dict) and set(item) == {"name", "tasks", "artifacts", "test_gate"}
@@ -203,12 +208,126 @@ def source_resources(shared, root, data):
     return limits
 
 
+def source_toolchain_tools(fixture):
+    """Load only the frozen subject's existing pure installation/profile validator."""
+    spec = importlib.util.spec_from_file_location("frozen_source_toolchains", fixture / "gradle/controlled_toolchains.py")
+    tools = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tools)
+    return tools
+
+
+SOURCE_TOOLCHAIN_INPUT_INIT = """import groovy.json.JsonOutput
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
+import org.gradle.api.JavaVersion
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    if (root.projectDir.canonicalFile != new File(System.getenv('STRATA_PAIRED_WORKSPACE')).canonicalFile) return
+    def majors = System.getenv('STRATA_PAIRED_CAPTURE_MAJORS').split(',').collect { it.toInteger() }
+    def service = root.allprojects.sort { it.path }.collect { it.extensions.findByType(JavaToolchainService) }.find { it != null }
+    if (service == null) throw new GradleException('No ordinary Java toolchain service in the declared model')
+    def selected = majors.collect { major ->
+        def launcher = service.launcherFor { languageVersion = JavaLanguageVersion.of(major) }.get()
+        def metadata = launcher.metadata
+        [home: metadata.installationPath.asFile.canonicalPath, major: metadata.languageVersion.asInt(),
+         vendor: metadata.vendor, runtime_version: metadata.javaRuntimeVersion, jvm_version: metadata.jvmVersion]
+    }
+    def daemon = [home: new File(System.getProperty('java.home')).canonicalPath, major: JavaVersion.current().majorVersion.toInteger(),
+                  vm_vendor: System.getProperty('java.vm.vendor'), runtime_version: System.getProperty('java.runtime.version'),
+                  jvm_version: System.getProperty('java.vm.version')]
+    def result = [schema: 1, gradle_version: gradle.gradleVersion, gradle_installation_home: gradle.gradleHomeDir.canonicalPath,
+                  gradle_user_home: gradle.gradleUserHomeDir.canonicalPath, selected: selected, daemon: daemon,
+                  jvm_only: root.providers.gradleProperty('strata.jvmOnly').getOrElse('false') == 'true']
+    def output = new File(System.getenv('STRATA_PAIRED_CAPTURE_METADATA'))
+    Files.writeString(output.toPath(), JsonOutput.prettyPrint(JsonOutput.toJson(result)), StandardOpenOption.CREATE_NEW)
+}
+"""
+
+
+def require_default_toolchain_environment(shared, environment):
+    """Refuse inherited Gradle Java project properties, including Windows-normalized names."""
+    shared.require(not any(key.upper().startswith("ORG_GRADLE_PROJECT_ORG.GRADLE.JAVA.") for key in environment),
+                   "Unreviewed environment installation properties")
+
+
+def capture_source_toolchain_inputs(shared, tools, workspace, directory, environment, arguments):
+    """Freeze observed hosted inputs after untimed acquisition; this certifies no preparation or timing."""
+    require_default_toolchain_environment(shared, environment)
+    metadata_path = directory / "actual-toolchain-metadata.json"
+    metadata = shared.read_json(metadata_path)
+    shared.require(metadata["schema"] == 1 and isinstance(metadata["selected"], list), "Missing actual Gradle toolchain metadata")
+    model = tools.Model.JVM if metadata["jvm_only"] else tools.Model.COMPLETE
+    required = tools.required_versions(workspace, model) | {metadata["daemon"]["major"]}
+    shared.require({item["major"] for item in metadata["selected"]} == required
+                   and len(metadata["selected"]) == len(required), "Acquired model toolchain assignments are incomplete")
+    jdks = []
+    for item in metadata["selected"]:
+        actual = tools.installation(item["home"])
+        shared.require(actual["major"] == item["major"] and all(isinstance(item.get(key), str) and item[key].strip()
+                       for key in ("vendor", "runtime_version", "jvm_version")), "Missing actual selected toolchain identity")
+        jdks.append({**actual, **{key: item[key] for key in ("vendor", "runtime_version", "jvm_version")}})
+    user, distribution = Path(metadata["gradle_user_home"]), Path(metadata["gradle_installation_home"])
+    inherited = {owner: tools.properties(path / "gradle.properties") for owner, path in (("user", user), ("project", workspace), ("installation", distribution))}
+    shared.require(all(values.get("org.gradle.java.installations.auto-detect", "true") == "true" for values in inherited.values()), "Acquired default-discovery baseline was already bounded")
+    inherited_environment = {}
+    for values in inherited.values():
+        for name in values.get("org.gradle.java.installations.fromEnv", "").split(","):
+            if name.strip():
+                inherited_environment[name.strip()] = tools.absolute_home(environment.get(name.strip())).as_posix()
+    criteria = workspace / "gradle/gradle-daemon-jvm.properties"
+    profile = {"schema": 1, "model": model.value, "gradle_version": metadata["gradle_version"], "jdks": jdks,
+               "daemon_major": metadata["daemon"]["major"], "gradle_user_home": user.as_posix(),
+               "gradle_installation_home": distribution.as_posix(), "inherited_properties": inherited,
+               "inherited_environment": inherited_environment,
+               "daemon_criteria": {"sha256": shared.digest(criteria), "properties": tools.properties(criteria)} if criteria.exists() else None}
+    authorities = {os.path.normcase(str(Path(metadata["daemon"]["home"]))): {key: metadata["daemon"][key] for key in ("runtime_version", "jvm_version", "vm_vendor")}}
+    console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
+    for home, payload in re.findall(r"Received JVM installation metadata from '([^']+)': \{([^}\r\n]+)\}", console):
+        pairs = [item.partition("=") for item in payload.split(", ")]
+        shared.require(all(separator and key for key, separator, value in pairs) and len({key for key, _, _ in pairs}) == len(pairs), "Malformed acquired installation metadata")
+        values = {key: value for key, _, value in pairs}
+        shared.require(all(key in values for key in ("RUNTIME_VERSION", "VM_VERSION", "VM_VENDOR")), "Acquired runtime metadata is incomplete")
+        authorities[os.path.normcase(str(Path(home)))] = {"runtime_version": values["RUNTIME_VERSION"], "jvm_version": values["VM_VERSION"], "vm_vendor": values["VM_VENDOR"]}
+    diagnostics = {shared.digest(path): path for path in (directory.parent.parent / "vms").glob("*.log")}
+    inventory = {}
+    for vm in shared.read_json(directory / "vms.json"):
+        home = tools.absolute_home(vm["home"])
+        key = os.path.normcase(str(home))
+        shared.require(key in authorities, "Acquired physical VM lacks fresh same-home runtime authority")
+        xml = ElementTree.parse(diagnostics[vm["diagnostic_sha256"]]).getroot()
+        properties = dict(line.partition("=")[::2] for line in xml.findtext("vm_arguments/properties", "").splitlines() if "=" in line)
+        actual = authorities[key]
+        shared.require(properties.get("java.vm.vendor") == actual["vm_vendor"]
+                       and properties.get("java.vm.version") == xml.findtext("vm_version/release", "").strip() == actual["jvm_version"], "Acquired actual VM metadata disagrees")
+        release = home / "release"
+        entry = {"home": str(home), "tree_sha256": tools.installation_tree_digest(home), "java_sha256": shared.digest(home / "bin/java.exe"),
+                 "release_sha256": shared.digest(release) if release.is_file() else None, **actual}
+        shared.require(key not in inventory or inventory[key] == entry, "Acquired installation changed between physical VM observations")
+        inventory[key] = entry
+    shared.require(0 < len(inventory) <= 32 and set(authorities) <= set(inventory)
+                   and {os.path.normcase(str(Path(item["home"]))) for item in jdks} <= set(inventory), "Incomplete finite acquired installation inventory")
+    shared.require(all(all(item[key] == inventory[os.path.normcase(str(Path(item["home"])))][key] for key in ("runtime_version", "jvm_version", "tree_sha256")) for item in jdks), "Selected Gradle metadata or bytes differ from the observed VM installation")
+    destination = directory / "captured-inputs"
+    destination.mkdir()
+    profile_path = destination / "profile.json"
+    shared.write_new(profile_path, profile)
+    # Reuse the subject's complete byte, inheritance, model and daemon validation before exporting an activatable profile.
+    tools.load_profile(profile_path, workspace, environment, arguments)
+    installations = destination / "installations.json"
+    shared.write_new(installations, {"schema": 1, "installations": list(inventory.values())})
+    pins = {name: {"path": path.name, "sha256": shared.digest(path)} for name, path in (("profile", profile_path), ("installations", installations))}
+    shared.write_new(destination / "pins.json", {"toolchain_binding": pins, "metadata_sha256": shared.digest(metadata_path),
+                     "scope": "untimed observed input acquisition; installation bytes captured after closed acquisition and must be verified afresh before every formal phase"})
+    return pins
+
+
 def controlled_source_inputs(shared, input_root, fixture, specification):
     """Reuse the frozen subject's binder and finite complete installation byte pins; resolve no new home."""
     binder = fixture / "gradle/controlled_toolchains.py"
-    spec = importlib.util.spec_from_file_location("frozen_source_toolchains", binder)
-    tools = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tools)
+    tools = source_toolchain_tools(fixture)
     profile_path = shared.pin(input_root, specification["profile"])
     profile = shared.read_json(profile_path)
     inventory = shared.read_json(shared.pin(input_root, specification["installations"]))
@@ -430,6 +549,9 @@ def run(shared, root, selection, output):
         shared.require(shared.git(root, "rev-parse", "HEAD") == selection["execution_head"], "Browser driver head changed")
         data = shared.load_manifest(selection["root"], selection["path"])
         source_mode = data["schema"] == "strata-source-preparation-ci-v1"
+        capture = source_mode and data.get("capture_toolchain_inputs", False)
+        if capture:
+            require_default_toolchain_environment(shared, os.environ)
         resources = source_resources(shared, selection["root"], data) if source_mode else {"minimumFreePhysicalBytes": 4 * 1024**3, "daemonMetaspaceMiB": 1024}
         if source_mode:
             record["schema"] = "strata-source-preparation-attempt-v1"
@@ -483,6 +605,9 @@ def run(shared, root, selection, output):
             workspaces["fixture"], record["sources"]["fixture"] = shared.materialize(root, output, "fixture", data["sources"]["fixture"], selection["root"])
         common_sources(shared, workspaces, data)
         toolchains = None
+        capture_tools = None
+        if capture:
+            capture_tools = source_toolchain_tools(workspaces["fixture"])
         if source_mode and "toolchain_binding" in data:
             toolchains = controlled_source_inputs(shared, selection["root"], workspaces["fixture"], data["toolchain_binding"])
             allowed_java = verify_source_installations(shared, toolchains)
@@ -502,9 +627,9 @@ def run(shared, root, selection, output):
         captured_class_loads = {}
         prepared = set()
 
-        def phase(name, workspace, arguments, node_program=None, test_gate=None, source_metric_scope=None):
+        def phase(name, workspace, arguments, node_program=None, test_gate=None, source_metric_scope=None, acquisition_environment=None):
             """Reuse the existing owning helper and fixed limits for Gradle or a pinned Node adapter."""
-            nonlocal captured_class_loads
+            nonlocal captured_class_loads, allowed_java
             shared.require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient whole-attempt time and upload reserve")
             shared.verify_driver_sources(record["driver_sources"])
             shared.verify_driver_source(root, record["driver_head"], data, selection.get("explicit_manual", False))
@@ -531,9 +656,10 @@ def run(shared, root, selection, output):
             flags = f"-XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile={vms.as_posix()}/vm-%p-%t.log"
             environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-Xmx32m -XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "", "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": vms.as_posix(), "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix()}
             environment["STRATA_PAIRED_DAEMON_METASPACE_MIB"] = str(resources["daemonMetaspaceMiB"])
+            environment.update(acquisition_environment or {})
             if source_mode:
                 environment.update({"JAVA_HOME": str(homes["launcher"]), "ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy": "in-process"})
-                if toolchains is None:
+                if toolchains is None and not capture:
                     environment.update({"ORG_GRADLE_PROJECT_org.gradle.java.installations.auto-detect": "false",
                                         "ORG_GRADLE_PROJECT_org.gradle.java.installations.auto-download": "false", "ORG_GRADLE_PROJECT_org.gradle.java.installations.fromEnv": "",
                                         "ORG_GRADLE_PROJECT_org.gradle.java.installations.paths": ",".join(str(home) for home in homes.values())})
@@ -541,7 +667,7 @@ def run(shared, root, selection, output):
             if node_program is None:
                 metaspace = "1g" if resources["daemonMetaspaceMiB"] == 1024 else str(resources["daemonMetaspaceMiB"]) + "m"
                 arguments = arguments + ["--no-daemon", "--no-parallel", "--max-workers=1", "--no-build-cache", "--no-configuration-cache", "--console=plain", "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-I", str(root / "gradle/performance/bounded-jvm.init.gradle.kts"), f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize={metaspace} -Dfile.encoding=UTF-8 {flags}"]
-                if toolchains is None:
+                if toolchains is None and not capture:
                     arguments += ["-Dorg.gradle.java.installations.auto-detect=false", "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(str(home) for home in homes.values())]
                 if source_mode:
                     arguments += ["--rerun-tasks"]
@@ -557,6 +683,8 @@ def run(shared, root, selection, output):
             shared.write_new(directory / "request.json", request)
             before = set(vms.glob("*.log"))
             previous_classes = shared.class_load_inventory(class_staging, captured_class_loads)
+            if capture:
+                shared.require(shared.digest(init) == capture_init_sha256, "Acquisition metadata init bytes changed")
             phase_started = time.monotonic()
             invocation_started_ns = time.monotonic_ns()
             try:
@@ -578,6 +706,14 @@ def run(shared, root, selection, output):
                 first = record["phases"][0]["terminal"]
                 shared.require(terminal["inheritedAffinityMask"] == first["inheritedAffinityMask"] and terminal["systemAffinityMask"] == first["systemAffinityMask"], "Host affinity changed")
             if node_program is None:
+                if capture:
+                    # Acquisition observes actual owned images before freezing inputs; it grants no formal byte/timing credit.
+                    images = {member["image"] for histories in terminal["members"].values() for member in histories if Path(member["image"]).name.lower() in ("java.exe", "javaw.exe")}
+                    shared.require(0 < len(images) <= 32, "Missing or oversized acquired Java image inventory")
+                    observed_java = {os.path.normcase(image): shared.digest(Path(image)) for image in images}
+                    shared.require(all(observed_java[path] == expected for path, expected in allowed_java.items() if path in observed_java),
+                                   "Known pinned Java bytes changed during input acquisition")
+                    allowed_java = observed_java
                 shared.verify_vms(directory, sorted(set(vms.glob("*.log")) - before), terminal, allowed_java, maximum_diagnostic_bytes=16 * 1024**2, require_all_java_generations=True, daemon_metaspace_mib=resources["daemonMetaspaceMiB"])
                 if binding is not None:
                     selections = toolchains["tools"].verify(binding, workspace, binding_environment, directory / "console.log")
@@ -608,7 +744,25 @@ def run(shared, root, selection, output):
             for side in prepared:
                 for item in compiled_pins[side]:
                     shared.pin(workspaces[side], item)
-            return directory
+            if capture:
+                shared.require(shared.digest(init) == capture_init_sha256, "Acquisition metadata init bytes changed during execution")
+            return (directory, request) if capture else directory
+
+        if capture:
+            init = output / "capture-toolchain-inputs.init.gradle"
+            init.write_text(SOURCE_TOOLCHAIN_INPUT_INIT, encoding="utf-8")
+            capture_init_sha256 = shared.digest(init)
+            record["toolchain_input_init"] = {"path": init.name, "sha256": capture_init_sha256}
+            model = capture_tools.Model.JVM if data["arguments"]["baseline"] else capture_tools.Model.COMPLETE
+            majors = sorted(capture_tools.required_versions(workspaces["baseline"], model) | {int(versions["performance-launcher"].split(".")[0])})
+            directory = output / "phases/toolchain-input-acquisition"
+            # The existing phase owns the only Gradle help invocation, caps, all physical generations and diagnostics.
+            capture_environment = {"STRATA_PAIRED_CAPTURE_MAJORS": ",".join(map(str, majors)), "STRATA_PAIRED_CAPTURE_METADATA": str(directory / "actual-toolchain-metadata.json")}
+            acquired, request = phase("toolchain-input-acquisition", workspaces["baseline"], ["help", *data["arguments"]["baseline"], "--info", "-I", str(init)],
+                                      source_metric_scope="untimed_toolchain_input_acquisition", acquisition_environment=capture_environment)
+            pins = capture_source_toolchain_inputs(shared, capture_tools, workspaces["baseline"], acquired, dict(os.environ, **request["environment"]), request["arguments"])
+            record.update(status="toolchain-inputs-prepared", toolchain_input_pins=pins, original_source_preparations="UNRUN", runtime_collection="UNRUN", complete_measured_attempts=0)
+            return
 
         if source_mode:
             latest = {}

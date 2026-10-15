@@ -499,6 +499,104 @@ class PairedBrowserTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         self.load(value)
 
+
+    def test_toolchain_input_acquisition_is_separate_from_frozen_binding_and_original_work(self):
+        value = self.controlled_source_manifest()
+        value.pop("toolchain_binding")
+        value.update(capture_toolchain_inputs=True, repetitions=1)
+        self.assertEqual(self.load(value), value)
+        self.assertEqual([len(item["tasks"]) for item in value["preparations"]], [2, 15])
+        for mutation in (lambda item: item.update(capture_toolchain_inputs="true"),
+                         lambda item: item.update(repetitions=3), lambda item: item.update(provision_dependency_caches=True),
+                         lambda item: item.update(toolchain_binding={}), lambda item: item.pop("preparations"),
+                         lambda item: item["arguments"].update(baseline=["-Pstrata.webOnly=true"], candidate=["-Pstrata.webOnly=true"])):
+            invalid = copy.deepcopy(value)
+            mutation(invalid)
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.load(invalid)
+
+
+    def test_acquisition_refuses_inherited_toolchain_overrides_before_execution_or_export(self):
+        data = self.controlled_source_manifest()
+        data.pop("toolchain_binding")
+        data.update(capture_toolchain_inputs=True, repetitions=1)
+        selection = {"root": self.root, "path": self.root / "manifest.json", "execution_head": "a" * 40}
+        for index, suffix in enumerate(("installations.auto-detect", "installations.auto-download", "installations.paths", "installations.fromEnv", "home", "INSTALLATIONS.AUTO-DETECT")):
+            with self.subTest(suffix=suffix):
+                key = "ORG_GRADLE_PROJECT_org.gradle.java." + suffix
+                environment = {key.upper() if suffix.isupper() else key: "false"}
+                tools = Mock()
+                directory = self.root / ("refused-export-" + str(index))
+                with self.assertRaisesRegex(ValueError, "Unreviewed environment installation properties"):
+                    self.browser.capture_source_toolchain_inputs(self.shared, tools, self.root, directory, environment, ["help"])
+                self.assertEqual(tools.mock_calls, [])
+                self.assertFalse(directory.exists())
+                api = SimpleNamespace(**vars(self.shared))
+                api.git, api.load_manifest, api.invoke, api.materialize = Mock(return_value="a" * 40), Mock(return_value=data), Mock(), Mock()
+                output = self.root / ("refused-acquisition-" + str(index))
+                with patch.dict(os.environ, environment), patch.object(self.browser, "os", SimpleNamespace(name="nt", path=os.path, environ=os.environ)), patch.object(self.browser.subprocess, "check_output") as process, self.assertRaisesRegex(ValueError, "Unreviewed environment installation properties"):
+                    self.browser.run(api, self.root, selection, output)
+                api.invoke.assert_not_called()
+                api.materialize.assert_not_called()
+                process.assert_not_called()
+                self.assertEqual(self.shared.read_json(output / "attempt.json")["phases"], [])
+                self.assertFalse(any(output.rglob("pins.json")))
+
+    def test_acquired_toolchain_inputs_require_actual_selected_and_unused_vm_metadata(self):
+        for mode in ("complete", "missing-runtime", "wrong-vendor", "wrong-vm", "unobserved-home", "selected-byte-drift"):
+            with self.subTest(mode=mode):
+                workspace = self.root / ("acquire-" + mode)
+                directory = workspace / "phases/metadata"
+                directory.mkdir(parents=True)
+                vms = workspace / "vms"
+                vms.mkdir()
+                homes, selected, records, entries = {}, [], [], {}
+                for major in (17, 21, 25):
+                    home = workspace / ("jdk-" + str(major))
+                    home.joinpath("bin").mkdir(parents=True)
+                    home.joinpath("bin/java.exe").write_bytes(b"synthetic Java; never executed")
+                    home.joinpath("release").write_text(str(major), encoding="utf-8")
+                    homes[major] = home
+                    entry = {"home": home.as_posix(), "major": major, "tree_sha256": "a" * 64}
+                    entries[str(home)] = entry
+                    if major != 21:
+                        selected.append({"home": str(home), "major": major, "vendor": "actual Gradle vendor", "runtime_version": str(major) + ".0.1", "jvm_version": str(major) + ".0.1"})
+                    xml = vms / (str(major) + ".log")
+                    vendor = "different" if mode == "wrong-vendor" and major == 21 else "actual VM vendor"
+                    vm_version = "different" if mode == "wrong-vm" and major == 21 else str(major) + ".0.1"
+                    xml.write_text(f"<hotspot_log><vm_version><release>{vm_version}</release></vm_version><vm_arguments><properties>java.vm.vendor={vendor}\njava.vm.version={vm_version}\n</properties></vm_arguments><hotspot_log_done/></hotspot_log>", encoding="utf-8")
+                    if not (mode == "unobserved-home" and major == 21):
+                        records.append({"home": str(home), "diagnostic_sha256": self.shared.digest(xml)})
+                metadata = {"schema": 1, "selected": selected, "jvm_only": True, "gradle_version": "9.8.0", "gradle_user_home": str(workspace / "user"),
+                            "gradle_installation_home": str(workspace / "gradle"),
+                            "daemon": {"home": str(homes[25]), "major": 25, "vm_vendor": "actual VM vendor", "runtime_version": "25.0.1", "jvm_version": "25.0.1"}}
+                self.shared.write_new(directory / "actual-toolchain-metadata.json", metadata)
+                self.shared.write_new(directory / "vms.json", records)
+                console = []
+                for major in (17, 21):
+                    if mode == "missing-runtime" and major == 21:
+                        continue
+                    console.append(f"Received JVM installation metadata from '{homes[major]}': {{RUNTIME_VERSION={major}.0.1, VM_VERSION={major}.0.1, VM_VENDOR=actual VM vendor}}")
+                (directory / "console.log").write_text("\n".join(console), encoding="utf-8")
+                validator = Mock()
+                models = SimpleNamespace(JVM=SimpleNamespace(value="jvmOnly"), COMPLETE=SimpleNamespace(value="complete"))
+                tools = SimpleNamespace(Model=models, required_versions=lambda *args: {17, 25},
+                                        installation=lambda home: entries[home], installation_tree_digest=lambda home: ("b" if mode == "selected-byte-drift" else "a") * 64,
+                                        absolute_home=lambda home: Path(home).resolve(), properties=lambda *args: {}, load_profile=validator)
+                if mode == "complete":
+                    pins = self.browser.capture_source_toolchain_inputs(self.shared, tools, workspace, directory, {}, ["help", "-Pstrata.jvmOnly=true"])
+                    profile = self.shared.read_json(directory / "captured-inputs/profile.json")
+                    inventory = self.shared.read_json(directory / "captured-inputs/installations.json")
+                    self.assertEqual([item["major"] for item in profile["jdks"]], [17, 25])
+                    self.assertEqual(len(inventory["installations"]), 3)
+                    self.assertTrue(all(set(item) == {"home", "tree_sha256", "java_sha256", "release_sha256", "vm_vendor", "runtime_version", "jvm_version"} for item in inventory["installations"]))
+                    self.assertEqual(set(pins), {"profile", "installations"})
+                    validator.assert_called_once()
+                else:
+                    with self.assertRaises(ValueError):
+                        self.browser.capture_source_toolchain_inputs(self.shared, tools, workspace, directory, {}, ["help", "-Pstrata.jvmOnly=true"])
+                    self.assertFalse((directory / "captured-inputs/pins.json").exists())
+
     def test_controlled_source_preserves_native_requests_complete_preparations_and_pinned_inputs(self):
         value = self.controlled_source_manifest()
         self.assertEqual(self.load(value), value)
@@ -944,9 +1042,15 @@ class PairedBrowserTest(unittest.TestCase):
                   (3, "source-candidate-1-fixtures", False, True, True, False), (3, "gate-source-baseline-0-api", False, True, True, False)]
         mutations = {name + "-" + when: name for name in ("profile", "installations") for when in ("between-phases", "during-phase")}
         cases += [(3, name, False, True, True, False) for name in mutations]
+        cases += [(1, "capture-inputs", False, False, True, False), (1, "capture-command-failure", False, False, True, False), (1, "capture-known-java-changed", False, False, True, False)]
+        cases += [(1, name, False, False, True, False) for name in ("capture-init-before", "capture-init-during")]
         for repetitions, failure, copy_failure, provisioning, controlled, separate_driver in cases:
+            acquiring = failure in ("capture-inputs", "capture-command-failure", "capture-known-java-changed", "capture-init-before", "capture-init-during")
             data = self.controlled_source_manifest() if controlled else self.source_manifest(repetitions) if repetitions is not None else browser_data
             data = copy.deepcopy(data)
+            if acquiring:
+                data.pop("toolchain_binding")
+                data.update(capture_toolchain_inputs=True, repetitions=1)
             if separate_driver:
                 data["driver_source"] = {"ref": "d" * 40, "tree": "e" * 40}
             if provisioning:
@@ -955,7 +1059,7 @@ class PairedBrowserTest(unittest.TestCase):
                 resource_path = self.root / "controlled-resources.json"
                 resource_path.write_text(json.dumps({"minimumFreePhysicalBytes": 4608 * 1024**2, "daemonMetaspaceMiB": 384}), encoding="utf-8")
                 data["resource_profile"] = {"path": resource_path.name, "sha256": self.shared.digest(resource_path)}
-            if repetitions == 1:
+            if repetitions == 1 and not acquiring:
                 data["tasks"] = [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"]
                 data["test_gate"] = {"task": ":integration:web:jvmTest", "required_tests": self.manifest["correctness"]["required_tests"]}
             output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else "") + ("-provisioning" if provisioning else "") + ("-separate-driver" if separate_driver else "") + ("-controlled" if controlled else "") + ("-" + failure if failure is not None else ""))
@@ -978,7 +1082,11 @@ class PairedBrowserTest(unittest.TestCase):
             api.verify_driver_source = verify_driver_source
             api.declared_inputs = lambda *args: ("c" * 40, "manifest.json")
             api.source_files = lambda *args: {"same-common-fixture": "same"}
-            api.source_guard = lambda *args: None
+            def source_guard(*args):
+                init = output / "capture-toolchain-inputs.init.gradle"
+                if failure == "capture-init-before" and init.exists() and not calls:
+                    init.write_text("throw new GradleException('changed before invoke')", encoding="utf-8")
+            api.source_guard = source_guard
             api.class_load_inventory = lambda *args: {}
             api.preserve_class_loads = lambda *args: {}
             def verify_vms(*args, maximum_diagnostic_bytes, require_all_java_generations, daemon_metaspace_mib):
@@ -1050,6 +1158,17 @@ class PairedBrowserTest(unittest.TestCase):
                 name = directory.name
                 calls.append(name)
                 console.write_bytes(b"synthetic command transcript\n")
+                if acquiring:
+                    if failure == "capture-init-during":
+                        (output / "capture-toolchain-inputs.init.gradle").write_text("throw new GradleException('changed during invoke')", encoding="utf-8")
+                    self.assertEqual(request["arguments"][0], "help")
+                    self.assertIn("-Pstrata.jvmOnly=true", request["arguments"])
+                    self.assertFalse(any("org.gradle.java.installations." in item for item in request["arguments"]))
+                    self.assertFalse(any(key.startswith("ORG_GRADLE_PROJECT_org.gradle.java.") for key in request["environment"]))
+                    self.assertEqual(request["environment"]["STRATA_PAIRED_CAPTURE_MAJORS"], "17,25")
+                    self.assertEqual(Path(request["environment"]["STRATA_PAIRED_CAPTURE_METADATA"]), directory / "actual-toolchain-metadata.json")
+                    xml = output / "vms/acquisition.log"
+                    xml.write_text("<hotspot_log><hotspot_log_done/></hotspot_log>", encoding="utf-8")
                 if repetitions is None and name.startswith("prepare-"):
                     self.assertEqual(request["arguments"][:8], [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver", *linked_archives])
                     for task, relative in linked_archives.items():
@@ -1057,7 +1176,7 @@ class PairedBrowserTest(unittest.TestCase):
                             path = Path(request["workspace"]) / relative
                             path.parent.mkdir(parents=True, exist_ok=True)
                             path.write_bytes(b"synthetic compiled bytes")
-                if repetitions is not None:
+                if repetitions is not None and not acquiring:
                     preparation = next(item for item in data["preparations"] if name.endswith("-" + item["name"])) if controlled else data
                     self.assertEqual(request["arguments"][:len(preparation["tasks"])], preparation["tasks"])
                     self.assertIn("--rerun-tasks", request["arguments"])
@@ -1095,9 +1214,10 @@ class PairedBrowserTest(unittest.TestCase):
                 self.assertEqual(request["environment"]["STRATA_PAIRED_DAEMON_METASPACE_MIB"], "384" if controlled else "1024")
                 if "program" not in request:
                     self.assertTrue(any(argument.startswith("-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=" + ("384m" if controlled else "1g") + " ") for argument in request["arguments"]))
-                member = {"pid": 1, "image": str(node), "primaryBeforeResume": True, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
+                image = str(homes["launcher"] / "bin/java.exe") if acquiring else str(node)
+                member = {"pid": 1, "image": image, "primaryBeforeResume": True, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
                           "creationFileTime": 1, "exitFileTime": 2, "affinityMask": 15, "systemAffinityMask": 15}
-                exit_code = 7 if name == failure else 0
+                exit_code = 7 if name == failure or failure == "capture-command-failure" else 0
                 self.shared.write_new(terminal_path, {"exitCode": exit_code, "naturalRelease": True, "handlesClosed": True, "activeProcessesAfterCleanup": 0,
                                                     "jobName": name, "callerPid": 1, "members": {"1": [member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15,
                                                     "jobUserCpu100ns": 10, "jobKernelCpu100ns": 20, "peakJobCommittedBytes": 30,
@@ -1123,6 +1243,8 @@ class PairedBrowserTest(unittest.TestCase):
                 if failure in mutations and failure.endswith("during-phase") and name == "provision-baseline-api":
                     path = self.shared.pin(self.root, data["toolchain_binding"][mutations[failure]])
                     path.write_text(json.dumps({"synthetic": "changed-" + mutations[failure]}), encoding="utf-8")
+                if failure == "capture-known-java-changed":
+                    homes["launcher"].joinpath("bin/java.exe").write_bytes(b"changed after acquisition started")
                 return exit_code
 
             preserve_outputs = self.browser.preserve_source_outputs
@@ -1143,15 +1265,31 @@ class PairedBrowserTest(unittest.TestCase):
             preparation = data
             if controlled:
                 self.load(data)
-            with patch.object(self.browser, "controlled_source_inputs", return_value=binding), patch.object(self.browser, "preserve_source_outputs", side_effect=preserve_then_mutate), patch.object(self.browser, "os", SimpleNamespace(name="nt", path=self.browser.os.path, environ=self.browser.os.environ)), patch.object(self.browser, "sys", SimpleNamespace(executable=str(node))), patch.dict(self.browser.os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}), patch.object(self.browser.shutil, "which", return_value=str(node)), patch.object(self.browser.subprocess, "check_output", side_effect=lambda args, **kwargs: node_metadata if args[0] == str(node) else "{}"):
-                if failure is None and copy_failure is False:
+            capture_tools = SimpleNamespace(Model=SimpleNamespace(JVM="jvm", COMPLETE="complete"), required_versions=lambda *args: {17, 25})
+            capture_pins = {name: {"path": name + ".json", "sha256": "a" * 64} for name in ("profile", "installations")}
+            with patch.object(self.browser, "source_toolchain_tools", return_value=capture_tools), patch.object(self.browser, "capture_source_toolchain_inputs", return_value=capture_pins) as capture_builder, patch.object(self.browser, "controlled_source_inputs", return_value=binding), patch.object(self.browser, "preserve_source_outputs", side_effect=preserve_then_mutate), patch.object(self.browser, "os", SimpleNamespace(name="nt", path=self.browser.os.path, environ=self.browser.os.environ)), patch.object(self.browser, "sys", SimpleNamespace(executable=str(node))), patch.dict(self.browser.os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}), patch.object(self.browser.shutil, "which", return_value=str(node)), patch.object(self.browser.subprocess, "check_output", side_effect=lambda args, **kwargs: node_metadata if args[0] == str(node) else "{}"):
+                if failure in (None, "capture-inputs") and copy_failure is False:
                     self.browser.run(api, self.root, selection, output)
                 else:
-                    with self.assertRaisesRegex(ValueError, "Prepared evidence preservation failed" if failure is None else "Pinned bytes changed" if failure in mutations else "Changed frozen browser driver source" if failure == "changed-driver-source" else "JVM parity tests were skipped" if failure.startswith("gate-") else "Owned browser phase failed"):
+                    with self.assertRaisesRegex(ValueError, "Acquisition metadata init bytes changed" if failure in ("capture-init-before", "capture-init-during") else "Prepared evidence preservation failed" if failure is None else "Known pinned Java bytes changed" if failure == "capture-known-java-changed" else "Pinned bytes changed" if failure in mutations else "Changed frozen browser driver source" if failure == "changed-driver-source" else "JVM parity tests were skipped" if failure.startswith("gate-") else "Owned browser phase failed"):
                         self.browser.run(api, self.root, selection, output)
             record = self.shared.read_json(output / "attempt.json")
             self.assertNotEqual(side_paths["baseline"], side_paths["candidate"])
             self.assertTrue(output.with_suffix(".zip").is_file())
+            if acquiring:
+                self.assertEqual(calls, [] if failure == "capture-init-before" else ["toolchain-input-acquisition"])
+                self.assertFalse((output / "prepared-pins.json").exists())
+                self.assertFalse((output / "report.md").exists())
+                self.assertNotIn("completed_source_invocations", record)
+                if failure == "capture-inputs":
+                    self.assertEqual(record["toolchain_input_init"]["sha256"], self.shared.digest(output / record["toolchain_input_init"]["path"]))
+                    capture_builder.assert_called_once()
+                    self.assertEqual((record["status"], record["original_source_preparations"], record["runtime_collection"], record["complete_measured_attempts"]), ("toolchain-inputs-prepared", "UNRUN", "UNRUN", 0))
+                    self.assertEqual(record["toolchain_input_pins"], capture_pins)
+                else:
+                    capture_builder.assert_not_called()
+                    self.assertEqual(record["status"], "failed")
+                continue
             if failure is None and copy_failure is False:
                 if repetitions is None:
                     self.assertEqual((record["status"], record["expected_cases"], record["measured_browser_invocations"]), ("passed", 372, 36))
