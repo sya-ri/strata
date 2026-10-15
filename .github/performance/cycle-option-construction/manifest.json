@@ -1,0 +1,76 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "92fb1dcef004d98f3c6b5176cdf14ab3dca6f406",
+      "tree": "a3c992c05cc0e5e1253f3e287fedfcd8b19d7764",
+      "patches": []
+    },
+    "baseline": {
+      "ref": "92fb1dcef004d98f3c6b5176cdf14ab3dca6f406",
+      "tree": "399a8e696bf2da7698f519e969276d9b0fa66252",
+      "patches": [
+        {
+          "path": ".github/performance/cycle-option-construction/runtime-baseline.patch",
+          "sha256": "fd6cb3bb7f5bb154c84c9e621ce3c6be56b67df3494603e5bbaeb8ac53abd834"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "92fb1dcef004d98f3c6b5176cdf14ab3dca6f406",
+      "tree": "a3c992c05cc0e5e1253f3e287fedfcd8b19d7764",
+      "patches": []
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "cycle-option-construction",
+      "benchmarks": [
+        "CycleOptionConstructionBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 21,
+      "profilers": [],
+      "test_gates": [
+        {
+          "task": ":api:jvmTest",
+          "required_tests": [
+            "dev.s7a.strata.CycleButtonConstructionTest#listAndNonListCallersKeepIndependentSnapshotsAndCanonicalFormatting",
+            "dev.s7a.strata.CycleButtonConstructionTest#listAndNonListConstructionPreserveValidationAndConversionFailures",
+            "dev.s7a.strata.CycleButtonStateTest#enumFactoryUsesEveryConstantInDeclarationOrderAndDefaultsToName",
+            "dev.s7a.strata.CycleButtonStateTest#enumFactoryAcceptsAnExplicitDisplayConversion",
+            "dev.s7a.strata.CycleButtonStateTest#collectionFactorySnapshotsIterationOrderAndFormatsCanonicalValues",
+            "dev.s7a.strata.CycleButtonStateTest#formattingIsConfinedToTheCreatingThread",
+            "dev.s7a.strata.CycleButtonStateTest#formattingPropagatesConversionFailuresUnchanged",
+            "dev.s7a.strata.CycleButtonStateTest#legacyListConstructorsKeepDefaultObjectFormatting",
+            "dev.s7a.strata.CycleButtonStateTest#collectionFactoryKeepsExistingOptionValidation"
+          ]
+        }
+      ],
+      "operation_reports": {
+        "adapters": {
+          "dev.s7a.strata.quality.benchmark.CycleOptionConstructionBenchmark": "dev.s7a.strata.quality.benchmark.CycleOptionConstructionOperationReport"
+        },
+        "warmup": 30,
+        "samples": 60,
+        "expected_rows": 21,
+        "expected_controls": 15
+      }
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}
