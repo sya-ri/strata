@@ -3307,6 +3307,7 @@ core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getModifiers:()Ljava/uti
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getOwnsFocusTargets:()Z
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getRefreshChildren:()Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getSemanticsChildren:()Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getTraversalSummaryDirty:()Z
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:refreshTraversalSummary:(Z)V
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setContentObservation:(Ldev/s7a/strata/state/StateObservation;)V
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setDynamicDescriptions:(Ljava/util/List;)V
