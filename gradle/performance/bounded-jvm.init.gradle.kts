@@ -177,10 +177,12 @@ gradle.projectsEvaluated {
                 it.name in setOf("getWorkerJvmArgs", "getJvmArgs") && it.parameterCount == 0 && ListProperty::class.java.isAssignableFrom(it.returnType)
             }.forEach { getter ->
                 val arguments = getter.invoke(this) as ListProperty<*>
+                // Idle isolation workers remain live beside later tasks; avoid their default large initial heap.
                 ListProperty::class.java.getMethod("addAll", Iterable::class.java)
-                    .invoke(arguments, listOf("-Xmx512m", "-XX:MaxMetaspaceSize=256m") + workerDiagnostics)
+                    .invoke(arguments, listOf("-Xms64m", "-Xmx512m", "-XX:MaxMetaspaceSize=256m") + workerDiagnostics)
                 doFirst {
                     val actual = arguments.get().map { it.toString() }
+                    check(actual.lastOrNull { it.startsWith("-Xms") } == "-Xms64m")
                     check(actual.lastOrNull { it.startsWith("-Xmx") } == "-Xmx512m")
                     check(actual.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=256m")
                     check(actual.takeLast(workerDiagnostics.size) == workerDiagnostics)

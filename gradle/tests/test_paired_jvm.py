@@ -2108,7 +2108,7 @@ class PairedJvmTest(unittest.TestCase):
         diagnostics = re.findall(r'"([^"]+)"', block)
         self.assertEqual(diagnostics[:4], ["-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCommandLineFlags", "-XX:-DisplayVMOutput", "-XX:+LogVMOutput"])
         self.assertEqual(diagnostics[4:], ["-XX:LogFile=${vmLogs.invariantSeparatorsPath}/vm-%p-%t.log"])
-        self.assertIn('.invoke(arguments, listOf("-Xmx512m", "-XX:MaxMetaspaceSize=256m") + workerDiagnostics)', source)
+        self.assertIn('.invoke(arguments, listOf("-Xms64m", "-Xmx512m", "-XX:MaxMetaspaceSize=256m") + workerDiagnostics)', source)
         for mode in ("complete-reuse", "legacy-default", "missing-generation", "wrong-reused-birth", "wrong-image", "unclosed",
                      "active", "nonnatural", "open-terminal", "duplicate-diagnostic", "wrong-affinity", "unknown-javaw", "alias-pid"):
             with self.subTest(mode=mode):
@@ -2121,7 +2121,7 @@ class PairedJvmTest(unittest.TestCase):
                 (directory / "console.log").write_bytes(b"")
                 parent_environment = {"JAVA_TOOL_OPTIONS": "-XX:LogFile=wrong-inherited-path"}
                 worker_environment = {}
-                arguments = ["-Xmx512m", "-XX:MaxMetaspaceSize=256m", *[flag.replace("${vmLogs.invariantSeparatorsPath}", directory.as_posix()) for flag in diagnostics]]
+                arguments = ["-Xms64m", "-Xmx512m", "-XX:MaxMetaspaceSize=256m", *[flag.replace("${vmLogs.invariantSeparatorsPath}", directory.as_posix()) for flag in diagnostics]]
                 self.assertNotIn("JAVA_TOOL_OPTIONS", worker_environment)
                 self.assertNotIn(parent_environment["JAVA_TOOL_OPTIONS"], arguments)
                 members, logs = [], []
