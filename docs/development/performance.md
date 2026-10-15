@@ -826,9 +826,10 @@ The pending flag contains no borrowed references, is flushed before a skipped br
 Phase invalidation preserves capability membership; acceptance properties, observed-source declarations, deferred reasons, semantics payloads and geometry remain live and are never stored in these summaries.
 
 The lists borrow only current direct children in declaration order, with at most four additional references per logical edge and fixed scalar flags per retained node.
+Nonempty subsets covering every active child borrow the node's existing ordered child list; selective subsets retain their immutable membership list.
 They do not flatten descendants, retain prior generations, or cache source values.
 The owning tree updates and reads them synchronously under its execution owner.
-Parent-first dynamic callbacks reconcile their children before selecting the next child subset, so newly inserted descendants attach and evaluate in the same pass; immutable borrowed subsets remain stable when a descendant updates an ancestor's summary.
+Parent-first dynamic callbacks reconcile their children before selecting the next child subset, so newly inserted descendants attach and evaluate in the same pass; descendant capability publication replaces summary references without mutating the enclosing child list currently being traversed.
 Attachment completion prunes temporary participant paths bottom-up, and cleanup clears every summary before input-release, detach or dispose callbacks, including failed reconciliation and terminal failure.
 Unplaced branches remain excluded through the ordinary live placement checks, while applicable parent measurement/layout and dense participant enumeration still perform their required work.
 

@@ -110,6 +110,43 @@ internal class RetainedTraversalTest {
     }
 
     @Test
+    fun denseMembershipBecomesSelectiveAfterMiddleReplacementReorderAndRemoval() {
+        val fixture = TraversalTestFixture()
+        val tracker = DirtyTracker()
+        val lifecycle = LifecycleManager(NodeOwnershipRegistry(), OwnerGuard(), tracker) {}
+        val reconciler = Reconciler(lifecycle, tracker)
+        val initial = (1..3).map { fixture.element(it, Kind.Participant) }
+        val root = reconciler.reconcileRoot(null, fixture.element(0, children = initial))
+        reconciler.markInstalled(root)
+        lifecycle.attachPending(root)
+        val retired = root.children[1]
+        val replacements =
+            listOf(
+                listOf(3 to Kind.Participant, 2 to Kind.Plain, 1 to Kind.Participant) to listOf(3, 1),
+                listOf(3 to Kind.Plain, 1 to Kind.Participant) to listOf(1),
+                listOf(2 to Kind.Participant, 1 to Kind.Participant, 3 to Kind.Participant) to listOf(2, 1, 3),
+                emptyList<Pair<Int, Kind>>() to emptyList(),
+            )
+        try {
+            for ((descriptions, expectedIds) in replacements) {
+                val children = descriptions.map { (id, kind) -> fixture.element(id, kind) }
+                reconciler.reconcileRoot(root, fixture.element(0, children = children))
+                lifecycle.attachPending(root)
+                val expected = expectedIds.map(fixture.nodes::getValue)
+                assertEquals(expected, root.focusChildren.map { it.node })
+                assertEquals(expected, root.semanticsChildren.map { it.node })
+                assertTrue(root.refreshChildren.isEmpty())
+                assertTrue(root.attachmentChildren.isEmpty())
+                assertReleased(retired)
+                assertBound(root)
+            }
+        } finally {
+            lifecycle.cleanup(root)
+        }
+        assertReleased(root)
+    }
+
+    @Test
     fun terminalCleanupClearsEverySummaryBeforeAnyFailingCallbackAndRejectsAllInvalidation() {
         val fixture = TraversalTestFixture()
         val primary = IllegalArgumentException("detach")

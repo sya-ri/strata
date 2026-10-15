@@ -175,10 +175,24 @@ internal class RetainedNode(
 
     private fun localAttachmentPending(): Boolean = attachAttempted.not() || (modifiers.isNotEmpty() && modifiers.any { it.attachAttempted.not() })
 
+    /**
+     * Borrows the owner list when no filtering is needed; reconciliation finishes before its traversal starts.
+     */
     private inline fun selectChildren(
         previous: List<RetainedNode>,
         predicate: (RetainedNode) -> Boolean,
     ): List<RetainedNode> {
+        if (children.isNotEmpty()) {
+            var allMatch = true
+            for (index in children.indices) {
+                val child = children[index]
+                if (child.cleanupStarted || predicate(child).not()) {
+                    allMatch = false
+                    break
+                }
+            }
+            if (allMatch) return children
+        }
         var selected: MutableList<RetainedNode>? = null
         var matched = 0
         for (index in children.indices) {
