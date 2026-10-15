@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
@@ -236,6 +237,12 @@ public open class SampledSourceRequestsBenchmark {
      * Runtime-specific request, capacity and terminal checks additionally run in every trial's setup and teardown.
      */
     public companion object {
+        /**
+         * Supplies every original preparation and borrowing row to the shared owner-thread collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = SampledSourceRequestsOperationReport
+
         /**
          * Checks each original identity stream and one independent literal-pixel oracle before collection.
          */
