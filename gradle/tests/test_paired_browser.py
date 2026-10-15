@@ -383,8 +383,19 @@ class PairedBrowserTest(unittest.TestCase):
         value["tasks"] = [project + ":" + task for task in ("jar", "checkKotlinAbi", "lintKotlin", "detekt", "test")]
         value["test_gate"] = {"task": project + ":test", "required_tests": ["dev.example.ParityTest#fullTransitions"]}
         self.assertEqual(self.load(value), value)
+        directory = self.root / "versioned-task-evidence"
+        directory.mkdir()
+        console = "".join("> Task " + task + "\n" for task in value["tasks"])
+        (directory / "console.log").write_text(console, encoding="utf-8")
+        self.assertEqual(self.browser.verify_source_tasks(self.shared, directory, value["tasks"]),
+                         dict.fromkeys(value["tasks"], "executed"))
+        for suffix in (" UP-TO-DATE", " FROM-CACHE", " SKIPPED", " NO-SOURCE", " FAILED"):
+            (directory / "console.log").write_text(console.replace(value["tasks"][0] + "\n", value["tasks"][0] + suffix + "\n"), encoding="utf-8")
+            with self.subTest(suffix=suffix), self.assertRaisesRegex(ValueError, "Requested Source task"):
+                self.browser.verify_source_tasks(self.shared, directory, value["tasks"])
         for task in (":runtime:minecraft-fabric-26..3:jar", ":runtime:..:jar", ":runtime:.26:jar",
-                     ":runtime:minecraft-fabric-26.:jar", "runtime:minecraft-fabric-26.3:jar", project + ":clean", project + ":jmhHistorical"):
+                     ":runtime:minecraft-fabric-26.:jar", "runtime:minecraft-fabric-26.3:jar", project + ":clean", project + ":jmhHistorical",
+                     project + ":jar --max-workers=8", project + ":../jar", project + ":jar;help"):
             invalid = copy.deepcopy(value)
             invalid["tasks"][0] = task
             with self.subTest(task=task), self.assertRaisesRegex(ValueError, "existing Source preparation tasks"):
@@ -716,7 +727,7 @@ class PairedBrowserTest(unittest.TestCase):
         copy.write_bytes(source.read_bytes())
         self.shared.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": [{"source": str(source), "path": str(copy), "sha256": self.shared.path_identity(source)}]})
         empty = workspace / "integration/web/build/classes/java/jvmMain"
-        absent = {"source": str(empty), "task": ":integration:web:compileJvmMainJava", "reason": "NO-SOURCE"}
+        absent = {"source": str(empty), "task": ":integration:minecraft-fabric-26.3:compileJvmMainJava", "reason": "NO-SOURCE"}
         original = {"sources": [str(empty), str(source)], "absent_outputs": [absent]}
         (retained / "original-classpath.json").write_text(json.dumps(original), encoding="utf-8")
         (directory / "console.log").write_text("> Task " + absent["task"] + " NO-SOURCE\n", encoding="utf-8")
@@ -727,6 +738,17 @@ class PairedBrowserTest(unittest.TestCase):
             (retained / "original-classpath.json").write_text(json.dumps({"sources": [altered["source"], str(source)], "absent_outputs": [altered]}), encoding="utf-8")
             with self.subTest(change=change), self.assertRaises(ValueError):
                 self.browser.verify_source_test_classpath(self.shared, workspace, directory)
+        for task in (":integration:26..3:compileJava", ":integration:..:compileJava", ":integration:.26:compileJava",
+                     ":integration:26.:compileJava", ":integration::compileJava", ":integration:26.3:compileJava --parallel"):
+            altered = {**absent, "task": task}
+            (retained / "original-classpath.json").write_text(json.dumps({"sources": [str(empty), str(source)], "absent_outputs": [altered]}), encoding="utf-8")
+            (directory / "console.log").write_text("> Task " + task + " NO-SOURCE\n", encoding="utf-8")
+            with self.subTest(task=task), self.assertRaisesRegex(ValueError, "NO-SOURCE task evidence"):
+                self.browser.verify_source_test_classpath(self.shared, workspace, directory)
+        root_output = {**absent, "task": ":compileJava"}
+        (retained / "original-classpath.json").write_text(json.dumps({"sources": [str(empty), str(source)], "absent_outputs": [root_output]}), encoding="utf-8")
+        (directory / "console.log").write_text("> Task :compileJava NO-SOURCE\n", encoding="utf-8")
+        self.assertEqual(self.browser.verify_source_classpath(self.shared, workspace, directory, retained)[1]["absent_outputs"], [root_output])
         (retained / "original-classpath.json").write_text(json.dumps(original), encoding="utf-8")
         source.write_bytes(b"changed resolved dependency")
         with self.assertRaisesRegex(ValueError, "Prepared classpath bytes changed"):

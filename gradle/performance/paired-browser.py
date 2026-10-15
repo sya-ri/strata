@@ -433,7 +433,7 @@ def verify_source_tasks(shared, directory, tasks):
     """Require each original requested task to execute successfully, without cached or skipped substitutes."""
     console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
     observed = {}
-    for task, status in re.findall(r"(?m)^> Task (:[A-Za-z0-9_:-]+)(?: ([A-Z-]+))?\s*$", console):
+    for task, status in re.findall(r"(?m)^> Task ((?::[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)*:[A-Za-z0-9_-]+)(?: ([A-Z-]+))?\s*$", console):
         if task in tasks:
             shared.require(task not in observed, "Duplicate Source task execution")
             observed[task] = status or "executed"
@@ -455,7 +455,7 @@ def verify_source_classpath(shared, workspace, directory, retained):
         path = Path(item["source"])
         shared.require(path.is_absolute() and path.resolve().is_relative_to(workspace.resolve()) and "build" in path.relative_to(workspace).parts
                        and path.suffix != ".jar" and not path.exists() and not path.is_symlink(), "Missing Test dependency is not an empty owned output")
-        shared.require(isinstance(item["task"], str) and re.fullmatch(r":[A-Za-z0-9_:-]+", item["task"])
+        shared.require(isinstance(item["task"], str) and re.fullmatch(r"(?::[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)*:[A-Za-z0-9_-]+", item["task"])
                        and re.search(r"(?m)^> Task " + re.escape(item["task"]) + r" NO-SOURCE\s*$", console), "Missing output lacks actual NO-SOURCE task evidence")
         absent[item["source"]] = item
     sources = [item["source"] for item in present["entries"]]
