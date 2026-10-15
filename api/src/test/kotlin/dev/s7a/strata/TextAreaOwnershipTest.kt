@@ -25,18 +25,20 @@ internal class TextAreaOwnershipTest {
         val scroll = owner.run { state.scrollState }
         val executor = Executors.newSingleThreadExecutor()
         try {
-            executor.submit {
-                assertFailsWith<IllegalStateException> { state.value = "\uD800" }
-                owner.run {
-                    state.value = "日\r\n🙂"
-                    assertEquals("日\n🙂", state.value)
-                    assertSame(scroll, state.scrollState)
-                    RuntimeExecutionOwner().run {
-                        assertFailsWith<IllegalStateException> { state.value = "\uD800" }
+            executor
+                .submit {
+                    assertFailsWith<IllegalStateException> { state.value = "\uD800" }
+                    owner.run {
+                        state.value = "日\r\n🙂"
+                        assertEquals("日\n🙂", state.value)
+                        assertSame(scroll, state.scrollState)
+                        RuntimeExecutionOwner().run {
+                            assertFailsWith<IllegalStateException> { state.value = "\uD800" }
+                        }
+                        state.observe {}.close()
                     }
-                    state.observe {}.close()
                 }
-            }.get(5, TimeUnit.SECONDS)
+                .get(5, TimeUnit.SECONDS)
             owner.run { assertEquals("日\n🙂", state.value) }
         } finally {
             executor.shutdownNow()
@@ -77,10 +79,11 @@ internal class TextAreaOwnershipTest {
         references.add(WeakReference(rejected))
         val captured = Any()
         references.add(WeakReference(captured))
-        val release = state.observe {
-            captured.hashCode()
-            state.value = "nested"
-        }
+        val release =
+            state.observe {
+                captured.hashCode()
+                state.value = "nested"
+            }
         state.value = "nested"
         release.close()
         state.value = "final"
