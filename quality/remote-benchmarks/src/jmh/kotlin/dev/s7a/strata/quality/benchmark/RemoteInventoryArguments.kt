@@ -52,10 +52,11 @@ internal object RemoteInventoryArguments {
         recorded: JsonObject?,
         inputs: Map<String, Path>,
     ): List<String> {
-        val selected = recorded?.get("argument")?.asString?.let { argument ->
-            require(argument.startsWith(PREFIX)) { "Recorded inventory argument has the wrong property." }
-            argument.removePrefix(PREFIX)
-        }
+        val selected =
+            recorded?.get("argument")?.asString?.let { argument ->
+                require(argument.startsWith(PREFIX)) { "Recorded inventory argument has the wrong property." }
+                argument.removePrefix(PREFIX)
+            }
         val actual = capture(arguments, selected, inputs)
         require(actual.second == recorded) { "Recorded inventory selection differs from its actual input." }
         return actual.first

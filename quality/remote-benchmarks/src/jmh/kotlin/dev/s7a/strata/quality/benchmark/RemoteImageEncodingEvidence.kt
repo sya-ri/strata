@@ -44,11 +44,13 @@ public object RemoteImageEncodingEvidence {
                     -> setOf(2L)
 
                     RemoteImageBenchmark.Workload.IdleProjection -> setOf(0L, 2L)
+
                     RemoteImageBenchmark.Workload.SharedNodes,
                     RemoteImageBenchmark.Workload.IndependentSessions,
                     -> setOf(0L, 4L)
 
                     RemoteImageBenchmark.Workload.RemovalReadmission -> setOf(1L)
+
                     RemoteImageBenchmark.Workload.ResourceReference,
                     RemoteImageBenchmark.Workload.EmptyProjection,
                     -> setOf(0L)
