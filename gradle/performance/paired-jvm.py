@@ -1340,6 +1340,27 @@ def test_classpath_preparation(data):
     return [":strataPairedPrepareTestClasspaths", "-Pstrata.paired.prepareTestClasspaths=" + ",".join(tasks)] if tasks else []
 
 
+def fixture_projects(data):
+    """Keep every declared compiled fixture project prepared, including owner-only continuations."""
+    paths = [pin["path"] for pins in data["compiled_pins"].values() for pin in pins]
+    pinned = {project.value[0] for project in FixtureProject
+              if any(path.startswith(project.value[0].strip(":").replace(":", "/") + "/build/") for path in paths)}
+    return sorted({suite["project"] for suite in data["suites"]} | pinned)
+
+
+def pinned_fixture_preparation(data, side, fixture_tasks):
+    """Build declared collector and fixture outputs on each runtime side before checking their pins."""
+    pins = [item["path"] for item in data["compiled_pins"][side]]
+    tasks = []
+    for task in fixture_tasks:
+        project, name = task.rsplit(":", 1)
+        root = project.strip(":").replace(":", "/") + "/build/"
+        prefixes = [root + suffix for suffix in ("classes/kotlin/test/", "classes/java/test/", "resources/test/")] if name == "testClasses" else [root]
+        if any(path.startswith(prefix) for path in pins for prefix in prefixes):
+            tasks.append(task)
+    return tasks
+
+
 def verify_jmh_completion(data, invocation_ids, comparisons, completed):
     """Require every declared mode's complete ordered B0/C0/B1/C1/B2/C2 sequence and comparison."""
     modes = [(suite["name"], mode) for suite in data["suites"] for mode in suite.get("modes", ["avgt", "sample"])]
@@ -1612,7 +1633,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         if input_producer and driver is None:
             require(source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == source_files(root, record["driver_head"]), "Candidate source differs from execution head")
         fixture = workspaces["fixture"]
-        owners = sorted({suite["project"] for suite in data["suites"]})
+        owners = fixture_projects(data)
         fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
         fixture_tasks += [report["project"] + ":testClasses" for report in data.get("owner_reports", []) if report["kind"] == "test"]
         test_classpaths = test_classpath_preparation(data)
@@ -1620,6 +1641,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             tasks = [archive_task(project) for project in data["runtime_projects"]]
             if workspaces[side] == fixture:
                 tasks += fixture_tasks
+            else:
+                tasks += pinned_fixture_preparation(data, side, fixture_tasks)
             phase(f"prepare-{side}", workspaces[side], tasks + test_classpaths)
         if fixture not in (workspaces["baseline"], workspaces["candidate"]):
             phase("prepare-fixture", fixture, fixture_tasks)

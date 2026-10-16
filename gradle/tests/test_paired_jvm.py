@@ -28,6 +28,28 @@ QUALIFICATION_SPEC.loader.exec_module(QUALIFICATION)
 
 
 class PairedJvmTest(unittest.TestCase):
+    def test_owner_continuation_keeps_the_complete_declared_fixture_closure(self):
+        data = {"suites": [{"project": ":quality:benchmarks"}],
+                "compiled_pins": {"baseline": [], "candidate": [], "fixture": [{"path": "quality/remote-benchmarks/build/classes/kotlin/jmh/example/Complete.class", "sha256": "a" * 64}]}}
+        self.assertEqual(PAIRED.fixture_projects(data), [":quality:benchmarks", ":quality:remote-benchmarks"])
+        data["suites"] = []
+        self.assertEqual(PAIRED.fixture_projects(data), [":quality:remote-benchmarks"])
+        data["compiled_pins"]["fixture"] = [{"path": "runtime/velocity/build/classes/kotlin/test/example/Complete.class", "sha256": "a" * 64}]
+        self.assertEqual(PAIRED.fixture_projects(data), [])
+
+    def test_runtime_side_builds_declared_fixture_pins_without_changing_the_inventory(self):
+        tasks = [":performance-testkit:jvmJar", ":quality:remote-benchmarks:jmhCompileGeneratedClasses", ":runtime:velocity:testClasses"]
+        paths = ["performance-testkit/build/libs/performance-testkit-0.2.2.jar", "quality/remote-benchmarks/build/classes/kotlin/jmh/example/Complete.class",
+                 "runtime/velocity/build/classes/kotlin/test/example/CompleteProbe.class"]
+        data = {"compiled_pins": {"baseline": [{"path": path, "sha256": "a" * 64} for path in paths]}}
+        original = copy.deepcopy(data)
+        self.assertEqual(PAIRED.pinned_fixture_preparation(data, "baseline", tasks), tasks)
+        self.assertEqual(data, original)
+        data["compiled_pins"]["baseline"] = [{"path": "runtime/velocity/build/libs/velocity-0.2.2.jar", "sha256": "a" * 64}]
+        self.assertEqual(PAIRED.pinned_fixture_preparation(data, "baseline", tasks), [])
+        data["compiled_pins"]["baseline"] = [{"path": paths[0], "sha256": "a" * 64}]
+        self.assertEqual(PAIRED.pinned_fixture_preparation(data, "baseline", tasks), tasks[:1])
+
     """Invalid manifests cannot weaken the declared complete three-repetition collection contract."""
 
     def test_failed_owned_jvm_reports_are_fresh_bounded_sanitized_pins_without_admission(self):
