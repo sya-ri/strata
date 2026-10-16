@@ -18,25 +18,30 @@ import net.minecraft.server.packs.resources.ResourceManager
 internal fun ResourceManager.readWidgetImages(): FabricMinecraftWidgetImages {
     val buttonPath = "textures/gui/sprites/widget/button.png"
     return if (fabricMinecraftUsesGuiSprites) {
+        val (slider, sliderBorder) = readWidgetNineSliceImage("textures/gui/sprites/widget/slider.png", buttonImageSize)
+        val (sliderHighlighted, sliderHighlightedBorder) = readWidgetNineSliceImage("textures/gui/sprites/widget/slider_highlighted.png", buttonImageSize)
+        val (buttonNormal, buttonNormalBorder) = readWidgetNineSliceImage(buttonPath, buttonImageSize)
+        val (buttonHighlighted, buttonHighlightedBorder) = readWidgetNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", buttonImageSize)
+        val (buttonDisabled, buttonDisabledBorder) = readWidgetNineSliceImage("textures/gui/sprites/widget/button_disabled.png", buttonImageSize)
         FabricMinecraftWidgetImages(
             checkbox = readImage("textures/gui/sprites/widget/checkbox.png", checkboxImageSize),
             checkboxHighlighted = readImage("textures/gui/sprites/widget/checkbox_highlighted.png", checkboxImageSize),
             checkboxSelected = readImage("textures/gui/sprites/widget/checkbox_selected.png", checkboxImageSize),
             checkboxSelectedHighlighted = readImage("textures/gui/sprites/widget/checkbox_selected_highlighted.png", checkboxImageSize),
-            slider = readNineSliceImage("textures/gui/sprites/widget/slider.png", buttonImageSize, 1),
-            sliderBorder = 1,
-            sliderHighlighted = readNineSliceImage("textures/gui/sprites/widget/slider_highlighted.png", buttonImageSize, 1),
-            sliderHighlightedBorder = 1,
+            slider = slider,
+            sliderBorder = sliderBorder,
+            sliderHighlighted = sliderHighlighted,
+            sliderHighlightedBorder = sliderHighlightedBorder,
             sliderHandle = readImage("textures/gui/sprites/widget/slider_handle.png", sliderHandleImageSize),
             sliderHandleHighlighted = readImage("textures/gui/sprites/widget/slider_handle_highlighted.png", sliderHandleImageSize),
             textFieldNormal = readImage("textures/gui/sprites/widget/text_field.png", buttonImageSize),
             textFieldHighlighted = readImage("textures/gui/sprites/widget/text_field_highlighted.png", buttonImageSize),
-            buttonNormal = readNineSliceImage(buttonPath, buttonImageSize, 3),
-            buttonNormalBorder = 3,
-            buttonHighlighted = readNineSliceImage("textures/gui/sprites/widget/button_highlighted.png", buttonImageSize, 3),
-            buttonHighlightedBorder = 3,
-            buttonDisabled = readNineSliceImage("textures/gui/sprites/widget/button_disabled.png", buttonImageSize, 1),
-            buttonDisabledBorder = 1,
+            buttonNormal = buttonNormal,
+            buttonNormalBorder = buttonNormalBorder,
+            buttonHighlighted = buttonHighlighted,
+            buttonHighlightedBorder = buttonHighlightedBorder,
+            buttonDisabled = buttonDisabled,
+            buttonDisabledBorder = buttonDisabledBorder,
         )
     } else {
         readLegacyWidgetImages()

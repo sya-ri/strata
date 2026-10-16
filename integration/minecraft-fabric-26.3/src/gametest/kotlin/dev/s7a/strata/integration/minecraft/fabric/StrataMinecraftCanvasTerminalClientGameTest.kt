@@ -39,9 +39,18 @@ public class StrataMinecraftCanvasTerminalClientGameTest : FabricClientGameTest 
             )
         }
         when (scope) {
-            MinecraftCanvasSuiteScope.Full -> StrataMinecraftFontGameTest().runTest(context)
-            MinecraftCanvasSuiteScope.CanvasOnly -> MinecraftCanvasBackendGameTest.run(context)
-            MinecraftCanvasSuiteScope.TerminalOnly -> context.waitTicks(5)
+            MinecraftCanvasSuiteScope.Full -> {
+                MinecraftHighContrastGameTest.run(context)
+                StrataMinecraftFontGameTest().runTest(context)
+            }
+
+            MinecraftCanvasSuiteScope.CanvasOnly -> {
+                MinecraftCanvasBackendGameTest.run(context)
+            }
+
+            MinecraftCanvasSuiteScope.TerminalOnly -> {
+                context.waitTicks(5)
+            }
         }
         PaperRemoteGameTest.run(context)
         resizeMinecraftTestWindow(context, startingViewport.first, startingViewport.second)

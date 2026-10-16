@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntSize
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
@@ -28,6 +29,32 @@ internal class FabricMinecraftProfileMetadataTest {
         variants.forEach { scaling ->
             assertThrows(IllegalArgumentException::class.java) {
                 validateMinecraftNineSliceScaling(scaling, IntSize(200, 20), 3, false)
+            }
+        }
+    }
+
+    @Test
+    fun preservesDefaultAndHighContrastWidgetBorders() {
+        listOf(1, 2, 3).forEach { border ->
+            assertEquals(border, minecraftWidgetBorder(nineSlice(border), IntSize(200, 20)))
+        }
+    }
+
+    @Test
+    fun rejectsWidgetScalingThatCannotBeSampled() {
+        val variants =
+            listOf(
+                nineSlice(0),
+                nineSlice(-1),
+                nineSlice(10),
+                nineSlice(3, width = 199),
+                nineSlice(3, height = 19),
+                nineSlice(3, borderTop = 2),
+                nineSlice(3, stretchInner = true),
+            )
+        variants.forEach { scaling ->
+            assertThrows(IllegalArgumentException::class.java) {
+                minecraftWidgetBorder(scaling, IntSize(200, 20))
             }
         }
     }
