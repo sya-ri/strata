@@ -604,6 +604,9 @@ For an archived-runtime comparison, `strata.performance.remoteInventory` selects
 Keep both baseline and candidate inventory files in the identical immutable input map on both sides; selecting one never changes the runtime classpath or relaxes the exact loaded-surface comparison.
 Ordinary `check` and collection without this explicit archived input remain bound to the current checked-in `remote-api.tsv` registration.
 Capture each inventory from its actual compiled archive with `captureRemoteInventory`; review permitted opt-in additions rather than inventing JVM symbols or accepting a package wildcard.
+The selected inventory is admission metadata and remains on the entry-point JVM, bound to its exact immutable input by `RemoteInventoryArguments`.
+Timed forks receive every other inherited JVM argument unchanged through standard JMH options; explicit command-line or annotated fork replacements are refused rather than overwritten.
+Raw JMH arguments, input inventories and comparison conditions remain exact, with no path normalization in the shared comparator.
 Freeze one compiled fixture and shared collector after source/work preflight, and preserve exact source, archive and input hashes for three independent Standard invocations per side and per measured mode.
 The incoming comparison baseline must already include the bounded-drain change on both sides so its saving is not counted again.
 
