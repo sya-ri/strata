@@ -1243,6 +1243,19 @@ class PairedBrowserTest(unittest.TestCase):
             with self.subTest(driver=driver), self.assertRaisesRegex(ValueError, "driver commit and tree"):
                 self.load(changed)
 
+    def test_browser_and_source_dispatch_keep_complete_manifest_and_exact_zip_without_Git_inputs(self):
+        (self.root / "settings.gradle.kts").write_text("// Synthetic source selector fixture.\n", encoding="utf-8")
+        for source in (False, True):
+            self.fixture.manifest = self.source_manifest() if source else self.manifest
+            head, manifest, inputs, event = self.fixture.dispatch_fixture()
+            with self.subTest(source=source), patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}):
+                with self.shared.selected_inputs(self.root, inputs["paired_manifest"], expected_head=head) as selection:
+                    self.assertEqual(self.shared.load_manifest(selection["root"], selection["path"]), manifest)
+                    self.assertEqual(self.shared.digest(selection["bundle"]), selection["producer"])
+                    self.shared.verify_input_producer(self.root, head, selection["root"], selection["path"], selection["producer"], selection["sha256"], selection["bundle"])
+                    self.assertIsNone(self.shared.declared_inputs(self.root, head))
+            self.assertEqual(self.fixture.selector_git("status", "--porcelain=v1"), "")
+
     @patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch"})
     def test_manual_browser_driver_reuses_complete_subject_and_actual_driver_guards(self):
         base, producer, head, path, manifest = self.fixture.input_consumer(value=self.manifest, candidate_patch=True, separate_driver=True)
@@ -1320,9 +1333,10 @@ class PairedBrowserTest(unittest.TestCase):
                 else:
                     selection["producer"] = "" if mode == "missing-producer" else "0" * 40
                 output = self.root / mode
+                expected = "immutable declared producer inputs" if mode == "wrong-producer" else "manifest differs from selected immutable inputs"
                 with self.subTest(mode=mode), patch.object(self.browser, "os", SimpleNamespace(name="nt", path=os.path, environ=os.environ)), \
                      patch.object(self.browser.subprocess, "check_output", side_effect=git_only), \
-                     self.assertRaisesRegex(ValueError, "unchanged immutable declared producer inputs"):
+                     self.assertRaisesRegex(ValueError, expected):
                     self.browser.run(self.shared, self.root, selection, output)
                 record = self.shared.read_json(output / "attempt.json")
                 self.assertEqual(record["status"], "failed")
@@ -1480,7 +1494,11 @@ class PairedBrowserTest(unittest.TestCase):
                     raise ValueError("Changed frozen browser driver source")
                 return {**data["driver_source"], "execution_head": head, "execution_tree": "f" * 40}
             api.verify_driver_source = verify_driver_source
-            api.declared_inputs = lambda *args: ("c" * 40, "manifest.json")
+            def verify_input_producer(root, head, input_root, manifest, producer, manifest_sha256, bundle):
+                self.assertEqual((root, input_root, manifest, producer), (self.root, self.root, self.root / "manifest.json", "c" * 40))
+                self.assertEqual(manifest_sha256, self.shared.digest(manifest))
+                self.assertIsNone(bundle)
+            api.verify_input_producer = verify_input_producer
             api.source_files = lambda *args: {"same-common-fixture": "same"}
             def source_guard(*args):
                 init = output / "capture-toolchain-inputs.init.gradle"

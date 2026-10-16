@@ -133,7 +133,7 @@ Edit and reflow samples retain the complete public mutation/frame opportunity; c
 Independent scalar, exact bounded pixel, original-viewport old-frame and release oracles run outside samples, and terminal cleanup must succeed.
 All 82 owner rows retain CPU, owner/all-thread allocation and wall metrics with unavailable counters explicit; none replaces the complete JMH comparison or establishes native input/FPS gains.
 The copying neutral runtime preserves the original six-argument constructor and every shared semantic control; only the candidate's exclusive-array identity test is omitted from its source.
-Frozen source/input bytes are selected from the final commit's `Performance-Inputs` producer; transient inputs are absent from the execution tree.
+Frozen source/input bytes are supplied through the manual dispatch payload and declared source pins; transient inputs are absent from the execution tree.
 
 Its optional `operationReport()` hook connects the same 60 method/parameter boundaries to the shared owner-thread meter.
 Input samples retain the complete original opportunity cycle; initial-layout samples retain fresh host creation, attach, first frame and terminal close.
@@ -618,21 +618,32 @@ These native-free retained owners do not replace real Paper/Velocity scheduling,
 
 ## Opt-in paired JVM CI
 
-The `JVM checks` workflow runs a complete frozen JVM comparison in one Windows runner when the final driver commit declares its input producer.
-Prepare the manifest and its frozen input files under `.github/performance/` in a producer commit.
-Its single-parent successor removes that entire subtree, preserves every other path, mode and blob, and declares exactly one Git commit trailer: `Performance-Inputs: <producer-sha>:<manifest-path>`.
-The producer is the full 40-character lowercase commit SHA of that sole parent; the manifest is a canonical repository-relative JSON path under `.github/performance/`.
-By default, the reconstructed candidate must also match every non-data path, mode and blob of the final driver revision.
-This keeps experiment data reachable through Git history without including it in the merged product tree.
+The `JVM checks` workflow accepts complete frozen comparison metadata through `workflow_dispatch` inputs on the existing product branch.
+Prepare the manifest and any patches under `.github/performance/` in a local staging directory outside the repository; do not commit that directory or create measurement branches.
+Encode it with `python -B gradle/performance/paired-jvm.py --pack-inputs <staging-directory> --manifest .github/performance/<campaign>/manifest.json --output <new-request.json>`.
+Pass the resulting input object to `gh workflow run jvm.yml --ref <product-branch> --json` through standard input.
+The `paired_manifest` input names the manifest inside the metadata ZIP; `paired_inputs` contains its base64-encoded XZ stream.
+Compression covers the complete ZIP so repeated baseline/candidate inventories share the same compression window.
+The runner reads the immutable event file directly, including on Windows, rather than putting the payload in shell code or an environment variable.
+The payload admits at most 45,000 compressed bytes, 256 regular metadata files and 4 MiB expanded; oversized inputs fail before dispatch packaging completes.
+Source pins outside the metadata subtree resolve against the selected driver checkout.
+Large generated inputs may remain in a previous same-repository Actions artifact instead of the dispatch payload.
+An optional local `.github/performance/dispatch-artifacts.json` list binds each provider's `id`, `bytes`, `sha256`, inner ZIP `archive` and `files` mappings from `member` to `target`.
+Each target must be an existing manifest input pin under the metadata subtree; packing omits its bytes and execution restores only byte-identical declared inputs.
+Providers are limited to four 128 MiB archives, expansion to 4 MiB per provider, and XZ decoding to 64 MiB memory and 6 MiB output.
+The runner uses the job's read-only Actions token and keeps hash-checked downloads only in that job's temporary directory.
+An expired or changed provider fails before Java starts; no Git input branch is created as a fallback.
 
-Pull request planning and execution check out the same exact head and independently validate the trailer, producer, manifest digest, source trees and file pins before Java starts.
-The selector returns the manifest path, producer SHA and manifest SHA-256; the paired job passes all three with the expected driver head and preserves their binding in the attempt evidence.
-A nonempty manual `paired_manifest` input must match the declared trailer path; a different path, missing producer, malformed or duplicate trailer, retained data subtree or changed non-data source fails without fallback.
-Without a declaration and without an explicit input, all three selector outputs are empty and the paired job is skipped.
-Manual dispatch uses the same declaration contract and needs no additional workflow input.
-A normal JVM manifest may additionally declare `driver_source` as an exact unpatched `{ "ref": "<commit>", "tree": "<tree>" }` binding for an explicit manual dispatch with its declared immutable inputs.
+Planning and execution independently verify the ZIP digest, manifest digest, exact source trees and every input pin before Java starts.
+The reconstructed candidate must match every non-data path, mode and blob of the actual driver revision.
+The existing `paired_data_ref` output and `input_producer` receipt contain the ZIP SHA-256 for dispatch inputs.
+Planning uploads the exact ZIP as a run artifact, and the complete attempt retains another byte-identical copy.
+Each paired dispatch has its own concurrency group, so comparisons on the same product branch do not cancel each other or ordinary PR verification.
+Manual full CI with empty paired inputs and ordinary PR verification keep their existing selection.
+Historical producer/consumer trailers remain readable by the CLI for replay, but new workflow dispatches require the direct payload and never create those Git references.
+A normal JVM manifest may additionally declare `driver_source` as an exact unpatched `{ "ref": "<commit>", "tree": "<tree>" }` binding for an explicit manual dispatch with its immutable dispatch inputs.
 That commit must be an ancestor of the actual execution consumer, and its entire non-data source inventory must match the execution tree and unchanged working bytes.
-The existing producer trailer, manifest digest and independently reconstructed fixture/baseline/candidate source guards remain required; subject source is not copied into the shared driver consumer.
+The exact dispatch ZIP hash, manifest digest and independently reconstructed fixture/baseline/candidate source guards remain required; subject source is not copied into the shared driver consumer.
 Automatic PR selection rejects this separate binding and retains its exact candidate-to-consumer identity requirement.
 The attempt records the frozen driver commit/tree, actual execution commit/tree, preserved live driver bytes, complete subject source archives, actual runtime/collector/classpath/loaded-code identities and original complete comparison inventory independently.
 Consumer CI does not certify subject-source acceptance, and the route adopts no earlier rows or whole-Issue credit; final subject correctness, quality and platform gates remain separately required.

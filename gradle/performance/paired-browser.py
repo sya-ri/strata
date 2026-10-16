@@ -643,12 +643,13 @@ def run(shared, root, selection, output):
                 shared.preserve_file(shared.pin(selection["root"], data["resource_profile"]), output / "source-resource-profile.json")
         compiled_pins = data.get("compiled_pins", {side: [] for side in ("baseline", "candidate")})
         record.update(driver_head=selection["execution_head"], input_producer=selection["producer"], manifest_sha256=shared.digest(selection["path"]))
+        if "bundle" in selection:
+            record["dispatch_inputs"] = shared.preserve_file(selection["bundle"], output / "dispatch-inputs.zip")
+            shared.require(record["dispatch_inputs"]["sha256"] == selection["producer"], "Dispatch input bytes changed")
+            record["dispatch_artifacts"] = selection.get("artifacts", [])
         driver = shared.verify_driver_source(root, record["driver_head"], data, selection.get("explicit_manual", False))
         if driver is not None:
-            declaration = shared.declared_inputs(root, record["driver_head"])
-            shared.require(selection["producer"] and declaration is not None and declaration[0] == selection["producer"]
-                           and declaration[1] == selection["path"].relative_to(selection["root"]).as_posix()
-                           and shared.digest(selection["path"]) == selection["sha256"], "Separate browser driver requires unchanged immutable declared producer inputs")
+            shared.verify_input_producer(root, record["driver_head"], selection["root"], selection["path"], selection["producer"], selection["sha256"], selection.get("bundle"))
             record["driver_source"] = driver
             record["scope"] = {"consumer_ci_establishes_subject_acceptance": False, "prior_rows_adopted": False}
         record["driver_sources"] = shared.preserve_driver_sources(root, output, ("paired-browser.py",))
