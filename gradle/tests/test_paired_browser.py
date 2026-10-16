@@ -442,6 +442,68 @@ class PairedBrowserTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "actual linked collector"):
             self.load(missing)
 
+    def test_compiled_inputs_require_complete_variants_and_exact_existing_output_pins(self):
+        value = copy.deepcopy(self.manifest)
+        target = "integration/web/build/dist/js/productionExecutable/application.js"
+        for pins in value["compiled_pins"].values():
+            next(pin for pin in pins if pin["path"] == target)["sha256"] = self.fixture.pin["sha256"]
+        value["compiled_inputs"] = {side: {target: "fixture"} for side in ("baseline", "candidate")}
+        self.assertEqual(self.load(value), value)
+        for mode in ("missing-side", "empty", "unknown-label", "untracked-output", "tracked-source", "hash", "list", "label-type"):
+            invalid = copy.deepcopy(value)
+            if mode == "missing-side":
+                invalid["compiled_inputs"].pop("baseline")
+            elif mode == "empty":
+                invalid["compiled_inputs"]["baseline"] = {}
+            elif mode == "unknown-label":
+                invalid["compiled_inputs"]["baseline"][target] = "missing"
+            elif mode in ("untracked-output", "tracked-source"):
+                path = "integration/web/build/unpinned.js" if mode == "untracked-output" else "tools/web/build.mjs"
+                invalid["compiled_inputs"]["baseline"] = {path: "fixture"}
+                if mode == "tracked-source":
+                    invalid["compiled_pins"]["baseline"].append({"path": path, "sha256": self.fixture.pin["sha256"]})
+            elif mode == "hash":
+                invalid["compiled_pins"]["baseline"][-1]["sha256"] = "f" * 64
+            elif mode == "list":
+                invalid["compiled_inputs"]["baseline"] = []
+            else:
+                invalid["compiled_inputs"]["baseline"][target] = []
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                self.load(invalid)
+
+    def test_compiled_inputs_keep_generated_output_and_consume_exact_source_bytes(self):
+        workspace = self.root / "prepared"
+        directory = self.root / "phase"
+        relative = "integration/web/build/dist/js/productionExecutable/application.js"
+        target = workspace / relative
+        target.parent.mkdir(parents=True)
+        generated = b"independently generated output with different metadata order"
+        target.write_bytes(generated)
+        source = self.root / self.fixture.pin["path"]
+        pins = [{"path": relative, "sha256": self.fixture.pin["sha256"]}]
+        self.browser.stage_compiled_inputs(self.shared, workspace, directory, pins, {relative: "frozen"}, {"frozen": str(source)})
+        self.assertEqual(target.read_bytes(), source.read_bytes())
+        self.assertEqual((directory / "generated-compiled" / relative).read_bytes(), generated)
+        record, = json.loads((directory / "compiled-inputs.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["consumed_sha256"], self.shared.digest(target))
+        self.assertEqual(record["generated"]["sha256"], self.shared.digest(directory / "generated-compiled" / relative))
+
+    def test_compiled_inputs_refuse_missing_preparation_and_changed_frozen_bytes(self):
+        relative = "integration/web/build/dist/js/productionExecutable/application.js"
+        workspace = self.root / "prepared"
+        directory = self.root / "phase"
+        source = self.root / self.fixture.pin["path"]
+        pins = [{"path": relative, "sha256": self.fixture.pin["sha256"]}]
+        with self.assertRaisesRegex(ValueError, "actual prepared regular output"):
+            self.browser.stage_compiled_inputs(self.shared, workspace, directory, pins, {relative: "frozen"}, {"frozen": str(source)})
+        target = workspace / relative
+        target.parent.mkdir(parents=True)
+        target.write_bytes(b"actual generated output")
+        source.write_bytes(b"changed frozen input")
+        with self.assertRaisesRegex(ValueError, "Frozen compiled input bytes changed"):
+            self.browser.stage_compiled_inputs(self.shared, workspace, directory, pins, {relative: "frozen"}, {"frozen": str(source)})
+        self.assertEqual(target.read_bytes(), b"actual generated output")
+
     def supplemental(self):
         result = copy.deepcopy(self.manifest["collections"][0])
         result.update(name="supplemental", scenarios=[{"id": f"independent-{index}-{theme}", "phases": ["Update"]} for index in range(12) for theme in ("native", "minecraft")], expected_cases=72)
