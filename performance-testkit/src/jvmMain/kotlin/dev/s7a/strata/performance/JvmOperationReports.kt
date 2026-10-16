@@ -17,7 +17,7 @@ import java.util.UUID
  */
 public object JvmOperationReports {
     private val gson = Gson()
-    private val conditions = setOf("protocol", "selection", "plan", "rows", "fixture_identity", "adapter_identity", "inputs", "input_sources", "environment", "source_bindings")
+    private val conditions = setOf("protocol", "selection", "plan", "rows", "fixture_identity", "adapter_identity", "inputs", "environment", "source_bindings")
     private val phaseConditions = setOf("samples", "benchmark", "parameters", "boundary", "operations_per_sample", "control")
     private val metrics =
         listOf(
@@ -202,7 +202,8 @@ public object JvmOperationReports {
         val candidate = request.arrayField("candidate").map { Path.of(it.textValue()) }
         val reference = JvmEvidenceFiles.document(baseline.first())
         val rowCount = reference.arrayField("rows").size()
-        val contract = PerformanceReportContract("jvm-operation-reports", listOf("operation_id"), rowCount, conditions, phaseConditions, setOf("runtime_identities"))
+        // Each role may load identical inputs from its own classpath; all repetitions of that role retain the exact mapping.
+        val contract = PerformanceReportContract("jvm-operation-reports", listOf("operation_id"), rowCount, conditions, phaseConditions, setOf("runtime_identities", "input_sources"))
         return JvmPerformanceReports.compare(baseline, candidate, collector, contract, metrics) { report ->
             require(report.textField("protocol").contentEquals("strata-owner-thread-operation-v1")) { "Wrong operation report protocol" }
             val binding = Path.of(report.textField("jmh_directory"))
