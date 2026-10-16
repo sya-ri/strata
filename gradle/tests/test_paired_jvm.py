@@ -1,11 +1,13 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
 from contextlib import redirect_stdout
+import base64
 import copy
 import csv
 import hashlib
 import importlib.util
 import io
 import json
+import lzma
 import os
 from pathlib import Path
 import re
@@ -75,6 +77,180 @@ class PairedJvmTest(unittest.TestCase):
         self.selector_git("config", "core.longpaths", "true")
         (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
         return self.selector_commit()
+
+    def dispatch_fixture(self):
+        """Prepare complete metadata outside a real clean execution repository."""
+        head = self.selector_repository()
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = Path(temporary.name)
+        source = {"ref": head, "tree": self.selector_git("rev-parse", "HEAD^{tree}"), "patches": []}
+        manifest = copy.deepcopy(self.manifest)
+        manifest["sources"] = {side: copy.deepcopy(source) for side in ("baseline", "candidate", "fixture")}
+        path = ".github/performance/manual/manifest.json"
+        target = directory / path
+        target.parent.mkdir(parents=True)
+        target.write_text(json.dumps(manifest), encoding="utf-8")
+        inputs = PAIRED.pack_dispatch_inputs(directory, path)
+        event = directory / "event.json"
+        event.write_text(json.dumps({"inputs": inputs}), encoding="utf-8")
+        return head, manifest, inputs, event
+
+    def test_dispatch_keeps_complete_pins_without_any_producer_or_consumer_commit(self):
+        head, manifest, inputs, event = self.dispatch_fixture()
+        refs = self.selector_git("show-ref", "--heads")
+        raw = lzma.decompress(base64.b64decode(inputs["paired_inputs"]))
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}):
+            with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], expected_head=head) as selection:
+                self.assertEqual(PAIRED.load_manifest(selection["root"], selection["path"]), manifest)
+                self.assertEqual(selection["producer"], hashlib.sha256(raw).hexdigest())
+                self.assertEqual(selection["bundle"].read_bytes(), raw)
+                self.assertNotEqual(selection["root"], self.root)
+            with self.assertRaisesRegex(ValueError, "planned bytes"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], data_ref="0" * 64):
+                    self.fail("Changed ZIP admitted")
+            with self.assertRaisesRegex(ValueError, "planned bytes"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], manifest_sha256="0" * 64):
+                    self.fail("Changed manifest admitted")
+            with self.assertRaisesRegex(ValueError, "explicit manual"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], base=head, head=head):
+                    self.fail("Dispatch combined with PR selection")
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("rev-list", "--count", "HEAD"), "1")
+        self.assertEqual(self.selector_git("show-ref", "--heads"), refs)
+        self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
+
+    def test_dispatch_rejects_a_changed_candidate_source_before_collection(self):
+        _, _, inputs, event = self.dispatch_fixture()
+        (self.root / "source.txt").write_text("another candidate\n", encoding="utf-8")
+        changed = self.selector_commit()
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}):
+            with self.assertRaisesRegex(ValueError, "Candidate source differs"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], expected_head=changed):
+                    self.fail("Different execution source admitted")
+
+    def test_dispatch_rejects_dirty_tracked_driver_and_invalid_event_payload(self):
+        head, _, inputs, event = self.dispatch_fixture()
+        environment = {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}
+        with patch.dict(os.environ, environment):
+            (self.root / "source.txt").write_text("dirty working bytes\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "tracked bytes"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], expected_head=head):
+                    self.fail("Dirty driver admitted")
+            for invalid in ("x" * 60001, ["not a string"], "not base64!"):
+                event.write_text(json.dumps({"inputs": {"paired_inputs": invalid}}), encoding="utf-8")
+                with self.subTest(invalid_type=type(invalid).__name__), self.assertRaises(ValueError):
+                    PAIRED.dispatch_input_bytes()
+
+    def test_dispatch_zip_rejects_aliases_links_and_existing_file_overwrite(self):
+        def bundle(entries):
+            output = io.BytesIO()
+            with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for path, mode in entries:
+                    entry = zipfile.ZipInfo(path)
+                    entry.external_attr = mode << 16
+                    archive.writestr(entry, b"fixed")
+            return output.getvalue()
+        for entries in ([('../escape', 0o100644)], [('source.txt', 0o100644)],
+                        [('.github/performance/../outside', 0o100644)], [('.github/performance/NUL.json', 0o100644)],
+                        [('.github/performance/test.json.', 0o100644)], [('.github/performance/test.json', 0o120777)],
+                        [('.github/performance/test.json', 0o100644), ('.github/performance/TEST.json', 0o100644)]):
+            with self.subTest(entries=entries), self.assertRaises(ValueError):
+                PAIRED.unpack_dispatch_inputs(bundle(entries), self.root)
+        target = self.root / ".github/performance/existing.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"original")
+        with self.assertRaisesRegex(ValueError, "overwrites"):
+            PAIRED.unpack_dispatch_inputs(bundle([(target.relative_to(self.root).as_posix(), 0o100644)]), self.root)
+        self.assertEqual(target.read_bytes(), b"original")
+
+    def test_dispatch_zip_bounds_compressed_bytes_files_and_expansion(self):
+        with self.assertRaisesRegex(ValueError, "exceeds 6 MiB"):
+            PAIRED.unpack_dispatch_inputs(b"x" * (6 * 1024**2 + 1), self.root)
+        for count, size in ((257, 1), (1, 4 * 1024**2 + 1)):
+            output = io.BytesIO()
+            with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for index in range(count):
+                    archive.writestr(f".github/performance/{index}.json", b"x" * size)
+            with self.subTest(count=count, size=size), self.assertRaisesRegex(ValueError, "256 files or 4 MiB"):
+                PAIRED.unpack_dispatch_inputs(output.getvalue(), self.root)
+
+    def test_dispatch_selection_retains_exact_input_artifact_and_hash_outputs(self):
+        head, _, inputs, event = self.dispatch_fixture()
+        output = event.parent / "outputs.txt"
+        file = self.root / "gradle/performance/paired-jvm.py"
+        argv = [str(file), "--select", "--manifest", inputs["paired_manifest"]]
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event), "GITHUB_OUTPUT": str(output)}), \
+                patch.object(PAIRED, "__file__", str(file)), patch.object(PAIRED.sys, "argv", argv), redirect_stdout(io.StringIO()):
+            PAIRED.main()
+        raw = lzma.decompress(base64.b64decode(inputs["paired_inputs"]))
+        self.assertEqual((self.root / "build/performance-ci/dispatch-inputs.zip").read_bytes(), raw)
+        self.assertIn("paired_data_ref=" + hashlib.sha256(raw).hexdigest(), output.read_text())
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("diff", "HEAD", "--name-only"), "")
+
+    def test_dispatch_rejects_trailing_truncated_and_oversized_compressed_data(self):
+        _, _, _, event = self.dispatch_fixture()
+        valid = lzma.compress(b"bounded input")
+        for invalid in (valid + b"trailing", valid[:-1], lzma.compress(b"x" * (6 * 1024**2 + 1))):
+            event.write_text(json.dumps({"inputs": {"paired_inputs": base64.b64encode(invalid).decode("ascii")}}), encoding="utf-8")
+            with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}), self.assertRaises(ValueError):
+                PAIRED.dispatch_input_bytes()
+
+    def artifact_fixture(self):
+        """Create an independent nested provider ZIP and a byte-pinned large input declaration."""
+        directory = self.root / "metadata"
+        directory.mkdir()
+        manifest = ".github/performance/manual/manifest.json"
+        target = ".github/performance/manual/app.js"
+        expected = b"exact frozen application bytes"
+        nested = io.BytesIO()
+        with zipfile.ZipFile(nested, "w") as archive:
+            archive.writestr("outputs/app.js", expected)
+        outer = io.BytesIO()
+        with zipfile.ZipFile(outer, "w") as archive:
+            archive.writestr("prepared.zip", nested.getvalue())
+        raw = outer.getvalue()
+        provider = {"id": 123, "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(), "archive": "prepared.zip",
+                    "files": [{"member": "outputs/app.js", "target": target}]}
+        path = directory / manifest
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({"inputs": [{"label": "app", "pin": {"path": target, "sha256": hashlib.sha256(expected).hexdigest()}}]}), encoding="utf-8")
+        (directory / ".github/performance/dispatch-artifacts.json").write_text(json.dumps([provider]), encoding="utf-8")
+        metadata = {"id": 123, "size_in_bytes": len(raw), "digest": "sha256:" + provider["sha256"], "expired": False}
+        return directory, manifest, target, expected, provider, metadata, raw
+
+    def test_dispatch_hydrates_only_exact_pinned_artifact_bytes_without_Git_inputs(self):
+        directory, manifest, target, expected, provider, metadata, raw = self.artifact_fixture()
+        inputs = PAIRED.pack_dispatch_inputs(directory, manifest)
+        with zipfile.ZipFile(io.BytesIO(lzma.decompress(base64.b64decode(inputs["paired_inputs"])))) as archive:
+            self.assertNotIn(target, archive.namelist())
+        with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repository", "RUNNER_TEMP": str(self.root / "job")}), \
+                patch.object(PAIRED.subprocess, "check_output", side_effect=[json.dumps(metadata).encode(), raw]) as download:
+            targets, receipts = PAIRED.dispatch_artifact_inputs(directory, manifest, download=True)
+            self.assertEqual(download.call_count, 2)
+        self.assertEqual(targets, {target.casefold()})
+        self.assertEqual(receipts, [provider])
+        self.assertEqual((directory / target).read_bytes(), expected)
+        (directory / target).unlink()
+        with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repository", "RUNNER_TEMP": str(self.root / "job")}), \
+                patch.object(PAIRED.subprocess, "check_output", return_value=json.dumps(metadata).encode()) as download:
+            PAIRED.dispatch_artifact_inputs(directory, manifest, download=True)
+            self.assertEqual(download.call_count, 1)
+        self.assertEqual((directory / target).read_bytes(), expected)
+
+    def test_dispatch_rejects_changed_provider_bytes_expiry_and_undeclared_targets(self):
+        directory, manifest, target, _, provider, metadata, raw = self.artifact_fixture()
+        environment = {"GITHUB_REPOSITORY": "owner/repository", "RUNNER_TEMP": str(self.root / "job")}
+        for responses in ([json.dumps({**metadata, "expired": True}).encode()],
+                          [json.dumps(metadata).encode(), raw + b"changed"]):
+            with patch.dict(os.environ, environment), patch.object(PAIRED.subprocess, "check_output", side_effect=responses), self.assertRaises(ValueError):
+                PAIRED.dispatch_artifact_inputs(directory, manifest, download=True)
+            self.assertFalse((directory / target).exists())
+        changed = {**provider, "files": [{"member": "outputs/app.js", "target": ".github/performance/undeclared.js"}]}
+        (directory / ".github/performance/dispatch-artifacts.json").write_text(json.dumps([changed]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "declared metadata"):
+            PAIRED.pack_dispatch_inputs(directory, manifest)
 
     def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None, payload=None):
         """Construct real producer/consumer commits and an independently reconstructed candidate tree."""

@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Run one opt-in frozen JVM pair using the existing Gradle collectors and processor."""
 import argparse
+import base64
 import csv
 from contextlib import contextmanager
 from enum import Enum
 import hashlib
 import html
+import io
 import json
+import lzma
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -1032,7 +1035,7 @@ def verify_continuation_archives(data, runtime, collector):
     require(digest(collector) == continuation["collector_sha256"], "Continuation collector differs from original measured bytes")
 
 
-def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None, owner_report=None):
+def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None, owner_report=None, input_bundle=None, input_artifacts=None):
     """Own a fresh whole attempt; an exception preserves failure and never adopts completed rows."""
     input_root = root if input_root is None else input_root
     require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
@@ -1046,6 +1049,10 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         actual_head = git(root, "rev-parse", "HEAD")
         require(execution_head is None or actual_head == execution_head, "Paired execution head changed after selection")
         record.update(driver_head=actual_head, input_producer=input_producer, manifest_sha256=digest(manifest_path))
+        if input_bundle is not None:
+            record["dispatch_inputs"] = preserve_file(input_bundle, output / "dispatch-inputs.zip")
+            require(record["dispatch_inputs"]["sha256"] == input_producer, "Dispatch input bytes changed")
+            record["dispatch_artifacts"] = input_artifacts or []
         homes = sorted({os.environ["STRATA_PAIRED_TOOLCHAIN"], os.environ["JAVA_HOME"]})
         versions = tomllib.loads((root / "gradle/libs.versions.toml").read_text(encoding="utf-8"))["versions"]
         for key, provider, version in (("STRATA_PAIRED_TOOLCHAIN", "Eclipse Adoptium", versions["performance-toolchain"].split("+", 1)[0]), ("JAVA_HOME", "Oracle Corporation", versions["performance-launcher"])):
@@ -1438,6 +1445,137 @@ def declared_inputs(root, head):
     return producer, manifest
 
 
+def unpack_dispatch_inputs(raw, directory):
+    """Extract bounded regular metadata without overwriting source or following path aliases."""
+    require(0 < len(raw) <= 6 * 1024**2, "Dispatch input ZIP exceeds 6 MiB")
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        entries = archive.infolist()
+        require(0 < len(entries) <= 256 and sum(item.file_size for item in entries) <= 4 * 1024**2,
+                "Dispatch inputs exceed 256 files or 4 MiB expanded")
+        paths = set()
+        reserved = {"con", "prn", "aux", "nul", *(f"com{index}" for index in range(1, 10)), *(f"lpt{index}" for index in range(1, 10))}
+        for entry in entries:
+            path = PurePosixPath(entry.filename)
+            require(path.as_posix() == entry.filename and entry.filename.startswith(".github/performance/")
+                    and entry.filename.casefold() not in paths and not entry.is_dir()
+                    and entry.external_attr >> 16 in (0, 0o600, 0o100644)
+                    and all(not part.endswith((".", " ")) and part.split(".", 1)[0].casefold() not in reserved for part in path.parts),
+                    "Unsafe or duplicate dispatch input entry")
+            paths.add(entry.filename.casefold())
+            target = relative_path(directory, entry.filename)
+            require(not target.exists() and not any(parent.is_symlink() for parent in target.parents), "Dispatch input overwrites source")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(entry) as source, target.open("xb") as destination:
+                shutil.copyfileobj(source, destination)
+
+
+def dispatch_artifact_inputs(directory, manifest, download=False):
+    """Resolve optional large pinned metadata from same-repository immutable Actions artifacts."""
+    descriptor = directory / ".github/performance/dispatch-artifacts.json"
+    if not descriptor.exists():
+        return set(), []
+    providers = read_json(descriptor)
+    require(isinstance(providers, list) and 0 < len(providers) <= 4, "Invalid dispatch artifact providers")
+    pins = {item["pin"]["path"]: item["pin"]["sha256"] for item in read_json(relative_path(directory, manifest))["inputs"]}
+    targets, receipts = set(), []
+    for provider in providers:
+        require(set(provider) == {"id", "bytes", "sha256", "archive", "files"}
+                and type(provider["id"]) is int and 0 < provider["id"]
+                and type(provider["bytes"]) is int and 0 < provider["bytes"] <= 128 * 1024**2
+                and re.fullmatch(r"[0-9a-f]{64}", provider["sha256"])
+                and isinstance(provider["files"], list) and 0 < len(provider["files"]) <= 256, "Invalid dispatch artifact identity")
+        relative_path(directory, provider["archive"])
+        for item in provider["files"]:
+            require(set(item) == {"member", "target"} and item["target"] in pins
+                    and item["target"].startswith(".github/performance/") and item["target"].casefold() not in targets,
+                    "Artifact targets must be unique declared metadata input pins")
+            relative_path(directory, item["member"])
+            relative_path(directory, item["target"])
+            targets.add(item["target"].casefold())
+            local = relative_path(directory, item["target"])
+            if local.exists():
+                require(not download and digest(local) == pins[item["target"]], "Artifact input already exists or changed")
+        if not download:
+            continue
+        repository = os.environ.get("GITHUB_REPOSITORY", "")
+        require(re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository), "Missing artifact repository")
+        cache = Path(os.environ.get("RUNNER_TEMP", str(directory.parent))) / "strata-dispatch-artifacts"
+        cache.mkdir(parents=True, exist_ok=True)
+        artifact = cache / (provider["sha256"] + ".zip")
+        endpoint = f"repos/{repository}/actions/artifacts/{provider['id']}"
+        metadata = json.loads(subprocess.check_output(["gh", "api", endpoint], timeout=120))
+        require(metadata["id"] == provider["id"] and metadata["size_in_bytes"] == provider["bytes"]
+                and metadata["digest"] == "sha256:" + provider["sha256"] and not metadata["expired"], "Artifact metadata differs from pinned provider")
+        if not artifact.exists():
+            raw = subprocess.check_output(["gh", "api", endpoint + "/zip"], timeout=120)
+            require(len(raw) == provider["bytes"] and hashlib.sha256(raw).hexdigest() == provider["sha256"], "Artifact provider bytes changed")
+            with artifact.open("xb") as target:
+                target.write(raw)
+        require(artifact.stat().st_size == provider["bytes"] and digest(artifact) == provider["sha256"], "Cached input artifact changed")
+        with zipfile.ZipFile(artifact) as outer:
+            require(len(outer.namelist()) == len(set(outer.namelist())), "Duplicate artifact archive members")
+            entry = outer.getinfo(provider["archive"])
+            require(entry.file_size <= 128 * 1024**2, "Artifact archive exceeds its byte bound")
+            with zipfile.ZipFile(io.BytesIO(outer.read(entry))) as archive:
+                require(len(archive.namelist()) == len(set(archive.namelist())), "Duplicate artifact input members")
+                expanded = 0
+                for item in provider["files"]:
+                    entry = archive.getinfo(item["member"])
+                    expanded += entry.file_size
+                    require(expanded <= 4 * 1024**2 and not entry.is_dir()
+                            and (entry.external_attr >> 16) & 0o170000 in (0, 0o100000), "Unsafe or oversized artifact metadata")
+                    raw = archive.read(entry)
+                    require(hashlib.sha256(raw).hexdigest() == pins[item["target"]], "Artifact input pin changed")
+                    target = relative_path(directory, item["target"])
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    with target.open("xb") as stream:
+                        stream.write(raw)
+        receipts.append(provider)
+    return targets, receipts
+
+
+def pack_dispatch_inputs(directory, manifest):
+    """Encode local metadata as workflow input without creating a commit or branch."""
+    require(directory.is_dir() and not directory.is_symlink(), "Supply a regular local metadata directory")
+    require(isinstance(manifest, str) and len(manifest) <= 4096, "Dispatch manifest path exceeds 4,096 characters")
+    read_json(relative_path(directory, manifest))
+    external, _ = dispatch_artifact_inputs(directory, manifest)
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as archive:
+        files = sorted(directory.rglob("*"))
+        require(not any(path.is_symlink() for path in files), "Linked dispatch input")
+        regular = [path for path in files if path.is_file() and path.relative_to(directory).as_posix().casefold() not in external]
+        require(len(regular) <= 256 and sum(path.stat().st_size for path in regular) <= 4 * 1024**2,
+                "Dispatch inputs exceed 256 files or 4 MiB expanded")
+        for path in regular:
+            entry = zipfile.ZipInfo(path.relative_to(directory).as_posix(), (1980, 1, 1, 0, 0, 0))
+            entry.compress_type = zipfile.ZIP_STORED
+            entry.external_attr = 0o100644 << 16
+            archive.writestr(entry, path.read_bytes())
+    raw = buffer.getvalue()
+    compressed = lzma.compress(raw)
+    require(len(compressed) <= 45000, "Compressed dispatch inputs must be at most 45,000 bytes")
+    with tempfile.TemporaryDirectory(prefix="strata-dispatch-check-") as temporary:
+        unpack_dispatch_inputs(raw, Path(temporary))
+    return {"paired_manifest": manifest, "paired_inputs": base64.b64encode(compressed).decode("ascii")}
+
+
+def dispatch_input_bytes():
+    """Read the manual payload from its event file, avoiding shell and environment string limits."""
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch" or not event_path:
+        return None
+    value = read_json(Path(event_path)).get("inputs", {}).get("paired_inputs", "")
+    require(isinstance(value, str) and len(value) <= 60000, "Dispatch inputs exceed 60,000 characters")
+    if not value:
+        return None
+    decoder = lzma.LZMADecompressor(memlimit=64 * 1024**2)
+    raw = decoder.decompress(base64.b64decode(value, validate=True), 6 * 1024**2 + 1)
+    require(decoder.eof and not decoder.unused_data and len(raw) <= 6 * 1024**2,
+            "Truncated, trailing or oversized compressed dispatch inputs")
+    return raw
+
+
 @contextmanager
 def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, manifest_sha256=None, expected_head=None):
     """Keep Git execution and privately checked-out pinned data separate for the full consumer lifetime."""
@@ -1447,6 +1585,36 @@ def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, ma
     if head is not None:
         require(all(re.fullmatch(r"[0-9a-f]{40}", value) for value in (base, head)), "Use exact PR commit identities")
         require(execution_head == head, "Paired planning checkout differs from PR head")
+    bundle = dispatch_input_bytes()
+    if bundle is not None:
+        require(explicit is not None and base is None and head is None, "Dispatch inputs require an explicit manual manifest")
+        require(len(explicit) <= 4096, "Dispatch manifest path exceeds 4,096 characters")
+        require(declared_inputs(root, execution_head) is None, "Dispatch inputs cannot use a producer commit")
+        require(git(root, "write-tree") == git(root, "rev-parse", execution_head + "^{tree}")
+                and subprocess.run(["git", "-C", str(root), "diff", "--quiet", "--no-ext-diff", "HEAD"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0,
+                "Dispatch driver tracked bytes differ from its revision")
+        bundle_sha = hashlib.sha256(bundle).hexdigest()
+        require(data_ref is None or data_ref == bundle_sha, "Dispatch payload differs from planned bytes")
+        with tempfile.TemporaryDirectory(prefix="strata-dispatch-inputs-") as temporary:
+            output = Path(temporary)
+            source = {"ref": execution_head, "tree": git(root, "rev-parse", execution_head + "^{tree}"), "patches": []}
+            input_root, _ = materialize(root, output, "input-driver", source)
+            unpack_dispatch_inputs(bundle, input_root)
+            path = relative_path(input_root, explicit)
+            _, artifacts = dispatch_artifact_inputs(input_root, explicit, download=True)
+            data = load_manifest(input_root, path)
+            candidate, _ = materialize(root, output, "candidate-check", data["sources"]["candidate"], input_root)
+            require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head),
+                    "Candidate source differs from execution head")
+            actual_sha = digest(path)
+            require(manifest_sha256 is None or manifest_sha256 == actual_sha, "Manifest differs from planned bytes")
+            bundle_path = output / "dispatch-inputs.zip"
+            bundle_path.write_bytes(bundle)
+            require(git(root, "rev-parse", "HEAD") == execution_head, "Dispatch execution head changed")
+            yield {"root": input_root, "path": path, "manifest": explicit, "producer": bundle_sha,
+                   "sha256": actual_sha, "execution_head": execution_head, "bundle": bundle_path, "artifacts": artifacts}
+        return
     declaration = declared_inputs(root, execution_head)
     require(data_ref is None or declaration is not None and data_ref == declaration[0], "Producer differs from execution-head trailer")
     if declaration is not None:
@@ -1504,6 +1672,7 @@ def main():
     """Select the opt-in manifest during CI planning or execute one fresh Windows attempt."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest")
+    parser.add_argument("--pack-inputs", type=Path, help="Encode an off-repository metadata directory for gh workflow run --json")
     parser.add_argument("--data-ref")
     parser.add_argument("--manifest-sha256")
     parser.add_argument("--expected-head")
@@ -1513,6 +1682,12 @@ def main():
     parser.add_argument("--output", type=Path)
     parser.add_argument("--owner-report", help="Continue one complete declared independent owner domain; does not establish whole Issue acceptance")
     args = parser.parse_args()
+    if args.pack_inputs is not None:
+        require(args.manifest is not None and args.output is not None and not args.select
+                and all(value is None for value in (args.data_ref, args.manifest_sha256, args.expected_head, args.base, args.head, args.owner_report)),
+                "Packing requires only --pack-inputs, --manifest and a new --output JSON path")
+        write_new(args.output, pack_dispatch_inputs(args.pack_inputs.resolve(), args.manifest))
+        return
     root = Path(__file__).resolve().parents[2]
     require(not args.select or args.owner_report is None, "CI selection retains the whole declared manifest")
     if args.expected_head is not None:
@@ -1521,6 +1696,11 @@ def main():
     require(args.select or args.base is None and args.head is None, "PR selection arguments require --select")
     with selected_inputs(root, args.manifest, args.base, args.head, args.data_ref, args.manifest_sha256, args.expected_head) as selection:
         if args.select:
+            if "bundle" in selection:
+                target = root / "build/performance-ci/dispatch-inputs.zip"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                require(not target.exists(), "Dispatch selection output already exists")
+                shutil.copyfile(selection["bundle"], target)
             if os.environ.get("GITHUB_OUTPUT"):
                 with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as target:
                     for key in ("manifest", "data_ref", "manifest_sha256"):
@@ -1530,7 +1710,8 @@ def main():
         else:
             require(args.output is not None, "Supply a fresh attempt output directory")
             require(selection["path"] is not None, "Supply explicit paired inputs")
-            run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report)
+            run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report,
+                input_bundle=selection.get("bundle"), input_artifacts=selection.get("artifacts"))
 
 
 if __name__ == "__main__":
