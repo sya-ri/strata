@@ -2311,10 +2311,15 @@ class PairedJvmTest(unittest.TestCase):
 
 
     def test_source_daemon_cap_requires_matching_closed_xml_and_keeps_other_role_caps(self):
-        for index, (declared, actual, role, closed, valid) in enumerate(((384, 384, "daemon", True, True),
+        cases = ((384, 384, "daemon", True, True),
                 (1024, 1024, "daemon", True, True), (384, 1024, "daemon", True, False),
                 (1024, 384, "daemon", True, False), (384, 384, "daemon", False, False),
-                (384, 256, "worker", True, True), (384, 384, "worker", True, False))):
+                (384, 256, "worker", True, True), (384, 384, "worker", True, False))
+        cases = [(*case, 768, 768 if case[2] == "daemon" else 512) for case in cases]
+        cases += [(384, 384, "daemon", True, True, 512, 512), (384, 384, "daemon", True, False, 512, 768),
+                  (384, 384, "daemon", True, False, 768, 512), (384, 384, "daemon", False, False, 512, 512),
+                  (384, 256, "worker", True, True, 384, 512)]
+        for index, (declared, actual, role, closed, valid, declared_heap, actual_heap) in enumerate(cases):
             with self.subTest(declared=declared, actual=actual, role=role, closed=closed):
                 directory = self.root / ("source-daemon-cap-" + str(index))
                 directory.joinpath("class-loads").mkdir(parents=True)
@@ -2324,7 +2329,7 @@ class PairedJvmTest(unittest.TestCase):
                 executable.parent.mkdir(parents=True)
                 executable.write_bytes(b"synthetic pinned Java; never launched")
                 main = "org.gradle.launcher.daemon.bootstrap.GradleDaemon" if role == "daemon" else "worker.org.gradle.process.internal.worker.GradleWorkerMain"
-                heap = (768 if role == "daemon" else 512) * 1024**2
+                heap = actual_heap * 1024**2
                 log = directory / "vm.log"
                 log.write_text(f"<hotspot_log process='123' time_ms='1001'><vm_arguments><command>{main} 1</command>\njava.home={home}\njava.class.path=frozen.jar\n"
                                f"</vm_arguments>\n-XX:MaxHeapSize={heap} -XX:MaxMetaspaceSize={actual * 1024**2}\n"
@@ -2337,16 +2342,20 @@ class PairedJvmTest(unittest.TestCase):
                                                      "totalProcesses": 1, "capturedGenerations": 1, "closedGenerations": 1}}
                 arguments = (directory, [log], terminal, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 0)
                 if valid:
-                    PAIRED.verify_vms(*arguments, require_all_java_generations=True, daemon_metaspace_mib=declared)
+                    PAIRED.verify_vms(*arguments, require_all_java_generations=True, daemon_metaspace_mib=declared, daemon_heap_mib=declared_heap)
                     record = PAIRED.read_json(directory / "vms.json")[0]
                     self.assertEqual((record["role"], record["caps"]["MaxMetaspaceSize"], record["os_generation"]), (role, actual * 1024**2, member))
+                    self.assertEqual(record["caps"]["MaxHeapSize"], heap)
                 else:
                     with self.assertRaises(ValueError):
-                        PAIRED.verify_vms(*arguments, require_all_java_generations=True, daemon_metaspace_mib=declared)
+                        PAIRED.verify_vms(*arguments, require_all_java_generations=True, daemon_metaspace_mib=declared, daemon_heap_mib=declared_heap)
                     self.assertFalse((directory / "vms.json").exists())
         for invalid in (True, 0, 1025, "384", None):
             with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "Invalid finite daemon metaspace cap"):
                 PAIRED.verify_vms(self.root, [], {}, {}, daemon_metaspace_mib=invalid)
+        for invalid in (True, 63, 769, "512", None):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "Invalid finite daemon heap cap"):
+                PAIRED.verify_vms(self.root, [], {}, {}, daemon_heap_mib=invalid)
 
     def test_compiled_qualification_preserves_long_paths_before_its_first_checkout(self):
         self.selector_repository()

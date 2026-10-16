@@ -254,10 +254,14 @@ def source_resources(shared, root, data):
     limits = shared.read_json(shared.pin(root, data["resource_profile"]))
     fields = {"minimumFreePhysicalBytes", "daemonMetaspaceMiB"}
     execution = {"javaExecHeapMiB", "javaExecMetaspaceMiB"}
-    shared.require(isinstance(limits, dict) and (set(limits) == fields or set(limits) == fields | execution)
+    heap = {"daemonHeapMiB"}
+    shared.require(isinstance(limits, dict) and set(limits) in (fields, fields | heap, fields | execution, fields | execution | heap)
                    and type(limits["minimumFreePhysicalBytes"]) is int and 4 * 1024**3 <= limits["minimumFreePhysicalBytes"] <= 16 * 1024**3
                    and type(limits["daemonMetaspaceMiB"]) is int and 0 < limits["daemonMetaspaceMiB"] <= 1024,
                    "Source resources must retain finite admission and daemon bounds")
+    if "daemonHeapMiB" in limits:
+        shared.require(type(limits["daemonHeapMiB"]) is int and 64 <= limits["daemonHeapMiB"] <= 768,
+                       "Source daemon heap must remain within its existing cap")
     if execution <= set(limits):
         shared.require(type(limits["javaExecHeapMiB"]) is int and 64 <= limits["javaExecHeapMiB"] <= 768
                        and type(limits["javaExecMetaspaceMiB"]) is int and 0 < limits["javaExecMetaspaceMiB"] <= 384,
@@ -769,8 +773,9 @@ def run(shared, root, selection, output):
                                         "ORG_GRADLE_PROJECT_org.gradle.java.installations.paths": ",".join(str(home) for home in homes.values())})
             binding = None
             if node_program is None:
+                daemon_heap = resources.get("daemonHeapMiB", 768)
                 metaspace = "1g" if resources["daemonMetaspaceMiB"] == 1024 else str(resources["daemonMetaspaceMiB"]) + "m"
-                arguments = arguments + ["--no-daemon", "--no-parallel", "--max-workers=1", "--no-build-cache", "--no-configuration-cache", "--console=plain", "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-I", str(root / "gradle/performance/bounded-jvm.init.gradle.kts"), f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize={metaspace} -Dfile.encoding=UTF-8 {flags}"]
+                arguments = arguments + ["--no-daemon", "--no-parallel", "--max-workers=1", "--no-build-cache", "--no-configuration-cache", "--console=plain", "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-I", str(root / "gradle/performance/bounded-jvm.init.gradle.kts"), f"-Dorg.gradle.jvmargs=-Xmx{daemon_heap}m -XX:MaxMetaspaceSize={metaspace} -Dfile.encoding=UTF-8 {flags}"]
                 if toolchains is None and not capture:
                     arguments += ["-Dorg.gradle.java.installations.auto-detect=false", "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(str(home) for home in homes.values())]
                 if source_mode:
@@ -827,6 +832,7 @@ def run(shared, root, selection, output):
                 shared.verify_vms(directory, sorted(set(vms.glob("*.log")) - before), terminal, allowed_java,
                                   maximum_diagnostic_bytes=16 * 1024**2, require_all_java_generations=True,
                                   daemon_metaspace_mib=resources["daemonMetaspaceMiB"],
+                                  daemon_heap_mib=resources.get("daemonHeapMiB", 768),
                                   java_exec_heap_mib=resources.get("javaExecHeapMiB", 768),
                                   java_exec_metaspace_mib=resources.get("javaExecMetaspaceMiB", 384))
                 if binding is not None:

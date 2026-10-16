@@ -922,6 +922,7 @@ It binds all three source trees, the exact differing source-file list, immutable
 The common driver and prepared Source subjects have separate frozen identities; preparing another change does not require that change to contain the common driver.
 Each side may select one existing model argument, `-Pstrata.webOnly=true` or `-Pstrata.jvmOnly=true`; worker, deadline, cache, task and sampling overrides are rejected.
 An optional immutable `resource_profile` file pin supplies `minimumFreePhysicalBytes` and `daemonMetaspaceMiB` for both Source sides, with an optional pair of `javaExecHeapMiB` and `javaExecMetaspaceMiB`.
+It may also tighten `daemonHeapMiB` to 64–768 MiB; omission preserves the existing 768 MiB daemon heap.
 The finite admission range is 4–16 GiB, and the positive daemon metaspace cap cannot exceed the default 1024 MiB.
 Source JavaExec heap is bounded to 64–768 MiB and positive metaspace to at most 384 MiB; supplying only one of the pair fails.
 These preparation-only limits can reduce simultaneous Gradle and verification-process memory within the existing 3 GiB Job without changing the original tasks, test gates or artifacts.
