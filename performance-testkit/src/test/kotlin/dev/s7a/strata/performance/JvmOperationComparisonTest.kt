@@ -31,7 +31,16 @@ class JvmOperationComparisonTest {
             val after = result.objectField("after").objectField("conditions").objectField("input_sources")
             assertNotEquals(before, after)
             assertEquals(before.objectField("files").objectField("font").textField("sha256"), after.objectField("files").objectField("font").textField("sha256"))
-            assertEquals(200.0, result.arrayField("phases").single().asJsonObject.objectField("before").get("wall_ns_per_sample").asDouble)
+            assertEquals(
+                200.0,
+                result
+                    .arrayField("phases")
+                    .single()
+                    .asJsonObject
+                    .objectField("before")
+                    .get("wall_ns_per_sample")
+                    .asDouble,
+            )
         }
     }
 
@@ -64,7 +73,11 @@ class JvmOperationComparisonTest {
             val candidate = reports(kit, directory.resolve("candidate"))
             val replacement = Files.copy(directory.resolve("candidate/live.bin"), directory.resolve("candidate/replacement.bin"))
             val report = JvmEvidenceFiles.document(candidate.last())
-            report.objectField("input_sources").objectField("files").objectField("font").addProperty("path", replacement.toString())
+            report
+                .objectField("input_sources")
+                .objectField("files")
+                .objectField("font")
+                .addProperty("path", replacement.toString())
             Files.writeString(candidate.last(), report.toString())
             assertFails { compare(kit, baseline, candidate) }
         }
