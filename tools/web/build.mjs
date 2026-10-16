@@ -140,7 +140,7 @@ async function verifyTheme(browser, engine, theme, expected, variant) {
     return receipt;
 }
 
-/** Adds caller-supplied frozen fixture inputs without changing the standard workload. */
+/** Adds frozen caller inputs while retaining the compiled standard workload and collector defaults. */
 async function performanceInputs(inventoryPath) {
     const inputs = { 'standard-component-inventory': inventoryPath };
     if (inputManifestArgument === undefined) return inputs;

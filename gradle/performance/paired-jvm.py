@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from enum import Enum
 import hashlib
 import html
+import importlib.util
 import io
 import json
 import lzma
@@ -14,12 +15,14 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import threading
 import time
 import tomllib
+from types import SimpleNamespace
 from urllib.parse import unquote, urlparse
 import zipfile
 import xml.etree.ElementTree as ElementTree
@@ -71,12 +74,118 @@ def digest(path):
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
-def relative_path(root, value):
-    """Keep manifest files within the checkout, including on Windows."""
+def preserve_failed_jvm_diagnostics(directory, workspace, terminal, environment):
+    """Keep bounded, sanitized failed-JVM reports from known invocation roots without masking its original failure."""
+    receipt = {"schema": "strata-failed-owned-jvm-diagnostics-v1", "qualified": False, "entries": [], "errors": [],
+               "maximum_read_bytes": 4 * 1024**2, "maximum_retained_bytes": 4 * 1024**2, "maximum_file_bytes": 1024**2,
+               "maximum_files": 16, "read_bytes": 0, "retained_bytes": 0}
+    try:
+        effective = dict(os.environ, **environment)
+        sensitive = r"token|password|passwd|secret|credential|authorization|api[_-]?key|access[_-]?key|private[_-]?key"
+        secrets = sorted({value for key, value in effective.items() if value and re.search(sensitive, key, re.I)}, key=len, reverse=True)
+        def sanitized(data, crash):
+            text = data.decode("utf-8-sig", errors="replace")
+            if crash:
+                boundary = re.search(r"(?im)^(?:Registers:|Register to memory mapping|Top of Stack:|Instructions:|VM Arguments:|Environment Variables:|.*P R O C E S S.*)", text)
+                if boundary:
+                    text = text[:boundary.start()]
+            text = re.sub(r"(?im)^.*(?:Command Line:|jvm_args:|Configuring env variables|" + sensitive + r").*(?:\n|$)", "[sensitive line omitted]\n", text)
+            for value in secrets:
+                text = text.replace(value, "[redacted]")
+            return re.sub(r"https?://\S+", "[URL omitted]", text).encode("utf-8")
+        generations = []
+        if terminal.get("nativeInvoked") is True:
+            for pid, histories in terminal.get("members", {}).items():
+                for member in histories:
+                    born, exited = member.get("creationFileTime"), member.get("exitFileTime")
+                    image = Path(member.get("image", ""))
+                    if (type(member.get("pid")) is int and str(member["pid"]) == pid
+                            and type(born) is int and 0 < born and type(exited) is int and born <= exited
+                            and member.get("inOwnedJob") is True and member.get("completed") is True and member.get("handleClosed") is True
+                            and type(member.get("exitCode")) is int and member["exitCode"] != 0
+                            and image.is_absolute() and image.name.lower() in ("java.exe", "javaw.exe")):
+                        generations.append(member)
+        receipt["known_failed_jvm_generations"] = len(generations)
+        receipt["omitted_generations"] = max(0, len(generations) - 16)
+        if generations:
+            wrapper = (Path(__file__).resolve().parents[2] / "gradle/wrapper/gradle-wrapper.properties").read_bytes()
+            version = re.search(r"(?m)^distributionUrl=.*?/gradle-([^/]+?)-(?:bin|all)\.zip\s*$", wrapper.decode("utf-8")).group(1)
+            require(re.fullmatch(r"[0-9]+(?:\.[0-9]+)+(?:-[A-Za-z0-9.-]+)?", version), "Invalid fixed Gradle version")
+            receipt["gradle_wrapper_sha256"] = hashlib.sha256(wrapper).hexdigest()
+            home = Path(effective.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))).resolve()
+            workspace = Path(workspace).resolve()
+            roots = [("workspace", workspace, workspace), ("gradle-daemon", home, home / "daemon" / version)]
+            for member in sorted(generations, key=lambda item: item["exitFileTime"], reverse=True)[:16]:
+                owner = {key: member[key] for key in ("pid", "creationFileTime", "exitFileTime")}
+                for label, root, folder in roots:
+                    names = [f"hs_err_pid{member['pid']}.log"] + ([f"daemon-{member['pid']}.out.log"] if label == "gradle-daemon" else [])
+                    for name in names:
+                        if (receipt["maximum_read_bytes"] <= receipt["read_bytes"] or receipt["maximum_retained_bytes"] <= receipt["retained_bytes"]
+                                or len(receipt["entries"]) == receipt["maximum_files"]):
+                            receipt["truncated"] = True
+                            continue
+                        source = folder / name
+                        if not source.exists():
+                            continue
+                        try:
+                            require(not source.is_symlink() and not folder.is_symlink() and not folder.parent.is_symlink(), "Linked diagnostic path")
+                            resolved = source.resolve()
+                            require(resolved.is_relative_to(root), "Diagnostic escaped its invocation root")
+                            before = source.stat()
+                            require(stat.S_ISREG(before.st_mode), "Nonregular diagnostic")
+                            born_ns = (member["creationFileTime"] - 116444736000000000) * 100
+                            exit_ns = (member["exitFileTime"] - 116444736000000000) * 100
+                            require(born_ns <= before.st_mtime_ns <= exit_ns, "Diagnostic belongs to another process lifetime")
+                            limit = min(receipt["maximum_file_bytes"], receipt["maximum_read_bytes"] - receipt["read_bytes"])
+                            offset = max(0, before.st_size - limit) if name.startswith("daemon-") else 0
+                            with source.open("rb") as stream:
+                                stream.seek(offset)
+                                raw = stream.read(limit)
+                            receipt["read_bytes"] += len(raw)
+                            after = source.stat()
+                            require((before.st_size, before.st_mtime_ns, before.st_ino) == (after.st_size, after.st_mtime_ns, after.st_ino)
+                                    and source.resolve() == resolved, "Diagnostic changed while being read")
+                            crash = name.startswith("hs_err_")
+                            if crash:
+                                observed_pid = re.search(rb"\bpid\s*[=:]\s*([0-9]+)\b", raw[:8192])
+                                require(observed_pid and int(observed_pid[1]) == member["pid"], "Crash report lacks its actual owned PID")
+                            retained_limit = min(limit, receipt["maximum_retained_bytes"] - receipt["retained_bytes"])
+                            retained = sanitized(raw, crash)[:retained_limit].decode("utf-8", errors="ignore").encode("utf-8")
+                            destination = Path(directory) / "failed-jvm-diagnostics" / f"{member['pid']}-{member['creationFileTime']}" / (label + "-" + name)
+                            destination.parent.mkdir(parents=True, exist_ok=True)
+                            with destination.open("xb") as target:
+                                target.write(retained)
+                            receipt["retained_bytes"] += len(retained)
+                            receipt["entries"].append({"owner": owner, "source_root": label, "source_relative": resolved.relative_to(root).as_posix(),
+                                "source_file_bytes": before.st_size, "source_mtime_ns": before.st_mtime_ns, "source_range_offset": offset,
+                                "source_range_bytes": len(raw), "source_range_sha256": hashlib.sha256(raw).hexdigest(),
+                                "source_file_sha256": hashlib.sha256(raw).hexdigest() if offset == 0 and len(raw) == before.st_size else None,
+                                "retained_path": destination.relative_to(directory).as_posix(), "retained_bytes": len(retained),
+                                "retained_sha256": hashlib.sha256(retained).hexdigest(), "sanitized": True, "qualified": False})
+                        except Exception as failure:
+                            receipt["errors"].append({"owner": owner, "source_root": label, "name": name, "error_type": type(failure).__name__})
+    except Exception as failure:
+        receipt["errors"].append({"stage": "diagnostic-retention", "error_type": type(failure).__name__})
+    receipt["status"] = "retained-unqualified" if receipt["entries"] else "unavailable"
+    try:
+        write_new(Path(directory) / "failed-jvm-diagnostics.json", receipt)
+    except Exception as failure:
+        receipt["manifest_error_type"] = type(failure).__name__
+    return receipt
+
+
+def canonical_path(value):
+    """Decode the existing canonical repository-relative path format without filesystem resolution."""
     require(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_$+./-]+", value), "Invalid repository path")
     relative = PurePosixPath(value)
     require(not relative.is_absolute() and all(part not in (".", "..", ".git") for part in relative.parts)
             and relative.as_posix() == value, "Noncanonical repository path")
+    return relative
+
+
+def relative_path(root, value):
+    """Keep manifest files within the checkout, including on Windows."""
+    relative = canonical_path(value)
     path = root.joinpath(*relative.parts)
     require(path.resolve().is_relative_to(root.resolve()), "Repository path escapes checkout")
     return path
@@ -90,11 +199,47 @@ def pin(root, value):
     return path
 
 
+def input_paths(inputs, external_inputs=()):
+    """Resolve optional logical roots and paths, keeping omitted layouts flat and rejecting path aliases."""
+    paths = {}
+    prefixes = {}
+    reserved = {"con", "prn", "aux", "nul", "conin$", "conout$", *(f"com{index}" for index in range(1, 10)), *(f"lpt{index}" for index in range(1, 10))}
+    for index, item in enumerate(inputs):
+        require(isinstance(item, dict) and set(item) in ({"label", "pin"}, {"label", "pin", "layout"}), "Invalid fixture input fields")
+        path = PurePosixPath(f"input-{index}.jar" if item["label"] in external_inputs else f"input-{index}.bin")
+        if "layout" in item:
+            layout = item["layout"]
+            require(isinstance(layout, dict) and set(layout) == {"root", "path"}, "Invalid input layout fields")
+            require(isinstance(layout["root"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", layout["root"]), "Invalid input root")
+            require(isinstance(layout["path"], str) and len(layout["path"]) <= 4096, "Invalid logical input path")
+            path = canonical_path(layout["root"] + "/" + canonical_path(layout["path"]).as_posix())
+            require(all(not part.endswith(".") and part.casefold() != ".git" and part.split(".", 1)[0].casefold() not in reserved for part in path.parts),
+                    "Nonportable logical input path")
+        require(item["label"] not in paths, "Duplicate fixture input label")
+        paths[item["label"]] = path
+        for depth in range(1, len(path.parts) + 1):
+            prefix = PurePosixPath(*path.parts[:depth])
+            key = prefix.as_posix().casefold()
+            require(key not in prefixes or prefixes[key] == prefix, "Case-colliding logical input paths")
+            prefixes[key] = prefix
+    files = set(paths.values())
+    require(len(files) == len(paths), "Duplicate logical input destination")
+    require(all(not any(parent in files for parent in path.parents) for path in files), "Logical input file/directory collision")
+    return paths
+
+
 def load_manifest(root, path):
     """Validate explicit frozen refs and selectors; sampling and repetition settings stay fixed."""
     data = read_json(path)
+    if data.get("schema") in ("strata-paired-browser-ci-v1", "strata-source-preparation-ci-v1"):
+        return browser_controller().load_manifest(SimpleNamespace(**globals()), root, data)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
-    require(required <= set(data) <= required | {"owner_reports", "owner_continuation"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    require(required <= set(data) <= required | {"owner_reports", "owner_continuation", "driver_source", "input_properties"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    if "driver_source" in data:
+        driver = data["driver_source"]
+        require(isinstance(driver, dict) and set(driver) == {"ref", "tree"}
+                and all(isinstance(driver[key], str) and re.fullmatch(r"[0-9a-f]{40}", driver[key]) for key in ("ref", "tree")),
+                "Pin the exact unpatched driver commit and tree")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three source bindings")
     for source in data["sources"].values():
         require(set(source) == {"ref", "tree", "patches"}, "Invalid source binding")
@@ -110,7 +255,17 @@ def load_manifest(root, path):
     names = set()
     for suite in data["suites"]:
         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
-        require(fields <= set(suite) <= fields | {"profilers", "operation_reports", "preflight", "test_gates"}, "Invalid suite fields")
+        require(fields <= set(suite) <= fields | {"profilers", "operation_reports", "preflight", "test_gates", "modes", "compiled_main", "external_runtime_inputs"}, "Invalid suite fields")
+        if "compiled_main" in suite or "external_runtime_inputs" in suite:
+            require(FixtureProject.decode(suite["project"]) == FixtureProject.HISTORICAL, "Compiled launch selectors require the existing historical template")
+        if "compiled_main" in suite:
+            require(isinstance(suite["compiled_main"], str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", suite["compiled_main"]), "Use one compiled JVM main class")
+        if "external_runtime_inputs" in suite:
+            selected = suite["external_runtime_inputs"]
+            require(isinstance(selected, dict) and set(selected) == {"baseline", "candidate"}
+                    and all(isinstance(label, str) for label in selected.values()), "Bind both external runtime input labels")
+        require(suite.get("modes", ["avgt", "sample"]) in (["avgt"], ["avgt", "sample"]),
+                "Preserve the declared Standard average-time profile, optionally with SampleTime")
         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
         require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", suite["name"]) and suite["name"] not in names, "Invalid or duplicate suite name")
         names.add(suite["name"])
@@ -132,7 +287,7 @@ def load_manifest(root, path):
         for gate in gates:
             require(isinstance(gate, dict) and set(gate) == {"task", "required_tests"}, "Invalid independent test gate fields")
             task = gate["task"]
-            require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*:(?:test|jvmTest|fontTest[A-Za-z0-9_]+)", task)
+            require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)+", task)
                     and task.rsplit(":", 1)[0] in projects and task not in tasks, "Use unique existing runtime test tasks")
             tasks.add(task)
             tests = gate["required_tests"]
@@ -226,10 +381,25 @@ def load_manifest(root, path):
             require(0 <= operation["warmup"] <= 1_000_000 and 0 < operation["samples"] <= 1_000_000
                     and 0 <= operation["expected_controls"] <= operation["expected_rows"] == suite["expected_cases"], "Incomplete or unbounded operation inventory")
     for value in data["inputs"]:
-        require(set(value) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", value["label"])
+        require({"label", "pin"} <= set(value) <= {"label", "pin", "layout"} and re.fullmatch(r"[A-Za-z0-9_.-]+", value["label"])
                 and value["label"] not in labels, "Invalid or duplicate fixture input")
         labels.add(value["label"])
         pin(root, value["pin"])
+    input_paths(data["inputs"], {label for suite in data["suites"] for label in suite.get("external_runtime_inputs", {}).values()})
+    bindings = data.get("input_properties", {})
+    require(isinstance(bindings, dict) and len(bindings) <= 32, "Invalid frozen inventory input properties")
+    for name, sides in bindings.items():
+        require(isinstance(name, str) and re.fullmatch(r"strata\.performance\.[a-z][A-Za-z0-9]*Inventory", name),
+                "Inventory inputs cannot override workload, sampling or JVM settings")
+        require(isinstance(sides, dict) and set(sides) == {"baseline", "candidate"}
+                and all(isinstance(label, str) and label in labels for label in sides.values()),
+                "Bind both inventory sides to the complete immutable input map")
+
+    for suite in data["suites"]:
+        require(set(suite.get("external_runtime_inputs", {}).values()) <= labels, "External runtime input is not registered")
+        for label in suite.get("external_runtime_inputs", {}).values():
+            registered = next(item for item in data["inputs"] if item["label"] == label)
+            require(Path(registered["pin"]["path"]).suffix == ".jar", "External runtime input must be a JAR")
     require(set(data["compiled_pins"]) == {"fixture", "baseline", "candidate"}, "Missing compiled pin inventory")
     for side, pins in data["compiled_pins"].items():
         require(isinstance(pins, list), f"Invalid compiled pin list: {side}")
@@ -251,6 +421,21 @@ def load_manifest(root, path):
         roles.add(item["role"])
         require(all(re.fullmatch(r"[0-9a-f]{64}", item[key]) for key in ("executable_sha256", "release_sha256")), "Invalid Java byte pin")
     return data
+
+
+def suite_launch_flags(suite, side, inputs):
+    """Select the existing compiled entry and byte-fenced archive from immutable registered inputs."""
+    flags = []
+    if "compiled_main" in suite:
+        flags.append("-Pstrata.performance.compiledMain=" + suite["compiled_main"])
+    if "external_runtime_inputs" in suite:
+        label = suite["external_runtime_inputs"][side]
+        require(label in inputs, "External runtime input is not registered")
+        item = inputs[label]
+        archive = Path(item["path"])
+        require(archive.suffix == ".jar" and digest(archive) == item["sha256"], "External runtime archive changed or is not a JAR")
+        flags.append("-Pstrata.performance.externalRuntime=" + str(archive))
+    return flags
 
 
 def git(root, *arguments):
@@ -430,7 +615,103 @@ def class_loads(directory):
     return "".join(texts), identities
 
 
-def owned_generation(terminal, pid, vm_start):
+def verify_generation_accounting(terminal):
+    """Reconcile every closed physical PID/birth history with actual terminal Job accounting."""
+    creation_capture = terminal.get("processCreationCapture")
+    require(creation_capture in (None, "debug-before-continue-v1", "debug-before-continue-v2"), "Unknown owned process creation capture")
+    if creation_capture is not None:
+        require(isinstance(terminal.get("processAcquisition"), dict), "Creation capture lacks its physical handle inventory")
+    accounting = terminal.get("generationAccounting", {})
+    require(isinstance(accounting, dict) and accounting.get("schema") == "strata-owned-generation-accounting-v1"
+            and accounting.get("complete") is True and terminal.get("notificationReaderJoined") is True,
+            "Missing complete physical generation accounting")
+    require(terminal.get("nativeInvoked") is True and terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
+            and "error" not in terminal and "cleanupError" not in terminal
+            and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
+            "Generation accounting lacks natural closed terminal proof")
+    identities = set()
+    for pid, histories in terminal["members"].items():
+        require(re.fullmatch(r"[1-9][0-9]*", pid) is not None and isinstance(histories, list) and histories,
+                "Invalid physical process histories")
+        previous_exit = None
+        for member in histories:
+            if creation_capture is not None:
+                require("creationEventBeforeContinue" not in member or type(member["creationEventBeforeContinue"]) is bool,
+                        "Malformed actual creation-event witness")
+                if creation_capture == "debug-before-continue-v2":
+                    require("exitDuplicateBeforeContinue" not in member or type(member["exitDuplicateBeforeContinue"]) is bool,
+                            "Malformed actual pre-continuation exit duplicate")
+                    require((member.get("creationEventBeforeContinue") is True) == (member.get("exitDuplicateBeforeContinue") is True),
+                            "Creation lease lacks its same-generation duplicate before exit continuation")
+            require(type(member.get("pid")) is int and member["pid"] == int(pid) and type(member.get("creationFileTime")) is int
+                    and type(member.get("exitFileTime")) is int and member["creationFileTime"] <= member["exitFileTime"]
+                    and 0 < member["creationFileTime"]
+                    and (previous_exit is None or previous_exit <= member["creationFileTime"])
+                    and member.get("inOwnedJob") is True and member.get("completed") is True and member.get("handleClosed") is True
+                    and type(member.get("exitCode")) is int and isinstance(member.get("image"), str) and bool(member["image"])
+                    and type(member.get("affinityMask")) is int and member["affinityMask"] == terminal["inheritedAffinityMask"]
+                    and type(member.get("systemAffinityMask")) is int and member["systemAffinityMask"] == terminal["systemAffinityMask"],
+                    "Unclosed or altered physical process generation")
+            identity = (int(pid), member["creationFileTime"])
+            require(identity not in identities, "Duplicate physical process generation")
+            identities.add(identity)
+            previous_exit = member["exitFileTime"]
+    require(0 < len(identities) and type(terminal.get("totalProcesses")) is int
+            and all(type(accounting.get(key)) is int and accounting[key] == len(identities)
+                    for key in ("totalProcesses", "capturedGenerations", "closedGenerations"))
+            and terminal["totalProcesses"] == len(identities), "Physical histories do not reconcile with actual Job totalProcesses")
+    if "processAcquisition" in terminal:
+        acquisition = terminal["processAcquisition"]
+        require(isinstance(acquisition, dict)
+                and all(type(acquisition.get(key)) is int and acquisition[key] == 0
+                        for key in ("pending", "metadataInFlight", "physicalHandles", "unpublishedByteBound"))
+                and type(acquisition.get("maximumPhysicalHandles")) is int and 0 < acquisition["maximumPhysicalHandles"] <= 256
+                and type(acquisition.get("maximumPending")) is int and 0 <= acquisition["maximumPending"] <= acquisition["maximumPhysicalHandles"],
+                "Acquired physical handles lack bounded drained ownership")
+        published_bound = sum(1024 + 6 * (len(member["image"].encode("utf-16-le")) // 2)
+                              for histories in terminal["members"].values() for member in histories)
+        require(type(acquisition.get("publishedByteBound")) is int and acquisition["publishedByteBound"] == published_bound
+                and type(terminal.get("memberHistorySerializedByteBound")) is int
+                and published_bound <= terminal["memberHistorySerializedByteBound"] <= 3 * 1024**2,
+                "Acquired physical history exceeds its shared byte bound")
+        counters = ("newProcessNotifications", "notificationOpenSuccesses", "notificationOpenFailures", "notificationImageSuccesses",
+                    "notificationImageFailures", "notificationMetadataSuccesses", "notificationMetadataFailures")
+        delivered = terminal.get("newProcessNotifications")
+        acquired = terminal.get("notificationOpenSuccesses")
+        acquisition_failures = terminal.get("notificationOpenFailures")
+        if creation_capture is not None:
+            counters += ("notificationDuplicateSuccesses", "notificationDuplicateFailures")
+            acquired = terminal.get("notificationDuplicateSuccesses")
+            acquisition_failures = terminal.get("notificationDuplicateFailures")
+            delivered = terminal.get("processCreationEvents")
+            abi = terminal.get("processCreationAbi", {})
+            counts = terminal.get("debugEventCounts", {})
+            require(isinstance(abi, dict) and all(type(abi.get(key)) is int for key in ("pointerBytes", "eventBytes", "unionOffset", "firstChanceOffset"))
+                    and tuple(abi[key] for key in ("pointerBytes", "eventBytes", "unionOffset", "firstChanceOffset")) in ((8, 176, 16, 152), (4, 96, 12, 80))
+                    and isinstance(counts, dict) and all(isinstance(key, str) and re.fullmatch(r"[1-9]", key) and type(value) is int and 0 <= value for key, value in counts.items())
+                    and counts.get("3") == counts.get("5") == delivered,
+                    "Creation capture lacks its actual ABI or complete native create/exit event counts")
+            witnessed = sum(member.get("creationEventBeforeContinue") is True for histories in terminal["members"].values() for member in histories)
+            if creation_capture == "debug-before-continue-v2":
+                counters += ("creationLeaseTransfers", "exitDuplicateSuccesses", "exitDuplicateFailures")
+                require(terminal.get("creationLeaseTransfers") == terminal.get("exitDuplicateSuccesses") == delivered
+                        and terminal.get("exitDuplicateFailures") == 0, "Creation leases lack complete owned exit duplicates")
+            handle_source = "debug-event-lease-with-exit-duplicate" if creation_capture == "debug-before-continue-v2" else "duplicate-debug-event-handle"
+            require(type(delivered) is int and 0 < delivered == witnessed <= terminal["totalProcesses"]
+                    and type(terminal.get("creationEventsAfterFailure")) is int and terminal["creationEventsAfterFailure"] == 0
+                    and "creationCaptureError" not in terminal
+                    and type(acquisition.get("debugProcessHandles")) is int and acquisition["debugProcessHandles"] == 0
+                    and terminal.get("processCreationHandleSource") == handle_source
+                    and terminal.get("notificationOpenSuccesses") == terminal.get("notificationOpenFailures") == acquisition_failures == 0,
+                    "Creation events do not reconcile with actual closed Job generations")
+        require(all(type(terminal.get(key)) is int and 0 <= terminal[key] for key in counters)
+                and terminal["notificationImageFailures"] == terminal["notificationMetadataFailures"] == 0
+                and delivered == acquired + acquisition_failures
+                and acquired == terminal["notificationImageSuccesses"] == terminal["notificationMetadataSuccesses"],
+                "Acquired process image or metadata lacks complete delivery")
+
+
+def owned_generation(terminal, pid, vm_start, unique_invocation_pid=False):
     """Select one captured PID/birth generation; legacy single-record receipts remain readable."""
     histories = terminal["members"].get(str(pid), [])
     legacy = isinstance(histories, dict)
@@ -455,6 +736,12 @@ def owned_generation(terminal, pid, vm_start):
         require(exit_ms is None or birth_ms <= exit_ms, "Altered owned process lifetime")
         if 0 <= vm_start - birth_ms <= 2000 and (exit_ms is None or vm_start <= exit_ms):
             matching.append(member)
+    if not matching and unique_invocation_pid and not legacy and len(histories) == 1:
+        # A fresh XML PID can bind a unique fully accounted generation without claiming its coarse reconstructed start is kernel birth.
+        birth_ms = (histories[0]["creationFileTime"] - 116444736000000000) // 10000
+        if vm_start < birth_ms:
+            verify_generation_accounting(terminal)
+            matching.append(histories[0])
     require(len(matching) == 1, "Missing or ambiguous owned process generation")
     member = matching[0]
     require(member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
@@ -462,7 +749,7 @@ def owned_generation(terminal, pid, vm_start):
     return member
 
 
-def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None):
+def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None, unique_invocation_pid=False):
     """Use exact start stamps or uniquely pinned owned generations when logging expands filenames independently."""
     candidates = [item for item in identities.values() if item["pid"] == pid]
     if not candidates:
@@ -483,10 +770,10 @@ def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None):
     require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
     if matching and Path(matching[0]["path"]).name == f"classes-{pid}-{name[1]}.log":
         return matching[0]
-    return unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal)
+    return unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, unique_invocation_pid)
 
 
-def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
+def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, unique_invocation_pid=False):
     """Bind one fresh class file to a captured lifetime, including independent startup filename expansion."""
     same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
                                  path.read_text(encoding="utf-8"))) for path in vm_files)
@@ -504,7 +791,7 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
     history = terminal["members"].get(str(pid), [])
     if not isinstance(history, list) or not history:
         return None
-    member = owned_generation(terminal, pid, int(starts[0]))
+    member = owned_generation(terminal, pid, int(starts[0]), unique_invocation_pid=unique_invocation_pid and same_pid == 1)
     startup_stamps = {stamp}
     if startup_binding:
         # Each JVM expands %t independently; kernel birth and the already-bound VM start bound that expansion.
@@ -525,9 +812,9 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
         helpers = [item for item in history if item not in java]
     if helpers:
         homes = re.findall(r"(?m)^java\.home=([^\r\n]+)", raw)
-        require(len(homes) == 1 and member in java
-                and os.path.normcase(member["image"]) == os.path.normcase(str(Path(html.unescape(homes[0]), "bin/java.exe"))),
-                "Unique JVM and actual Java generation disagree")
+        require(len(homes) == 1 and member in java, "Unique JVM and actual Java generation disagree")
+        java_installation_home(member["image"], html.unescape(homes[0]),
+                               re.findall(r"(?m)^java\.vm\.specification\.version=([^\r\n]+)", raw))
         for helper in helpers:
             require(Path(helper["image"]).is_absolute() and helper["inOwnedJob"] is True and helper["completed"] is True
                     and helper["handleClosed"] is True and helper["exitCode"] == 0
@@ -612,15 +899,50 @@ def independent_class_file(directory, phase_directory, result, vm):
     return matches[0] if matches else None
 
 
-def verify_vms(directory, files, terminal, allowed, expected_forks=None):
+def java_installation_home(executable, runtime_home, specification_versions=()):
+    """Bind a held launcher image to its runtime; Java 8 JDK tools use the nested jre home."""
+    executable, runtime_home = Path(executable), Path(runtime_home)
+    home = executable.parent.parent
+    require(executable.is_absolute() and runtime_home.is_absolute()
+            and ".." not in executable.parts and ".." not in runtime_home.parts
+            and executable.name.lower() == "java.exe" and executable.parent.name.lower() == "bin",
+            "Invalid actual Java launcher path")
+    require(os.path.normcase(str(runtime_home)) == os.path.normcase(str(home))
+            or list(specification_versions) == ["1.8"]
+            and os.path.normcase(str(runtime_home)) == os.path.normcase(str(home / "jre")),
+            "Java runtime home differs from its actual launcher installation")
+    return home
+
+
+def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False, daemon_metaspace_mib=1024, java_exec_heap_mib=768, java_exec_metaspace_mib=384):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
-    profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
+    require(type(maximum_diagnostic_bytes) is int and 0 < maximum_diagnostic_bytes <= 16 * 1024**2,
+            "Invalid finite VM diagnostic byte bound")
+    require(type(require_all_java_generations) is bool, "Invalid Java generation coverage mode")
+    require(type(daemon_metaspace_mib) is int and 0 < daemon_metaspace_mib <= 1024, "Invalid finite daemon metaspace cap")
+    require(type(java_exec_heap_mib) is int and 64 <= java_exec_heap_mib <= 768
+            and type(java_exec_metaspace_mib) is int and 0 < java_exec_metaspace_mib <= 384, "Invalid finite JavaExec caps")
+    if require_all_java_generations:
+        require(terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
+                and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
+                "Java generation coverage requires natural closed terminal proof")
+        verify_generation_accounting(terminal)
+    pid_log_counts = {}
+    for path in files:
+        require(path.stat().st_size <= maximum_diagnostic_bytes, "VM diagnostic exceeds its retained bound")
+        headers = re.findall(r"<hotspot_log\b[^>]*\bprocess='([0-9]+)'\s+time_ms='([0-9]+)'", path.read_text(encoding="utf-8"))
+        require(len(headers) == 1, "VM diagnostic lacks a unique PID header")
+        pid = int(headers[0][0])
+        pid_log_counts[pid] = pid_log_counts.get(pid, 0) + 1
+    profiles = {"wrapper": (64, 256), "daemon": (768, daemon_metaspace_mib), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (java_exec_heap_mib, java_exec_metaspace_mib), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(directory)
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]
     records, forks, version_probes = [], [], []
+    observed_generations = []
     for path in files:
-        require(path.stat().st_size <= 1024 * 1024, "VM diagnostic exceeds its retained bound")
+        diagnostic_bytes = path.stat().st_size
+        require(diagnostic_bytes <= maximum_diagnostic_bytes, "VM diagnostic exceeds its retained bound")
         value = path.read_text(encoding="utf-8")
         headers = re.findall(r"<hotspot_log\b[^>]*\bprocess='([0-9]+)'\s+time_ms='([0-9]+)'", value)
         blocks = re.findall(r"<vm_arguments>([\s\S]*?)</vm_arguments>", value)
@@ -653,8 +975,6 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         elif main == "org.openjdk.jmh.runner.ForkedMain":
             role = "fork"
         else:
-            require(any(origin["main"] == main and os.path.normcase(origin["executable"]) == os.path.normcase(str(Path(html.unescape(homes[0]), "bin/java.exe")))
-                        and origin["classpath"] == html.unescape(classpaths[0]) for origin in origins), "Unbound actual JavaExec origin")
             role = "java_exec"
         caps = {}
         for name, cap in zip(("MaxHeapSize", "MaxMetaspaceSize"), profiles[role]):
@@ -662,16 +982,34 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
             require(len(flags) == 1 and int(flags[0]) == cap * 1024**2, f"Changed or unavailable actual finite VM cap: {role}/{name}")
             caps[name] = int(flags[0])
         pid, vm_start = map(int, headers[0])
+        specifications = re.findall(r"(?m)^java\.vm\.specification\.version=([^\r\n]+)", blocks[0])
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
+        if require_all_java_generations or role == "fork":
+            member = owned_generation(terminal, pid, vm_start, unique_invocation_pid=require_all_java_generations and pid_log_counts[pid] == 1)
+            actual_executable = Path(member["image"])
+            java_installation_home(actual_executable, html.unescape(homes[0]), specifications)
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
-        evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
+        if role == "java_exec":
+            require(any(origin["main"] == main and os.path.normcase(origin["executable"]) == os.path.normcase(str(actual_executable))
+                        and origin["classpath"] == html.unescape(classpaths[0]) for origin in origins), "Unbound actual JavaExec origin")
+        evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "executable": str(actual_executable), "diagnostic_sha256": digest(path), "diagnostic_bytes": diagnostic_bytes, "diagnostic_byte_bound": maximum_diagnostic_bytes}
+        evidence["vm_specification_versions"] = specifications
+        if require_all_java_generations:
+            require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable))
+                    and member["affinityMask"] == terminal["inheritedAffinityMask"]
+                    and member["systemAffinityMask"] == terminal["systemAffinityMask"], "Java diagnostic generation changed image or affinity")
+            evidence["os_generation"] = member
+            delta = vm_start - (member["creationFileTime"] - 116444736000000000) // 10000
+            evidence["vm_start_minus_creation_ms"] = delta
+            evidence["binding_basis"] = "unique_owned_pid_in_complete_invocation" if delta < 0 else "timestamp_within_captured_lifetime"
+            observed_generations.append((pid, member["creationFileTime"]))
         flags = class_file_flags(value)
         if flags:
             evidence.update(diagnostic_path=str(path), class_load_file_flags=flags)
         if version_probe:
             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
             version_probes.append(evidence)
-        diagnostic = class_diagnostic(class_identities, pid, path, files, terminal)
+        diagnostic = class_diagnostic(class_identities, pid, path, files, terminal, unique_invocation_pid=require_all_java_generations)
         if diagnostic is not None:
             evidence["class_load_diagnostic"] = diagnostic
             if "unique_generation" in diagnostic:
@@ -697,6 +1035,19 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
                               Path(record["class_load_diagnostic"]["path"]).read_text(encoding="utf-8"))
                     for record in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
     require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or duplicate JMH fork generation")
+    if require_all_java_generations:
+        captured_generations = set()
+        for pid, histories in terminal["members"].items():
+            require(re.fullmatch(r"[1-9][0-9]*", pid) is not None and isinstance(histories, list),
+                    "Complete Java coverage requires explicit process histories")
+            for member in histories:
+                if Path(member["image"]).name.lower() in ("java.exe", "javaw.exe"):
+                    require(os.path.normcase(member["image"]) in allowed, "Unknown owned Java executable")
+                    identity = (int(pid), member["creationFileTime"])
+                    require(identity not in captured_generations, "Duplicate captured Java generation")
+                    captured_generations.add(identity)
+        require(len(observed_generations) == len(set(observed_generations))
+                and set(observed_generations) == captured_generations, "Missing or duplicate owned Java generation diagnostic")
     if expected_forks is not None:
         require(len(forks) == expected_forks, "Incomplete actual JMH fork ownership/caps/affinity matrix")
     captured = [record["class_load_diagnostic"]["path"] for record in records if "class_load_diagnostic" in record]
@@ -711,6 +1062,60 @@ def properties(path, values):
     with path.open("x", encoding="utf-8") as target:
         for key, value in sorted(values.items()):
             target.write(f"{escape(key)}={escape(value)}\n")
+
+
+def input_property_files(output, data, archives):
+    """Bind only declared frozen inventory files; preserve both sides in the common input closure."""
+    bindings = data.get("input_properties", {})
+    if not bindings:
+        return {}
+    files = {}
+    for side in ("baseline", "candidate"):
+        entries = {name: archives[sides[side]] for name, sides in bindings.items()}
+        require(all(digest(Path(item["path"])) == item["sha256"] for item in entries.values()),
+                "Frozen inventory input bytes changed")
+        path = output / f"input-properties-{side}.json"
+        write_new(path, {"schema": "strata-paired-jvm-input-properties-v1", "entries": entries})
+        files[side] = {"path": path, "sha256": digest(path)}
+    return files
+
+
+def verify_input_property_files(files):
+    """Guard the complete immutable selector/input closure, including the currently unselected side."""
+    for item in files.values():
+        require(digest(item["path"]) == item["sha256"], "Frozen inventory selector changed")
+        for archive in read_json(item["path"])["entries"].values():
+            require(digest(Path(archive["path"])) == archive["sha256"], "Frozen inventory bytes changed")
+
+
+def verify_input_properties(directory, selected, vm_files):
+    """Require every actual JavaExec to apply every pinned declared property, with no ignored selector."""
+    entries = read_json(selected["path"])["entries"]
+    console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
+    origins = [json.loads(row) for row in re.findall(r"(?m)^paired\.jvm\.origin (.+)$", console)]
+    records = [json.loads(row) for row in re.findall(r"(?m)^paired\.jvm\.inputProperty (.+)$", console)]
+    tasks = [origin["task"] for origin in origins]
+    require(tasks and len(tasks) == len(set(tasks)), "Inventory inputs have no unique executed JavaExec consumer")
+    expected = [{"task": task, "property": name, **item} for task in tasks for name, item in entries.items()]
+    require(len(records) == len(expected) and sorted(records, key=lambda item: (item.get("task", ""), item.get("property", "")))
+            == sorted(expected, key=lambda item: (item["task"], item["property"])),
+            "Inventory input was missing, unknown, altered or unconsumed by its launcher")
+    verified = [vm for vm in read_json(directory / "vms.json") if vm["role"] == "java_exec"]
+    require(len(verified) == len(tasks), "Inventory input lacks each actual JavaExec diagnostic")
+    diagnostics = {digest(path): path for path in vm_files}
+    for vm in verified:
+        require(vm["diagnostic_sha256"] in diagnostics, "Inventory JVM diagnostic bytes changed")
+        raw = diagnostics[vm["diagnostic_sha256"]].read_text(encoding="utf-8")
+        arguments = re.findall(r"<vm_arguments>([\s\S]*?)</vm_arguments>", raw)
+        properties = re.findall(r"<properties>([\s\S]*?)</properties>", arguments[0]) if len(arguments) == 1 else []
+        require(len(properties) == 1, "Inventory input lacks actual JVM properties")
+        raw = html.unescape(properties[0])
+        for name, item in entries.items():
+            values = re.findall(r"(?m)^" + re.escape(name) + r"=([^\r\n]+)", raw)
+            require(len(values) == 1 and os.path.normcase(os.path.normpath(values[0]))
+                    == os.path.normcase(os.path.normpath(item["path"])),
+                    "Inventory property was missing, changed or overwritten in the actual JVM")
+    write_new(directory / "input-properties-verified.json", {"selector_sha256": selected["sha256"], "applied": records})
 
 
 def path_identity(path):
@@ -737,6 +1142,28 @@ def preserve_file(source, destination):
     shutil.copyfile(source, destination)
     require(digest(source) == digest(destination) == identity, "Prepared archive changed during preservation")
     return {"path": destination.as_posix(), "sha256": identity}
+
+
+def preserve_inputs(root, owner, inputs, external_inputs=()):
+    """Preserve only declared pinned files at their frozen logical destinations, rejecting link redirection."""
+    paths = input_paths(inputs, external_inputs)
+    result = {}
+    for item in inputs:
+        destination = relative_path(owner, paths[item["label"]].as_posix())
+        for path in (destination, *destination.parents):
+            try:
+                status = path.lstat()
+            except FileNotFoundError:
+                status = None
+            require(status is None or (not stat.S_ISLNK(status.st_mode) and not (getattr(status, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT)),
+                    "Linked prepared input path")
+            if path == owner:
+                break
+        result[item["label"]] = preserve_file(pin(root, item["pin"]), destination)
+    expected = {owner.joinpath(*path.parts) for path in paths.values()}
+    expected |= {parent for path in tuple(expected) for parent in path.parents if parent != owner and parent.is_relative_to(owner)}
+    require(set(owner.rglob("*")) == expected, "Incomplete or undeclared prepared input tree")
+    return result
 
 
 def prepared_classpath(path):
@@ -841,7 +1268,9 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
                     and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
                     and member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"],
                     "Preflight observation lacks naturally released owning JVM proof")
-            require(os.path.normcase(member["image"]) == os.path.normcase(str(Path(vm["home"], "bin/java.exe"))), "Control loaded origin and OS executable disagree")
+            require(os.path.normcase(member["image"]) == os.path.normcase(vm.get("executable", str(Path(vm["home"], "bin/java.exe")))), "Control loaded origin and OS executable disagree")
+            if "executable" in vm:
+                java_installation_home(member["image"], vm["home"], vm["vm_specification_versions"])
             birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
             require(0 <= vm["vm_start_ms"] - birth_ms <= 2000, "Control OS generation and diagnostic disagree")
             pattern = r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)"
@@ -917,6 +1346,46 @@ def verify_test_gate(directory, gate):
     require(all(observed.get(test) == [True] for test in gate["required_tests"]), "Required independent JUnit method missing, repeated, failed or skipped")
     write_new(directory / "junit-verified.json", {"status": "passed", "task": gate["task"], "required_tests": gate["required_tests"],
                                                 "counts": counts, "reports": inventory["reports"]})
+
+
+def test_classpath_preparation(data):
+    """Resolve every declared complete Test gate's libraries before validating frozen dependency pins."""
+    tasks = sorted({gate["task"] for suite in data["suites"] for gate in suite.get("test_gates", [])})
+    return [":strataPairedPrepareTestClasspaths", "-Pstrata.paired.prepareTestClasspaths=" + ",".join(tasks)] if tasks else []
+
+
+def fixture_projects(data):
+    """Keep every declared compiled fixture project prepared, including owner-only continuations."""
+    paths = [pin["path"] for pins in data["compiled_pins"].values() for pin in pins]
+    pinned = {project.value[0] for project in FixtureProject
+              if any(path.startswith(project.value[0].strip(":").replace(":", "/") + "/build/") for path in paths)}
+    return sorted({suite["project"] for suite in data["suites"]} | pinned)
+
+
+def pinned_fixture_preparation(data, side, fixture_tasks):
+    """Build declared collector and fixture outputs on each runtime side before checking their pins."""
+    pins = [item["path"] for item in data["compiled_pins"][side]]
+    tasks = []
+    for task in fixture_tasks:
+        project, name = task.rsplit(":", 1)
+        root = project.strip(":").replace(":", "/") + "/build/"
+        prefixes = [root + suffix for suffix in ("classes/kotlin/test/", "classes/java/test/", "resources/test/")] if name == "testClasses" else [root]
+        if any(path.startswith(prefix) for path in pins for prefix in prefixes):
+            tasks.append(task)
+    return tasks
+
+
+def verify_jmh_completion(data, invocation_ids, comparisons, completed):
+    """Require every declared mode's complete ordered B0/C0/B1/C1/B2/C2 sequence and comparison."""
+    modes = [(suite["name"], mode) for suite in data["suites"] for mode in suite.get("modes", ["avgt", "sample"])]
+    expected = [(name, mode, side, repetition) for name, mode in modes
+                for repetition in range(3) for side in ("baseline", "candidate")]
+    require(len(invocation_ids) == len(modes) * 6, "Whole attempt invocation count is incomplete")
+    require(len(comparisons) == len(modes), "Whole attempt comparison count is incomplete")
+    require([tuple(item[:4]) for item in completed] == expected, "Whole attempt collection sequence is missing, repeated or reordered")
+    require(len(completed) == len(invocation_ids) and {item[4] for item in completed} == invocation_ids,
+            "Whole attempt receipt identities are missing, repeated or changed")
+    require([(name, mode) for name, mode, _ in comparisons] == modes, "Whole attempt comparisons are missing, repeated or reordered")
 
 
 def table(output, comparisons, phases, operations=(), owners=()):
@@ -1046,7 +1515,7 @@ def verify_continuation_archives(data, runtime, collector):
     require(digest(collector) == continuation["collector_sha256"], "Continuation collector differs from original measured bytes")
 
 
-def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None, owner_report=None, input_bundle=None, input_artifacts=None):
+def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None, owner_report=None, explicit_manual=False, input_bundle=None, input_artifacts=None):
     """Own a fresh whole attempt; an exception preserves failure and never adopts completed rows."""
     input_root = root if input_root is None else input_root
     require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
@@ -1081,11 +1550,16 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                   "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-Dorg.gradle.java.installations.auto-detect=false",
                   "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(homes), "-I", str(init)]
 
+        selected_input_files = {}
+
         def phase(name, workspace, arguments, expected_forks=None, test_gate=None):
             """Admit a full bounded call with upload reserve, then require natural Job release."""
             nonlocal captured_class_loads
             require(git(root, "rev-parse", "HEAD") == record["driver_head"], "Paired execution head changed before invocation")
             verify_driver_sources(record["driver_sources"])
+            verify_input_property_files(selected_input_files)
+            if "driver_source" in record:
+                verify_driver_source(root, record["driver_head"], data, explicit_manual)
             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
             for executable, expected in allowed_java.items():
                 require(digest(Path(executable)) == expected, "Pinned Java executable bytes changed before invocation")
@@ -1098,8 +1572,14 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             logs = vm_directory.as_posix()
             flags = f"-XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile={logs}/vm-%p-%t.log"
             environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-Xmx32m -XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "",
-                           "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs, "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix()}
-            args = arguments + common + [f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
+                           "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs, "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix(), "STRATA_PAIRED_DAEMON_METASPACE_MIB": "1024"}
+            matches = [side for side in selected_input_files if f"-Pstrata.paired.runtime={runtime_manifests[side]}" in arguments]
+            require(len(matches) <= 1, "Ambiguous runtime inventory input side")
+            input_flags = []
+            if matches:
+                selected = selected_input_files[matches[0]]
+                input_flags = [f"-Pstrata.paired.inputProperties={selected['path']}"]
+            args = arguments + input_flags + common + [f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
             request = {"workspace": str(workspace), "arguments": args, "environment": environment, "minimumFreePhysicalBytes": 4 * 1024**3,
                        "jobCommittedBytes": 3 * 1024**3, "workSeconds": 1800, "cleanupSeconds": 30}
             write_new(directory / "request.json", request)
@@ -1116,8 +1596,12 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                         preserve_test_reports(workspace, directory, test_gate)
             verify_driver_sources(record["driver_sources"])
             terminal = read_json(directory / "terminal.json")
+            if "driver_source" in record:
+                verify_driver_source(root, record["driver_head"], data, explicit_manual)
             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic()-phase_started, "exit_code": exit_code, "terminal": terminal,
                                     "available_disk_bytes": shutil.disk_usage(output).free})
+            if exit_code != 0:
+                record["phases"][-1]["failed_jvm_diagnostics"] = preserve_failed_jvm_diagnostics(directory, workspace, terminal, environment)
             require(exit_code == 0 and terminal["exitCode"] == 0 and terminal["naturalRelease"] is True and terminal["handlesClosed"] is True,
                     f"Owned phase failed: {name}; retained {directory}")
             admission = read_json(directory / "child-admission.json")
@@ -1127,12 +1611,20 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 first = record["phases"][0]["terminal"]
                 require(terminal["inheritedAffinityMask"] == first["inheritedAffinityMask"] and terminal["systemAffinityMask"] == first["systemAffinityMask"], "Host affinity changed between paired phases")
             verify_vms(directory, sorted(set(vm_directory.glob("*.log"))-previous_vms), terminal, allowed_java, expected_forks)
+            if matches:
+                verify_input_properties(directory, selected, sorted(set(vm_directory.glob("*.log"))-previous_vms))
+            verify_input_property_files(selected_input_files)
             for release, expected in allowed_releases.items():
                 require(digest(release) == expected, "Pinned Java release bytes changed during invocation")
             return directory
 
         data = load_manifest(input_root, manifest_path)
         data, record["scope"] = continuation_scope(data, owner_report)
+        driver = verify_driver_source(root, record["driver_head"], data, explicit_manual)
+        if driver is not None:
+            verify_input_producer(root, record["driver_head"], input_root, manifest_path, input_producer, record["manifest_sha256"], input_bundle)
+            record["driver_source"] = driver
+            record["scope"].update(consumer_ci_establishes_subject_acceptance=False, prior_rows_adopted=False)
         java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
         write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                              "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}
@@ -1154,17 +1646,20 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 workspaces[side], record["sources"][side] = materialize(root, output, side, source, input_root)
             else:
                 workspaces[side], record["sources"][side] = workspaces[identical], record["sources"][identical]
-        if input_producer:
+        if input_producer and driver is None:
             require(source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == source_files(root, record["driver_head"]), "Candidate source differs from execution head")
         fixture = workspaces["fixture"]
-        owners = sorted({suite["project"] for suite in data["suites"]})
+        owners = fixture_projects(data)
         fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
         fixture_tasks += [report["project"] + ":testClasses" for report in data.get("owner_reports", []) if report["kind"] == "test"]
+        test_classpaths = test_classpath_preparation(data)
         for side in ("baseline", "candidate"):
             tasks = [archive_task(project) for project in data["runtime_projects"]]
             if workspaces[side] == fixture:
                 tasks += fixture_tasks
-            phase(f"prepare-{side}", workspaces[side], tasks)
+            else:
+                tasks += pinned_fixture_preparation(data, side, fixture_tasks)
+            phase(f"prepare-{side}", workspaces[side], tasks + test_classpaths)
         if fixture not in (workspaces["baseline"], workspaces["candidate"]):
             phase("prepare-fixture", fixture, fixture_tasks)
         for item in data["dependency_pins"]:
@@ -1182,8 +1677,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             properties(runtime_manifests[side], mapping)
             record["archives"][side] = {project: digest(Path(path)) for project, path in mapping.items()}
         inputs = output / "fixture-inputs.properties"
-        input_archives = {item["label"]: preserve_file(pin(input_root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
-                          for index, item in enumerate(data["inputs"])}
+        external_inputs = {label for suite in data["suites"] for label in suite.get("external_runtime_inputs", {}).values()}
+        input_archives = preserve_inputs(input_root, output / "prepared" / "inputs", data["inputs"], external_inputs)
         paired_owner_plans = {}
         for specification in data.get("owner_reports", []):
             if "paired_jmh" in specification:
@@ -1195,6 +1690,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 input_archives[label] = item
                 paired_owner_plans[specification["name"]] = item
         properties(inputs, {label: item["path"] for label, item in input_archives.items()})
+        selected_input_files = input_property_files(output, data, input_archives)
         collector = archive_file(fixture, ":performance-testkit")
         verify_continuation_archives(data, runtime_archives, collector)
         prepared = output / "compiled"
@@ -1207,6 +1703,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 require(original.is_dir(), "Missing common compiled fixture closure")
                 shutil.copytree(original, prepared / owner.strip(":").replace(":", "-") / relative)
         comparisons, invocation_ids, operation_comparisons, operation_ids, admitted_suites = [], set(), [], set(), []
+        completed_jmh = []
         java_identity = read_json(output / "java-installations.json")
         # Every independent suite/side control completes before the first timed invocation in the attempt.
         for suite in data["suites"]:
@@ -1224,7 +1721,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                     checked = phase(f"tests-{suite['name']}-{side}-{index}", workspaces[side], [gate["task"]], 0, gate)
                     verify_test_gate(checked, gate)
                     source_guard(workspaces[side], data["sources"][side]["tree"])
-                flags = [f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                flags = [f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives)
                 if "preflight" in suite:
                     retained = output / "prepared-classpaths" / suite["name"] / side
                     flags += [f"-Pstrata.paired.preserveClasspath={retained}"]
@@ -1237,14 +1734,14 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                     actual = phase(f"preflight-{suite['name']}-{side}", fixture,
                                    [project + ":strataPairedPreflight", f"-Pstrata.paired.template={verifier}",
                                     f"-Pstrata.paired.preflight={control / 'request.json'}", f"-Pstrata.paired.classpath={classpaths[side]['path']}",
-                                    f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + selectors, 0)
+                                    f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives) + selectors, 0)
                     verify_preflight(control, actual, record["phases"][-1]["terminal"], request_hash)
                     require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Control changed its prepared classpath inventory")
             admitted_suites.append((suite, project, task, selectors, classpaths))
         paired_jmh_bindings = {}
         for suite, project, task, selectors, classpaths in admitted_suites:
             bindings = {"baseline": [], "candidate": []}
-            for mode in ("avgt", "sample"):
+            for mode in suite.get("modes", ["avgt", "sample"]):
                 runs = {"baseline": [], "candidate": []}
                 for repetition in range(3):
                     for side in ("baseline", "candidate"):
@@ -1259,7 +1756,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                             pin(input_root, suite["preflight"]["qualification"])
                         destination = output / "raw" / suite["name"] / mode / side / f"run-{repetition}"
                         flags = [f"-Pstrata.performance.mode={mode}", f"-Pstrata.performance.repetition={repetition}",
-                                 f"-Pstrata.performance.suite={suite['name']}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                                 f"-Pstrata.performance.suite={suite['name']}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives)
                         if side in classpaths:
                             require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Prepared classpath inventory changed before collection")
                             prepared_classpath(classpaths[side]["path"])
@@ -1277,6 +1774,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                                 and len(receipt["registered_workloads"]) == suite["expected_cases"] and receipt["run_id"] not in invocation_ids,
                                 "Missing cases, fork proof or independent invocation")
                         invocation_ids.add(receipt["run_id"])
+                        completed_jmh.append((suite["name"], mode, side, repetition, receipt["run_id"]))
                         runs[side].append(str(destination))
                         if mode == "avgt":
                             bindings[side].append(str(destination))
@@ -1298,9 +1796,10 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                             source_guard(workspace, data["sources"][key]["tree"])
                         destination = output / "raw" / suite["name"] / "operations" / side / f"run-{repetition}"
                         request_path = output / f"{suite['name']}-operations-{side}-{repetition}-request.json"
-                        write_new(request_path, {**operation, "collector": str(collector), "jmh_directory": bindings[side][repetition],
+                        processing_collector = owner_processing_collector(classpaths[side]["path"], collector) if side in classpaths else str(collector)
+                        write_new(request_path, {**operation, "collector": processing_collector, "jmh_directory": bindings[side][repetition],
                                                  "output": str(destination), "repetition": repetition, "source_bindings": record["sources"]})
-                        flags = [f"-Pstrata.performance.operationRequest={request_path}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                        flags = [f"-Pstrata.performance.operationRequest={request_path}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives)
                         if side in classpaths:
                             require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Prepared classpath inventory changed before operation collection")
                             prepared_classpath(classpaths[side]["path"])
@@ -1376,7 +1875,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                                 "arguments": runs["baseline"] + runs["candidate"] + [processing_collector, str(comparison_path)], "inputs": str(library_manifest)})
             phase(f"compare-{specification['name']}-owner", fixture,
                   [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
-                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}"])
+                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}",
+                   f"-Pstrata.performance.fixtureInputs={inputs}"])
             comparison = read_json(comparison_path)
             require(comparison["status"] == "passed" and len(comparison["phases"]) == len(specification["rows"]), "Incomplete owner comparison")
             owner_comparisons.append((specification, comparison))
@@ -1393,11 +1893,19 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             for item in classpaths.values():
                 require(digest(item["path"]) == item["sha256"], "Prepared classpath inventory changed during collection")
                 prepared_classpath(item["path"])
-        require(len(invocation_ids) == len(data["suites"]) * 12 and len(comparisons) == len(data["suites"]) * 2, "Whole attempt incomplete")
+        verify_jmh_completion(data, invocation_ids, comparisons, completed_jmh)
         require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
-        record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
+        record["score_cells"] = sum(suite["expected_cases"] * len(suite.get("modes", ["avgt", "sample"])) * 6 for suite in data["suites"])
         record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
         table(output, comparisons, record["phases"], operation_comparisons, owner_comparisons)
+        if driver is not None:
+            verify_driver_source(root, record["driver_head"], data, explicit_manual)
+            with (output / "report.md").open("a", encoding="utf-8") as target:
+                target.write(f"\nFrozen shared driver `{driver['ref']}` / tree `{driver['tree']}` executed as `{driver['execution_head']}` / tree `{driver['execution_tree']}`.\n")
+                for side in ("fixture", "baseline", "candidate"):
+                    subject = record["sources"][side]
+                    target.write(f"\n{side.title()} subject `{subject['ref']}` / tree `{subject['tree']}` / source archive SHA-256 `{subject['archive_sha256']}`.\n")
+                target.write("\nConsumer CI does not certify these subject sources. Whole-Issue acceptance remains separate; no prior rows were adopted.\n")
         if owner_controls:
             with (output / "report.md").open("a", encoding="utf-8") as target:
                 target.write("\nUntimed original owner controls are raw counts/transitions, not wall-time or percentile measurements. Every independent invocation is retained.\n\n| Suite | Side | Repetition | Original row/control fields |\n| --- | --- | ---: | --- |\n")
@@ -1428,6 +1936,26 @@ def source_files(root, tree):
     return rows
 
 
+def verify_driver_source(root, execution_head, data, explicit_manual):
+    """Admit a separate frozen driver only for explicit manual inputs; guard every actual tracked driver byte and mode."""
+    driver = data.get("driver_source")
+    if driver is None:
+        return None
+    require(explicit_manual and os.environ.get("GITHUB_EVENT_NAME") in (None, "workflow_dispatch"),
+            "Separate driver source requires explicit manual immutable inputs")
+    require(git(root, "cat-file", "-t", driver["ref"]) == "commit"
+            and git(root, "rev-parse", driver["ref"] + "^{tree}") == driver["tree"], "Frozen driver commit or tree changed")
+    require(subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor", driver["ref"], execution_head],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0, "Frozen driver is not an execution ancestor")
+    execution_tree = git(root, "rev-parse", execution_head + "^{tree}")
+    require(source_files(root, driver["tree"]) == source_files(root, execution_tree), "Frozen driver source differs from execution head")
+    require(git(root, "write-tree") == execution_tree
+            and subprocess.run(["git", "-C", str(root), "diff", "--quiet", "--no-ext-diff", "HEAD"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0,
+            "Actual driver source index or working bytes changed")
+    return {**driver, "execution_head": execution_head, "execution_tree": execution_tree}
+
+
 def declared_inputs(root, head):
     """Resolve one immutable trailer only from a clean head whose sole parent owns the data."""
     require(not git(root, "ls-tree", "-z", head, "--", ".github/performance"), "Execution head contains transient performance inputs")
@@ -1454,6 +1982,17 @@ def declared_inputs(root, head):
         if entry:
             require(entry.split("\t", 1)[0].split()[:2] in (["100644", "blob"], ["100755", "blob"]), "Unsafe producer input entry")
     return producer, manifest
+
+
+def verify_input_producer(root, head, input_root, manifest, producer, manifest_sha256, bundle=None):
+    """Bind collection to exact dispatch ZIP bytes or the historical immutable replay declaration."""
+    require(producer and digest(manifest) == manifest_sha256, "Collection manifest differs from selected immutable inputs")
+    if bundle is not None:
+        require(digest(bundle) == producer, "Collection dispatch input bytes changed")
+    else:
+        declaration = declared_inputs(root, head)
+        require(declaration is not None and declaration == (producer, manifest.relative_to(input_root).as_posix()),
+                "Separate driver collection requires immutable declared producer inputs")
 
 
 def unpack_dispatch_inputs(raw, directory):
@@ -1618,16 +2157,21 @@ def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, ma
             path = relative_path(input_root, explicit)
             _, artifacts = dispatch_artifact_inputs(input_root, explicit, download=True)
             data = load_manifest(input_root, path)
+            driver = verify_driver_source(root, execution_head, data, True)
             candidate, _ = materialize(root, output, "candidate-check", data["sources"]["candidate"], input_root)
-            require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head),
-                    "Candidate source differs from execution head")
+            if data["schema"] != "strata-source-preparation-ci-v1" and driver is None:
+                require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head),
+                        "Candidate source differs from execution head")
+            if data["schema"] == "strata-paired-browser-ci-v1":
+                browser_controller().verify_adapters(SimpleNamespace(**globals()), candidate, data)
             actual_sha = digest(path)
             require(manifest_sha256 is None or manifest_sha256 == actual_sha, "Manifest differs from planned bytes")
             bundle_path = output / "dispatch-inputs.zip"
             bundle_path.write_bytes(bundle)
             require(git(root, "rev-parse", "HEAD") == execution_head, "Dispatch execution head changed")
             yield {"root": input_root, "path": path, "manifest": explicit, "producer": bundle_sha,
-                   "sha256": actual_sha, "execution_head": execution_head, "bundle": bundle_path, "artifacts": artifacts}
+                   "sha256": actual_sha, "execution_head": execution_head, "bundle": bundle_path, "artifacts": artifacts,
+                   "explicit_manual": driver is not None}
         return
     declaration = declared_inputs(root, execution_head)
     require(data_ref is None or declaration is not None and data_ref == declaration[0], "Producer differs from execution-head trailer")
@@ -1639,12 +2183,18 @@ def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, ma
             input_root, _ = materialize(root, output, "input-producer", {"ref": producer, "tree": git(root, "rev-parse", producer + "^{tree}"), "patches": []})
             path = relative_path(input_root, manifest)
             data = load_manifest(input_root, path)
+            explicit_manual = explicit is not None and base is None and head is None
+            driver = verify_driver_source(root, execution_head, data, explicit_manual)
             candidate, _ = materialize(root, output, "candidate-check", data["sources"]["candidate"], input_root)
-            require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head), "Candidate source differs from execution head")
+            if data["schema"] != "strata-source-preparation-ci-v1" and driver is None:
+                require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head), "Candidate source differs from execution head")
+            if data["schema"] == "strata-paired-browser-ci-v1":
+                browser_controller().verify_adapters(SimpleNamespace(**globals()), candidate, data)
             actual_sha = digest(path)
             require(manifest_sha256 is None or manifest_sha256 == actual_sha, "Manifest differs from planned bytes")
             require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during materialization")
-            yield {"root": input_root, "path": path, "manifest": manifest, "producer": producer, "sha256": actual_sha, "execution_head": execution_head}
+            yield {"root": input_root, "path": path, "manifest": manifest, "producer": producer, "sha256": actual_sha, "execution_head": execution_head,
+                   "explicit_manual": driver is not None}
     else:
         require(explicit is None and data_ref is None and manifest_sha256 is None, "Missing Performance-Inputs trailer for explicit input")
         require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during selection")
@@ -1657,10 +2207,10 @@ def select_manifest(root, explicit=None, base=None, head=None):
         return selection["manifest"]
 
 
-def preserve_driver_sources(root, output):
+def preserve_driver_sources(root, output, extra=()):
     """Retain the three actual live controller sources separately from prepared source archives."""
     records = {}
-    for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"):
+    for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts", *extra):
         path = root / "gradle/performance" / name
         relative = path.relative_to(root).as_posix()
         mode, kind, blob = git(root, "ls-tree", "HEAD", "--", relative).split("\t", 1)[0].split()
@@ -1679,6 +2229,14 @@ def verify_driver_sources(records):
         require(git(root, "hash-object", "--path=" + item["git_path"], item["source"]) == item["git_blob"], "Driver bytes differ from execution head")
         require(git(root, "ls-files", "--stage", "--", item["git_path"]).split("\t", 1)[0] == f"{item['git_mode']} {item['git_blob']} 0", "Driver tracked mode or identity changed")
         require(digest(Path(item["source"])) == digest(Path(item["path"])) == item["sha256"], "Actual driver source changed")
+
+
+def browser_controller():
+    """Load the shared Web adapter route without changing the existing CPU collector contract."""
+    specification = importlib.util.spec_from_file_location("paired_browser", Path(__file__).with_name("paired-browser.py"))
+    controller = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(controller)
+    return controller
 
 
 
@@ -1724,8 +2282,13 @@ def main():
         else:
             require(args.output is not None, "Supply a fresh attempt output directory")
             require(selection["path"] is not None, "Supply explicit paired inputs")
-            run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report,
-                input_bundle=selection.get("bundle"), input_artifacts=selection.get("artifacts"))
+            data = load_manifest(selection["root"], selection["path"])
+            if data["schema"] in ("strata-paired-browser-ci-v1", "strata-source-preparation-ci-v1"):
+                require(args.owner_report is None, "Browser collection retains the whole declared manifest")
+                browser_controller().run(SimpleNamespace(**globals()), root, selection, args.output.resolve())
+            else:
+                run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report,
+                    selection.get("explicit_manual", False), input_bundle=selection.get("bundle"), input_artifacts=selection.get("artifacts"))
 
 
 if __name__ == "__main__":
