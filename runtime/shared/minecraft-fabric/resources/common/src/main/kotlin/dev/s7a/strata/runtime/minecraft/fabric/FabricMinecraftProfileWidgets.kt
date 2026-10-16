@@ -48,6 +48,47 @@ internal fun ResourceManager.readWidgetImages(): FabricMinecraftWidgetImages {
     }
 }
 
+/**
+ * Copies a widget sprite using the active resource pack's uniform tiled nine-slice border.
+ *
+ * Call on the owning Minecraft client thread; the result retains neither the resource nor native metadata.
+ * Image dimensions, scaling dimensions, and center mode remain validated before the profile is published.
+ *
+ * @param path resource path in the Minecraft namespace.
+ * @param expectedSize required image and logical scaling dimensions.
+ * @return detached pixels and the validated border width from their selected metadata.
+ * @throws IllegalArgumentException when the resource or its widget scaling contract is invalid.
+ */
+private fun ResourceManager.readWidgetNineSliceImage(
+    path: String,
+    expectedSize: IntSize,
+): Pair<DrawImage, Int> {
+    val resource = requiredResource(path)
+    val border = minecraftWidgetBorder(readFabricMinecraftGuiScaling(resource, path), expectedSize)
+    return readImage(resource, path, expectedSize) to border
+}
+
+/**
+ * Validates the uniform tiled widget scaling supported by the common horizontal widget renderer.
+ *
+ * @param scaling detached metadata from the selected sprite resource.
+ * @param expectedSize required logical source dimensions.
+ * @return the active resource pack's positive uniform border, leaving a nonempty source center.
+ * @throws IllegalArgumentException when dimensions, borders, or center mode cannot be represented by the widget renderer.
+ */
+@JvmSynthetic
+internal fun minecraftWidgetBorder(
+    scaling: FabricMinecraftGuiScaling,
+    expectedSize: IntSize,
+): Int {
+    val border = scaling.borderLeft
+    require(0 < border && border < expectedSize.width / 2 && border < expectedSize.height / 2) {
+        "Minecraft widget borders must be positive and leave a nonempty source center."
+    }
+    validateMinecraftNineSliceScaling(scaling, expectedSize, border, false)
+    return border
+}
+
 private fun ResourceManager.readLegacyWidgetImages(): FabricMinecraftWidgetImages {
     val widgets = readImage("textures/gui/widgets.png", legacyWidgetAtlasSize)
     val checkbox = readImage("textures/gui/checkbox.png", legacyCheckboxAtlasSize)
