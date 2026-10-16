@@ -66,7 +66,7 @@ internal object RemoteInventoryArguments {
         fixtures: List<Class<*>>,
         inherited: List<String>,
     ): List<String> {
-        val parsed = CommandLineOptions(*options.toTypedArray())
+        val parsed = jmhOptions(options)
         require(listOf(parsed.jvmArgs, parsed.jvmArgsPrepend, parsed.jvmArgsAppend).all { it.orElse(null) == null }) {
             "Explicit JMH JVM arguments cannot be combined with an admission-only inventory."
         }
@@ -78,11 +78,15 @@ internal object RemoteInventoryArguments {
             },
         ) { "Annotated JMH forks cannot be combined with an admission-only inventory." }
         val arguments = options + if (inherited.isEmpty()) listOf("-jvmArgs", "") else inherited.flatMap { listOf("-jvmArgs", it) }
-        require(CommandLineOptions(*arguments.toTypedArray()).jvmArgs.orElse(emptyList()).toList() == inherited) {
+        require(jmhOptions(arguments).jvmArgs.orElse(emptyList()).toList() == inherited) {
             "Standard JMH options did not preserve the complete inherited argument sequence."
         }
         return arguments
     }
+
+    // JMH exposes only a Java vararg constructor; these calls belong to untimed argument admission.
+    @Suppress("SpreadOperator")
+    private fun jmhOptions(arguments: List<String>): CommandLineOptions = CommandLineOptions(*arguments.toTypedArray())
 
     /**
      * Independent untimed argument controls using the shipped inventory as fixed file data.
@@ -113,8 +117,8 @@ internal object RemoteInventoryArguments {
         val inherited = ordinary + listOf("-Dfixture=C:\\source with spaces\\fixed", "-Dquoted=a\"b")
         val actual = forkArguments(options, fixtures, inherited)
         check(actual.take(options.size) == options)
-        check(CommandLineOptions(*actual.toTypedArray()).jvmArgs.orElse(emptyList()).toList() == inherited)
-        check(CommandLineOptions(*forkArguments(options, fixtures, emptyList()).toTypedArray()).jvmArgs.orElse(ordinary).isEmpty())
+        check(jmhOptions(actual).jvmArgs.orElse(emptyList()).toList() == inherited)
+        check(jmhOptions(forkArguments(options, fixtures, emptyList())).jvmArgs.orElse(ordinary).isEmpty())
         listOf("-jvmArgs", "-jvmArgsPrepend", "-jvmArgsAppend").forEach { flag ->
             check(runCatching { forkArguments(options + listOf(flag, "-Xmx2g"), fixtures, ordinary) }.exceptionOrNull() is IllegalArgumentException)
         }
