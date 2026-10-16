@@ -67,7 +67,7 @@ public object RemotePerformanceEvidence {
         JmhFixtureSelection.verifyIncludes(expected, includes)
         val inputs = inputs()
         JmhPerformanceRunner.run(
-            options.toTypedArray(),
+            RemoteInventoryArguments.jmhArguments(options, fixtures, inputs).toTypedArray(),
             fixtures,
             mapOf("api" to "dev.s7a.strata.projection.ProjectionValue", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "remote" to "dev.s7a.strata.runtime.remote.RemoteTree"),
             Path.of(args[0]),

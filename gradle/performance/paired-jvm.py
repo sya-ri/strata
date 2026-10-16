@@ -1489,12 +1489,15 @@ def dispatch_artifact_inputs(directory, manifest, download=False):
     require(isinstance(providers, list) and 0 < len(providers) <= 4, "Invalid dispatch artifact providers")
     pins = {item["pin"]["path"]: item["pin"]["sha256"] for item in read_json(relative_path(directory, manifest))["inputs"]}
     targets, receipts = set(), []
+    provider_bytes = 0
     for provider in providers:
         require(set(provider) == {"id", "bytes", "sha256", "archive", "files"}
                 and type(provider["id"]) is int and 0 < provider["id"]
-                and type(provider["bytes"]) is int and 0 < provider["bytes"] <= 128 * 1024**2
+                and type(provider["bytes"]) is int and 0 < provider["bytes"] <= 256 * 1024**2
                 and re.fullmatch(r"[0-9a-f]{64}", provider["sha256"])
                 and isinstance(provider["files"], list) and 0 < len(provider["files"]) <= 256, "Invalid dispatch artifact identity")
+        provider_bytes += provider["bytes"]
+        require(provider_bytes <= 512 * 1024**2, "Dispatch artifact providers exceed 512 MiB in total")
         relative_path(directory, provider["archive"])
         for item in provider["files"]:
             require(set(item) == {"member", "target"} and item["target"] in pins
@@ -1526,7 +1529,7 @@ def dispatch_artifact_inputs(directory, manifest, download=False):
         with zipfile.ZipFile(artifact) as outer:
             require(len(outer.namelist()) == len(set(outer.namelist())), "Duplicate artifact archive members")
             entry = outer.getinfo(provider["archive"])
-            require(entry.file_size <= 128 * 1024**2, "Artifact archive exceeds its byte bound")
+            require(entry.file_size <= 256 * 1024**2, "Artifact archive exceeds its byte bound")
             with zipfile.ZipFile(io.BytesIO(outer.read(entry))) as archive:
                 require(len(archive.namelist()) == len(set(archive.namelist())), "Duplicate artifact input members")
                 expanded = 0

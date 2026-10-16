@@ -106,7 +106,10 @@ internal class WebComponentRuntime(
         style: TextStyle,
         modifier: Modifier,
         key: ElementKey<*>?,
-    ): Element = primitive(resolve(text), WebPresentation.Kind.Text, style, true, null, modifier, key)
+    ): Element {
+        val label = resolve(text)
+        return primitive(label, WebPresentation.Kind.Text, style, true, textWidth(label), modifier, key)
+    }
 
     override fun button(
         label: UiText,
@@ -205,19 +208,22 @@ internal class WebComponentRuntime(
         kind: WebPresentation.Kind,
         style: TextStyle,
         enabled: Boolean,
-        width: Int?,
+        width: Int,
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element {
-        val naturalWidth =
-            width ?: run {
-                val canvas = document.createElement("canvas") as HTMLCanvasElement
-                val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
-                context.font = theme.font
-                ceil(context.measureText(label).width).toInt()
-            }
-        val size = IntSize(naturalWidth, if (kind == WebPresentation.Kind.Button) 32 else 24)
+        val size = IntSize(width, if (kind == WebPresentation.Kind.Button) 32 else 24)
         return WebPrimitiveElement(WebPresentation(0, kind, label, enabled, style), size, ::allocateIdentity, modifier, key)
+    }
+
+    /**
+     * Measures a resolved automatic-width Text label with the current native theme.
+     */
+    private fun textWidth(label: String): Int {
+        val canvas = document.createElement("canvas") as HTMLCanvasElement
+        val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
+        context.font = theme.font
+        return ceil(context.measureText(label).width).toInt()
     }
 
     private fun allocateIdentity(): Int {
