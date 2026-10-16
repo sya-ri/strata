@@ -929,6 +929,11 @@ The same input is checked before and after every phase and preserved verbatim; a
 Without these inputs, Source keeps its existing 4 GiB admission, 1024 MiB daemon metaspace and 768/384 MiB JavaExec profile.
 JMH forks retain their fixed 768/384 MiB profile, and collection cannot select Source JavaExec overrides.
 Source preparation admits the existing JVM/JS archive and compilation tasks, JMH compilation/quality tasks, complete workload verification and runtime-surface inventory tasks, and explicitly declared tracked TSV source resources and compiler ABI snapshots.
+The existing `arguments` lists may append one `-Pstrata.performance.benchmarks=` selector containing at most 32 unique fully qualified JVM fixture class names, with optional `-Pstrata.jvmOnly=true` before it.
+This requires an existing complete workload-verification task and keeps every generated method, parameter combination and independent control of each selected fixture.
+The compiled JMH inventory rejects unknown classes; this selector cannot choose methods, parameter subsets, quick/smoke modes, arbitrary Gradle options or browser-only verification.
+Omitting the selector preserves the default complete fixture selection, and ordered preparations still require identical baseline/candidate argument lists.
+The existing bounded init forwards the exact property to the owned JavaExec invocation; acceptance must verify its actual VM metadata, complete fixture work, unchanged tasks/gates/outputs and naturally closed process generations.
 A requested `test` or `jvmTest` task requires its matching full test gate; multiple requested test tasks, missing gates and partial test filters fail.
 Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
 For one untimed qualification per side, optional `preparations` may partition the complete ordered task and artifact lists into separately owned invocations so compiler processes are released before later test or workload gates.

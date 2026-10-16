@@ -200,8 +200,21 @@ def load_source_manifest(shared, root, data):
     for task in tasks:
         require(isinstance(task, str) and re.fullmatch(r"(?::[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)+:[A-Za-z0-9]+", task)
                 and (controlled or capture or task.rsplit(":", 1)[1] in endings), "Use existing Source preparation tasks")
-    require(set(data["arguments"]) == {"baseline", "candidate"}, "Supply both Source argument lists")
+    require(isinstance(data["arguments"], dict) and set(data["arguments"]) == {"baseline", "candidate"}, "Supply both Source argument lists")
     for arguments in data["arguments"].values():
+        require(isinstance(arguments, list), "Source arguments must be an explicit list")
+        selector = "-Pstrata.performance.benchmarks="
+        if arguments and isinstance(arguments[-1], str) and arguments[-1].startswith(selector):
+            requested = arguments[-1][len(selector):]
+            require(0 < len(requested) <= 8192, "Source fixture selection must be bounded")
+            names = requested.split(',')
+            require(len(names) <= 32 and len(names) == len(set(names))
+                    and all(len(name) <= 256 and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", name) for name in names),
+                    "Select complete unique qualified JVM fixture classes")
+            require(any(task.endswith((":verifyHistoricalWorkloads", ":verifyComponentRenderingWork", ":verifyRemoteWorkloads")) for task in tasks),
+                    "Source fixture selection requires complete workload verification")
+            arguments = arguments[:-1]
+            require(arguments in ([], ["-Pstrata.jvmOnly=true"]), "Source fixture selection is restricted to JVM verification")
         require(arguments in ([], ["-Pstrata.webOnly=true"], ["-Pstrata.jvmOnly=true"]), "Source arguments cannot change ownership, task or sampling bounds")
     require(type(data["repetitions"]) is int and data["repetitions"] in (1, 3), "Source preparation keeps one or three complete paired invocations")
     require(isinstance(data["artifacts"], list) and data["artifacts"] and len(data["artifacts"]) <= 32, "Declare actual Source outputs")
