@@ -36,10 +36,16 @@ internal class SemanticsPipeline(
         retained.localSemantics.orEmpty().forEach { semantics ->
             output.add(SemanticsEntry(retained.bounds, semantics))
         }
-        for (index in 0 until retained.effectiveChildCount) {
-            val child = retained.effectiveChildAt(index)
-            if (child.placed) {
-                semanticsNode(child, output)
+        if (retained is RetainedNode) {
+            val children = retained.semanticsChildren
+            for (index in children.indices) {
+                val child = children[index].effectiveRoot
+                if (child.placed) semanticsNode(child, output)
+            }
+        } else {
+            for (index in 0 until retained.effectiveChildCount) {
+                val child = retained.effectiveChildAt(index)
+                if (child.placed) semanticsNode(child, output)
             }
         }
     }
