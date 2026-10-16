@@ -64,12 +64,15 @@ The always-running planner and `CI result` job distinguish planned skips from fa
 | Changed input | Selected work |
 | --- | --- |
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
+| Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
 | Prose and links | Documentation and Skill consistency |
 | Documentation generation, examples, images, or Dokka | Compiled documentation and generated-output checks |
 | One Minecraft runtime or shared source | Every version using that source |
 | API, common runtime, or build-wide settings | Common checks and all affected runtimes |
 | Web | Linux unit/demo checks and Windows browser parity |
 | Unrecognized input | Full verification |
+
+Native helpers, compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
 
 `writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model.
 Shared-source selection uses that output; deletions and both sides of renames participate in the diff.

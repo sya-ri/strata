@@ -323,6 +323,27 @@ class PlanCiTest(unittest.TestCase):
         self.assertFalse(planner.plan(["runtime/core/src/commonMain/Runtime.kt"])["preflight"])
         self.assertTrue(planner.plan([], full=True)["preflight"])
 
+    def test_python_performance_controllers_keep_workflow_and_compiled_native_qualification(self):
+        for path in ("paired-jvm.py", "paired-browser.py", "windows-process-history.py", "future-controller.py"):
+            with self.subTest(path=path):
+                result = planner.plan(["gradle/performance/" + path, "gradle/tests/test_paired_jvm.py"])
+                self.assertEqual({"workflow", "preflight"}, {name for name, value in result.items() if value is True})
+                self.assertEqual([], result["minecraft"])
+        full = planner.plan(["gradle/performance/paired-jvm.py"], full=True)
+        self.assertTrue(all(value for name, value in full.items() if name != "minecraft"))
+
+    def test_controller_selection_preserves_mixed_runtime_and_native_or_unknown_build_checks(self):
+        for paths in (["gradle/performance/paired-jvm.py", "runtime/core/src/commonMain/Runtime.kt"],
+                      ["runtime/core/src/commonMain/Runtime.kt", "gradle/performance/paired-jvm.py"]):
+            mixed = planner.plan(paths)
+            self.assertTrue(mixed["workflow"] and mixed["preflight"] and mixed["common"] and mixed["all_minecraft"] and mixed["qodana"])
+        for path in ("gradle/performance/invoke-windows.ps1", "gradle/performance/bounded-jvm.init.gradle.kts",
+                     "gradle/performance/fixtures/QualifiedFixtureController.java", "gradle/performance/new-build-input.bin",
+                     "gradle/performance-other/controller.py"):
+            with self.subTest(path=path):
+                result = planner.plan([path])
+                self.assertTrue(all(value for name, value in result.items() if name != "minecraft"))
+
     def test_transient_input_removal_and_shared_example_validate_the_controller(self):
         for path in (".github/performance/owned/baseline.patch", ".github/performance/owned/manifest.json",
                      ".github/performance/owned/Observer.kt", "gradle/performance/paired-jvm.example.json"):
