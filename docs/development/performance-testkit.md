@@ -77,6 +77,15 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
+`BlitTemplateBenchmark` supplies 45 separate initial-frame, paint-rebuild and retained-clean boundaries across 15 compiled dense and ineligible controls.
+Atlas cases use multiple source rectangles from one immutable source image; the distinct-image case deliberately retains the original command path.
+Small/large sources and templates, cropped edges, one/four/32 groups, sparse/overlapping/reversed/stretched/oversized inputs, clips and fractional child transforms retain complete original geometry and straight ARGB.
+Prepared source pairs are outside timing, while initial frames include actual session creation, attach, first paint and close; rebuilds change the source at its ordinary capture/commit cutoff.
+The optional verifier compares original and actual presented pixels at physical densities one and two, immutable old frames, public copy/equality/hash, clean identity, bounded templates and balanced bindings.
+It emits each case's actual command, template-pixel, paint and binding diagnostic to the preserved untimed work-gate output.
+Use the existing historical shared-kit selectors and controlled API/core/headless runtime archives; the fixture adds no central registry or selector and reports no native uploads, GPU duration or FPS.
+Private-copy payload removed by owned transfer is a source-derived count from each accepted template's pixel area, separate from measured CPU time and normalized allocation.
+
 The component task accepts `-Pstrata.performance.profilers=<comma-separated-JMH-profiler-identifiers>` for additional metrics from standard JMH profilers.
 It appends the requested profilers to the unchanged GC and loaded-fork provenance profilers; omission preserves the existing collection.
 Use the same selection on both runtime sides and retain it in the raw receipt's arguments.
@@ -116,6 +125,15 @@ Use the existing packaged collector entry point and the same resolved execution 
 Preserve actual parent/fork loaded archives and class trees, external inputs, source revisions, conditions, all 60 rows and three independent Standard receipts for each side.
 Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
 The corpus makes no native latency, upload, FPS or GPU claim.
+
+`TextLineLayoutBenchmark` keeps all 60 retained construction opportunities and 22 clean, caret and composition controls.
+Its optional `operationReport()` uses the same original scene setup and benchmark methods through the shared owner-thread meter.
+Initial construction replaces a keyed component in the primed host/font owner; it does not include a new backend or profile.
+Edit and reflow samples retain the complete public mutation/frame opportunity; caret and composition controls retain their original restoring input cycles.
+Independent scalar, exact bounded pixel, original-viewport old-frame and release oracles run outside samples, and terminal cleanup must succeed.
+All 82 owner rows retain CPU, owner/all-thread allocation and wall metrics with unavailable counters explicit; none replaces the complete JMH comparison or establishes native input/FPS gains.
+The copying neutral runtime preserves the original six-argument constructor and every shared semantic control; only the candidate's exclusive-array identity test is omitted from its source.
+Frozen source/input bytes are selected from the final commit's `Performance-Inputs` producer; transient inputs are absent from the execution tree.
 
 Its optional `operationReport()` hook connects the same 60 method/parameter boundaries to the shared owner-thread meter.
 Input samples retain the complete original opportunity cycle; initial-layout samples retain fresh host creation, attach, first frame and terminal close.
@@ -524,6 +542,21 @@ Generated `@Fork` arguments are checked alongside CLI overrides, so benchmark an
 Collector changes require fresh evidence; earlier receipts without child verification cannot satisfy this contract.
 
 The separate stress corpus is selected with `-Pstrata.performance.benchmarks=StressRenderingBenchmark -Pstrata.performance.suite=stress` on `jmhComponents` and writes separate `stress` or `stress-sample` directories.
+
+The supplemental `TextLineLayoutBenchmark` corpus selects the actual retained TextArea and multiline Text public entry points with `-Pstrata.performance.benchmarks=TextLineLayoutBenchmark -Pstrata.performance.suite=text-line-layout` on `:quality:component-benchmarks:jmhComponents`.
+Its 82 generated cases separate 60 keyed initial construction, content-edit and width-reflow opportunities from 22 clean, restoring caret and complete preedit/focused-range/loss controls.
+Initial construction replaces a retained component within an already primed host/font lifetime; it does not include profile/backend creation.
+Each CPU and allocation interval includes the complete public mutation/input/frame cycle, with no per-invocation setup, reflection or oracle work.
+Inputs cover empty, short, 128 and 32,767 BMP scalars, 32,767 supplementary scalars with sufficient explicit UTF-16 state capacity, character wrapping, CRLF/hard breaks, signed/zero/exceptional advances, font spans and first/middle/last ellipsis cuts.
+TextArea font changes select a whole editor font; multiline display text also supplies mixed spans.
+The deterministic custom ordering probe preserves original logical caret metrics and does not establish native bidi or IME acceptance.
+The generated fixture gate verifies independent original boundaries and forward Float-prefix/native rounding, compact visible arrays, nearest/caret/range lookups, semantics, bounded synthetic reference pixels at densities one through three, immutable old lines/frames and zero terminal faces/backends.
+Raster checks cover a 64-by-64 logical window; long-line suffix admission is checked by complete scalar/run oracles, not by a full-width image claim.
+Both runtime sides must load the same compiled fixture and helper/generated classes, collector, harness and reviewed API inputs, with only the target Minecraft runtime archive varied.
+Freeze a reviewed neutral factory baseline retaining the original copies before measuring the owned-array candidate so both sides share the exact internal host inventory registration.
+Prepare with fully qualified JVM tasks and the generic `-Pstrata.jvmOnly=true` model; quote dotted properties in PowerShell and keep final aggregate/platform verification unscoped.
+Collect three independent Standard repetitions per side and retain every case, control and regression through the existing shared processor.
+This native-free JVM fixture measures layout opportunity CPU/allocation, without GPU uploads, native input latency or FPS evidence.
 
 The supplemental `-Pstrata.performance.benchmarks=ExceptionalTextFieldBenchmark -Pstrata.performance.suite=exceptional-text` corpus uses public TextField operations with fixed synthetic TrueType metrics for signed fractional spacing, inexact large cancellation and infinite tails under both native rounding contracts.
 Its 18 independent idle/update/lifecycle cases use the unchanged JMH defaults and shared processing, with `exceptional-text` / `exceptional-text-sample` outputs; it does not change the existing stress matrix or font inputs.
