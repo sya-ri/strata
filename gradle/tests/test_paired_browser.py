@@ -507,8 +507,9 @@ class PairedBrowserTest(unittest.TestCase):
                                   "test_gate": value["test_gate"] if index == 1 else None}
                                  for index, (name, task, artifact) in enumerate(zip(("compile", "tests", "work"), value["tasks"], value["artifacts"]))]
         self.assertEqual(self.load(value), value)
+        value["provision_dependency_caches"] = True
+        self.assertEqual(self.load(value), value)
         for mutation in (lambda item: item.update(repetitions=3),
-                         lambda item: item.update(provision_dependency_caches=True),
                          lambda item: item["arguments"].update(candidate=[]),
                          lambda item: item["preparations"].pop(),
                          lambda item: item["preparations"].reverse(),
@@ -1340,6 +1341,8 @@ class PairedBrowserTest(unittest.TestCase):
         cases = [(*case, False) for case in cases]
         cases += [(1, failure, False, False, False, False, True)
                   for failure in (None, "source-baseline-0-compile", "gate-source-baseline-0-verify")]
+        cases += [(1, failure, False, True, False, False, True)
+                  for failure in (None, "provision-baseline-compile", "gate-provision-baseline-verify")]
         for repetitions, failure, copy_failure, provisioning, controlled, separate_driver, partitioned in cases:
             acquiring = failure in ("capture-inputs", "capture-command-failure", "capture-known-java-changed", "capture-init-before", "capture-init-during")
             data = self.controlled_source_manifest() if controlled else self.source_manifest(repetitions) if repetitions is not None else browser_data
@@ -1735,7 +1738,8 @@ class PairedBrowserTest(unittest.TestCase):
                     self.assertEqual(record["preparations_per_attempt"], 2)
                     self.assertNotIn("complete_measured_attempts", record)
                 else:
-                    self.assertEqual(calls, ["source-baseline-0-compile"] + (["source-baseline-0-verify"] if failure.startswith("gate-") else []))
+                    prefix = "provision-baseline" if provisioning else "source-baseline-0"
+                    self.assertEqual(calls, [prefix + "-compile"] + ([prefix + "-verify"] if failure.startswith("gate-") else []))
                     self.assertEqual(record["status"], "failed")
                     self.assertFalse((output / "prepared-pins.json").exists())
             if copy_failure:

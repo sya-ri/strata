@@ -134,7 +134,7 @@ def load_source_manifest(shared, root, data):
     require(type(capture) is bool and not (capture and controlled), "Toolchain input acquisition cannot consume or rebind existing frozen toolchain inputs")
     require(not (controlled or capture) or "preparations" in data, "Bind complete preparations and toolchain inputs together")
     if not (controlled or capture) and "preparations" in data:
-        require(data["repetitions"] == 1 and not data.get("provision_dependency_caches", False),
+        require(data["repetitions"] == 1,
                 "Partition only a single untimed Source qualification without controlled toolchain inputs")
     if capture:
         require(data["repetitions"] == 1 and not data.get("provision_dependency_caches", False)
