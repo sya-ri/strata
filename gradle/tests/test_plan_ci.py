@@ -2,10 +2,12 @@
 import importlib.util
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("plan_ci", Path(__file__).parents[1] / "plan-ci.py")
 planner = importlib.util.module_from_spec(spec)
@@ -13,6 +15,109 @@ spec.loader.exec_module(planner)
 
 
 class PlanCiTest(unittest.TestCase):
+    def test_workflow_isolates_selected_client_concurrency_and_paired_intent(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
+        group = next(line.removeprefix("  group: ") for line in workflow.splitlines() if line.startswith("  group: "))
+        self.assertEqual("${{ github.workflow }}-${{ github.ref }}"
+                         "${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}"
+                         "${{ inputs.paired_inputs != '' && format('-paired-{0}', github.run_id) || '' }}", group)
+        self.assertIn("  cancel-in-progress: true\n", workflow)
+        self.assertIn("    - name: Select opt-in paired JVM measurement\n      if: inputs.subject_ref == ''\n", workflow)
+        minecraft = workflow.split("\n  minecraft:\n", 1)[1].split("\n  documentation:", 1)[0]
+        checkout_ref = next(line.removeprefix("        ref: ") for line in minecraft.splitlines() if line.startswith("        ref: "))
+        # Empty input preserves checkout's event-ref and event-SHA default; a selected SHA remains explicit.
+        self.assertEqual("${{ needs.plan.outputs.subject_ref }}", checkout_ref)
+
+    def test_default_full_plan_keeps_every_existing_gate(self):
+        result = planner.plan([], full=True)
+        self.assertEqual([], result.pop("minecraft"))
+        self.assertTrue(all(result.values()))
+
+    def test_selected_clients_bind_the_subject_and_declared_backend_contract(self):
+        subject = "a" * 40
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for version in ("26.2", "26.3"):
+                for kind in ("runtime", "integration"):
+                    directory = root / kind / f"minecraft-fabric-{version}"
+                    directory.mkdir(parents=True)
+                    # Use the real build declarations, rather than inventing another backend inventory.
+                    source = Path(__file__).parents[2] / kind / f"minecraft-fabric-{version}" / "build.gradle.kts"
+                    (directory / "build.gradle.kts").write_bytes(source.read_bytes())
+            with patch.object(planner.subprocess, "check_output", side_effect=lambda args, **kwargs: subject + "\n" if args[1] == "rev-parse" else b""):
+                for backend in ("opengl", "vulkan"):
+                    with self.subTest(backend=backend):
+                        result = planner.client_plan(root, "26.3,26.2", backend, subject)
+                        self.assertEqual(["26.2", "26.3"], result["minecraft"])
+                        self.assertEqual(subject, result["subject_ref"])
+                        self.assertFalse(result["common"] or result["all_minecraft"] or result["preflight"])
+                        for entry in result["client_matrix"]["include"]:
+                            self.assertEqual([f':integration:minecraft-fabric-{entry["version"]}:check',
+                                              f'-Pstrata.minecraftVersions={entry["version"]}',
+                                              f"-Pstrata.canvas.backend={backend}", "-Pstrata.canvas.scope=full", "--continue"],
+                                             entry["gradle_arguments"].split())
+                            self.assertFalse(entry["documentation"])
+                self.assertEqual(["26.3"], planner.client_plan(root, "26.3", "vulkan", subject)["minecraft"])
+                build_file = root / "integration/minecraft-fabric-26.3/build.gradle.kts"
+                build = build_file.read_text(encoding="utf-8")
+                build_file.write_text(build.replace('dependsOn("runClientGameTest", runProductionClientGameTest)', 'dependsOn("runClientGameTest")'), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "does not declare"):
+                    planner.client_plan(root, "26.3", "vulkan", subject)
+                build_file.write_text(build, encoding="utf-8")
+                for versions, backend, ref in (("", "vulkan", subject), ("26.3,", "vulkan", subject),
+                                               ("26.3,26.3", "vulkan", subject), ("26.3;whoami", "vulkan", subject),
+                                               ("26.9", "vulkan", subject), ("26.3", "default", subject),
+                                               ("26.3", "shell", subject), ("26.3", "vulkan", "master"),
+                                               ("26.3", "vulkan", "b" * 40)):
+                    with self.subTest(versions=versions, backend=backend, ref=ref), self.assertRaises(ValueError):
+                        planner.client_plan(root, versions, backend, ref)
+                (root / "integration/minecraft-fabric-26.2/build.gradle.kts").write_text('tasks.named("runClientGameTest")')
+                with self.assertRaisesRegex(ValueError, "does not declare"):
+                    planner.client_plan(root, "26.2", "vulkan", subject)
+                with patch.object(planner.subprocess, "check_output", side_effect=[subject + "\n", b" M build.gradle.kts"]):
+                    with self.assertRaisesRegex(ValueError, "modified tracked"):
+                        planner.client_plan(root, "26.3", "vulkan", subject)
+
+    def test_selected_check_uses_the_existing_subject_parity_dependencies(self):
+        root = Path(__file__).parents[2]
+        build = (root / "build.gradle.kts").read_text(encoding="utf-8")
+        self.assertRegex(build, r'fontParityComparisonsByVersion\[target\.version\]\?\.let\s*\{\s*comparison\s*->\s*tasks\.named\("check"\)\s*\{\s*dependsOn\(comparison\)\s*\}')
+        self.assertIn("ciMinecraftVersions.isNotEmpty() ->", build)
+        verification = (root / "runtime/minecraft-fonts-lwjgl/verification.gradle.kts").read_text(encoding="utf-8")
+        comparison = verification.split('tasks.register<Test>("compareOfflineFont${contract.name}")', 1)[1].split("verifyOfflineFontParity.configure", 1)[0]
+        self.assertIn("dependsOn(verification)", comparison)
+        self.assertIn("mustRunAfter(nativeRunner)", comparison)
+        self.assertIn('useJUnitPlatform { includeTags("font-offline-parity") }', comparison)
+        self.assertIn("outputs.upToDateWhen { false }", comparison)
+        self.assertIn("outputs.cacheIf { false }", comparison)
+
+    def test_loaded_client_upload_retains_archives_tests_and_declared_offline_outputs(self):
+        root = Path(__file__).parents[2]
+        workflow = (root / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
+        upload = workflow.split("    - name: Upload loaded-client evidence for", 1)[1]
+        paths = upload.split("        path: |\n", 1)[1].split("        if-no-files-found:", 1)[0]
+        patterns = [line.strip() for line in paths.splitlines() if line.strip()]
+        verification = (root / "runtime/minecraft-fonts-lwjgl/verification.gradle.kts").read_text(encoding="utf-8")
+        offline_paths = re.findall(r'layout\.buildDirectory\.dir\("([^"\n]*offline[^"\n]*)"\)', verification)
+        self.assertEqual(2, len(offline_paths))
+        required = [f"{module}/build/libs/verified.jar" for module in ("api", "runtime/core", "runtime/minecraft", "runtime/minecraft-fonts-lwjgl", "performance-testkit", "integration/minecraft-fabric-26.3")]
+        required += ["runtime/minecraft-fonts-lwjgl/build/test-results/compareOfflineFontMinecraft263/TEST-parity.xml"]
+        required += [f'runtime/minecraft-fonts-lwjgl/build/{path.replace("$minecraftVersion", "26.3")}/result.properties' for path in offline_paths]
+        required += [f"integration/minecraft-fabric-26.3/build/{directory}/receipt.properties" for directory in ("minecraft-parity-vulkan", "minecraft-production-parity-vulkan")]
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary)
+            for name in required + ["runtime/minecraft/build/classes/Unrelated.class", "runtime/minecraft/build/run/world/region.mca"]:
+                file = destination / name
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_text("verified", encoding="utf-8")
+            retained = set()
+            for pattern in patterns:
+                for match in destination.glob(pattern):
+                    retained.update(file.relative_to(destination).as_posix() for file in ([match] if match.is_file() else match.rglob("*")) if file.is_file())
+            self.assertTrue(set(required) <= retained, sorted(set(required) - retained))
+            self.assertNotIn("runtime/minecraft/build/classes/Unrelated.class", retained)
+            self.assertNotIn("runtime/minecraft/build/run/world/region.mca", retained)
+
     def test_git_rename_diff_keeps_both_source_owners(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

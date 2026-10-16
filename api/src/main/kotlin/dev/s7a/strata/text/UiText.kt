@@ -105,7 +105,7 @@ public sealed interface UiText {
          *
          * @param parts the unresolved text values.
          */
-        public constructor(vararg parts: UiText) : this(parts.toList())
+        public constructor(vararg parts: UiText) : this(parts.asList())
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -143,7 +143,7 @@ public sealed interface UiText {
             when (parts.size) {
                 0 -> Literal("")
                 1 -> parts[0]
-                else -> Concatenated(parts.toList())
+                else -> Concatenated(parts.asList())
             }
     }
 }

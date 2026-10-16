@@ -85,6 +85,15 @@ Independent Minecraft jobs read Gradle dependency caches but do not each save an
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
 Acceptance evidence is generated for the selected revision.
+
+For loaded client verification alone, dispatch `jvm.yml` with `minecraft_versions` as comma-separated exact paired targets, `minecraft_backend` as `opengl` or `vulkan`, and `subject_ref` as the full lowercase public commit SHA in this repository.
+The planner reads each selected subject's existing backend and full-suite declarations; targets without that contract fail admission.
+Both `runClientGameTest` and `runProductionClientGameTest` run with `strata.canvas.scope=full`, retaining their pixel, input, lifecycle, terminal, and resource gates.
+The shared driver is independent of the subject revision, so an older open PR can be verified without copying workflow changes into it.
+The loaded-client artifact includes source/tree identity, a source-archive digest, built JAR digests and native origins, complete parity outputs, and the Gradle log, including failures.
+Vulkan jobs install Mesa's software driver and record actual device capabilities; these are correctness results for that environment and make no hardware GPU performance claim.
+An unavailable backend or incomplete suite remains a failed gate.
+Selected client verification cannot be combined with `paired_manifest`; leaving the client inputs at their defaults preserves manual full CI and ordinary PR selection.
 A signed release's prepared artifacts are immutable publication inputs, as defined in [release publication](release.md).
 Superseded JVM and Qodana runs on the same ref are cancelled.
 
@@ -109,8 +118,11 @@ The latter preserves mapped binaries without optional source remapping.
 The generated IDEA model assigns linked source roots, real compile/test/GameTest classpaths, and language levels to each owner; `rootJavaProjects` opens that model directly.
 Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
-The shared JMH plugin boundary exports declared Java/Kotlin inputs and resources as `TestSource`/`TestResource` in their actual owner, including nondefault directories, and retains the resolved compile/runtime classpaths in IDEA's TEST scope.
+The shared JVM model exports configured auxiliary Java/Kotlin inputs and resources as `TestSource`/`TestResource` in their actual owner, including nondefault directories, and retains their real compile/runtime configurations in IDEA's TEST scope.
+Roots already admitted by production keep that ownership once.
+This IDE view is an analysis union; isolated Gradle compilations and `checkStrataSkillExampleClasspath` still enforce API-only skill dependencies.
 `qodanaDeclarationInventory` discovers owners from the configured Gradle plugin/source-set model and records actual module identities, Java requirements, source/resource declarations, file membership and hashes, and resolved project/library dependency identities independently of IML and Qodana JSON.
+The same inventory depends on working auxiliary compiler outputs, records their actual bytes, and rejects missing or changed outputs before accepting their generated/imported model roots.
 Nonexistent directories remain explicit declarations without becoming model roots; compiler and harness outputs are build intermediates, and authored JMH roots inside excluded build directories fail verification.
 The verifier compares the declaration inventory with both generated IML and imported Qodana roots, SDKs, language levels, and dependency closures.
 The selected Git revision, clean tracked bytes, authored membership, and SARIF revision must agree before declaration completeness can pass.
