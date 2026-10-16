@@ -19,9 +19,11 @@ internal class BoundedJvmClassLoadFunctionalTest {
         val repository = generateSequence(Path.of("").toAbsolutePath()) { it.parent }.first { Files.isRegularFile(it.resolve("gradle/libs.versions.toml")) }
         val workspace = directory.resolve("source with spaces")
         val logs = directory.resolve("class logs with spaces")
+        val vmLogs = directory.resolve("VM logs with spaces")
         Files.createDirectories(workspace.resolve("src/main/java/fixture"))
         Files.createDirectories(workspace.resolve("execution with spaces"))
         Files.createDirectories(logs)
+        Files.createDirectories(vmLogs)
         Files.writeString(workspace.resolve("settings.gradle.kts"), "rootProject.name = \"class-load-transport\"\n")
         Files.writeString(
             workspace.resolve("build.gradle.kts"),
@@ -63,6 +65,7 @@ internal class BoundedJvmClassLoadFunctionalTest {
         val environment = System.getenv().toMutableMap()
         environment["STRATA_PAIRED_WORKSPACE"] = workspace.toString()
         environment["STRATA_PAIRED_CLASS_LOGS"] = logs.toString()
+        environment["STRATA_PAIRED_LOGS"] = vmLogs.toString()
         val result =
             GradleRunner
                 .create()

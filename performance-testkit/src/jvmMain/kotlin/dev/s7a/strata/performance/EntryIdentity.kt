@@ -11,6 +11,7 @@ import java.util.zip.ZipFile
 
 /**
  * Canonical entry hashing shared by directory and archive provenance.
+ * One synchronous traversal owns its read scratch; independent single-stream calls own separate scratch.
  */
 internal object EntryIdentity {
     /**
@@ -60,13 +61,15 @@ internal object EntryIdentity {
         open: (String) -> InputStream,
     ): String {
         val digest = MessageDigest.getInstance("SHA-256")
+        if (entries.isEmpty()) return HexFormat.of().formatHex(digest.digest())
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         entries.forEach { entry ->
             val name = entry.toByteArray(Charsets.UTF_8)
             digest.update(name.size.toString().toByteArray(Charsets.US_ASCII))
             digest.update(':'.code.toByte())
             digest.update(name)
             digest.update(0.toByte())
-            open(entry).use { input -> update(digest, input) }
+            open(entry).use { input -> update(digest, input, buffer) }
             digest.update(0xff.toByte())
         }
         return HexFormat.of().formatHex(digest.digest())
@@ -89,15 +92,15 @@ internal object EntryIdentity {
      */
     internal fun sha256(input: InputStream): String {
         val digest = MessageDigest.getInstance("SHA-256")
-        update(digest, input)
+        update(digest, input, ByteArray(DEFAULT_BUFFER_SIZE))
         return HexFormat.of().formatHex(digest.digest())
     }
 
     private fun update(
         digest: MessageDigest,
         input: InputStream,
+        buffer: ByteArray,
     ) {
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         while (true) {
             val size = input.read(buffer)
             if (size < 0) return

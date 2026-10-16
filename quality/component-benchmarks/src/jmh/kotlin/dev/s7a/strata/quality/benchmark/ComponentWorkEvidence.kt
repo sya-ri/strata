@@ -20,6 +20,7 @@ public object ComponentWorkEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(args.isEmpty())
+        RuntimeSurfaceInventoryEvidence.verifyVariantControls()
         verifyJmhInventory()
         verifyGeneratedFixtures()
         val coverage = ComponentInventoryEvidence.verify()

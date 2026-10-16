@@ -11,7 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
 
-/** Runs the shared production JMH export and inventory against working, Minecraft-independent owners. */
+/** Runs production compiler exports and declaration inventory against working, Minecraft-independent owners. */
 internal class QodanaJmhModelFunctionalTest {
     @TempDir
     lateinit var directory: Path
@@ -27,10 +27,11 @@ internal class QodanaJmhModelFunctionalTest {
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)
-        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"shared-kmp\", ${owners.joinToString { "\"$it\"" }})\n")
+        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"shared-kmp\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
         val production = Files.readString(repository.resolve("build.gradle.kts"))
         val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
+        val auxiliaryCallback = production.substringAfter("    // Export configured auxiliary JVM inputs through the existing TEST analysis view.\n").substringBefore("    tasks.withType<JavaCompile>()")
         Files.writeString(
             directory.resolve("build.gradle.kts"),
             """
@@ -40,6 +41,8 @@ internal class QodanaJmhModelFunctionalTest {
             import org.gradle.api.artifacts.component.ModuleComponentIdentifier
             import org.gradle.api.artifacts.component.ProjectComponentIdentifier
             import org.gradle.api.plugins.JavaPluginExtension
+            import org.gradle.api.Project
+            import org.gradle.api.tasks.SourceSet
             import org.gradle.api.tasks.SourceSetContainer
             import org.gradle.jvm.toolchain.JavaLanguageVersion
             import org.gradle.jvm.toolchain.JavaToolchainService
@@ -66,6 +69,7 @@ internal class QodanaJmhModelFunctionalTest {
                 plugins.withId("me.champeau.jmh") {
             $callback
                 }
+            $auxiliaryCallback
             }
             """.trimIndent(),
         )
@@ -88,6 +92,7 @@ internal class QodanaJmhModelFunctionalTest {
             """.trimIndent(),
         )
         write("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt", "package fixture\npublic fun ownedValue(): Int = 13\n")
+        writeAuxiliaryOwner()
         owners.forEach { owner ->
             write(
                 "$owner/build.gradle.kts",
@@ -151,9 +156,74 @@ internal class QodanaJmhModelFunctionalTest {
         assertTrue(roots.any { it["kind"] == "TestResource" && it["path"] == "shared-inputs/resources" })
         assertTrue(roots.none { it["kind"] == "TestSource" && it["path"] == "shared-kmp/src/commonMain/kotlin" })
         assertEquals(TaskOutcome.SUCCESS, result.task(":shared-kmp:compileKotlinJvm")?.outcome)
+        val auxiliary = (parsed["auxiliary"] as List<*>).map { it as Map<*, *> }.single()
+        assertEquals(":auxiliary-owner", auxiliary["project"])
+        assertEquals("verification", auxiliary["sourceSet"])
+        assertEquals(TaskOutcome.SUCCESS, result.task(":auxiliary-owner:compileVerificationKotlin")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":auxiliary-owner:compileVerificationJava")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":auxiliary-owner:processVerificationResources")?.outcome)
+        val auxiliaryRoots = (auxiliary["roots"] as List<*>).map { it as Map<*, *> }
+        assertTrue(auxiliaryRoots.any { it["kind"] == "Source" && it["path"] == "auxiliary-owner/shared-production" })
+        assertTrue(auxiliaryRoots.any { it["kind"] == "TestSource" && it["path"] == "auxiliary-owner/authored-kotlin" })
+        assertTrue(auxiliaryRoots.any { it["kind"] == "TestSource" && it["path"] == "auxiliary-owner/authored-java" })
+        assertTrue(auxiliaryRoots.any { it["kind"] == "TestResource" && it["path"] == "auxiliary-owner/authored-resources" })
+        assertTrue(auxiliaryRoots.any { it["exists"] == false && it["path"] == "auxiliary-owner/absent/java" })
+        val auxiliaryDependencies = auxiliary["dependencies"] as Map<*, *>
+        auxiliaryDependencies.values.forEach { closure ->
+            assertTrue((closure as List<*>).any { (it as Map<*, *>)["identity"] == "support" })
+        }
+        val auxiliaryIml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(auxiliary["iml"] as String).toFile())
+        val auxiliaryFolders = auxiliaryIml.getElementsByTagName("sourceFolder")
+        val shared =
+            (0 until auxiliaryFolders.length)
+                .map { auxiliaryFolders.item(it) }
+                .filter {
+                    it.attributes
+                        .getNamedItem("url")
+                        .nodeValue
+                        .endsWith("/shared-production")
+                }
+        assertEquals(1, shared.size)
+        assertEquals(
+            "false",
+            shared
+                .single()
+                .attributes
+                .getNamedItem("isTestSource")
+                .nodeValue,
+        )
+        assertTrue((auxiliary["outputs"] as List<*>).any { ((it as Map<*, *>)["files"] as Map<*, *>).isNotEmpty() })
         val reused = runner().build()
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
         assertEquals(parsed, JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()))
+        write("auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt", "package fixture\npublic fun broken(): Int = missingValue\n")
+        git("add", "--", "auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt")
+        git("-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Reject broken auxiliary compilation")
+        Files.delete(directory.resolve("build/qodana/declarations.json"))
+        val failed = runner().buildAndFail()
+        assertEquals(TaskOutcome.FAILED, failed.task(":auxiliary-owner:compileVerificationKotlin")?.outcome)
+        assertEquals(null, failed.task(":qodanaDeclarationInventory"))
+        assertTrue(Files.exists(directory.resolve("build/qodana/declarations.json")).not())
+    }
+
+    /** Adds a custom compiler with its own real dependencies and one root already owned by production. */
+    private fun writeAuxiliaryOwner() {
+        write(
+            "auxiliary-owner/build.gradle.kts",
+            """
+            val verification = sourceSets.create("verification") {
+                java.setSrcDirs(listOf("authored-java", "absent/java"))
+                resources.setSrcDirs(listOf("authored-resources"))
+            }
+            dependencies { add(verification.implementationConfigurationName, project(":support")) }
+            kotlin.sourceSets.named("main") { kotlin.srcDir("shared-production") }
+            kotlin.sourceSets.named("verification") { kotlin.setSrcDirs(listOf("authored-kotlin", "shared-production")) }
+            """.trimIndent(),
+        )
+        write("auxiliary-owner/shared-production/fixture/ProductionValue.kt", "package fixture\npublic fun productionValue(): Int = 3\n")
+        write("auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt", "package fixture\npublic fun auxiliaryValue(): Int = Support.value() + productionValue()\n")
+        write("auxiliary-owner/authored-java/fixture/JavaAuxiliary.java", "package fixture; public class JavaAuxiliary { public int value() { return Support.value(); } }")
+        write("auxiliary-owner/authored-resources/payload.txt", "auxiliary compiler resource\n")
     }
 
     /** Writes authored fixture sources before the declaration snapshot is selected. */
