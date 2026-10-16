@@ -497,6 +497,31 @@ class PairedBrowserTest(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.load(invalid)
 
+    def test_untimed_source_groups_preserve_full_order_outputs_and_test_gate(self):
+        value = self.source_manifest(1)
+        value["arguments"] = {side: ["-Pstrata.jvmOnly=true"] for side in ("baseline", "candidate")}
+        value["tasks"] = [":quality:component-benchmarks:jmhClasses", ":runtime:core:jvmTest", ":quality:component-benchmarks:verifyComponentRenderingWork"]
+        value["test_gate"] = {"task": ":runtime:core:jvmTest", "required_tests": ["dev.example.ParityTest#fullTransitions"]}
+        value["artifacts"] = [{"glob": "build/" + name + ".json", "minimum": 1} for name in ("compiled", "tests", "work")]
+        value["preparations"] = [{"name": name, "tasks": [task], "artifacts": [artifact],
+                                  "test_gate": value["test_gate"] if index == 1 else None}
+                                 for index, (name, task, artifact) in enumerate(zip(("compile", "tests", "work"), value["tasks"], value["artifacts"]))]
+        self.assertEqual(self.load(value), value)
+        for mutation in (lambda item: item.update(repetitions=3),
+                         lambda item: item.update(provision_dependency_caches=True),
+                         lambda item: item["arguments"].update(candidate=[]),
+                         lambda item: item["preparations"].pop(),
+                         lambda item: item["preparations"].reverse(),
+                         lambda item: item["preparations"][1].update(tasks=item["preparations"][0]["tasks"]),
+                         lambda item: item["preparations"][1].update(test_gate=None),
+                         lambda item: item["preparations"][0].update(test_gate=item["test_gate"]),
+                         lambda item: item["preparations"][2].update(artifacts=[]),
+                         lambda item: item["preparations"][2].update(name="compile")):
+            invalid = copy.deepcopy(value)
+            mutation(invalid)
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.load(invalid)
+
     def test_source_versioned_project_paths_keep_task_and_full_test_gate_guards(self):
         value = self.source_manifest(1)
         project = ":runtime:minecraft-fabric-26.3"
@@ -1312,7 +1337,10 @@ class PairedBrowserTest(unittest.TestCase):
         cases += [(3, name, False, True, True, False) for name in mutations]
         cases += [(1, "capture-inputs", False, False, True, False), (1, "capture-command-failure", False, False, True, False), (1, "capture-known-java-changed", False, False, True, False)]
         cases += [(1, name, False, False, True, False) for name in ("capture-init-before", "capture-init-during")]
-        for repetitions, failure, copy_failure, provisioning, controlled, separate_driver in cases:
+        cases = [(*case, False) for case in cases]
+        cases += [(1, failure, False, False, False, False, True)
+                  for failure in (None, "source-baseline-0-compile", "gate-source-baseline-0-verify")]
+        for repetitions, failure, copy_failure, provisioning, controlled, separate_driver, partitioned in cases:
             acquiring = failure in ("capture-inputs", "capture-command-failure", "capture-known-java-changed", "capture-init-before", "capture-init-during")
             data = self.controlled_source_manifest() if controlled else self.source_manifest(repetitions) if repetitions is not None else browser_data
             data = copy.deepcopy(data)
@@ -1334,7 +1362,11 @@ class PairedBrowserTest(unittest.TestCase):
             if repetitions == 1 and not acquiring:
                 data["tasks"] = [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"]
                 data["test_gate"] = {"task": ":integration:web:jvmTest", "required_tests": self.manifest["correctness"]["required_tests"]}
-            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else "") + ("-provisioning" if provisioning else "") + ("-separate-driver" if separate_driver else "") + ("-controlled" if controlled else "") + ("-" + failure if failure is not None else ""))
+            if partitioned:
+                data["arguments"] = {side: ["-Pstrata.webOnly=true"] for side in ("baseline", "candidate")}
+                data["preparations"] = [{"name": "compile", "tasks": data["tasks"][:1], "artifacts": data["artifacts"][:1], "test_gate": None},
+                                        {"name": "verify", "tasks": data["tasks"][1:], "artifacts": data["artifacts"][1:], "test_gate": data["test_gate"]}]
+            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else "") + ("-provisioning" if provisioning else "") + ("-separate-driver" if separate_driver else "") + ("-controlled" if controlled else "") + ("-partitioned" if partitioned else "") + ("-" + failure if failure is not None else ""))
             calls, side_paths = [], {}
             distribution_installed = False
             driver_checks = []
@@ -1471,10 +1503,10 @@ class PairedBrowserTest(unittest.TestCase):
                             path.parent.mkdir(parents=True, exist_ok=True)
                             path.write_bytes(b"synthetic compiled bytes")
                 if repetitions is not None and not acquiring and not bootstrap:
-                    preparation = next(item for item in data["preparations"] if name.endswith("-" + item["name"])) if controlled else data
+                    preparation = next(item for item in data["preparations"] if name.endswith("-" + item["name"])) if "preparations" in data else data
                     self.assertEqual(request["arguments"][:len(preparation["tasks"])], preparation["tasks"])
                     self.assertIn("--rerun-tasks", request["arguments"])
-                    self.assertEqual("-Pstrata.webOnly=true" in request["arguments"], "candidate" in name and not controlled)
+                    self.assertEqual("-Pstrata.webOnly=true" in request["arguments"], (partitioned or "candidate" in name) and not controlled)
                     self.assertEqual(request["environment"]["JAVA_HOME"], str(homes["launcher"]))
                     if controlled:
                         self.assertFalse(any(key.startswith("ORG_GRADLE_PROJECT_org.gradle.java.") for key in request["environment"]))
@@ -1630,14 +1662,14 @@ class PairedBrowserTest(unittest.TestCase):
                         self.assertEqual(record["scope"], {"consumer_ci_establishes_subject_acceptance": False, "prior_rows_adopted": False})
                         self.assertEqual(driver_checks, [0] + [value for index in range(12) for value in (index, index + 1)])
                 else:
-                    count = 2 if controlled else 1
+                    count = len(data["preparations"]) if "preparations" in data else 1
                     self.assertEqual((record["status"], record["completed_source_invocations"], record["runtime_collection"]), ("prepared", repetitions * 2 * count, "UNRUN"))
                     self.assertEqual(record["source_resources"], self.shared.read_json(resource_path) if controlled else {"minimumFreePhysicalBytes": 4 * 1024**3, "daemonMetaspaceMiB": 1024})
-                    if not controlled:
+                    if "preparations" not in data:
                         self.assertEqual(record["tasks_per_invocation"], len(data["tasks"]))
                     provisioning_names = ["provision-baseline", "provision-candidate"] if provisioning else []
                     attempts = provisioning_names + [f"source-{side}-{index}" for index in range(repetitions) for side in ("baseline", "candidate")]
-                    self.assertEqual(calls, ["wrapper-bootstrap", *[name + "-" + item["name"] for name in attempts for item in data["preparations"]]] if controlled else attempts)
+                    self.assertEqual(calls, (["wrapper-bootstrap"] if controlled else []) + [name + "-" + item["name"] for name in attempts for item in data["preparations"]] if "preparations" in data else attempts)
                     self.assertEqual(record["completed_dependency_provisioning_invocations"], len(provisioning_names) * count)
                     self.assertEqual([phase["source_metric_scope"] for phase in record["phases"]], (["untimed_wrapper_bootstrap"] if controlled else []) + ["untimed_dependency_provisioning"] * (len(provisioning_names) * count) + ["measured_source_preparation"] * (repetitions * 2 * count))
                     self.assertTrue(all(phase["jobUserCpu100ns"] == 10 and phase["jobKernelCpu100ns"] == 20 and phase["peakJobCommittedBytes"] == 30 and phase["allocation_bytes"] is None and phase["rss_bytes"] is None for phase in record["phases"]))
@@ -1658,7 +1690,7 @@ class PairedBrowserTest(unittest.TestCase):
                         self.assertTrue(all(phase["invocation_started_ns"] <= phase["invocation_closed_ns"] for phase in record["phases"]))
                     self.assertFalse((output / "report.md").exists())
                     if data["test_gate"] is not None:
-                        self.assertTrue(all(self.shared.read_json(output / "phases" / name / "test-classpath-verified.json")["present_entries"] == 1 for name in calls if not controlled or name.endswith("-api")))
+                        self.assertTrue(all(self.shared.read_json(output / "phases" / name / "test-classpath-verified.json")["present_entries"] == 1 for name in calls if not (controlled or partitioned) or name.endswith("-api" if controlled else "-verify")))
             elif failure in mutations:
                 self.assertEqual(record["status"], "failed")
                 self.assertEqual(calls, ["wrapper-bootstrap", "provision-baseline-api"])
@@ -1696,6 +1728,16 @@ class PairedBrowserTest(unittest.TestCase):
                 self.assertEqual(calls[-1], "compare-supplemental")
                 self.assertTrue((output / "phases/compare-supplemental/terminal.json").is_file())
                 self.assertTrue((output / "standard-comparison.json").is_file())
+            if partitioned:
+                self.assertTrue(all("--rerun-tasks" in self.shared.read_json(output / "phases" / name / "request.json")["arguments"] for name in calls))
+                if failure is None:
+                    self.assertEqual(record["tasks_per_preparation"], {"compile": 1, "verify": 4})
+                    self.assertEqual(record["preparations_per_attempt"], 2)
+                    self.assertNotIn("complete_measured_attempts", record)
+                else:
+                    self.assertEqual(calls, ["source-baseline-0-compile"] + (["source-baseline-0-verify"] if failure.startswith("gate-") else []))
+                    self.assertEqual(record["status"], "failed")
+                    self.assertFalse((output / "prepared-pins.json").exists())
             if copy_failure:
                 self.assertTrue(record["preservation_errors"])
                 self.assertTrue(all("Injected prepared-only copy failure" in item["error"] for item in record["preservation_errors"]))

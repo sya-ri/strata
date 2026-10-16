@@ -885,6 +885,10 @@ JMH forks retain their fixed 768/384 MiB profile, and collection cannot select S
 Source preparation admits the existing JVM/JS archive and compilation tasks, JMH compilation/quality tasks, complete workload verification and runtime-surface inventory tasks, and explicitly declared tracked TSV source resources and compiler ABI snapshots.
 A requested `test` or `jvmTest` task requires its matching full test gate; multiple requested test tasks, missing gates and partial test filters fail.
 Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
+For one untimed qualification per side, optional `preparations` may partition the complete ordered task and artifact lists into separately owned invocations so compiler processes are released before later test or workload gates.
+Both sides retain identical arguments; concatenating the groups must recover every original task and artifact exactly, with the unchanged full test gate assigned to its actual task.
+Each group retains `--rerun-tasks`, fresh evidence, the existing memory bounds and terminal checks; a failed group stops subsequent work and cannot produce accepted compiled pins.
+This unbound partitioning requires `repetitions` of one and no dependency provisioning; measured discovery comparisons retain their controlled input contract below.
 For a comparison that requires provisioned dependency caches, set the optional boolean `provision_dependency_caches` to `true`.
 It runs exactly one untimed baseline and one untimed candidate invocation with the same full task lists, arguments, caps, output and test gates before the original alternating measured invocations.
 All provisioning diagnostics, outputs and actual Job counters remain in separate `untimed_dependency_provisioning` phase receipts; the original measured count is unchanged.

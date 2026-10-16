@@ -132,7 +132,10 @@ def load_source_manifest(shared, root, data):
     controlled = "toolchain_binding" in data
     capture = data.get("capture_toolchain_inputs", False)
     require(type(capture) is bool and not (capture and controlled), "Toolchain input acquisition cannot consume or rebind existing frozen toolchain inputs")
-    require((controlled or capture) == ("preparations" in data), "Bind complete preparations and toolchain inputs together")
+    require(not (controlled or capture) or "preparations" in data, "Bind complete preparations and toolchain inputs together")
+    if not (controlled or capture) and "preparations" in data:
+        require(data["repetitions"] == 1 and not data.get("provision_dependency_caches", False),
+                "Partition only a single untimed Source qualification without controlled toolchain inputs")
     if capture:
         require(data["repetitions"] == 1 and not data.get("provision_dependency_caches", False)
                 and data["arguments"]["baseline"] in ([], ["-Pstrata.jvmOnly=true"]), "Acquire toolchain inputs once outside complete preparation and timing")
@@ -182,7 +185,7 @@ def load_source_manifest(shared, root, data):
         require(isinstance(tests, list) and tests and len(tests) == len(set(tests))
                 and all(re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_.$]*#[^#\r\n\x00]+", item) for item in tests), "Declare exact Source JVM parity tests")
     require(sum(task.endswith((":test", ":jvmTest")) for task in tasks) == int(gate is not None), "Every Source JVM test invocation requires its full gate")
-    if controlled or capture:
+    if "preparations" in data:
         preparations = data["preparations"]
         require(isinstance(preparations, list) and 0 < len(preparations) <= 16, "Declare complete ordered preparations")
         require(all(isinstance(item, dict) and set(item) == {"name", "tasks", "artifacts", "test_gate"}
@@ -194,7 +197,7 @@ def load_source_manifest(shared, root, data):
                 and [artifact for item in preparations for artifact in item["artifacts"]] == data["artifacts"], "Preparations must preserve the complete original ordered work and output inventory")
         require([item["test_gate"] for item in preparations if item["test_gate"] is not None] == ([] if gate is None else [gate])
                 and all(item["test_gate"] is None or item["test_gate"]["task"] in item["tasks"] for item in preparations), "Preserve the full test gate in its actual preparation")
-        require(data["arguments"]["baseline"] == data["arguments"]["candidate"], "Controlled discovery must preserve matched native requests")
+        require(data["arguments"]["baseline"] == data["arguments"]["candidate"], "Ordered preparations must preserve matched native requests")
     return data
 
 
@@ -836,14 +839,17 @@ def run(shared, root, selection, output):
                     directory = phase(phase_name, workspaces[side], preparation["tasks"] + data["arguments"][side], test_gate=preparation["test_gate"], source_metric_scope=scope)
                     verify_source_tasks(shared, directory, preparation["tasks"])
                     latest[side] += preserve_source_outputs(shared, workspaces[side], directory, preparation["artifacts"])
+                for item in latest[side]:
+                    shared.pin(workspaces[side], item)
             shared.write_new(output / "prepared-pins.json", {"schema": "strata-prepared-source-pins-v1", "driver_head": selection["execution_head"], "sources": data["sources"], "java_pins": java_pins, "compiled_pins": latest})
             record.update(status="prepared", completed_source_invocations=data["repetitions"] * 2 * len(preparations), completed_dependency_provisioning_invocations=len(provisioning) * len(preparations), runtime_collection="UNRUN")
-            if toolchains is not None:
+            if "preparations" in data:
                 record["tasks_per_attempt"] = len(data["tasks"])
                 record["tasks_per_preparation"] = {item["name"]: len(item["tasks"]) for item in preparations}
                 record["preparations_per_attempt"] = len(data["preparations"])
-                record["complete_measured_attempts"] = data["repetitions"] * 2
-                record["complete_dependency_provisioning_attempts"] = len(provisioning)
+                if toolchains is not None:
+                    record["complete_measured_attempts"] = data["repetitions"] * 2
+                    record["complete_dependency_provisioning_attempts"] = len(provisioning)
             else:
                 record["tasks_per_invocation"] = len(data["tasks"])
             return
