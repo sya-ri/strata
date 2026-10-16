@@ -1,11 +1,13 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
 from contextlib import redirect_stdout
+import base64
 import copy
 import csv
 import hashlib
 import importlib.util
 import io
 import json
+import lzma
 import os
 from pathlib import Path
 import re
@@ -75,6 +77,204 @@ class PairedJvmTest(unittest.TestCase):
         self.selector_git("config", "core.longpaths", "true")
         (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
         return self.selector_commit()
+
+    def dispatch_fixture(self):
+        """Prepare complete metadata outside a real clean execution repository."""
+        head = self.selector_repository()
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = Path(temporary.name)
+        source = {"ref": head, "tree": self.selector_git("rev-parse", "HEAD^{tree}"), "patches": []}
+        manifest = copy.deepcopy(self.manifest)
+        manifest["sources"] = {side: copy.deepcopy(source) for side in ("baseline", "candidate", "fixture")}
+        path = ".github/performance/manual/manifest.json"
+        target = directory / path
+        target.parent.mkdir(parents=True)
+        target.write_text(json.dumps(manifest), encoding="utf-8")
+        inputs = PAIRED.pack_dispatch_inputs(directory, path)
+        event = directory / "event.json"
+        event.write_text(json.dumps({"inputs": inputs}), encoding="utf-8")
+        return head, manifest, inputs, event
+
+    def test_dispatch_keeps_complete_pins_without_any_producer_or_consumer_commit(self):
+        head, manifest, inputs, event = self.dispatch_fixture()
+        refs = self.selector_git("show-ref", "--heads")
+        raw = lzma.decompress(base64.b64decode(inputs["paired_inputs"]))
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}):
+            with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], expected_head=head) as selection:
+                self.assertEqual(PAIRED.load_manifest(selection["root"], selection["path"]), manifest)
+                self.assertEqual(selection["producer"], hashlib.sha256(raw).hexdigest())
+                self.assertEqual(selection["bundle"].read_bytes(), raw)
+                self.assertNotEqual(selection["root"], self.root)
+            with self.assertRaisesRegex(ValueError, "planned bytes"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], data_ref="0" * 64):
+                    self.fail("Changed ZIP admitted")
+            with self.assertRaisesRegex(ValueError, "planned bytes"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], manifest_sha256="0" * 64):
+                    self.fail("Changed manifest admitted")
+            with self.assertRaisesRegex(ValueError, "explicit manual"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], base=head, head=head):
+                    self.fail("Dispatch combined with PR selection")
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("rev-list", "--count", "HEAD"), "1")
+        self.assertEqual(self.selector_git("show-ref", "--heads"), refs)
+        self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
+
+    def test_dispatch_rejects_a_changed_candidate_source_before_collection(self):
+        _, _, inputs, event = self.dispatch_fixture()
+        (self.root / "source.txt").write_text("another candidate\n", encoding="utf-8")
+        changed = self.selector_commit()
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}):
+            with self.assertRaisesRegex(ValueError, "Candidate source differs"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], expected_head=changed):
+                    self.fail("Different execution source admitted")
+
+    def test_dispatch_rejects_dirty_tracked_driver_and_invalid_event_payload(self):
+        head, _, inputs, event = self.dispatch_fixture()
+        environment = {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}
+        with patch.dict(os.environ, environment):
+            (self.root / "source.txt").write_text("dirty working bytes\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "tracked bytes"):
+                with PAIRED.selected_inputs(self.root, inputs["paired_manifest"], expected_head=head):
+                    self.fail("Dirty driver admitted")
+            for invalid in ("x" * 60001, ["not a string"], "not base64!"):
+                event.write_text(json.dumps({"inputs": {"paired_inputs": invalid}}), encoding="utf-8")
+                with self.subTest(invalid_type=type(invalid).__name__), self.assertRaises(ValueError):
+                    PAIRED.dispatch_input_bytes()
+
+    def test_dispatch_zip_rejects_aliases_links_and_existing_file_overwrite(self):
+        def bundle(entries):
+            output = io.BytesIO()
+            with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for path, mode in entries:
+                    entry = zipfile.ZipInfo(path)
+                    entry.external_attr = mode << 16
+                    archive.writestr(entry, b"fixed")
+            return output.getvalue()
+        for entries in ([('../escape', 0o100644)], [('source.txt', 0o100644)],
+                        [('.github/performance/../outside', 0o100644)], [('.github/performance/NUL.json', 0o100644)],
+                        [('.github/performance/test.json.', 0o100644)], [('.github/performance/test.json', 0o120777)],
+                        [('.github/performance/test.json', 0o100644), ('.github/performance/TEST.json', 0o100644)]):
+            with self.subTest(entries=entries), self.assertRaises(ValueError):
+                PAIRED.unpack_dispatch_inputs(bundle(entries), self.root)
+        target = self.root / ".github/performance/existing.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"original")
+        with self.assertRaisesRegex(ValueError, "overwrites"):
+            PAIRED.unpack_dispatch_inputs(bundle([(target.relative_to(self.root).as_posix(), 0o100644)]), self.root)
+        self.assertEqual(target.read_bytes(), b"original")
+
+    def test_dispatch_zip_bounds_compressed_bytes_files_and_expansion(self):
+        with self.assertRaisesRegex(ValueError, "exceeds 6 MiB"):
+            PAIRED.unpack_dispatch_inputs(b"x" * (6 * 1024**2 + 1), self.root)
+        for count, size in ((257, 1), (1, 4 * 1024**2 + 1)):
+            output = io.BytesIO()
+            with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for index in range(count):
+                    archive.writestr(f".github/performance/{index}.json", b"x" * size)
+            with self.subTest(count=count, size=size), self.assertRaisesRegex(ValueError, "256 files or 4 MiB"):
+                PAIRED.unpack_dispatch_inputs(output.getvalue(), self.root)
+
+    def test_dispatch_selection_retains_exact_input_artifact_and_hash_outputs(self):
+        head, _, inputs, event = self.dispatch_fixture()
+        output = event.parent / "outputs.txt"
+        file = self.root / "gradle/performance/paired-jvm.py"
+        argv = [str(file), "--select", "--manifest", inputs["paired_manifest"]]
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event), "GITHUB_OUTPUT": str(output)}), \
+                patch.object(PAIRED, "__file__", str(file)), patch.object(PAIRED.sys, "argv", argv), redirect_stdout(io.StringIO()):
+            PAIRED.main()
+        raw = lzma.decompress(base64.b64decode(inputs["paired_inputs"]))
+        self.assertEqual((self.root / "build/performance-ci/dispatch-inputs.zip").read_bytes(), raw)
+        self.assertIn("paired_data_ref=" + hashlib.sha256(raw).hexdigest(), output.read_text())
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("diff", "HEAD", "--name-only"), "")
+
+    def test_dispatch_rejects_trailing_truncated_and_oversized_compressed_data(self):
+        _, _, _, event = self.dispatch_fixture()
+        valid = lzma.compress(b"bounded input")
+        for invalid in (valid + b"trailing", valid[:-1], lzma.compress(b"x" * (6 * 1024**2 + 1))):
+            event.write_text(json.dumps({"inputs": {"paired_inputs": base64.b64encode(invalid).decode("ascii")}}), encoding="utf-8")
+            with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_EVENT_PATH": str(event)}), self.assertRaises(ValueError):
+                PAIRED.dispatch_input_bytes()
+
+    def artifact_fixture(self):
+        """Create an independent nested provider ZIP and a byte-pinned large input declaration."""
+        directory = self.root / "metadata"
+        directory.mkdir()
+        manifest = ".github/performance/manual/manifest.json"
+        target = ".github/performance/manual/app.js"
+        expected = b"exact frozen application bytes"
+        nested = io.BytesIO()
+        with zipfile.ZipFile(nested, "w") as archive:
+            archive.writestr("outputs/app.js", expected)
+        outer = io.BytesIO()
+        with zipfile.ZipFile(outer, "w") as archive:
+            archive.writestr("prepared.zip", nested.getvalue())
+        raw = outer.getvalue()
+        provider = {"id": 123, "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(), "archive": "prepared.zip",
+                    "files": [{"member": "outputs/app.js", "target": target}]}
+        path = directory / manifest
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({"inputs": [{"label": "app", "pin": {"path": target, "sha256": hashlib.sha256(expected).hexdigest()}}]}), encoding="utf-8")
+        (directory / ".github/performance/dispatch-artifacts.json").write_text(json.dumps([provider]), encoding="utf-8")
+        metadata = {"id": 123, "size_in_bytes": len(raw), "digest": "sha256:" + provider["sha256"], "expired": False}
+        return directory, manifest, target, expected, provider, metadata, raw
+
+    def test_dispatch_hydrates_only_exact_pinned_artifact_bytes_without_Git_inputs(self):
+        directory, manifest, target, expected, provider, metadata, raw = self.artifact_fixture()
+        inputs = PAIRED.pack_dispatch_inputs(directory, manifest)
+        with zipfile.ZipFile(io.BytesIO(lzma.decompress(base64.b64decode(inputs["paired_inputs"])))) as archive:
+            self.assertNotIn(target, archive.namelist())
+        with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repository", "RUNNER_TEMP": str(self.root / "job")}), \
+                patch.object(PAIRED.subprocess, "check_output", side_effect=[json.dumps(metadata).encode(), raw]) as download:
+            targets, receipts = PAIRED.dispatch_artifact_inputs(directory, manifest, download=True)
+            self.assertEqual(download.call_count, 2)
+        self.assertEqual(targets, {target.casefold()})
+        self.assertEqual(receipts, [provider])
+        self.assertEqual((directory / target).read_bytes(), expected)
+        (directory / target).unlink()
+        with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repository", "RUNNER_TEMP": str(self.root / "job")}), \
+                patch.object(PAIRED.subprocess, "check_output", return_value=json.dumps(metadata).encode()) as download:
+            PAIRED.dispatch_artifact_inputs(directory, manifest, download=True)
+            self.assertEqual(download.call_count, 1)
+        self.assertEqual((directory / target).read_bytes(), expected)
+
+    def test_dispatch_rejects_changed_provider_bytes_expiry_and_undeclared_targets(self):
+        directory, manifest, target, _, provider, metadata, raw = self.artifact_fixture()
+        environment = {"GITHUB_REPOSITORY": "owner/repository", "RUNNER_TEMP": str(self.root / "job")}
+        for responses in ([json.dumps({**metadata, "expired": True}).encode()],
+                          [json.dumps(metadata).encode(), raw + b"changed"]):
+            with patch.dict(os.environ, environment), patch.object(PAIRED.subprocess, "check_output", side_effect=responses), self.assertRaises(ValueError):
+                PAIRED.dispatch_artifact_inputs(directory, manifest, download=True)
+            self.assertFalse((directory / target).exists())
+        changed = {**provider, "files": [{"member": "outputs/app.js", "target": ".github/performance/undeclared.js"}]}
+        (directory / ".github/performance/dispatch-artifacts.json").write_text(json.dumps([changed]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "declared metadata"):
+            PAIRED.pack_dispatch_inputs(directory, manifest)
+
+    def test_dispatch_admits_standard_Source_providers_with_the_original_total_transfer_bound(self):
+        directory, manifest, target, expected, provider, _, _ = self.artifact_fixture()
+        descriptor = directory / ".github/performance/dispatch-artifacts.json"
+        for size in (200_257_512, 256 * 1024**2):
+            descriptor.write_text(json.dumps([{**provider, "bytes": size}]), encoding="utf-8")
+            targets, receipts = PAIRED.dispatch_artifact_inputs(directory, manifest)
+            self.assertEqual(targets, {target.casefold()})
+            self.assertEqual(receipts, [])
+        descriptor.write_text(json.dumps([{**provider, "bytes": 256 * 1024**2 + 1}]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "artifact identity"):
+            PAIRED.dispatch_artifact_inputs(directory, manifest)
+        inputs, providers = [], []
+        for index, size in enumerate((256 * 1024**2, 256 * 1024**2, 1)):
+            path = target + str(index)
+            inputs.append({"label": "app" + str(index), "pin": {"path": path, "sha256": hashlib.sha256(expected).hexdigest()}})
+            providers.append({**provider, "id": index + 1, "bytes": size, "files": [{"member": "outputs/app.js", "target": path}]})
+        (directory / manifest).write_text(json.dumps({"inputs": inputs}), encoding="utf-8")
+        descriptor.write_text(json.dumps(providers[:2]), encoding="utf-8")
+        targets, _ = PAIRED.dispatch_artifact_inputs(directory, manifest)
+        self.assertEqual(targets, {item["pin"]["path"].casefold() for item in inputs[:2]})
+        descriptor.write_text(json.dumps(providers), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "512 MiB in total"):
+            PAIRED.dispatch_artifact_inputs(directory, manifest)
 
     def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None, payload=None):
         """Construct real producer/consumer commits and an independently reconstructed candidate tree."""
@@ -983,6 +1183,70 @@ class PairedJvmTest(unittest.TestCase):
                         PAIRED.verify_vms(directory, files, terminal, allowed, 2)
                     self.assertFalse((directory / "vms.json").exists())
 
+    def test_reused_fork_startup_filename_binds_actual_generation_and_rejects_drift_or_ambiguity(self):
+        for mode in ("complete", "before-birth", "after-start", "ambiguous", "changed-pin", "stale", "wrong-birth", "unclosed", "missing-main", "wrong-flag"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("startup-reuse-" + mode)
+                owner = directory / "class-loads"
+                owner.mkdir(parents=True)
+                (directory / "console.log").write_text("", encoding="utf-8")
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"pinned executable; never launched")
+                starts = (1792143444000, 1792143587000)
+                births = (starts[0] - 500, starts[1] - 53)
+                history, files, pins = [], [], []
+                for index, (start, birth) in enumerate(zip(starts, births)):
+                    stamp = PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.gmtime(start // 1000))
+                    class_second = (birth if index else start) // 1000
+                    if index and mode in ("before-birth", "after-start"):
+                        class_second += -1 if mode == "before-birth" else 2
+                    class_stamp = PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.gmtime(class_second))
+                    log = directory / f"vm-pid123-{stamp}.log"
+                    flag = (owner / "classes-%p-%t.log").as_posix()
+                    if index and mode == "wrong-flag":
+                        flag = flag.replace("%p", "%p%p")
+                    log.write_text(f"<hotspot_log process='123' time_ms='{start}'>\n<vm_arguments><args>"
+                                   f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0</args>"
+                                   f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\n"
+                                   "java.class.path=frozen.jar\n</vm_arguments>\n"
+                                   "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                                   "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                    diagnostic = owner / f"classes-123-{class_stamp}.log"
+                    main = "independent.WrongMain" if index and mode == "missing-main" else "org.openjdk.jmh.runner.ForkedMain"
+                    diagnostic.write_text(f"[123][info][class,load] {main} source: file:/frozen.jar\n", encoding="utf-8")
+                    pins.append({"source": str(diagnostic), "path": str(diagnostic), "sha256": PAIRED.digest(diagnostic)})
+                    history.append({"pid": 123, "creationFileTime": 116444736000000000 + birth * 10000,
+                                    "exitFileTime": 116444736000000000 + (start + 10000) * 10000,
+                                    "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15,
+                                    "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0})
+                    files.append(log)
+                if mode == "ambiguous":
+                    extra = owner / "classes-123-2026-10-16_09-39-47.log"
+                    extra.write_bytes(diagnostic.read_bytes())
+                    pins.append({"source": str(extra), "path": str(extra), "sha256": PAIRED.digest(extra)})
+                elif mode == "changed-pin":
+                    pins[-1]["sha256"] = "0" * 64
+                elif mode == "wrong-birth":
+                    history[-1]["creationFileTime"] = 116444736000000000 + (starts[-1] + 1) * 10000
+                elif mode == "unclosed":
+                    history[-1]["completed"] = False
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(owner), "copied": pins,
+                                 "previous": {diagnostic.name: PAIRED.digest(diagnostic)} if mode == "stale" else {}})
+                terminal = {"members": {"123": history}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                with patch.object(PAIRED.time, "localtime", side_effect=PAIRED.time.gmtime):
+                    if mode == "complete":
+                        PAIRED.verify_vms(directory, files, terminal, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 2)
+                        records = PAIRED.read_json(directory / "vms.json")
+                        self.assertEqual([record["os_generation"] for record in records], history)
+                        self.assertEqual(Path(records[-1]["class_load_diagnostic"]["path"]), diagnostic)
+                        self.assertEqual(records[-1]["class_load_diagnostic"]["startup_filename_stamps"], ["2026-10-16_09-39-46", "2026-10-16_09-39-47"])
+                    else:
+                        with self.assertRaises(ValueError):
+                            PAIRED.verify_vms(directory, files, terminal, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 2)
+                        self.assertFalse((directory / "vms.json").exists())
+
     def test_control_selects_actual_birth_without_borrowing_a_reused_pid_and_rejects_ambiguous_vm_origin(self):
         for mode in ("history", "ambiguous-vm", "wrong-birth", "active", "wrong-affinity"):
             with self.subTest(mode=mode):
@@ -1009,6 +1273,96 @@ class PairedJvmTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
                     self.assertFalse((directory / "verified.json").exists())
+
+    def test_independent_file_flags_bind_reused_control_pids_without_inventing_a_working_directory(self):
+        modes = ("positive", "changed-flag", "changed-vm", "changed-file", "missing-file", "wrong-pid", "truncated",
+                 "ambiguous-file", "ambiguous-vm", "wrong-birth", "wrong-origin", "reordered-controls", "console-only", "oversized")
+        for mode in modes:
+            with self.subTest(mode=mode):
+                directory, phase, terminal, receipt = self.preflight_fixture("independent-files-" + mode)
+                original = terminal["members"]["123"]
+                original.update(pid=123, exitFileTime=116444736020000000, handleClosed=True)
+                later = {**original, "creationFileTime": 116444736050000000, "exitFileTime": 116444736060000000}
+                terminal["members"]["123"] = [original, later]
+                classes = (phase / "console.log").read_text(encoding="utf-8")
+                (phase / "console.log").write_text(classes + classes, encoding="utf-8")
+                (directory.parents[2] / "vms").mkdir()
+                template = PAIRED.read_json(phase / "vms.json")[0]
+                vms, paths = [], []
+                for index, result in enumerate(receipt["controls"]):
+                    path = directory / result["id"] / "class-load.log"
+                    path.parent.mkdir()
+                    path.write_text(classes, encoding="utf-8")
+                    artifact = {"path": path.relative_to(directory).as_posix(), "sha256": PAIRED.digest(path)}
+                    result["artifacts"].append(artifact)
+                    flag = "../../" + result["id"] + "/class-load.log"
+                    start = (1001, 5001)[index]
+                    log = directory.parents[2] / "vms" / f"vm-{index}.log"
+                    log.write_text(f"<hotspot_log process='123' time_ms='{start}'><vm_arguments>"
+                                   f"<args>-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0 </args>"
+                                   "</vm_arguments><hotspot_log_done/></hotspot_log>\n", encoding="utf-8")
+                    vms.append({**template, "vm_start_ms": start, "diagnostic_path": str(log),
+                                "diagnostic_sha256": PAIRED.digest(log), "class_load_file_flags": [flag]})
+                    paths.append(path)
+                if mode == "changed-flag":
+                    vms[0]["class_load_file_flags"] = vms[1]["class_load_file_flags"]
+                elif mode == "changed-vm":
+                    Path(vms[0]["diagnostic_path"]).write_text("changed original VM arguments\n", encoding="utf-8")
+                elif mode == "changed-file":
+                    paths[0].write_text(classes + "changed\n", encoding="utf-8")
+                elif mode == "missing-file":
+                    paths[0].unlink()
+                elif mode in ("wrong-pid", "truncated", "wrong-origin", "oversized"):
+                    text = classes.replace("[123]", "[456]") if mode == "wrong-pid" else classes.rstrip("\n") if mode == "truncated" else \
+                        re.sub(r"source: [^\n]+", "source: file:/wrong.jar", classes) if mode == "wrong-origin" else classes + "x" * (1024 * 1024) + "\n"
+                    paths[0].write_text(text, encoding="utf-8")
+                    receipt["controls"][0]["artifacts"][-1]["sha256"] = PAIRED.digest(paths[0])
+                elif mode == "ambiguous-file":
+                    receipt["controls"][0]["artifacts"].append(copy.deepcopy(receipt["controls"][0]["artifacts"][-1]))
+                elif mode == "ambiguous-vm":
+                    vms.append(copy.deepcopy(vms[0]))
+                elif mode == "wrong-birth":
+                    original["creationFileTime"] = 116444736030000000
+                elif mode == "reordered-controls":
+                    receipt["controls"].reverse()
+                elif mode == "console-only":
+                    receipt["controls"][0]["artifacts"].pop()
+                (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if mode == "positive":
+                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    files = PAIRED.read_json(directory / "verified.json")["independent_class_load_files"]
+                    self.assertEqual(len(files), 2)
+                    self.assertEqual([item["vm_start_ms"] for item in files], [1001, 5001])
+                    self.assertTrue(all(item["working_directory_observation"] is None for item in files))
+                    self.assertTrue(all(item["relative_path_relationship"].startswith("inferred") for item in files))
+                else:
+                    with self.assertRaises((ValueError, FileNotFoundError)):
+                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertFalse((directory / "verified.json").exists())
+
+    def test_vm_argument_file_capture_keeps_its_original_diagnostic_pin(self):
+        directory = self.root / "file-flag-capture"
+        (directory / "class-loads").mkdir(parents=True)
+        home = self.root / "file-flag-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"source-only executable fixture")
+        origin = {"main": "independent.Controller", "executable": str(executable), "classpath": "frozen.jar"}
+        (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+        log = directory / "vm.log"
+        flag = "../../independent-a/class-load.log"
+        log.write_text("<hotspot_log process='123' time_ms='1001'><vm_arguments>"
+                       f"<args>-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0 </args>"
+                       f"<command>independent.Controller input</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                       "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                       "<hotspot_log_done/></hotspot_log>\n", encoding="utf-8")
+        PAIRED.verify_vms(directory, [log], {"members": {}}, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 0)
+        actual = PAIRED.read_json(directory / "vms.json")[0]
+        self.assertEqual(actual["class_load_file_flags"], [flag])
+        self.assertEqual(actual["diagnostic_path"], str(log))
+        self.assertEqual(actual["diagnostic_sha256"], PAIRED.digest(log))
+        self.assertNotIn("working_directory", actual)
 
     def test_new_history_requires_explicit_closure_and_lifetime_while_legacy_receipts_remain_readable(self):
         original = {"inOwnedJob": True, "completed": True, "exitCode": 0, "creationFileTime": 116444736010000000}

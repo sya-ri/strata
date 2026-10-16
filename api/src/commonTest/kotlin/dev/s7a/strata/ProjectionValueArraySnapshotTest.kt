@@ -1,18 +1,16 @@
 package dev.s7a.strata
 
 import dev.s7a.strata.projection.ProjectionValue
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
 
 /**
- * The internal array entry owns membership while preserving ordered immutable value references.
+ * The ordinary constructor detaches array-view membership while preserving ordered immutable value references.
  */
 class ProjectionValueArraySnapshotTest {
     @Test
-    @OptIn(InternalStrataRuntimeApi::class)
     fun arraySequencesDetachEverySizeAndPreserveOrderedDuplicateReferences() {
         val shared = ProjectionValue.Text("shared")
         val nested = ProjectionValue.Sequence(listOf(ProjectionValue.Integer(7)))
@@ -26,10 +24,10 @@ class ProjectionValueArraySnapshotTest {
                     }
                 }
             val expected = ProjectionValue.Sequence(input.toList())
-            val old = ProjectionValue.Sequence.fromArray(input)
+            val old = ProjectionValue.Sequence(input.asList())
             val hash = old.hashCode()
             input.fill(ProjectionValue.Absent)
-            val fresh = ProjectionValue.Sequence.fromArray(input)
+            val fresh = ProjectionValue.Sequence(input.asList())
             assertEquals(expected, old)
             assertEquals(expected.values, old.values)
             assertEquals(hash, old.hashCode())

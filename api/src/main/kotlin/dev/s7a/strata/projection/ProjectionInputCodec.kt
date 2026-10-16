@@ -8,7 +8,6 @@ import dev.s7a.strata.input.KeyboardModifiers
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Detached standard input properties shared by declaration projections and installed client adapters.
@@ -186,8 +185,7 @@ public object ProjectionInputCodec {
 
     private fun number(value: Int): ProjectionValue = ProjectionValue.Integer(value.toLong())
 
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun fields(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence.fromArray(values)
+    private fun fields(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence(if (values.size <= 1) values.toList() else values.asList())
 
     private enum class KeyKind { Press, Release }
 

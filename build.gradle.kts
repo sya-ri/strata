@@ -27,6 +27,7 @@ import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.Task
+import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
@@ -34,6 +35,7 @@ import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.api.tasks.GradleBuild
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.compile.JavaCompile
@@ -99,6 +101,7 @@ private data class MinecraftFabricTarget(
     val javaVersion: Int,
     val remapped: Boolean,
     val canvasFamily: CanvasFamily,
+    val nativePacingFamily: NativePacingFamily,
     val sourceLinkPaths: List<String>,
     val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.StreamCodec,
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
@@ -130,6 +133,7 @@ private data class MinecraftFabricTarget(
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
+            "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
             "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
@@ -140,6 +144,10 @@ private data class MinecraftFabricTarget(
             },
         )
 
+    /** Fixture-only limiter APIs verified from exact mapped clients; no runtime version dispatch. */
+    enum class NativePacingFamily(val sourceRoot: String) {
+        Legacy("legacy"), Tracker("tracker"), Reason("reason"), GameStateGetter("game-state-getter"), GameStateAccessor("game-state-accessor"),
+    }
     /** Native HUD extraction signatures verified from the exact client archives. */
     enum class UiFamily(val sourceRoot: String) {
         Float("float-delta"), Delta("delta-tracker"), ExtractGui("gui-extractor"), ExtractHud("hud-extractor"),
@@ -198,6 +206,7 @@ private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
             version = libs.versions.minecraft120.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -212,6 +221,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -225,6 +235,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1202.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -240,6 +251,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1203.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
@@ -256,6 +268,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1204.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -270,6 +283,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1205.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -284,6 +298,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1206.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -298,6 +313,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft121.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -312,6 +328,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1211.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -326,6 +343,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
@@ -341,6 +359,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1213.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
@@ -355,6 +374,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
@@ -368,6 +388,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dDirectTextures,
             javaVersion = minecraftJava21Version,
@@ -381,6 +402,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -395,6 +417,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -409,6 +432,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -423,6 +447,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -436,6 +461,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -449,6 +475,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dSamplers,
             javaVersion = minecraftJava21Version,
@@ -463,6 +490,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateGetter,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractGui,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dGuiExtractor,
@@ -479,6 +507,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft262.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dBindGroups,
             javaVersion = minecraftJavaVersion,
@@ -494,6 +523,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft263.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.RenderPearl,
             javaVersion = minecraftJavaVersion,
@@ -1123,14 +1153,64 @@ if (completeIdeaModelActive) {
         return root.relativize(path).toString().replace(File.separatorChar, '/')
     }
 
+    /** Finds authored auxiliary JVM compilations without introducing fixture names or KMP aliases. */
+    fun Project.workingAuxiliarySourceSets(): List<SourceSet> {
+        if (extensions.findByType<KotlinMultiplatformExtension>() != null) return emptyList()
+        val kotlin = extensions.findByType<KotlinJvmProjectExtension>()
+        return extensions.findByType<SourceSetContainer>()?.filter { sourceSet ->
+            val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty()
+            sourceSet.name !in setOf("main", "test", "jmh") && (sourceSet.java.files + inputs.flatMap { it.kotlin.files }).any { it.extension in setOf("kt", "java") }
+        }.orEmpty()
+    }
+
+    /** Resolves the actual selected compiler/runtime edges, excluding this owner's own output directories. */
+    fun Project.declarationDependencies(selected: List<SourceSet>): Map<String, List<Map<String, String>>> {
+        val owner = this
+        val sourceSets = extensions.getByType<SourceSetContainer>()
+        val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
+        val artifacts = selected.flatMap { sourceSet ->
+            listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
+                owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
+            }
+        }.distinctBy { it.file.canonicalFile }
+        val dependencies = selected.flatMap { sourceSet ->
+            listOf(sourceSet.compileClasspathConfigurationName to sourceSet.compileClasspath, sourceSet.runtimeClasspathConfigurationName to sourceSet.runtimeClasspath)
+        }.associate { (configurationName, classpath) ->
+            val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs
+            val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
+            val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
+            val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->
+                val component = artifact.id.componentIdentifier
+                when (component) {
+                    is ProjectComponentIdentifier -> {
+                        val dependency = rootProject.project(component.projectPath)
+                        mapOf("kind" to "Module", "identity" to dependency.extensions.getByType<IdeaModel>().module.name, "project" to component.projectPath)
+                    }
+                    is ModuleComponentIdentifier -> mapOf(
+                        "kind" to "Library",
+                        "identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}",
+                        "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'),
+                        "sha256" to artifact.file.sha256(),
+                    )
+                    else -> mapOf("kind" to "Library", "identity" to component.displayName, "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to artifact.file.sha256())
+                }
+            }.distinct() + (requiredFiles - resolvedFiles).sortedBy { it.path }.map { file ->
+                mapOf("kind" to "Library", "identity" to "file:${file.canonicalPath}", "path" to file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to file.sha256())
+            }
+            configurationName to identities
+        }
+        return dependencies
+    }
+
     tasks.register("qodanaDeclarationInventory") {
         group = "verification"
-        description = "Recreates revision-bound JMH owner, root, SDK and dependency expectations from Gradle declarations."
+        description = "Recreates revision-bound JVM compiler root, SDK and dependency expectations from Gradle declarations."
         notCompatibleWithConfigurationCache("Reads the complete configured project and resolution model.")
         outputs.file(layout.buildDirectory.file("qodana/declarations.json"))
         outputs.upToDateWhen { false }
         dependsOn(provider {
-            allprojects.filter { it.plugins.hasPlugin("me.champeau.jmh") }.map { it.tasks.named("jmhClasses") }
+            allprojects.filter { it.plugins.hasPlugin("me.champeau.jmh") }.map { it.tasks.named("jmhClasses") } +
+                allprojects.flatMap { owner -> owner.workingAuxiliarySourceSets().map { it.output } }
         })
         mustRunAfter(provider { allprojects.flatMap { it.tasks.matching { task -> task.name == "ideaModule" }.toList() } })
         doLast {
@@ -1143,9 +1223,11 @@ if (completeIdeaModelActive) {
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
                 val sourceSets = owner.extensions.findByType<SourceSetContainer>()
                 val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
+                val platformCompilations = owner.extensions.findByType<KotlinMultiplatformExtension>()?.targets?.flatMap { it.compilations }.orEmpty()
                 val roots = sourceSets?.flatMap { sourceSet ->
-                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty()
-                    val test = sourceSet.name != "main"
+                    val matching = platformCompilations.filter { it.name == sourceSet.name || it.defaultSourceSet.name == sourceSet.name }
+                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() + matching.flatMap { it.allKotlinSourceSets }
+                    val test = sourceSet.name != "main" && matching.none { it.name == "main" }
                     listOf(
                         (if (test) "TestSource" else "Source") to (sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }),
                         (if (test) "TestResource" else "Resource") to (sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }),
@@ -1155,8 +1237,12 @@ if (completeIdeaModelActive) {
                     "project" to owner.path,
                     "module" to idea?.name,
                     "directory" to owner.projectDir.takeUnless { it.canonicalFile == rootDir.canonicalFile }?.repositoryPath(),
-                    "roots" to roots,
+                    "roots" to roots.map { entry ->
+                        val production = roots.firstOrNull { it["path"] == entry["path"] && it["kind"] in setOf("Source", "Resource") }
+                        production ?: entry
+                    }.distinct(),
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
+                    "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
                 )
             }
             val owners = allprojects.filter { it.plugins.hasPlugin("me.champeau.jmh") }.sortedBy { it.path }.map { owner ->
@@ -1168,7 +1254,7 @@ if (completeIdeaModelActive) {
                 val compiler = owner.extensions.getByType<JavaToolchainService>().launcherFor {
                     languageVersion.set(owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion)
                 }.get().metadata
-                val roots = listOf("main", "test", "jmh").flatMap { sourceSetName ->
+                val roots = (listOf("main", "test", "jmh") + owner.workingAuxiliarySourceSets().map { it.name }).flatMap { sourceSetName ->
                     val sourceSet = sourceSets.getByName(sourceSetName)
                     val kotlinSets = kotlin?.target?.compilations?.findByName(sourceSetName)?.allKotlinSourceSets.orEmpty()
                     val inputs = if (sourceSetName == "main") kotlinSets else kotlinSets - kotlin?.target?.compilations?.findByName("main")?.allKotlinSourceSets.orEmpty()
@@ -1194,38 +1280,12 @@ if (completeIdeaModelActive) {
                             )
                         }
                     }
+                }.let { declarations ->
+                    declarations.map { entry ->
+                        declarations.firstOrNull { it["path"] == entry["path"] && it["kind"] in setOf("Source", "Resource") } ?: entry
+                    }
                 }.distinctBy { it["kind"] to it["path"] }
-                val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
-                val artifacts = listOf("main", "test", "jmh").flatMap { sourceSetName ->
-                    val sourceSet = sourceSets.getByName(sourceSetName)
-                    listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
-                        owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
-                    }
-                }.distinctBy { it.file.canonicalFile }
-                val dependencies = listOf(jmh.compileClasspathConfigurationName to jmh.compileClasspath, jmh.runtimeClasspathConfigurationName to jmh.runtimeClasspath).associate { (configurationName, classpath) ->
-                    val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs
-                    val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
-                    val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
-                    val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->
-                        val component = artifact.id.componentIdentifier
-                        when (component) {
-                            is ProjectComponentIdentifier -> {
-                                val dependency = rootProject.project(component.projectPath)
-                                mapOf("kind" to "Module", "identity" to dependency.extensions.getByType<IdeaModel>().module.name, "project" to component.projectPath)
-                            }
-                            is ModuleComponentIdentifier -> mapOf(
-                                "kind" to "Library",
-                                "identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}",
-                                "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'),
-                                "sha256" to artifact.file.sha256(),
-                            )
-                            else -> mapOf("kind" to "Library", "identity" to component.displayName, "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to artifact.file.sha256())
-                        }
-                    }.distinct() + (requiredFiles - resolvedFiles).sortedBy { it.path }.map { file ->
-                        mapOf("kind" to "Library", "identity" to "file:${file.canonicalPath}", "path" to file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to file.sha256())
-                    }
-                    configurationName to identities
-                }
+                val dependencies = owner.declarationDependencies(listOf(jmh))
                 mapOf(
                     "project" to owner.path,
                     "directory" to owner.projectDir.repositoryPath(),
@@ -1241,8 +1301,45 @@ if (completeIdeaModelActive) {
                     "dependencies" to dependencies,
                 )
             }
+            val auxiliary = allprojects.sortedBy { it.path }.flatMap { owner ->
+                val idea = owner.extensions.findByType<IdeaModel>()?.module
+                val sourceSets = owner.extensions.findByType<SourceSetContainer>()
+                val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
+                val mainKotlin = kotlin?.target?.compilations?.findByName("main")?.allKotlinSourceSets.orEmpty()
+                val main = sourceSets?.findByName("main")
+                val mainSources = main?.java?.srcDirs.orEmpty() + mainKotlin.flatMap { it.kotlin.srcDirs }
+                val mainResources = main?.resources?.srcDirs.orEmpty() + mainKotlin.flatMap { it.resources.srcDirs }
+                owner.workingAuxiliarySourceSets().sortedBy { it.name }.map { sourceSet ->
+                    val module = requireNotNull(idea)
+                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() - mainKotlin
+                    val roots = listOf(
+                        "TestSource" to (sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }),
+                        "TestResource" to (sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }),
+                    ).flatMap { (kind, directories) -> directories.sortedBy { it.repositoryPath() }.mapNotNull { directory ->
+                        val relative = directory.repositoryPath()
+                        val generated = directory.canonicalFile.toPath().startsWith(owner.layout.buildDirectory.get().asFile.canonicalFile.toPath())
+                        val authored = tracked.keys.any { it.startsWith("$relative/") }
+                        require((generated && authored).not()) { "Auxiliary compiler inputs must not be hidden under build: $directory" }
+                        if (generated) return@mapNotNull null
+                        val files = if (directory.isDirectory) directory.walkTopDown().filter { it.isFile }.sortedBy { it.repositoryPath() }.associate { it.repositoryPath() to it.sha256() } else emptyMap()
+                        require(tracked.keys.containsAll(files.keys)) { "Authored auxiliary roots must belong to the selected revision: ${owner.path}: $directory" }
+                        val production = directory in if (kind == "TestSource") mainSources else mainResources
+                        mapOf("sourceSet" to sourceSet.name, "kind" to (if (production) kind.removePrefix("Test") else kind), "path" to relative, "exists" to directory.isDirectory, "generated" to false, "files" to files)
+                    } }.distinctBy { it["kind"] to it["path"] }
+                    val outputs = sourceSet.output.classesDirs.files.sortedBy { it.repositoryPath() }.map { directory ->
+                        val files = if (directory.isDirectory) directory.walkTopDown().filter { it.isFile }.sortedBy { it.repositoryPath() }.associate { it.repositoryPath() to it.sha256() } else emptyMap()
+                        mapOf("path" to directory.repositoryPath(), "exists" to directory.isDirectory, "files" to files)
+                    }
+                    require(outputs.any { (it["files"] as Map<*, *>).isNotEmpty() }) { "Working auxiliary compilation produced no classes or metadata: ${owner.path}:${sourceSet.name}" }
+                    mapOf("project" to owner.path, "sourceSet" to sourceSet.name, "directory" to owner.projectDir.repositoryPath(), "module" to module.name,
+                        "java" to owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion.get().asInt(),
+                        "iml" to module.outputFile.repositoryPath(), "roots" to roots, "outputs" to outputs,
+                        "classpaths" to mapOf("compile" to sourceSet.compileClasspathConfigurationName, "runtime" to sourceSet.runtimeClasspathConfigurationName),
+                        "dependencies" to owner.declarationDependencies(listOf(sourceSet)))
+                }
+            }
             require(owners.isNotEmpty()) { "The complete model must discover configured working JMH owners." }
-            val inventory = mapOf("revision" to gitOutput("rev-parse", "HEAD").trim(), "tracked" to tracked, "projects" to projects, "owners" to owners, "taskGraph" to gradle.taskGraph.allTasks.map { it.path })
+            val inventory = mapOf("revision" to gitOutput("rev-parse", "HEAD").trim(), "tracked" to tracked, "projects" to projects, "owners" to owners, "auxiliary" to auxiliary, "taskGraph" to gradle.taskGraph.allTasks.map { it.path })
             val output = layout.buildDirectory.file("qodana/declarations.json").get().asFile
             output.parentFile.mkdirs()
             output.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(inventory)) + "\n")
@@ -1284,10 +1381,19 @@ subprojects {
             js {
                 browser {
                     testTask {
-                        useKarma { useChromeHeadless() }
+                        useKarma {
+                            useChromeHeadless()
+                            useConfigDirectory(rootProject.file("gradle/karma.config.d"))
+                        }
                     }
                 }
-                if (hasJvmTarget) nodejs()
+                if (hasJvmTarget) {
+                    nodejs {
+                        testTask {
+                            useMocha { timeout = "30s" }
+                        }
+                    }
+                }
             }
             compilerOptions {
                 allWarningsAsErrors.set(true)
@@ -1716,6 +1822,11 @@ subprojects {
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.gpuQueries", enabled) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
                 }
+                providers.gradleProperty("strata.performance.inactivity").orNull?.let { selected ->
+                    require(selected in setOf("minimized", "afk")) { "strata.performance.inactivity must be minimized or afk." }
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.inactivity", selected) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
+                }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
@@ -1755,21 +1866,6 @@ subprojects {
     plugins.withId("me.champeau.jmh") {
         val fixture = extensions.getByType<SourceSetContainer>().named("jmh")
         val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh")
-        if (completeIdeaModelActive) {
-            val kotlinInputs = provider {
-                val kotlin = extensions.getByType<KotlinJvmProjectExtension>()
-                kotlin.target.compilations.getByName("jmh").allKotlinSourceSets - kotlin.target.compilations.getByName("main").allKotlinSourceSets
-            }
-            extensions.configure<IdeaModel> {
-                module {
-                    testSources.from(fixture.map { it.java.srcDirs }, kotlinInputs.map { sourceSets -> sourceSets.flatMap { it.kotlin.srcDirs } })
-                    testResources.from(fixture.map { it.resources.srcDirs }, kotlinInputs.map { sourceSets -> sourceSets.flatMap { it.resources.srcDirs } })
-                    val testPlus = requireNotNull(scopes["TEST"]?.get("plus"))
-                    testPlus.add(configurations.getByName(fixture.get().compileClasspathConfigurationName))
-                    testPlus.add(configurations.getByName(fixture.get().runtimeClasspathConfigurationName))
-                }
-            }
-        }
         val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         }
@@ -1834,6 +1930,32 @@ subprojects {
                     testPlus.add(configurations.getByName(testSourceSet.compileClasspathConfigurationName))
                     if (gameTestSourceSet != null) {
                         testPlus.add(configurations.getByName(gameTestSourceSet.compileClasspathConfigurationName))
+                    }
+                }
+            }
+        }
+    }
+
+    // Export configured auxiliary JVM inputs through the existing TEST analysis view.
+    plugins.withId("java") {
+        if (completeIdeaModelActive && extensions.findByType<KotlinMultiplatformExtension>() == null) {
+            afterEvaluate {
+                val sourceSets = extensions.getByType<SourceSetContainer>()
+                val auxiliary = sourceSets.filter { it.name !in setOf("main", "test") }
+                val kotlin = extensions.findByType<KotlinJvmProjectExtension>()
+                val mainInputs = kotlin?.target?.compilations?.findByName("main")?.allKotlinSourceSets.orEmpty()
+                val mainSources = sourceSets.getByName("main").java.srcDirs + mainInputs.flatMap { it.kotlin.srcDirs }
+                val mainResources = sourceSets.getByName("main").resources.srcDirs + mainInputs.flatMap { it.resources.srcDirs }
+                extensions.configure<IdeaModel> {
+                    module {
+                        val inputs = auxiliary.flatMap { sourceSet -> kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() - mainInputs }
+                        testSources.from((auxiliary.flatMap { it.java.srcDirs } + inputs.flatMap { it.kotlin.srcDirs }).filter { sourceDirs.contains(it).not() && mainSources.contains(it).not() })
+                        testResources.from((auxiliary.flatMap { it.resources.srcDirs } + inputs.flatMap { it.resources.srcDirs }).filter { resourceDirs.contains(it).not() && mainResources.contains(it).not() })
+                        val testPlus = requireNotNull(scopes["TEST"]?.get("plus"))
+                        auxiliary.flatMap { listOf(it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName) }.forEach { name ->
+                            val configuration = configurations.getByName(name)
+                            if (testPlus.contains(configuration).not()) testPlus.add(configuration)
+                        }
                     }
                 }
             }

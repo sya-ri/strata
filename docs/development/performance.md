@@ -48,6 +48,17 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Standard component notification membership
+
+The shared observable implementation for Checkbox, Slider and CycleButton lazily retains one derived ordered callback snapshot under its construction execution owner.
+The authoritative registration set remains unchanged; every successful admission or removal immediately clears the snapshot, including last release.
+The bound is one list of current callbacks, while a synchronous publication retains its selected list locally until it unwinds.
+Selection happens after the value update and its declarative invalidations, so callback-time mutations affect later or nested writes without changing the current publication's membership or value.
+Callback failures still stop delivery after committing the value.
+No value, callback result or historical plan is cached.
+Common publication controls preserve order, mutation, reentry, normalization and failure behavior; JVM storage controls verify warm identity and immediate release without garbage-collection timing.
+Stable changed writes can avoid repeated membership copies; equal/unobserved writes, first admission, churn and completed-frame operations require separate measurements before claiming an improvement.
+
 ### Current CycleButton selection
 
 Each retained CycleButton borrows at most one immutable live selected-value reference and its derived first matching index.
@@ -149,6 +160,21 @@ The supplemental `GridTrackBenchmark` selects seven empty/single, one-column, pa
 Its four separate boundaries are a primed clean frame, one retained leaf size mutation plus frame, actual constraint change plus frame, and default-alignment publication plus declaration rebuild and frame; preparation, oracle checks and terminal cleanup are untimed.
 Source-derived C + R retained Int values and two avoided layout track-array constructions are primitive-payload and operation estimates, not observed heap savings.
 Compare the same frozen fixture/collector with three independent Standard baseline and candidate runs, report actual AverageTime and normalized allocation for every case, and disclose controls and regressions without a fixed time threshold.
+### Small local semantics collection
+
+`SemanticsPipeline` checks the current node capability before constructing a callback collector, while refreshed nonparticipants still validate the execution owner and publish an empty local payload.
+Every actual semantics callback receives its own guarded scope, including zero-emission callbacks, and closes it in `finally` after success or failure.
+A scalar first-value slot handles zero and one emission; only the second emission creates the growable buffer.
+Snapshots keep the existing empty/singleton representations and a compact defensive copy for larger payloads; the mutable buffer and scalar slot are cleared after scope close, including when a caller captures the closed scope.
+This changes collection bookkeeping without additional caching, skipped callbacks, cross-frame scope reuse or spare retained buffer capacity.
+
+Common JVM/JavaScript tests cover ordered unresolved values and bounds, nonparticipants, zero/one/many callbacks, virtual ancestry, unplaced children, input ownership, paint-only payload reuse, geometry, self-invalidation, keyed reorder/removal, old-frame immutability and failure/terminal cleanup.
+JVM tests additionally verify wrong-thread ownership precedence, captured-scope closure, detached source-list membership and deterministic null-reference release.
+`SmallSemanticsBenchmark` provides thirteen actual-session cases with both ordinary and captured scopes: fixed-cardinality refresh, initial mixed collection, broad/deep mixtures, paint-only/local/geometry changes, clean-frame reuse and keyed reorder/removal.
+Its generic static verifier checks output and callback work and observes buffer presence outside timings; such construction-site observations do not establish which objects survive JVM escape analysis.
+Keep many-emission and complete clean-frame controls in the paired result, including regressions, and record zero/singleton producer and published-entry counts separately.
+Native upload and GPU intervals are inapplicable to this CPU-only collection corpus.
+
 ### Current-tree frame callbacks
 
 State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.
@@ -179,7 +205,9 @@ Grid validation uses sequential edges without per-tile division or a coverage ar
 Clips, mixed images or primitives, overlaps, gaps, and invalid grids preserve the original commands.
 
 Each admitted unstretched pattern uses one immutable template of at most 64 by 64 pixels, repeated with tile-aligned offsets and cropped final chunks.
-Template admission also bounds its two pixel arrays against the removed command allocation; larger or stretched source groups retain their original blits.
+Template admission retains its existing two-array allowance against the removed command allocation; larger or stretched source groups retain their original blits.
+The fully initialized private repeating buffer transfers directly through the existing owned-image bridge, with no mutable alias used after transfer.
+Public image construction still defensively copies application buffers, and extracted pixel arrays remain detached.
 Templates preserve unblended source ARGB, including transparent RGB, and use no source-sized snapshot or global cache.
 The original commands remain the sampling oracle for all fractional, scaled, or reflected tree transforms.
 
@@ -211,7 +239,13 @@ An exact equality check on every covered palette result can restore the invocati
 Partial coverage never establishes this state; subsequent ordered fills retain each intermediate rounding and materialize before reading primitives.
 This removes repeated arithmetic over uniform surfaces without combining layers or changing intermediate rounding, including transparent colors and fractional clips.
 When the entire output remains uniform, full-viewport fills apply each ordered blend to one scalar and materialize the pixel array once.
-Every partial fill or image materializes the pending color before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Before a partial fill or image materializes the pending color, the dispatcher tests whether it can touch any physical pixel.
+Integer fill and both integer-image commands intersect their destination with the output region and current physical clip without allocating coverage storage or inspecting source pixels.
+Fractional sampled commands use their painter's original final-density pixel-center edges and exact zero-alpha-tint rejection.
+Positive fractional clips or destinations containing no physical centers preserve the pending uniform color; an outward logical rectangle is insufficient for this decision.
+Visible partial fills and images materialize before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Zero-alpha integer fills and transparent images retain source-over normalization and are not admitted by the sampled zero-tint proof.
+Every required output pixel is initialized before return, including all-nonpainting lists and reused dirty borrowed storage, while excess borrowed capacity remains untouched.
 Clip changes alone do not read pixels, and only a clip covering the complete physical viewport permits a deferred fill.
 This state belongs to one rasterization invocation, introduces no retained cache, and preserves intermediate per-layer rounding.
 For a nonuniform output of at least 262,144 physical pixels, two or more consecutive full-viewport translucent fills use an exact channel lookup table keyed by the initial alpha and channel value.
@@ -246,6 +280,8 @@ The pixel traversal reuses an exactly matching source/destination pair before ca
 This reuses repeated magnified texels without retaining any image reference.
 For the same large-span admission, an opaque nonwhite RGB tint may use 768 exact normalized channel products, bounded to three 256-entry primitive tables.
 Translucent composition lazily records rounded channel results by source alpha and source channel only while every admitted destination has the same complete ARGB value.
+Destination-result tables are admitted only after 32 qualifying blends have observed that same destination; earlier pixels keep the original scalar composition and early destination changes allocate no tables.
+Adjacent identical source/destination pairs and discarded or zero-byte-alpha results do not advance admission, since they already avoid channel work.
 The first unequal destination permanently disables and releases these blend tables for the command; subsequent pixels use the original Float equations, so a heterogeneous destination never triggers repeated table clearing or assumes uniformity.
 Each lazy alpha row contains 768 entries, with at most 16 rows (48 KiB of primitive values plus the 256 row references); other source alpha values use the original Float equations without allocating or replacing a row.
 The common fixed-alpha image requires only one row, and alternating uncommon alpha values cannot churn table allocations.
@@ -270,6 +306,11 @@ Compiled JMH include filters must select exactly the registered method names bef
 Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DenseSampledRasterBenchmark -Pstrata.performance.suite=dense-sampled-raster` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
 Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
 This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
+
+`DestinationPaletteBenchmark` is a separate 15-case corpus of transparent, translucent and opaque uniform backgrounds, per-pixel heterogeneity and an ARGB change after the first 16 destinations, each with 1, 16 or 256 source alpha bytes.
+Run `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DestinationPaletteBenchmark -Pstrata.performance.suite=destination-palette`; source and background construction stay outside measurement, and each operation owns a fresh 128 by 64 raster and its scratch.
+Its one-to-one sampling prevents magnified spans and repeated source rows from hiding destination-table allocation; it leaves the historical and other independent matrices unchanged.
+Its fixture-owned untimed verifier requires all 15 compiled cases, fixed command and input work, independent scalar Float pixels, fresh output and unchanged inputs.
 
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.
 Existing exact headless-to-Fabric rendering parity tests remain required so caching cannot change pixels, command order, or native presentation.
@@ -532,6 +573,11 @@ Its attachment index is keyed by immutable device and attachment identities, whi
 Native Canvas requests in core commands and retained RuntimeUiFrame instances contain only scalar device and attachment identifiers; separate prepared tokens also identify the committed generation.
 Portable commands and explicit capture snapshots may retain immutable CPU images, but no command retains a target, renderer, source callback, or host.
 The current batch is bounded to one outstanding native presentation; the next presentation cannot overtake an unconsumed or uncancelled batch.
+Preparation transfers its freshly completed resolved-command and receipt lists to the detached presentation without taking a second membership snapshot.
+Only preparation owns their construction, and no mutable construction alias escapes or remains available for later mutation.
+The mapping buffers retain only current payload membership and their standard geometrically bounded spare capacity; empty mappings allocate no element backing array.
+Later preparation, cancellation, consumption, reload and device shutdown cannot mutate an older presentation.
+Ordinary Canvas-free Fabric presentation bypasses this preparation boundary entirely.
 Resource reload discards committed generations and retires old producers; new instances open lazily when a target permit is available.
 
 At most three target sets may exist for one stable CanvasId across source replacement and detach/reattach, and at most 64 active, retired, partially allocated, or quarantined sets may exist on one device.
@@ -599,6 +645,9 @@ Provider and font initialization status is bounded by the snapshot's provider gr
 Changing resource packs, provider filters, or language direction requires a new snapshot and host; existing host engines never mutate their snapshot and never share native faces.
 All host-cache and native access is confined to the host's owner thread.
 Terminal cleanup clears cache and snapshot references and closes all faces and the backend, including when an initialization, rasterization, or cleanup step fails.
+A backend callback may close its engine on that same owner thread; subsequent cache and preflight publication is rejected.
+A face returned after terminal close is released immediately, and its cleanup failure propagates with the original throwable identity.
+An interrupted preflight returns the missing shape without opening another face; completed detached glyph results remain usable.
 Detachment preserves common host ownership for reattachment but releases Fabric presentation textures independently.
 
 Tests compare enabled and disabled raster caches, assert entry and payload bounds, churn face keys and weighted input limits, exercise duplicate-provider preflight and permanent poisoned-face rejection, isolate engines sharing one snapshot, and verify terminal counters and backend release after failures.
@@ -661,8 +710,22 @@ Primitive-array bytes exclude object headers, temporary decoding allocations, an
 ### Virtual-list retention
 
 A virtual list materializes only the visible rows plus its bounded overscan rows, caches only the current materialized range, and reuses that range while its inputs and viewport remain clean.
+When the range moves, overlapping declarations are keyed by the same absolute index, immutable item reference identity, stable-key equality and current list definition epoch.
+Every current-window item and key is accessed again before reuse; this cache does not replace authoritative source lookup.
+Definition replacement and explicit refresh invalidate the whole window, including equal-count model changes, callback captures, profile context and viewport policy.
+Callbacks that directly read MutableState are not admitted to cross-window reuse; synchronous read capture preserves existing dependency ownership and restores nested contexts on return or failure.
+Observe regions keep their independent source subscriptions, frame cutoff and callback state tracking even when their enclosing row declaration is reused.
+Other caller-owned presentation captures require refresh, as specified by VirtualListState; row content must not rely on a callback for each scroll step.
+The owner-thread cache retains at most the current visible rows plus overscan, including one row record, input identity, key and immutable wrapper per materialized index.
+Moving to a disjoint range drops all previous records; there is no visited-row history or global pool.
+Row construction failure, node removal, session detachment and terminal disposal clear the cache, while reattachment invalidates measurement to reconstruct the current window.
+Existing retained nodes, navigation ownership and stable-key anchors remain separate from declaration reuse.
 Jumping across a large indexed source replaces the current range instead of retaining visited ranges.
 Prepending data preserves the visible stable key without materializing the intervening items.
+`VirtualWindowBenchmark` separates clean frames, one-row moves, fractional moves, disjoint jumps, refresh and definition replacement across 8, 40 and 128 materialized rows with simple, deep, directly stateful and independently observed factories.
+The shared historical collector substitutes actual runtime archives while holding this fixture and its independent callback, full-pixel, geometry, input, semantics and release references identical.
+`MutableStateReadBenchmark` separately measures unobserved and dependency-tracked reads so the admission check's state-getter cost remains visible outside virtualization.
+These are diagnostic timings with standard collector settings; the complete generated work hooks remain ordinary check acceptance without a fixed time threshold.
 
 ### Observed-region retention
 
@@ -694,9 +757,9 @@ The retained remote corpus measures this path separately for idle projection, on
 
 ### Projection field snapshots
 
-Positional built-in properties, declared input policies/endpoints, standard input encoders and remote profile property records use the internal array snapshot entry of `ProjectionValue.Sequence`.
-The entry copies array membership directly into one owned snapshot; only its detached result can be captured by a declaration encoder.
-Empty and singleton array snapshots retain the standard specialized list forms.
+Positional built-in properties, declared input policies/endpoints, standard input encoders and remote profile property records pass a transient array-backed list view to the ordinary defensive `ProjectionValue.Sequence` constructor when at least two fields are present.
+The constructor takes the only owned membership snapshot; only its detached result can be captured by a declaration encoder.
+Empty and singleton records preserve their existing specialized-list construction paths.
 Caller mutation, duplicate references, nested values, schemas and endpoint ownership obey the unchanged [declaration projection](../reference/declaration-projection.md) contract.
 
 The supplemental `ProjectionFieldSnapshotBenchmark` uses the existing remote collector with `:quality:remote-benchmarks:jmhRemote -Pstrata.performance.benchmarks=ProjectionFieldSnapshotBenchmark -Pstrata.performance.suite=projection-field-snapshots`.
@@ -766,6 +829,21 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar 
 This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
 The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
 
+### Current text-line array ownership
+
+`MinecraftTextLineBreaker` exclusively transfers its completed original scalar-offset and rounded-position arrays into each current detached line.
+Untruncated lines transfer the original offsets directly; an ellipsis cut first trims offsets to exactly the admitted visible boundaries.
+Positions are constructed at their final visible length, and neither array is mutated or retained by the producer after transfer.
+The privileged factory exposes no array or mutable view; the existing six-argument constructor still snapshots arbitrary caller arrays.
+The general constructor copies caller arrays before delegating to private admission, which directly retains the two exclusive arrays.
+
+Every line keeps only its detached run, private current metrics and derived admission/ink data.
+Layout replacement releases the owner's old reference; editor detach clears current composition/layout, and terminal component disposal clears borrowed input/service references.
+The handoff introduces no string, renderer, backend, source-state or historical-layout cache.
+Scalar offsets, forward Float accumulation, native signed rounding, nearest-boundary ties, range extrema and glyph ordering remain defined by their existing contracts.
+The `TextLineLayoutBenchmark` corpus exercises actual construction and clean/editing controls with independent boundaries, bounded reference pixels and release checks; its complete frozen paired evidence is defined by [the testkit contract](performance-testkit.md).
+Removed source copy sites are separate from normalized VM allocation and do not establish measured CPU, native input or FPS gains.
+
 ### Logical multiline insertion lookup
 
 Each detached TextArea line owns one admission flag computed from its immutable rounded caret positions.
@@ -790,6 +868,26 @@ The optional shared operation-report adapter measures all 60 original boundaries
 This corpus measures neither native input latency, uploads nor GPU time.
 
 ## Interpreting measurements
+
+### Current retained traversal membership
+
+Each retained logical node keeps ordered direct-child subsets for content refresh, unfinished attachment, focus targets, and semantics capabilities.
+The complete key is the current node's immutable capability identity, current modifier identities, current ordered direct-child identities and their capability summaries, and attachment-attempt state.
+Creation, node replacement, modifier reconciliation, child insertion/removal/reordering, and completed attachment update the affected summaries and propagate changed membership to logical ancestors.
+During an owner-confined content or attachment walk, changed child capability flags mark the direct parent dirty; the caller rebuilds that parent's current memberships once on return before focus or semantics consume them.
+The pending flag contains no borrowed references, is flushed before a skipped branch is selected, and is cleared with the summaries during terminal cleanup.
+Phase invalidation preserves capability membership; acceptance properties, observed-source declarations, deferred reasons, semantics payloads and geometry remain live and are never stored in these summaries.
+
+The lists borrow only current direct children in declaration order, with at most four additional references per logical edge and fixed scalar flags per retained node.
+Nonempty subsets covering every active child borrow the node's existing ordered child list; selective subsets retain their immutable membership list.
+They do not flatten descendants, retain prior generations, or cache source values.
+The owning tree updates and reads them synchronously under its execution owner.
+Parent-first dynamic callbacks reconcile their children before selecting the next child subset, so newly inserted descendants attach and evaluate in the same pass; descendant capability publication replaces summary references without mutating the enclosing child list currently being traversed.
+Attachment completion prunes temporary participant paths bottom-up, and cleanup clears every summary before input-release, detach or dispose callbacks, including failed reconciliation and terminal failure.
+Unplaced branches remain excluded through the ordinary live placement checks, while applicable parent measurement/layout and dense participant enumeration still perform their required work.
+
+Common JVM/JavaScript tests cover broad and deep trees, absent/sparse/dense participants, list identity reuse, dynamic insertion/removal, modifier replacement, order, mutable focus acceptance, initial-focus uniqueness, callback invalidation, exact primary failures, independent owners, source cutoff, full updates, bounded current-child retention and terminal release.
+Timing and allocation acceptance use the same frozen generated fixture and shared performance collector on both runtime revisions; removed visits do not establish a latency or frame-rate percentage.
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
 It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.

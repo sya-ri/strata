@@ -2041,15 +2041,10 @@ public final class dev/s7a/strata/projection/ProjectionValue$Real : dev/s7a/stra
 }
 
 public final class dev/s7a/strata/projection/ProjectionValue$Sequence : dev/s7a/strata/projection/ProjectionValue {
-	public static final field Companion Ldev/s7a/strata/projection/ProjectionValue$Sequence$Companion;
 	public fun <init> (Ljava/util/List;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getValues ()Ljava/util/List;
 	public fun hashCode ()I
-}
-
-public final class dev/s7a/strata/projection/ProjectionValue$Sequence$Companion {
-	public final fun fromArray ([Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/projection/ProjectionValue$Sequence;
 }
 
 public final class dev/s7a/strata/projection/ProjectionValue$Text : dev/s7a/strata/projection/ProjectionValue {

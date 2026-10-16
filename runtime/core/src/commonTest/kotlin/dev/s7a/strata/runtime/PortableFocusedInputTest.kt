@@ -177,6 +177,7 @@ internal class PortableFocusedInputTest {
                 firstRead = false
                 nodes[2].accepting = true
                 fixture.root.children.removeAt(2)
+                fixture.root.refreshTraversalSummary()
             }
             false
         }
@@ -216,6 +217,7 @@ internal class PortableFocusedInputTest {
         val fixture = owners(nodes)
         val first = fixture.root.children.removeAt(0)
         fixture.root.children.add(1, first)
+        fixture.root.refreshTraversalSummary()
         fixture.pipeline.layoutCommitted(fixture.root)
         transitions.clear()
 
@@ -223,6 +225,7 @@ internal class PortableFocusedInputTest {
         assertEquals(listOf(0 to false, 2 to true), transitions)
         nodes[0].accepting = false
         fixture.root.children.removeAt(2)
+        fixture.root.refreshTraversalSummary()
         fixture.pipeline.layoutCommitted(fixture.root)
         assertNull(fixture.pipeline.textInputFocus)
         assertEquals(InputResult.Ignored, fixture.pipeline.dispatchTextInput(character))
@@ -335,6 +338,7 @@ internal class PortableFocusedInputTest {
     private fun owners(nodes: List<ProbeNode>): Fixture {
         val root = retained(ProbeNode(accepting = false))
         nodes.forEach { node -> root.children += retained(node).also { it.parent = root } }
+        root.refreshTraversalSummary()
         return Fixture(root, FocusedInputPipeline().also { it.layoutCommitted(root) })
     }
 
