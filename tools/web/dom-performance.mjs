@@ -37,7 +37,8 @@ const server = createServer(async (request, response) => {
         const name = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
         const file = resolve(site, `.${name === '/' ? '/index.html' : name}`);
         if (file.startsWith(site + sep) === false) { response.writeHead(403).end(); return; }
-        response.writeHead(200, { 'Content-Type': mime[extname(file)] ?? 'application/octet-stream' }).end(await readFile(file));
+        const body = await readFile(file);
+        response.writeHead(200, { 'Content-Type': mime[extname(file)] ?? 'application/octet-stream' }).end(body);
     } catch { response.writeHead(404).end(); }
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
