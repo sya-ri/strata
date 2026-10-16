@@ -440,18 +440,69 @@ idea = root / ".idea"
 idea.mkdir()
 (idea / "modules.xml").write_text(ET.tostring(project, encoding="unicode"))
 (idea / "misc.xml").write_text('<project><component name="ProjectRootManager" languageLevel="JDK_25" project-jdk-name="jbr-25"/></project>')
+# A working non-JMH compiler uses nondefault roots, a production-owned shared input and its own library.
+auxiliary_roots = []
+for relative, kind, filename, text in (
+    ("authored/kotlin", "TestSource", "Auxiliary.kt", "class Auxiliary\n"),
+    ("authored/java", "TestSource", "AuxiliaryJava.java", "class AuxiliaryJava {}\n"),
+    ("authored/resources", "TestResource", "input.txt", "auxiliary resource\n"),
+    ("shared-production", "Source", "Production.kt", "class Production\n"),
+):
+    path = root / "integration/docs" / relative
+    path.mkdir(parents=True, exist_ok=True)
+    (path / filename).write_text(text)
+    auxiliary_roots.append(dict(sourceSet="verification", kind=kind, path=path.relative_to(root).as_posix(), exists=True, generated=False,
+                                files={file.relative_to(root).as_posix(): hashlib.sha256(file.read_bytes()).hexdigest() for file in path.rglob("*") if file.is_file()}))
+auxiliary_roots.append(dict(sourceSet="verification", kind="TestSource", path="integration/docs/absent/java", exists=False, generated=False, files={}))
+auxiliary_library = library.with_name("auxiliary-dependency.jar")
+auxiliary_library.write_bytes(b"synthetic auxiliary dependency identity")
+auxiliary_dependency = dict(kind="Library", identity="fixture:auxiliary:1", path=auxiliary_library.as_posix(), sha256=hashlib.sha256(auxiliary_library.read_bytes()).hexdigest())
+compiler_output = root / "integration/docs/build/classes/kotlin/verification"
+compiler_output.mkdir(parents=True)
+(compiler_output / "Auxiliary.class").write_bytes(b"synthetic compiler-output identity; real compilation is covered by TestKit")
+auxiliary_outputs = [dict(path=compiler_output.relative_to(root).as_posix(), exists=True,
+                          files={file.relative_to(root).as_posix(): hashlib.sha256(file.read_bytes()).hexdigest() for file in compiler_output.rglob("*") if file.is_file()}),
+                     dict(path="integration/docs/build/classes/java/verification", exists=False, files={})]
+docs_iml_path = root / "integration/docs/docs.iml"
+docs_generated = ET.parse(docs_iml_path).getroot()
+docs_manager = docs_generated.find("component")
+docs_manager.attrib["LANGUAGE_LEVEL"] = "JDK_17"
+docs_content = docs_manager.find("content")
+for entry in auxiliary_roots:
+    if entry["exists"]:
+        attributes = {"url": "file://$MODULE_DIR$/" + pathlib.PurePosixPath(entry["path"]).relative_to("integration/docs").as_posix()}
+        attributes.update({"type": "java-test-resource"} if entry["kind"] == "TestResource" else {"isTestSource": "false" if entry["kind"] == "Source" else "true"})
+        ET.SubElement(docs_content, "sourceFolder", **attributes)
+ET.SubElement(docs_manager, "orderEntry", type="inheritedJdk")
+docs_library = ET.SubElement(docs_manager, "orderEntry", type="module-library", scope="TEST")
+ET.SubElement(ET.SubElement(ET.SubElement(docs_library, "library"), "CLASSES"), "root", url="jar://" + auxiliary_library.as_posix() + "!/")
+runtime_library = copy.deepcopy(docs_library)
+runtime_library.attrib["scope"] = "RUNTIME"
+docs_manager.append(runtime_library)
+docs_iml_path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(docs_generated, encoding="unicode"))
+ET.SubElement(modules_parent, "module", fileurl="file://$PROJECT_DIR$/integration/docs/docs.iml")
+(idea / "modules.xml").write_text(ET.tostring(project, encoding="unicode"))
+docs_module = next(module for module in model["modules"] if module["name"] == "docs")
+docs_module["contentEntries"][0]["path"] = "file://$PROJECT_DIR$/integration/docs/"
+docs_module["contentEntries"][0]["sourceFolders"].extend(dict(type=entry["kind"], path="file://$PROJECT_DIR$/" + entry["path"]) for entry in auxiliary_roots if entry["exists"])
+docs_module["orderEntries"] = [dict(type="SDK", name="jbr-25"), dict(type="ModuleSource"), dict(type="Library", name=auxiliary_library.as_posix()), dict(type="Library", name=auxiliary_library.as_posix())]
+auxiliary = dict(project=":integration:docs", directory="integration/docs", module="docs", iml="integration/docs/docs.iml", sourceSet="verification", java=17,
+                 roots=auxiliary_roots, outputs=auxiliary_outputs, classpaths={"compile": "verificationCompileClasspath", "runtime": "verificationRuntimeClasspath"},
+                 dependencies={"verificationCompileClasspath": [auxiliary_dependency], "verificationRuntimeClasspath": [auxiliary_dependency]})
 subprocess.run(["git", "init", "-q", str(root)], check=True)
 subprocess.run(["git", "add", "--", "*.gradle.kts", "*.kt", "*.java", "*.txt"], cwd=root, check=True)
 subprocess.run(["git", "-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Create working declaration fixtures"], cwd=root, check=True)
 revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
 tracked = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
 projects = [dict(project=owner["project"], module=owner["module"], directory=owner["directory"], roots=[dict(kind=entry["kind"], path=entry["path"]) for entry in owner["roots"]], jmh=True) for owner in owners]
-projects.append(dict(project=":integration:docs", module="docs", directory="integration/docs", roots=[], jmh=False))
+projects.append(dict(project=":integration:docs", module="docs", directory="integration/docs", roots=[dict(kind=entry["kind"], path=entry["path"]) for entry in auxiliary_roots], jmh=False))
 projects.extend(dict(project=":integration:minecraft-fabric-" + version, module="integration-minecraft-fabric-" + version, directory="integration/minecraft-fabric-" + version, roots=[dict(kind="TestSource", path="quality/component-benchmarks/src/jmh/kotlin")], jmh=False) for version in sys.argv[5:])
-inventory = dict(revision=revision, tracked={name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in tracked if name}, projects=projects, owners=owners)
+for declaration in projects:
+    declaration["auxiliarySourceSets"] = ["verification"] if declaration["module"] == "docs" else []
+inventory = dict(revision=revision, tracked={name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in tracked if name}, projects=projects, owners=owners, auxiliary=[auxiliary])
 (root / "build/qodana/declarations.json").write_text(json.dumps(inventory))
 model_path.write_text(json.dumps(model))
-model_path.with_name("Java.json").write_text(json.dumps({"modules": [{"name": owner["module"], "languageLevel": owner["java"]} for owner in owners]}))
+model_path.with_name("Java.json").write_text(json.dumps({"modules": [{"name": owner["module"], "languageLevel": owner["java"]} for owner in owners] + [{"name": "docs", "languageLevel": 17}]}))
 sarif_path = model_path.with_name("qodana.sarif.json")
 sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": revision}]}]}))
 validator = pathlib.Path(sys.argv[4])
@@ -468,6 +519,99 @@ def validate(candidate, rejected=False):
 
 validate(model_path)
 original_inventory = (root / "build/qodana/declarations.json").read_bytes()
+# Reject omissions independently of agreement between the generated and imported views.
+original_docs_iml = docs_iml_path.read_bytes()
+# PROVIDED dependencies remain available when the exported auxiliary TEST sources run.
+provided_model = copy.deepcopy(model)
+provided_docs = next(module for module in provided_model["modules"] if module["name"] == "docs")
+provided_generated = ET.fromstring(original_docs_iml.decode())
+provided_manager = provided_generated.find("component")
+provided_dependencies = provided_manager.findall("orderEntry[@type='module-library']")
+provided_dependencies[0].attrib["scope"] = "PROVIDED"
+for dependency in provided_dependencies[1:]:
+    provided_manager.remove(dependency)
+provided_docs["orderEntries"].remove(next(entry for entry in provided_docs["orderEntries"] if entry["type"] == "Library" and entry["name"] == auxiliary_library.as_posix()))
+docs_iml_path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(provided_generated, encoding="unicode"))
+provided_path = model_path.with_name("auxiliary-provided.json")
+provided_path.write_text(json.dumps(provided_model))
+validate(provided_path)
+docs_iml_path.write_bytes(original_docs_iml)
+# An omitted module level inherits the project level; it must still equal the compiler declaration.
+original_misc = (idea / "misc.xml").read_bytes()
+inherited_misc = ET.fromstring(original_misc.decode())
+inherited_misc.find("component").attrib["languageLevel"] = "JDK_17"
+(idea / "misc.xml").write_text(ET.tostring(inherited_misc, encoding="unicode"))
+inherited_docs = ET.fromstring(original_docs_iml.decode())
+del inherited_docs.find("component").attrib["LANGUAGE_LEVEL"]
+docs_iml_path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(inherited_docs, encoding="unicode"))
+validate(model_path)
+(idea / "misc.xml").write_bytes(original_misc)
+docs_iml_path.write_bytes(original_docs_iml)
+for mutation in ("paired-omission", "generated-omission", "imported-omission", "wrong-kind", "duplicate", "broader", "foreign-owner", "exclusion", "exclude-pattern", "missing-dependency", "duplicate-dependency", "runtime-only-compile", "wrong-sdk", "wrong-language", "wrong-inherited-language", "omitted-inventory", "duplicate-declaration", "changed-membership", "uncompiled-output"):
+    candidate = copy.deepcopy(model)
+    candidate_inventory = copy.deepcopy(inventory)
+    module = next(module for module in candidate["modules"] if module["name"] == "docs")
+    sources = module["contentEntries"][0]["sourceFolders"]
+    source = next(entry for entry in sources if entry["path"] == "file://$PROJECT_DIR$/" + auxiliary_roots[0]["path"])
+    generated = ET.fromstring(original_docs_iml.decode())
+    manager = generated.find("component")
+    content = manager.find("content")
+    folder = next(entry for entry in content.findall("sourceFolder") if entry.attrib["url"] == "file://$MODULE_DIR$/" + pathlib.PurePosixPath(auxiliary_roots[0]["path"]).relative_to("integration/docs").as_posix())
+    if mutation in ("paired-omission", "generated-omission", "imported-omission", "foreign-owner"):
+        if mutation != "imported-omission":
+            content.remove(folder)
+        if mutation != "generated-omission":
+            sources.remove(source)
+            if mutation == "foreign-owner":
+                next(owner for owner in candidate["modules"] if owner["name"] == owners[0]["module"])["contentEntries"][0]["sourceFolders"].append(source)
+    elif mutation == "wrong-kind":
+        folder.attrib["isTestSource"] = "false"
+        source["type"] = "Source"
+    elif mutation == "duplicate":
+        content.append(copy.deepcopy(folder))
+        sources.append(copy.deepcopy(source))
+    elif mutation == "broader":
+        folder.attrib["url"] = folder.attrib["url"].rsplit("/", 1)[0]
+        source["path"] = source["path"].rsplit("/", 1)[0]
+    elif mutation == "exclusion":
+        ET.SubElement(content, "excludeFolder", url=folder.attrib["url"])
+        module["contentEntries"][0]["excludeFolders"] = [dict(path=source["path"])]
+    elif mutation == "exclude-pattern":
+        module["contentEntries"][0]["excludePatterns"] = ["*"]
+    elif mutation == "missing-dependency":
+        manager.remove(manager.find("orderEntry[@type='module-library']"))
+        module["orderEntries"] = [entry for entry in module["orderEntries"] if entry["type"] != "Library"]
+    elif mutation == "duplicate-dependency":
+        manager.append(copy.deepcopy(manager.find("orderEntry[@type='module-library']")))
+        module["orderEntries"].append(copy.deepcopy(next(entry for entry in module["orderEntries"] if entry["type"] == "Library" and entry["name"] == auxiliary_library.as_posix())))
+    elif mutation == "runtime-only-compile":
+        dependencies = manager.findall("orderEntry[@type='module-library']")
+        dependencies[0].attrib["scope"] = "RUNTIME"
+        for dependency in dependencies[1:]:
+            manager.remove(dependency)
+        module["orderEntries"].remove(next(entry for entry in module["orderEntries"] if entry["type"] == "Library" and entry["name"] == auxiliary_library.as_posix()))
+    elif mutation == "wrong-sdk":
+        next(entry for entry in module["orderEntries"] if entry["type"] == "SDK")["name"] = "wrong-sdk"
+    elif mutation == "wrong-language":
+        manager.attrib["LANGUAGE_LEVEL"] = "JDK_21"
+    elif mutation == "wrong-inherited-language":
+        del manager.attrib["LANGUAGE_LEVEL"]
+    elif mutation == "omitted-inventory":
+        candidate_inventory["auxiliary"] = []
+    elif mutation == "duplicate-declaration":
+        candidate_inventory["auxiliary"][0]["roots"].append(copy.deepcopy(auxiliary_roots[0]))
+    elif mutation == "changed-membership":
+        candidate_inventory["auxiliary"][0]["roots"][0]["files"] = {}
+    else:
+        candidate_inventory["auxiliary"][0]["outputs"][0]["files"] = {}
+    docs_iml_path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(generated, encoding="unicode"))
+    (root / "build/qodana/declarations.json").write_text(json.dumps(candidate_inventory))
+    invalid = model_path.with_name("auxiliary-invalid.json")
+    invalid.write_text(json.dumps(candidate))
+    validate(invalid, rejected=True)
+    docs_iml_path.write_bytes(original_docs_iml)
+    (root / "build/qodana/declarations.json").write_bytes(original_inventory)
+validate(model_path)
 # Two working owners may explicitly share an input; a downstream duplicate alone is not a declaration.
 shared = copy.deepcopy(owners[0]["roots"][3])
 assert shared["sourceSet"] == "jmh" and shared["kind"] == "TestSource"
