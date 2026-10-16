@@ -19,8 +19,12 @@ internal object ComponentProfile {
      * Creates the complete profile outside timed operations; no native or application resource is acquired.
      * The unchanged default is the component bitmap snapshot; supplemental metric fixtures may supply their own snapshot.
      * A null snapshot selects deterministic compatibility ASCII glyphs instead of resource fonts.
+     * An optional compatibility glyph freezes equal-pixel inputs for supplemental replacement workloads.
      */
-    internal fun create(snapshot: MinecraftFontSnapshot? = ComponentFontAssets.snapshot()): MinecraftUiProfile =
+    internal fun create(
+        snapshot: MinecraftFontSnapshot? = ComponentFontAssets.snapshot(),
+        compatibilityGlyph: DrawImage? = null,
+    ): MinecraftUiProfile =
         createMinecraftUiProfile {
             menuBackground(image(16, 16))
             containerBackground(image(256, 256))
@@ -52,7 +56,7 @@ internal object ComponentProfile {
                     val pixels = IntArray(64) { 0x00FFFFFF }
                     pixels[(codePoint - 0x21) % 6] = -1
                     pixels[14] = -1
-                    printableAsciiGlyph(codePoint, createDrawImage(IntSize(8, 8), pixels))
+                    printableAsciiGlyph(codePoint, compatibilityGlyph ?: createDrawImage(IntSize(8, 8), pixels))
                 }
             } else {
                 fonts(snapshot)
