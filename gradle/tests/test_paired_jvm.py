@@ -38,6 +38,11 @@ class PairedJvmTest(unittest.TestCase):
         self.assertEqual(PAIRED.fixture_projects(data), [":quality:remote-benchmarks"])
         data["compiled_pins"]["fixture"] = [{"path": "runtime/velocity/build/classes/kotlin/test/example/Complete.class", "sha256": "a" * 64}]
         self.assertEqual(PAIRED.fixture_projects(data), [])
+        data["owner_reports"] = [{"kind": "java-exec", "project": ":quality:component-benchmarks"},
+                                 {"kind": "test", "project": ":runtime:velocity"}]
+        self.assertEqual(PAIRED.fixture_projects(data), [":quality:component-benchmarks"])
+        data["compiled_pins"]["fixture"] = [{"path": "quality/remote-benchmarks/build/classes/kotlin/jmh/example/Complete.class", "sha256": "a" * 64}]
+        self.assertEqual(PAIRED.fixture_projects(data), [":quality:component-benchmarks", ":quality:remote-benchmarks"])
 
     def test_runtime_side_builds_declared_fixture_pins_without_changing_the_inventory(self):
         tasks = [":performance-testkit:jvmJar", ":quality:remote-benchmarks:jmhCompileGeneratedClasses", ":runtime:velocity:testClasses"]
@@ -1322,6 +1327,112 @@ class PairedJvmTest(unittest.TestCase):
                 "phase_keys": ["workload"], "rows": [{"workload": "all"}, {"workload": "control"}], "warmup": 100, "samples": 200,
                 "runtime_classes": {"headless": {"project": ":runtime:headless", "class": "independent.Runtime"}}}
 
+    def test_complete_standalone_owner_corpus_has_no_fabricated_jmh_suite(self):
+        value = copy.deepcopy(self.manifest)
+        report = self.owner_specification()
+        report.update(project=":quality:benchmarks", template="jmhHistorical", kind="java-exec",
+                      rows=[{"workload": f"whole-{index}"} for index in range(55)], warmup=30, samples=60,
+                      controls=["verification"], runtime_classes={"identity": {"project": ":performance-testkit", "class": "independent.Runtime"}})
+        value.update(runtime_projects=[":performance-testkit"], suites=[], owner_reports=[report])
+        self.assertEqual(self.load(value), value)
+        self.assertEqual(PAIRED.fixture_projects(value), [":quality:benchmarks"])
+        for change in (lambda v: v.update(owner_reports=[]), lambda v: v["owner_reports"][0].update(rows=[]),
+                       lambda v: v["owner_reports"][0]["rows"].append(v["owner_reports"][0]["rows"][0]),
+                       lambda v: v["owner_reports"][0]["controls"].append("verification"),
+                       lambda v: v.update(suites=self.manifest["suites"])):
+            changed = copy.deepcopy(value)
+            change(changed)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(changed)
+
+    def test_neutral_outer_and_both_target_archive_roles_are_strictly_bound(self):
+        report = self.owner_specification()
+        report["runtime_classes"] = {"identity": {"project": ":performance-testkit", "class": "independent.Runtime"}}
+        collector = self.root / "neutral.jar"
+        collector.write_bytes(b"fixed neutral collector")
+        fixture = self.root / "fixture.jar"
+        fixture.write_bytes(b"compiled fixture")
+        fixture_pin = {"path": str(fixture), "sha256": PAIRED.digest(fixture)}
+        runtime = {}
+        for side in ("baseline", "candidate"):
+            target = self.root / (side + ".jar")
+            target.write_bytes(side.encode())
+            runtime[side] = {":performance-testkit": {"path": str(target), "sha256": PAIRED.digest(target)}}
+        self.assertEqual(PAIRED.owner_runtime_mapping(runtime["candidate"]), {})
+        inputs = {"original-input": {"path": str(self.input), "sha256": PAIRED.digest(self.input)}}
+        bound = PAIRED.owner_fixture_inputs(report, inputs, runtime, "candidate", str(collector), fixture_pin)
+        self.assertEqual(bound["owner-target-identity"], str(self.root / "candidate.jar"))
+        self.assertEqual(bound["owner-collector"], str(collector))
+        self.assertEqual(bound["owner-fixture"], str(fixture))
+        self.assertEqual(bound["owner-baseline-identity"], str(self.root / "baseline.jar"))
+        self.assertEqual(bound["original-input"], str(self.input))
+        with self.assertRaises(ValueError):
+            PAIRED.owner_fixture_inputs(report, {"owner-collector": inputs["original-input"]}, runtime, "candidate", str(collector), fixture_pin)
+        wrong = copy.deepcopy(runtime)
+        wrong["candidate"][":performance-testkit"]["path"] = str(collector)
+        wrong["candidate"][":performance-testkit"]["sha256"] = PAIRED.digest(collector)
+        with self.assertRaises(ValueError):
+            PAIRED.owner_fixture_inputs(report, inputs, wrong, "candidate", str(collector), fixture_pin)
+        (self.root / "candidate.jar").write_bytes(b"substituted target")
+        with self.assertRaises(ValueError):
+            PAIRED.owner_fixture_inputs(report, inputs, runtime, "candidate", str(collector), fixture_pin)
+        fixture.write_bytes(b"substituted fixture")
+        with self.assertRaisesRegex(ValueError, "Changed owner fixture archive"):
+            PAIRED.owner_fixture_inputs(report, inputs, runtime, "baseline", str(collector), fixture_pin)
+
+    def test_full_standalone_report_rejects_missing_duplicate_control_and_wrong_origin(self):
+        binary = b"actual target representative"
+        archive = self.root / "target.jar"
+        with zipfile.ZipFile(archive, "w") as jar:
+            jar.writestr("independent/Runtime.class", binary)
+        specification = self.owner_specification()
+        specification.update(rows=[{"workload": f"whole-{index}"} for index in range(55)], warmup=30, samples=60,
+                             controls=["verification"], runtime_classes={"identity": {"project": ":performance-testkit", "class": "independent.Runtime"}})
+        report = {"schema_version": 1, "status": "passed", "workload_id": specification["workload_id"], "repetition": 0,
+                  "run_id": "12345678-1234-1234-1234-123456789abc",
+                  "phases": [{**row, "warmup": 30, "samples": 60, "verification": {"passed": True}} for row in specification["rows"]],
+                  "runtime_metadata": {"modules": [{"module": "identity", "status": "resolved", "representativeClass": "independent.Runtime",
+                                                    "codeSource": {"status": "available", "sha256": PAIRED.digest(archive)},
+                                                    "classResource": {"status": "available", "sha256": hashlib.sha256(binary).hexdigest()},
+                                                    "classTree": {"status": "available"}}]}}
+        runtime = {":performance-testkit": {"path": str(archive), "sha256": PAIRED.digest(archive)}}
+        PAIRED.verify_owner_report(report, specification, 0, runtime, set())
+        changes = [lambda value: value["phases"].pop(),
+                   lambda value: value["phases"].append(value["phases"][0]),
+                   lambda value: value["phases"][0].pop("verification"),
+                   lambda value: value["runtime_metadata"]["modules"][0]["codeSource"].update(sha256="0" * 64),
+                   lambda value: value["runtime_metadata"]["modules"][0]["classResource"].update(sha256="0" * 64)]
+        for change in changes:
+            changed = copy.deepcopy(report)
+            change(changed)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                PAIRED.verify_owner_report(changed, specification, 0, runtime, set())
+
+    def test_archived_owner_fixture_preserves_original_classpath_and_rejects_mutation(self):
+        owner = self.root / "owner"
+        owner.mkdir()
+        source = self.root / "compiled"
+        source.mkdir()
+        (source / "Main.class").write_bytes(b"actual compiled fixture")
+        retained = owner / "classes"
+        retained.mkdir()
+        (retained / "Main.class").write_bytes((source / "Main.class").read_bytes())
+        original = owner / "classpath.json"
+        PAIRED.write_new(original, {"schema": "strata-paired-jvm-classpath-v1", "entries": [
+            {"source": str(source), "path": str(retained), "sha256": PAIRED.path_identity(source)}]})
+        before = original.read_bytes()
+        archived = PAIRED.archive_owner_classpath(original)
+        binding = PAIRED.digest(owner / "archive-binding.json")
+        prepared = PAIRED.verify_archived_owner_classpath(archived, binding)
+        entry = PAIRED.class_entry(prepared, "Main")
+        with zipfile.ZipFile(entry["path"]) as jar:
+            self.assertEqual(jar.read("Main.class"), b"actual compiled fixture")
+        self.assertEqual(original.read_bytes(), before)
+        self.assertEqual(PAIRED.prepared_classpath(original)["entries"][0]["source"], str(source))
+        (owner / "archive-binding.json").write_text('{}', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Changed owner archive binding"):
+            PAIRED.verify_archived_owner_classpath(archived, binding)
+
     def test_owner_reports_are_independent_of_jmh_rows_and_reject_incomplete_bindings(self):
         value = copy.deepcopy(self.manifest)
         value["runtime_projects"] += [":velocity-api", ":runtime:velocity"]
@@ -2220,7 +2331,7 @@ class PairedJvmTest(unittest.TestCase):
                     self.assertFalse((directory / "verified.json").exists())
 
     def test_independent_file_flags_bind_reused_control_pids_without_inventing_a_working_directory(self):
-        modes = ("positive", "changed-flag", "changed-vm", "changed-file", "missing-file", "wrong-pid", "truncated",
+        modes = ("positive", "positive-large", "changed-flag", "changed-vm", "changed-file", "missing-file", "wrong-pid", "truncated",
                  "ambiguous-file", "ambiguous-vm", "wrong-birth", "wrong-origin", "reordered-controls", "console-only", "oversized")
         for mode in modes:
             with self.subTest(mode=mode):
@@ -2237,7 +2348,8 @@ class PairedJvmTest(unittest.TestCase):
                 for index, result in enumerate(receipt["controls"]):
                     path = directory / result["id"] / "class-load.log"
                     path.parent.mkdir()
-                    path.write_text(classes, encoding="utf-8")
+                    additional = "[123][info][class,load] fixture.Supplement source: file:/unchanged-input.jar\n" * 100000
+                    path.write_text(classes + additional if mode == "positive-large" else classes, encoding="utf-8")
                     artifact = {"path": path.relative_to(directory).as_posix(), "sha256": PAIRED.digest(path)}
                     result["artifacts"].append(artifact)
                     flag = "../../" + result["id"] + "/class-load.log"
@@ -2257,10 +2369,14 @@ class PairedJvmTest(unittest.TestCase):
                     paths[0].write_text(classes + "changed\n", encoding="utf-8")
                 elif mode == "missing-file":
                     paths[0].unlink()
-                elif mode in ("wrong-pid", "truncated", "wrong-origin", "oversized"):
+                elif mode in ("wrong-pid", "truncated", "wrong-origin"):
                     text = classes.replace("[123]", "[456]") if mode == "wrong-pid" else classes.rstrip("\n") if mode == "truncated" else \
-                        re.sub(r"source: [^\n]+", "source: file:/wrong.jar", classes) if mode == "wrong-origin" else classes + "x" * (1024 * 1024) + "\n"
+                        re.sub(r"source: [^\n]+", "source: file:/wrong.jar", classes)
                     paths[0].write_text(text, encoding="utf-8")
+                    receipt["controls"][0]["artifacts"][-1]["sha256"] = PAIRED.digest(paths[0])
+                elif mode == "oversized":
+                    with paths[0].open("r+b") as stream:
+                        stream.truncate(PAIRED.CLASS_DIAGNOSTIC_BYTES + 1)
                     receipt["controls"][0]["artifacts"][-1]["sha256"] = PAIRED.digest(paths[0])
                 elif mode == "ambiguous-file":
                     receipt["controls"][0]["artifacts"].append(copy.deepcopy(receipt["controls"][0]["artifacts"][-1]))
@@ -2274,13 +2390,16 @@ class PairedJvmTest(unittest.TestCase):
                     receipt["controls"][0]["artifacts"].pop()
                 (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
                 PAIRED.write_new(directory / "receipt.json", receipt)
-                if mode == "positive":
+                if mode in ("positive", "positive-large"):
                     PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
                     files = PAIRED.read_json(directory / "verified.json")["independent_class_load_files"]
                     self.assertEqual(len(files), 2)
                     self.assertEqual([item["vm_start_ms"] for item in files], [1001, 5001])
                     self.assertTrue(all(item["working_directory_observation"] is None for item in files))
                     self.assertTrue(all(item["relative_path_relationship"].startswith("inferred") for item in files))
+                    if mode == "positive-large":
+                        self.assertTrue(all(path.stat().st_size > 1024 * 1024 for path in paths))
+                        self.assertEqual([item["sha256"] for item in files], [PAIRED.digest(path) for path in paths])
                 else:
                     with self.assertRaises((ValueError, FileNotFoundError)):
                         PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
@@ -3092,8 +3211,11 @@ class PairedJvmTest(unittest.TestCase):
 
     def test_class_load_inventory_rejects_missing_duplicate_wrong_pid_rotation_and_truncation(self):
         line = "[123][info][class,load] fixture.Complete source: file:/frozen-runtime.jar\n"
+        def oversized(path):
+            with path.open("r+b") as stream:
+                stream.truncate(PAIRED.CLASS_DIAGNOSTIC_BYTES + 1)
         changes = [lambda path: path.unlink(), lambda path: path.write_text(line.replace("[123]", "[999]")),
-                   lambda path: path.write_text(line.rstrip()), lambda path: path.write_text(line * 20000),
+                   lambda path: path.write_text(line.rstrip()), oversized,
                    lambda path: path.with_name("classes-123-2026-10-12_00-00-01.log").write_text(line),
                    lambda path: path.with_name(path.name + ".0").write_text(line)]
         for index, change in enumerate(changes):
@@ -3115,6 +3237,27 @@ class PairedJvmTest(unittest.TestCase):
                     PAIRED.class_loads(directory)
         with self.assertRaisesRegex(ValueError, "Missing owned class-load directory"):
             PAIRED.class_loads(self.root / "missing-phase")
+
+    def test_one_vm_complete_class_inventory_can_exceed_one_megabyte(self):
+        directory = self.root / "large-single-diagnostic"
+        owner = directory / "class-loads"
+        owner.mkdir(parents=True)
+        path = owner / "classes-123-2026-10-12_00-00-00.log"
+        line = "[123][info][class,load] fixture.Complete source: file:/frozen-runtime.jar\n"
+        complete = line * 100000
+        path.write_text(complete, encoding="utf-8")
+        self.assertGreater(path.stat().st_size, 1024 * 1024)
+        self.assertLess(path.stat().st_size, PAIRED.CLASS_DIAGNOSTIC_BYTES)
+        text, identities = PAIRED.class_loads(directory)
+        self.assertEqual(text, complete)
+        self.assertEqual(text.count("fixture.Complete source:"), 100000)
+        self.assertEqual(list(identities.values()), [{"path": str(path), "sha256": PAIRED.digest(path), "pid": 123}])
+        path.write_text(complete.replace("[123]", "[456]", 1), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "wrong-PID"):
+            PAIRED.class_loads(directory)
+        path.write_text(complete.rstrip("\n"), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "truncated"):
+            PAIRED.class_loads(directory)
 
     def test_early_setup_failure_preserves_failed_attempt_without_java(self):
         output = self.root / "early-failure"
