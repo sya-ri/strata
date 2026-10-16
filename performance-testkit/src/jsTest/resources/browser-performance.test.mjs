@@ -5,6 +5,42 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { collectBrowserPerformance, measureBrowserMatrix } from '../../jsMain/resources/browser-performance.mjs';
+import { captureStablePixels } from '../../../../tools/web/verification-fixtures.mjs';
+
+test('fresh-render capture retains settling frames before accepting consecutive identical pixels', async () => {
+    const frames = ['initial paint', 'settled paint', 'settled paint', 'must not capture'];
+    const recorded = [];
+    const capture = await captureStablePixels({ screenshot: async () => Buffer.from(frames.shift()) }, async (bytes, attempt) => recorded.push({ pixels: bytes.toString(), attempt }));
+    assert.equal(capture.toString(), 'settled paint');
+    assert.deepEqual(recorded, [{ pixels: 'initial paint', attempt: 0 }, { pixels: 'settled paint', attempt: 1 }, { pixels: 'settled paint', attempt: 2 }]);
+    assert.deepEqual(frames, ['must not capture']);
+});
+
+test('independently stable renders still reject different pixels without seeking a matching reference', async () => {
+    let calls = 0;
+    const capture = pixels => captureStablePixels({ screenshot: async () => { calls += 1; return Buffer.from(pixels); } }, async () => {});
+    const current = await capture('current pixels');
+    const reference = await capture('different reference pixels');
+    assert.throws(() => assert.deepEqual(current, reference));
+    assert.equal(calls, 4);
+});
+
+test('a changing render fails at the capture bound with every attempt retained', async () => {
+    let calls = 0;
+    const recorded = [];
+    await assert.rejects(captureStablePixels({ screenshot: async () => Buffer.from(String(calls++ % 2)) }, async (bytes, attempt) => recorded.push(attempt)), /did not stabilize/);
+    assert.equal(calls, 10);
+    assert.deepEqual(recorded, Array.from({ length: 10 }, (_, index) => index));
+});
+
+test('capture and evidence failures preserve the original failure without retrying', async () => {
+    const failure = new Error('capture or retention failed');
+    let captures = 0;
+    const page = { screenshot: async () => { captures += 1; return Buffer.from('pixels'); } };
+    await assert.rejects(captureStablePixels(page, async () => { throw failure; }), error => error === failure);
+    assert.equal(captures, 1);
+    await assert.rejects(captureStablePixels({ screenshot: async () => { throw failure; } }, async () => assert.fail('unexpected retention')), error => error === failure);
+});
 
 const conditions = { viewport: { width: 640, height: 480 }, warmup: 30, samples: 60 };
 const scenarios = ['native', 'minecraft'].map(id => ({ id, url: `http://fixture/${id}`, targetUrl: 'http://fixture/application.js', phases: ['Initial', 'Idle'] }));

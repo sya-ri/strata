@@ -3,6 +3,18 @@ import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+/** Requires two identical consecutive captures of one unchanged DOM, retaining every attempt and failing after ten captures. */
+export async function captureStablePixels(page, record) {
+    let previous;
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const capture = await page.screenshot();
+        await record(capture, attempt);
+        if (previous?.equals(capture)) return capture;
+        previous = capture;
+    }
+    assert.fail('Independent fresh render did not stabilize within ten captures');
+}
+
 /** Verifies every registered control with loaded-byte, raw-receipt and fresh-render pixel evidence. */
 export async function verifyRegisteredControls({ browser, page, engine, theme, site, evidence, variant, fixtures }) {
     assert.equal(new Set(fixtures.map(fixture => fixture.id)).size, fixtures.length);
@@ -31,13 +43,13 @@ export async function verifyRegisteredControls({ browser, page, engine, theme, s
         for (const control of inventory.controls) {
             assert.match(control.token, /^[a-z0-9-]+$/);
             const prefix = `${engine.name()}-${theme}-${fixture.id}-${control.token}`;
+            const screenshots = [];
             try {
                 const result = await page.evaluate(fixture.execute, fixture.prepare(control, variant));
                 await writeFile(resolve(evidence, `${prefix}.raw.json`), JSON.stringify({ ...result, ...provenance }, null, 2), { flag: 'wx' });
                 assert.equal(result.fixture.ok, true, `${control.token}: ${result.fixture.error}`);
                 assert.equal(result.fixture.control, control.token);
                 fixture.validate(result, control, variant);
-                const screenshots = [];
                 for (const [index, snapshot] of result.fixture.snapshots.entries()) {
                     const pixels = await browser.newPage({ viewport: { width: 640, height: 480 } });
                     try {
@@ -46,18 +58,24 @@ export async function verifyRegisteredControls({ browser, page, engine, theme, s
                             await pixels.setContent(`<!doctype html><html><head>${snapshot.stylesHtml}<style>body { margin: 0; }</style></head><body>${snapshot[`${side}Html`]}</body></html>`);
                             await pixels.evaluate(() => document.fonts.ready);
                             if (snapshot.focusIndex !== null) await pixels.locator('body > div > *').nth(snapshot.focusIndex).focus();
-                            const capture = await pixels.screenshot();
                             const name = `${prefix}-${index}-${side}.png`;
+                            const receipt = { phase: snapshot.phase, side, file: name, stability: [] };
+                            screenshots.push(receipt);
+                            const capture = await captureStablePixels(pixels, async (bytes, attempt) => {
+                                const file = `${prefix}-${index}-${side}-${attempt}.png`;
+                                await writeFile(resolve(evidence, file), bytes, { flag: 'wx' });
+                                receipt.stability.push({ file, sha256: hash(bytes) });
+                            });
                             await writeFile(resolve(evidence, name), capture, { flag: 'wx' });
                             captures.push(capture);
-                            screenshots.push({ phase: snapshot.phase, side, file: name, sha256: hash(capture) });
+                            receipt.sha256 = hash(capture);
                         }
                         assert.deepEqual(captures[0], captures[1], `${control.token}/${snapshot.phase}: independent fresh-render pixels`);
                     } finally { await pixels.close(); }
                 }
                 controls.push({ ...result, screenshots });
             } catch (error) {
-                await writeFile(resolve(evidence, `${prefix}.rejected.json`), JSON.stringify({ ...provenance, control, error: String(error), complete: false }, null, 2), { flag: 'wx' });
+                await writeFile(resolve(evidence, `${prefix}.rejected.json`), JSON.stringify({ ...provenance, control, screenshots, error: String(error), complete: false }, null, 2), { flag: 'wx' });
                 throw error;
             }
         }
