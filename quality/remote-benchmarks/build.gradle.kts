@@ -49,7 +49,7 @@ tasks.register<JavaExec>("jmhRemote") {
     workloads?.let { systemProperty("strata.performance.workloads", it) }
     val selected = listOf("benchmarks", "parameters").any { providers.gradleProperty("strata.performance.$it").isPresent }
     providers.gradleProperty("strata.performance.benchmarks").orNull?.let { systemProperty("strata.performance.benchmarks", it) }
-    listOf("parameters", "fixtureInputs").forEach { name ->
+    listOf("parameters", "fixtureInputs", "remoteInventory").forEach { name ->
         providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", rootProject.file(it).absolutePath) }
     }
     val label = providers.gradleProperty("strata.performance.suite").getOrElse(family)

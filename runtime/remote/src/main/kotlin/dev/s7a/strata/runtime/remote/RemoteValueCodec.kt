@@ -172,7 +172,8 @@ public class RemoteValueCodec(
     }
 
     private fun readBytes(input: ByteBuffer): ByteArray {
-        val size = readByteLength(input)
+        val size = input.int
+        require(size in 0..minOf(limits.messageBytes, input.remaining())) { "Invalid remote byte length." }
         return ByteArray(size).also { input.get(it) }
     }
 
