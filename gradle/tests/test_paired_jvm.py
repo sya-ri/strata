@@ -815,6 +815,30 @@ class PairedJvmTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "declared metadata"):
             PAIRED.pack_dispatch_inputs(directory, manifest)
 
+    def test_dispatch_admits_standard_Source_providers_with_the_original_total_transfer_bound(self):
+        directory, manifest, target, expected, provider, _, _ = self.artifact_fixture()
+        descriptor = directory / ".github/performance/dispatch-artifacts.json"
+        for size in (200_257_512, 256 * 1024**2):
+            descriptor.write_text(json.dumps([{**provider, "bytes": size}]), encoding="utf-8")
+            targets, receipts = PAIRED.dispatch_artifact_inputs(directory, manifest)
+            self.assertEqual(targets, {target.casefold()})
+            self.assertEqual(receipts, [])
+        descriptor.write_text(json.dumps([{**provider, "bytes": 256 * 1024**2 + 1}]), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "artifact identity"):
+            PAIRED.dispatch_artifact_inputs(directory, manifest)
+        inputs, providers = [], []
+        for index, size in enumerate((256 * 1024**2, 256 * 1024**2, 1)):
+            path = target + str(index)
+            inputs.append({"label": "app" + str(index), "pin": {"path": path, "sha256": hashlib.sha256(expected).hexdigest()}})
+            providers.append({**provider, "id": index + 1, "bytes": size, "files": [{"member": "outputs/app.js", "target": path}]})
+        (directory / manifest).write_text(json.dumps({"inputs": inputs}), encoding="utf-8")
+        descriptor.write_text(json.dumps(providers[:2]), encoding="utf-8")
+        targets, _ = PAIRED.dispatch_artifact_inputs(directory, manifest)
+        self.assertEqual(targets, {item["pin"]["path"].casefold() for item in inputs[:2]})
+        descriptor.write_text(json.dumps(providers), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "512 MiB in total"):
+            PAIRED.dispatch_artifact_inputs(directory, manifest)
+
     def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None, payload=None, separate_driver=False):
         """Construct real producer/consumer commits and an independently reconstructed candidate tree."""
         base = self.selector_repository()
