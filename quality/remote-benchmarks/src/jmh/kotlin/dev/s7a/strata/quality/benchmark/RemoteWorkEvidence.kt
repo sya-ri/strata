@@ -31,6 +31,7 @@ public object RemoteWorkEvidence {
             Files.writeString(destination, protocolSurface().getValue("remote").sorted().joinToString("\n", postfix = "\n"))
             return
         }
+        RemoteInventoryArguments.verifyWork()
         verifySurface()
         JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(JmhFixtureSelection.all()))
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)
@@ -65,7 +66,14 @@ public object RemoteWorkEvidence {
      * Protocol and retained-session inputs register idle, update and lifetime operations without claiming host transport latency.
      */
     public fun verifySurface() {
-        val symbols = checkNotNull(javaClass.getResourceAsStream("/remote-api.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }
+        val selectedInventory = System.getProperty("strata.performance.remoteInventory")?.let { Path.of(it).toAbsolutePath().normalize() }
+        val symbols =
+            if (selectedInventory == null) {
+                checkNotNull(javaClass.getResourceAsStream("/remote-api.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }
+            } else {
+                require(JmhFixtureSelection.inputs().values.any { it.toAbsolutePath().normalize() == selectedInventory }) { "Archived remote inventory must be an explicitly frozen fixture input" }
+                Files.readAllLines(selectedInventory, Charsets.UTF_8)
+            }
         require(symbols.toSet().size == symbols.size) { "Duplicate remote performance API registration" }
         val feature = "Remote"
         val scenarios =
