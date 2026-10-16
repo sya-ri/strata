@@ -7,8 +7,16 @@ import { resolve } from 'node:path';
 export async function captureStablePixels(page, record) {
     let previous;
     for (let attempt = 0; attempt < 10; attempt += 1) {
+        // Match Playwright's screenshot settling cadence and wait for the page to paint twice before capture.
+        const delay = [0, 100, 250, 500][attempt] ?? 1000;
+        await page.evaluate(async milliseconds => {
+            await Promise.all([
+                new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+                new Promise(resolve => setTimeout(resolve, milliseconds)),
+            ]);
+        }, delay);
         const capture = await page.screenshot();
-        await record(capture, attempt);
+        await record(capture, attempt, delay);
         if (previous?.equals(capture)) return capture;
         previous = capture;
     }
@@ -61,10 +69,10 @@ export async function verifyRegisteredControls({ browser, page, engine, theme, s
                             const name = `${prefix}-${index}-${side}.png`;
                             const receipt = { phase: snapshot.phase, side, file: name, stability: [] };
                             screenshots.push(receipt);
-                            const capture = await captureStablePixels(pixels, async (bytes, attempt) => {
+                            const capture = await captureStablePixels(pixels, async (bytes, attempt, delay) => {
                                 const file = `${prefix}-${index}-${side}-${attempt}.png`;
                                 await writeFile(resolve(evidence, file), bytes, { flag: 'wx' });
-                                receipt.stability.push({ file, sha256: hash(bytes) });
+                                receipt.stability.push({ file, sha256: hash(bytes), delayMilliseconds: delay });
                             });
                             await writeFile(resolve(evidence, name), capture, { flag: 'wx' });
                             captures.push(capture);
