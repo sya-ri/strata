@@ -187,9 +187,7 @@ internal object MinecraftTextLineBreaker {
         maxWidth: Int,
         ellipsis: Boolean,
     ): MinecraftTextLine {
-        val offsets = IntArray(widths.size)
-        offsets[0] = range.start
-        for (index in 1 until offsets.size) offsets[index] = content.value.offsetByCodePoints(offsets[index - 1], 1)
+        val offsets = offsets(content.value, range.start, widths.size)
         val markerEnd = if (ellipsis) ellipsisEnd(content, offsets, widths, renderer, maxWidth) else null
         val last = markerEnd ?: offsets.lastIndex
         val end = offsets[last]
@@ -203,7 +201,19 @@ internal object MinecraftTextLineBreaker {
             }
         val run = renderer.create(text, style, enabled, logicalOrder = logicalOrder)
         val positions = IntArray(last + 1) { renderer.roundedWidth(widths[it]) }
-        return MinecraftTextLine(range.start, end, range.nextStart, run, offsets.copyOf(last + 1), positions)
+        val visibleOffsets = if (last < offsets.lastIndex) offsets.copyOf(last + 1) else offsets
+        return MinecraftTextLine.createOwned(range.start, end, range.nextStart, run, visibleOffsets, positions)
+    }
+
+    private fun offsets(
+        value: String,
+        start: Int,
+        size: Int,
+    ): IntArray {
+        val offsets = IntArray(size)
+        offsets[0] = start
+        for (index in 1 until offsets.size) offsets[index] = value.offsetByCodePoints(offsets[index - 1], 1)
+        return offsets
     }
 
     private fun ellipsisEnd(

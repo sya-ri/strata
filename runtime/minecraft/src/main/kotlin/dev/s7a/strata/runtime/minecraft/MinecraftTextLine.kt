@@ -5,7 +5,8 @@ import kotlin.math.abs
 /**
  * One detached laid-out line with scalar-aligned original offsets and logical caret metrics.
  *
- * Arrays are copied once and never exposed; one admission flag belongs to their current immutable lifetime.
+ * Arbitrary caller arrays are copied; the line breaker exclusively transfers its fresh compact arrays.
+ * Arrays are never exposed, and one admission flag belongs to their current immutable lifetime.
  * The line owns no renderer, font backend, coordinate history or lookup result cache.
  * Display shaping changes only the run's visual glyphs, not the logical editing coordinates.
  *
@@ -16,20 +17,31 @@ import kotlin.math.abs
  * @param offsets ordered original scalar boundaries, including both ends.
  * @param positions signed native horizontal widths corresponding to [offsets].
  */
-internal class MinecraftTextLine(
+internal class MinecraftTextLine private constructor(
+    @get:JvmSynthetic
+    internal val run: MinecraftTextRun,
     @get:JvmSynthetic
     internal val start: Int,
     @get:JvmSynthetic
     internal val end: Int,
     @get:JvmSynthetic
     internal val nextStart: Int,
-    @get:JvmSynthetic
-    internal val run: MinecraftTextRun,
-    offsets: IntArray,
-    positions: IntArray,
+    private val offsets: IntArray,
+    private val positions: IntArray,
 ) {
-    private val offsets = offsets.copyOf()
-    private val positions = positions.copyOf()
+    /**
+     * Snapshots arbitrary caller-owned arrays through the original six-argument JVM construction contract.
+     * Scalar-boundary/coordinate inputs and detached ownership follow the enclosing line contract.
+     */
+    internal constructor(
+        start: Int,
+        end: Int,
+        nextStart: Int,
+        run: MinecraftTextRun,
+        offsets: IntArray,
+        positions: IntArray,
+    ) : this(run, start, end, nextStart, offsets.copyOf(), positions.copyOf())
+
     private val monotone = (1 until this.positions.size).all { index -> this.positions[index - 1] <= this.positions[index] }
 
     /**
@@ -147,5 +159,35 @@ internal class MinecraftTextLine(
             }
         }
         return nearest
+    }
+
+    /**
+     * Privileged construction for one completed current line; arbitrary callers use the defensive constructor.
+     */
+    companion object {
+        /**
+         * Consumes fresh producer-private scalar boundaries and their matching rounded coordinates.
+         * The producer must relinquish both arrays after this call; no array or mutable view is exposed by the result.
+         * Each array contains exactly the visible scalar boundaries, including both ends and at least one boundary.
+         * Ellipsis input must already be compact, without a discarded suffix or previous-layout history.
+         * The current layout owns the detached line until replacement or release; no renderer or resource owner is retained.
+         *
+         * @param start inclusive original UTF-16 start.
+         * @param end exclusive visible logical end before a hard break or ellipsis.
+         * @param nextStart original next-line start after any consumed break.
+         * @param run detached immutable run with original font provenance.
+         * @param offsets exclusive ordered original scalar boundaries.
+         * @param positions exclusive rounded logical caret coordinates with the same length as [offsets].
+         * @return one detached immutable current line.
+         */
+        @JvmSynthetic
+        internal fun createOwned(
+            start: Int,
+            end: Int,
+            nextStart: Int,
+            run: MinecraftTextRun,
+            offsets: IntArray,
+            positions: IntArray,
+        ): MinecraftTextLine = MinecraftTextLine(run, start, end, nextStart, offsets, positions)
     }
 }

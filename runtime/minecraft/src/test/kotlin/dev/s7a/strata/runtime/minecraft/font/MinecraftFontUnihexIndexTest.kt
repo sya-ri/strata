@@ -441,7 +441,7 @@ internal class MinecraftFontUnihexIndexTest {
         }
     }
 
-    // This independent original walk bypasses both resolution selection and Unihex index selection.
+    // This independent original walk bypasses Unihex index selection.
     // Private preflight and TrueType raster hooks are shared; call counts and terminal results are asserted separately.
     private fun originalContinuation(
         state: MinecraftFontSnapshot,
@@ -486,8 +486,7 @@ internal class MinecraftFontUnihexIndexTest {
         assertEquals(0L, engine.retainedRasterBytes)
         assertEquals(0, engine.retainedFaces)
         assertEquals(0L, continuationField(engine, "faceBytes"))
-        assertEquals(0, continuationField(engine, "resolutionUnits"))
-        for (name in listOf("resolutions", "rasters", "faces", "bitmapSizes", "bitmapFailures", "faceFailures", "providerStatus", "fontStatus")) {
+        for (name in listOf("rasters", "faces", "bitmapSizes", "bitmapFailures", "faceFailures", "providerStatus", "fontStatus")) {
             assertTrue((continuationField(engine, name) as Map<*, *>).isEmpty(), name)
         }
         assertTrue((continuationField(engine, "validatedFaces") as Set<*>).isEmpty())

@@ -199,6 +199,7 @@ internal class ChildParticipationTest {
             child.parent = root
             root.children.add(child)
         }
+        root.refreshTraversalSummary()
         val owner = OwnerGuard()
         val entries = listOf(root) + root.children
         val lifecycle =
