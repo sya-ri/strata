@@ -29,8 +29,7 @@ internal class SemanticsPipeline(
         retained: RetainedEntry,
         output: MutableList<SemanticsEntry>,
     ) {
-        val semanticsCapability = retained.node as? SemanticsNode
-        if (semanticsCapability != null && (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null)) {
+        if (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Semantics)
             retained.localSemantics = collectLocalSemantics(retained)
         }
