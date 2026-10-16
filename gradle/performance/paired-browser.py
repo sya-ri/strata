@@ -85,7 +85,11 @@ def load_manifest(shared, root, data):
         require(set(collection) == required and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", collection["name"])
                 and collection["name"] not in names, "Invalid or duplicate browser collection")
         names.add(collection["name"])
-        shared.pin(root, collection["adapter"])
+        adapter = collection["adapter"]
+        require(isinstance(adapter, dict) and set(adapter) == {"path", "sha256"}
+                and isinstance(adapter["path"], str) and isinstance(adapter["sha256"], str)
+                and re.fullmatch(r"[0-9a-f]{64}", adapter["sha256"]), "Invalid browser adapter pin")
+        shared.relative_path(root, adapter["path"])
         require(collection["adapter"]["path"].startswith("tools/web/") and collection["adapter"]["path"].endswith(".mjs"), "Use an existing source-pinned Web adapter")
         arguments = collection["arguments"]
         require(isinstance(arguments, list) and arguments and len(arguments) <= 32, "Invalid browser adapter arguments")
@@ -551,6 +555,12 @@ def validate_terminal(shared, exit_code, terminal, admission, minimum_free_physi
                    and minimum_free_physical_bytes <= admission["availablePhysicalBytes"], "Missing actual fresh owned admission")
 
 
+def verify_adapters(shared, workspace, data):
+    """Bind every declared adapter to the immutable subject source before preparation or collection."""
+    for collection in data["collections"]:
+        shared.pin(workspace, collection["adapter"])
+
+
 def common_sources(shared, workspaces, data):
     """Both runtime variants retain the exact common fixture, adapter and build source closure."""
     inventories = []
@@ -648,6 +658,9 @@ def run(shared, root, selection, output):
         else:
             workspaces["fixture"], record["sources"]["fixture"] = shared.materialize(root, output, "fixture", data["sources"]["fixture"], selection["root"])
         common_sources(shared, workspaces, data)
+        if not source_mode:
+            for workspace in workspaces.values():
+                verify_adapters(shared, workspace, data)
         toolchains = None
         capture_tools = None
         if capture:

@@ -951,6 +951,7 @@ Automatic PR selection cannot override candidate identity through this field; ch
 The manifest binds all three source trees, permits differences only in explicitly declared Web production files, and pins immutable inputs, both Java roles, the linked testkit JS artifact and each actual application bundle.
 Use the actual `jsJar.archiveFile` path for the collector, including its `.klib` extension when emitted; both variants must pin that same linked archive path.
 Existing `tools/web` adapters receive structured path arguments and retain their full compiled scenario inventories.
+Selection verifies each adapter pin against the materialized candidate source, and execution rechecks every frozen workspace before preparation as well as around collection.
 No permanent workload registry or per-change workflow is required.
 
 Each side completes the existing JS distribution, JVM parity test, browser installation, shared driver checks and API/core/Web `jsJar` tasks before running the existing build and verification adapters.

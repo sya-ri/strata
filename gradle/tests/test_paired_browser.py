@@ -396,7 +396,31 @@ class PairedBrowserTest(unittest.TestCase):
     def load(self, value):
         path = self.root / "manifest.json"
         path.write_text(json.dumps(value), encoding="utf-8")
-        return self.shared.load_manifest(self.root, path)
+        data = self.shared.load_manifest(self.root, path)
+        if data["schema"] == "strata-paired-browser-ci-v1":
+            self.browser.verify_adapters(self.shared, self.root, data)
+        return data
+
+    def test_adapter_pin_uses_frozen_subject_bytes_and_keeps_mismatch_and_missing_refusals(self):
+        value = copy.deepcopy(self.manifest)
+        subject = self.root / "frozen-subject"
+        adapter = subject / value["collections"][0]["adapter"]["path"]
+        adapter.parent.mkdir(parents=True)
+        adapter.write_text("// Independently frozen subject adapter.\n", encoding="utf-8")
+        value["collections"][0]["adapter"]["sha256"] = self.shared.digest(adapter)
+        self.assertEqual(self.browser.load_manifest(self.shared, self.root, value), value)
+        self.browser.verify_adapters(self.shared, subject, value)
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            self.browser.verify_adapters(self.shared, self.root, value)
+        adapter.write_text("// Changed subject adapter.\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            self.browser.verify_adapters(self.shared, subject, value)
+        adapter.unlink()
+        with self.assertRaisesRegex(ValueError, "Missing or unsafe pinned file"):
+            self.browser.verify_adapters(self.shared, subject, value)
+        value["collections"][0]["adapter"]["sha256"] = "malformed"
+        with self.assertRaisesRegex(ValueError, "Invalid browser adapter pin"):
+            self.browser.load_manifest(self.shared, self.root, value)
 
     def test_linked_js_archive_uses_actual_klib_path_and_retains_both_compiled_pins(self):
         value = copy.deepcopy(self.manifest)

@@ -1991,6 +1991,8 @@ def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, ma
             candidate, _ = materialize(root, output, "candidate-check", data["sources"]["candidate"], input_root)
             if data["schema"] != "strata-source-preparation-ci-v1" and driver is None:
                 require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head), "Candidate source differs from execution head")
+            if data["schema"] == "strata-paired-browser-ci-v1":
+                browser_controller().verify_adapters(SimpleNamespace(**globals()), candidate, data)
             actual_sha = digest(path)
             require(manifest_sha256 is None or manifest_sha256 == actual_sha, "Manifest differs from planned bytes")
             require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during materialization")
