@@ -389,6 +389,11 @@ class PairedJvmTest(unittest.TestCase):
                         phase = directory.name
                         calls.append((phase, arguments))
                         properties = {argument.split("=", 1)[0]: argument.split("=", 1)[1] for argument in arguments if argument.startswith("-P") and "=" in argument}
+                        if "-Pstrata.performance.operationRequest" in properties:
+                            operation = PAIRED.read_json(Path(properties["-Pstrata.performance.operationRequest"]))
+                            collector = archives[":performance-testkit"]
+                            expected = PAIRED.owner_processing_collector(Path(properties["-Pstrata.paired.classpath"]), collector) if preflight else str(collector)
+                            self.assertEqual(operation["collector"], expected)
                         external = properties.get("-Pstrata.performance.externalRuntime")
                         entries = [str(path) for path in archives.values()] + ([external] if external else [])
                         if "-Pstrata.paired.preserveClasspath" in properties:

@@ -1796,7 +1796,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                             source_guard(workspace, data["sources"][key]["tree"])
                         destination = output / "raw" / suite["name"] / "operations" / side / f"run-{repetition}"
                         request_path = output / f"{suite['name']}-operations-{side}-{repetition}-request.json"
-                        write_new(request_path, {**operation, "collector": str(collector), "jmh_directory": bindings[side][repetition],
+                        processing_collector = owner_processing_collector(classpaths[side]["path"], collector) if side in classpaths else str(collector)
+                        write_new(request_path, {**operation, "collector": processing_collector, "jmh_directory": bindings[side][repetition],
                                                  "output": str(destination), "repetition": repetition, "source_bindings": record["sources"]})
                         flags = [f"-Pstrata.performance.operationRequest={request_path}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives)
                         if side in classpaths:
