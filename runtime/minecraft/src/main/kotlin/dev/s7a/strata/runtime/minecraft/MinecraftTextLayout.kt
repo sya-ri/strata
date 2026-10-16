@@ -49,15 +49,30 @@ internal class MinecraftTextLayout(
      */
     @JvmSynthetic
     internal fun inkBounds(): MinecraftTextInkBounds? {
-        var result: MinecraftTextInkBounds? = null
-        lines.forEachIndexed { index, line ->
-            line.inkBounds?.let { bounds ->
-                val y = Math.multiplyExact(index, lineStep).toDouble()
-                val translated = MinecraftTextInkBounds(bounds.left, bounds.top + y, bounds.right, bounds.bottom + y)
-                result = result?.union(translated) ?: translated
+        var present = false
+        var left = 0.0
+        var top = 0.0
+        var right = 0.0
+        var bottom = 0.0
+        for (index in lines.indices) {
+            val bounds = lines[index].inkBounds ?: continue
+            val y = Math.multiplyExact(index, lineStep).toDouble()
+            val translatedTop = bounds.top + y
+            val translatedBottom = bounds.bottom + y
+            if (present) {
+                left = minOf(left, bounds.left)
+                top = minOf(top, translatedTop)
+                right = maxOf(right, bounds.right)
+                bottom = maxOf(bottom, translatedBottom)
+            } else {
+                left = bounds.left
+                top = translatedTop
+                right = bounds.right
+                bottom = translatedBottom
+                present = true
             }
         }
-        return result
+        return if (present) MinecraftTextInkBounds(left, top, right, bottom) else null
     }
 
     /**
