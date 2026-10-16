@@ -632,6 +632,9 @@ def run(shared, root, selection, output):
         shared.require(shared.git(root, "rev-parse", "HEAD") == selection["execution_head"], "Browser driver head changed")
         data = shared.load_manifest(selection["root"], selection["path"])
         source_mode = data["schema"] == "strata-source-preparation-ci-v1"
+        processor = output / "comparison-processor.mjs"
+        if source_mode is False:
+            record["comparison_processor"] = shared.preserve_file(shared.relative_path(root, PROCESSOR), processor)
         capture = source_mode and data.get("capture_toolchain_inputs", False)
         if capture:
             require_default_toolchain_environment(shared, os.environ)
@@ -933,7 +936,7 @@ def run(shared, root, selection, output):
             request = {"baselinePath": str(raw["baseline"]), "candidatePath": str(raw["candidate"]), "collectorPath": str(collectors["candidate"]), "driverPath": str(candidate / DRIVER), "baselineTargetPath": str(workspaces["baseline"] / BUILD / "site/application.js"), "candidateTargetPath": str(candidate / BUILD / "site/application.js"), "inputPaths": paths["candidate"], "engines": ENGINES, "scenarios": collection["scenarios"], "conditions": collection["conditions"], "outputPath": str(output / (collection["name"] + "-comparison.json"))}
             request_path = output / (collection["name"] + "-comparison-request.json")
             shared.write_new(request_path, request)
-            phase("compare-" + collection["name"], candidate, [str(candidate / PROCESSOR), str(request_path)], program)
+            phase("compare-" + collection["name"], candidate, [str(processor), str(request_path)], program)
             comparison = shared.read_json(Path(request["outputPath"]))
             shared.require(comparison["status"] == "passed" and len(comparison["rows"]) == collection["expected_cases"], "Incomplete shared browser comparison")
             comparisons.append({"name": collection["name"], "rows": len(comparison["rows"]), **shared.preserve_file(Path(request["outputPath"]), output / "comparisons" / (collection["name"] + ".json"))})

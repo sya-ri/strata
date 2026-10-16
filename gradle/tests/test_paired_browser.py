@@ -377,6 +377,9 @@ class PairedBrowserTest(unittest.TestCase):
         adapter = self.root / "tools/web/build.mjs"
         adapter.parent.mkdir(parents=True)
         adapter.write_text("// Synthetic controller input; starts no browser.\n", encoding="utf-8")
+        processor = self.root / self.browser.PROCESSOR
+        processor.parent.mkdir(parents=True)
+        processor.write_bytes(b"// Synthetic comparison processor; never executed.\n")
         standard = [{"id": "reactive-" + theme, "phases": ["Initial", "Idle", "Update", "Input", "Resize", "Release"]} for theme in ("native", "minecraft")]
         standard += [{"id": f"component-{index}-{theme}", "phases": ["Create", "Idle", "Update", "Release"]} for theme in ("native", "minecraft") for index in range(11)]
         self.manifest = {
@@ -1679,6 +1682,10 @@ class PairedBrowserTest(unittest.TestCase):
                 if name.startswith("collect-") and exit_code == 0:
                     Path(request["arguments"][4]).write_text("{}", encoding="utf-8")
                 if name.startswith("compare-"):
+                    processor = Path(request["arguments"][0])
+                    self.assertEqual(processor, output / "comparison-processor.mjs")
+                    self.assertEqual(processor.read_bytes(), (self.root / self.browser.PROCESSOR).read_bytes())
+                    self.assertFalse((workspace / self.browser.PROCESSOR).exists())
                     comparison_request = self.shared.read_json(Path(request["arguments"][1]))
                     collection = next(item for item in data["collections"] if "compare-" + item["name"] == name)
                     Path(comparison_request["outputPath"]).write_text(json.dumps({"status": "passed", "rows": [dict(engine="synthetic", scenario="synthetic", phase="synthetic", operation_wall={}, action_to_animation_frame={}, work_counts=None) for _ in range(collection["expected_cases"])]}), encoding="utf-8")
