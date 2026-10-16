@@ -886,6 +886,28 @@ class PairedBrowserTest(unittest.TestCase):
         (directory / "console.log").write_text("\n".join("> Task " + task for task in tasks) + "\n", encoding="utf-8")
         self.assertEqual(self.browser.verify_source_tasks(self.shared, directory, tasks), dict.fromkeys(tasks, "executed"))
 
+    def test_source_task_repeated_output_keeps_missing_and_nonexecution_rejections(self):
+        tasks = [":integration:api:test", ":integration:api:checkApiOnlyClasspath"]
+        directory = self.root / "repeated-source-task-output"
+        directory.mkdir()
+        console = ("> Task :integration:api:test\nDownloading test runtime dependencies\n"
+                   "Gradle Test Executor 1 finished executing tests.\n"
+                   "> Task :integration:api:test\nGenerating HTML test report...\n"
+                   "> Task :integration:api:checkApiOnlyClasspath\n")
+        (directory / "console.log").write_text(console, encoding="utf-8")
+        self.assertEqual(self.browser.verify_source_tasks(self.shared, directory, tasks), dict.fromkeys(tasks, "executed"))
+        for status in ("UP-TO-DATE", "FROM-CACHE", "NO-SOURCE", "SKIPPED", "FAILED"):
+            for first, second in (("", status), (status, ""), (status, status)):
+                output = ("> Task " + tasks[0] + (" " + first if first else "") + "\n"
+                          "> Task " + tasks[0] + (" " + second if second else "") + "\n"
+                          "> Task " + tasks[1] + "\n")
+                (directory / "console.log").write_text(output, encoding="utf-8")
+                with self.subTest(first=first, second=second), self.assertRaisesRegex(ValueError, "Source task"):
+                    self.browser.verify_source_tasks(self.shared, directory, tasks)
+        (directory / "console.log").write_text("> Task " + tasks[0] + "\n> Task " + tasks[0] + "\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Requested Source task"):
+            self.browser.verify_source_tasks(self.shared, directory, tasks)
+
     def test_failed_source_outputs_remain_partial_and_keep_strict_complete_inventory(self):
         workspace = self.root / "source"
         report = workspace / "build/reports/work/failed.json"

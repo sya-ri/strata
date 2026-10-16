@@ -473,8 +473,10 @@ def verify_source_tasks(shared, directory, tasks):
     observed = {}
     for task, status in re.findall(r"(?m)^> Task ((?::[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)*:[A-Za-z0-9_-]+)(?: ([A-Z-]+))?\s*$", console):
         if task in tasks:
-            shared.require(task not in observed, "Duplicate Source task execution")
-            observed[task] = status or "executed"
+            current = status or "executed"
+            # Gradle repeats plain headings when worker output interrupts a task's report.
+            shared.require(task not in observed or observed[task] == current, "Conflicting Source task status")
+            observed[task] = current
     shared.require(set(observed) == set(tasks) and all(value == "executed" for value in observed.values()), "Requested Source task was missing, cached, skipped or failed")
     shared.write_new(directory / "source-tasks-verified.json", observed)
     return observed
