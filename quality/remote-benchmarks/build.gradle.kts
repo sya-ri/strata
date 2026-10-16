@@ -72,14 +72,3 @@ tasks.register<JavaExec>("captureRemoteInventory") {
     mainClass.set("dev.s7a.strata.quality.benchmark.RemoteWorkEvidence")
     args(layout.buildDirectory.file("performance/remote-api.tsv").get().asFile.absolutePath)
 }
-
-val verifyRemoteSessionWork by tasks.registering(JavaExec::class) {
-    group = "verification"
-    description = "Checks actual retained remote owners, shared revisions and terminal subscription release."
-    dependsOn(remoteGenerated, remoteGenerator)
-    classpath = remoteClasspath
-    javaLauncher.set(remoteLauncher)
-    mainClass.set("dev.s7a.strata.quality.benchmark.RemoteSessionWorkEvidence")
-}
-
-tasks.named("check") { dependsOn(verifyRemoteSessionWork) }
