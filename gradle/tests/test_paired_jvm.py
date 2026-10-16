@@ -2099,6 +2099,70 @@ class PairedJvmTest(unittest.TestCase):
                         PAIRED.verify_vms(directory, files, terminal, allowed, 2)
                     self.assertFalse((directory / "vms.json").exists())
 
+    def test_reused_fork_startup_filename_binds_actual_generation_and_rejects_drift_or_ambiguity(self):
+        for mode in ("complete", "before-birth", "after-start", "ambiguous", "changed-pin", "stale", "wrong-birth", "unclosed", "missing-main", "wrong-flag"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("startup-reuse-" + mode)
+                owner = directory / "class-loads"
+                owner.mkdir(parents=True)
+                (directory / "console.log").write_text("", encoding="utf-8")
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"pinned executable; never launched")
+                starts = (1792143444000, 1792143587000)
+                births = (starts[0] - 500, starts[1] - 53)
+                history, files, pins = [], [], []
+                for index, (start, birth) in enumerate(zip(starts, births)):
+                    stamp = PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.gmtime(start // 1000))
+                    class_second = (birth if index else start) // 1000
+                    if index and mode in ("before-birth", "after-start"):
+                        class_second += -1 if mode == "before-birth" else 2
+                    class_stamp = PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.gmtime(class_second))
+                    log = directory / f"vm-pid123-{stamp}.log"
+                    flag = (owner / "classes-%p-%t.log").as_posix()
+                    if index and mode == "wrong-flag":
+                        flag = flag.replace("%p", "%p%p")
+                    log.write_text(f"<hotspot_log process='123' time_ms='{start}'>\n<vm_arguments><args>"
+                                   f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0</args>"
+                                   f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\n"
+                                   "java.class.path=frozen.jar\n</vm_arguments>\n"
+                                   "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                                   "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                    diagnostic = owner / f"classes-123-{class_stamp}.log"
+                    main = "independent.WrongMain" if index and mode == "missing-main" else "org.openjdk.jmh.runner.ForkedMain"
+                    diagnostic.write_text(f"[123][info][class,load] {main} source: file:/frozen.jar\n", encoding="utf-8")
+                    pins.append({"source": str(diagnostic), "path": str(diagnostic), "sha256": PAIRED.digest(diagnostic)})
+                    history.append({"pid": 123, "creationFileTime": 116444736000000000 + birth * 10000,
+                                    "exitFileTime": 116444736000000000 + (start + 10000) * 10000,
+                                    "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15,
+                                    "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0})
+                    files.append(log)
+                if mode == "ambiguous":
+                    extra = owner / "classes-123-2026-10-16_09-39-47.log"
+                    extra.write_bytes(diagnostic.read_bytes())
+                    pins.append({"source": str(extra), "path": str(extra), "sha256": PAIRED.digest(extra)})
+                elif mode == "changed-pin":
+                    pins[-1]["sha256"] = "0" * 64
+                elif mode == "wrong-birth":
+                    history[-1]["creationFileTime"] = 116444736000000000 + (starts[-1] + 1) * 10000
+                elif mode == "unclosed":
+                    history[-1]["completed"] = False
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(owner), "copied": pins,
+                                 "previous": {diagnostic.name: PAIRED.digest(diagnostic)} if mode == "stale" else {}})
+                terminal = {"members": {"123": history}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                with patch.object(PAIRED.time, "localtime", side_effect=PAIRED.time.gmtime):
+                    if mode == "complete":
+                        PAIRED.verify_vms(directory, files, terminal, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 2)
+                        records = PAIRED.read_json(directory / "vms.json")
+                        self.assertEqual([record["os_generation"] for record in records], history)
+                        self.assertEqual(Path(records[-1]["class_load_diagnostic"]["path"]), diagnostic)
+                        self.assertEqual(records[-1]["class_load_diagnostic"]["startup_filename_stamps"], ["2026-10-16_09-39-46", "2026-10-16_09-39-47"])
+                    else:
+                        with self.assertRaises(ValueError):
+                            PAIRED.verify_vms(directory, files, terminal, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 2)
+                        self.assertFalse((directory / "vms.json").exists())
+
     def test_control_selects_actual_birth_without_borrowing_a_reused_pid_and_rejects_ambiguous_vm_origin(self):
         for mode in ("history", "ambiguous-vm", "wrong-birth", "active", "wrong-affinity"):
             with self.subTest(mode=mode):

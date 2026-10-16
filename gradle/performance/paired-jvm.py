@@ -774,7 +774,7 @@ def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None, un
 
 
 def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, unique_invocation_pid=False):
-    """Bind an exact header-start file or unique independent expansion to its owned lifetime and fresh pin."""
+    """Bind one fresh class file to a captured lifetime, including independent startup filename expansion."""
     same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
                                  path.read_text(encoding="utf-8"))) for path in vm_files)
     if terminal is None:
@@ -785,11 +785,23 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, 
     stamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(int(starts[0]) // 1000))
     matching = [item for item in candidates if Path(item["path"]).name == f"classes-{pid}-{stamp}.log"]
     require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
-    if not matching and (len(candidates) != 1 or same_pid != 1):
+    startup_binding = not matching and (len(candidates) != 1 or same_pid != 1)
+    if startup_binding and re.search(r"<command>\s*org\.openjdk\.jmh\.runner\.ForkedMain(?:\s|<)", raw) is None:
         return None
     history = terminal["members"].get(str(pid), [])
     if not isinstance(history, list) or not history:
         return None
+    member = owned_generation(terminal, pid, int(starts[0]), unique_invocation_pid=unique_invocation_pid and same_pid == 1)
+    startup_stamps = {stamp}
+    if startup_binding:
+        # Each JVM expands %t independently; kernel birth and the already-bound VM start bound that expansion.
+        birth_second = (member["creationFileTime"] - 116444736000000000) // 10000000
+        startup_stamps = {time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(second))
+                          for second in range(birth_second, int(starts[0]) // 1000 + 1)}
+        matching = [item for item in candidates if Path(item["path"]).name in {f"classes-{pid}-{value}.log" for value in startup_stamps}]
+        require(len(matching) <= 1, "Ambiguous reused-PID startup class-load diagnostic")
+        if not matching:
+            return None
     helpers = []
     if len(history) != 1:
         if any(not isinstance(item, dict) or not isinstance(item.get("image"), str) or not item["image"] for item in history):
@@ -798,7 +810,6 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, 
         if not matching and len(java) != 1:
             return None
         helpers = [item for item in history if item not in java]
-    member = owned_generation(terminal, pid, int(starts[0]), unique_invocation_pid=unique_invocation_pid and same_pid == 1)
     if helpers:
         homes = re.findall(r"(?m)^java\.home=([^\r\n]+)", raw)
         require(len(homes) == 1 and member in java, "Unique JVM and actual Java generation disagree")
@@ -835,7 +846,7 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, 
     else:
         require([os.path.normcase(part) for part in source_parent.parts[-len(parts):]]
                 == [os.path.normcase(part) for part in parts], "Wrong relative class-file owner")
-    return {**candidate, "unique_generation": member, "actual_file_flag": flags[0],
+    return {**candidate, "unique_generation": member, "actual_file_flag": flags[0], "startup_filename_stamps": sorted(startup_stamps),
             "closed_non_java_helper_generations": helpers,
             "relative_path_relationship": "inferred from the verified bounded launcher" if not flag.is_absolute() else None}
 
