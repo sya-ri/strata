@@ -233,7 +233,16 @@ internal class MinecraftTextContentProvenanceTest {
         assertEquals(0, starts(MinecraftTextContent.create(implicit)).size)
         compareEverySlice(implicit)
         val materialized = UiText.concat(implicit, UiText.Literal("end").withFont(secondFont), UiText.Literal("q").withFont(firstFont))
-        val expected = IntArray(18) { if (it < 16) it + 1 else if (it == 16) 23 else 26 }
+        val expected =
+            IntArray(18) {
+                if (it < 16) {
+                    it + 1
+                } else if (it == 16) {
+                    23
+                } else {
+                    26
+                }
+            }
         assertArrayEquals(expected, starts(MinecraftTextContent.create(materialized)))
         compareEverySlice(materialized)
     }
