@@ -209,11 +209,14 @@ internal class WebComponentRuntime(
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element {
-        val canvas = document.createElement("canvas") as HTMLCanvasElement
-        val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
-        context.font = theme.font
-        val measured = ceil(context.measureText(label).width).toInt()
-        val size = IntSize(width ?: measured, if (kind == WebPresentation.Kind.Button) 32 else 24)
+        val naturalWidth =
+            width ?: run {
+                val canvas = document.createElement("canvas") as HTMLCanvasElement
+                val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
+                context.font = theme.font
+                ceil(context.measureText(label).width).toInt()
+            }
+        val size = IntSize(naturalWidth, if (kind == WebPresentation.Kind.Button) 32 else 24)
         return WebPrimitiveElement(WebPresentation(0, kind, label, enabled, style), size, ::allocateIdentity, modifier, key)
     }
 

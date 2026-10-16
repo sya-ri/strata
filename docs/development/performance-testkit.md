@@ -77,6 +77,15 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
+`BlitTemplateBenchmark` supplies 45 separate initial-frame, paint-rebuild and retained-clean boundaries across 15 compiled dense and ineligible controls.
+Atlas cases use multiple source rectangles from one immutable source image; the distinct-image case deliberately retains the original command path.
+Small/large sources and templates, cropped edges, one/four/32 groups, sparse/overlapping/reversed/stretched/oversized inputs, clips and fractional child transforms retain complete original geometry and straight ARGB.
+Prepared source pairs are outside timing, while initial frames include actual session creation, attach, first paint and close; rebuilds change the source at its ordinary capture/commit cutoff.
+The optional verifier compares original and actual presented pixels at physical densities one and two, immutable old frames, public copy/equality/hash, clean identity, bounded templates and balanced bindings.
+It emits each case's actual command, template-pixel, paint and binding diagnostic to the preserved untimed work-gate output.
+Use the existing historical shared-kit selectors and controlled API/core/headless runtime archives; the fixture adds no central registry or selector and reports no native uploads, GPU duration or FPS.
+Private-copy payload removed by owned transfer is a source-derived count from each accepted template's pixel area, separate from measured CPU time and normalized allocation.
+
 The component task accepts `-Pstrata.performance.profilers=<comma-separated-JMH-profiler-identifiers>` for additional metrics from standard JMH profilers.
 It appends the requested profilers to the unchanged GC and loaded-fork provenance profilers; omission preserves the existing collection.
 Use the same selection on both runtime sides and retain it in the raw receipt's arguments.
@@ -116,6 +125,15 @@ Use the existing packaged collector entry point and the same resolved execution 
 Preserve actual parent/fork loaded archives and class trees, external inputs, source revisions, conditions, all 60 rows and three independent Standard receipts for each side.
 Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
 The corpus makes no native latency, upload, FPS or GPU claim.
+
+`TextLineLayoutBenchmark` keeps all 60 retained construction opportunities and 22 clean, caret and composition controls.
+Its optional `operationReport()` uses the same original scene setup and benchmark methods through the shared owner-thread meter.
+Initial construction replaces a keyed component in the primed host/font owner; it does not include a new backend or profile.
+Edit and reflow samples retain the complete public mutation/frame opportunity; caret and composition controls retain their original restoring input cycles.
+Independent scalar, exact bounded pixel, original-viewport old-frame and release oracles run outside samples, and terminal cleanup must succeed.
+All 82 owner rows retain CPU, owner/all-thread allocation and wall metrics with unavailable counters explicit; none replaces the complete JMH comparison or establishes native input/FPS gains.
+The copying neutral runtime preserves the original six-argument constructor and every shared semantic control; only the candidate's exclusive-array identity test is omitted from its source.
+Frozen source/input bytes are supplied through the manual dispatch payload and declared source pins; transient inputs are absent from the execution tree.
 
 Its optional `operationReport()` hook connects the same 60 method/parameter boundaries to the shared owner-thread meter.
 Input samples retain the complete original opportunity cycle; initial-layout samples retain fresh host creation, attach, first frame and terminal close.
@@ -440,6 +458,9 @@ The driver rejects duplicate engine/scenario/phase registrations and conditions 
 Fixture-returned data cannot replace the driver-owned invocation or host identity, and operation failure closes the current page and browser before rejecting the matrix.
 `:performance-testkit:verifyBrowserPerformanceDriver` tests these orchestration and failure contracts with synthetic browser lifetimes and is part of the kit's `check`; it is not real browser performance evidence.
 The driver records the actual linked testkit JS artifact and driver hashes separately from the complete application-bundle hash, browser version, viewport, and workload conditions.
+The Web runner accepts an optional fifth performance argument containing a JSON map of additional frozen input names to file paths, resolved relative to that manifest; it records and rechecks the manifest and inputs through the same shared driver.
+Untimed fixture registrations run in the ordinary complete Web verification path; its optional third argument selects baseline or candidate expectations and defaults to candidate.
+The 36 Button controls restore native Canvas descriptors after each control, retain Text's measurement/failure path and exercise independent normal-property/pixel parity and terminal release; comparative evidence also supplies the actual compiled integration fixture artifact and control inventory/source guards in the input manifest.
 The kit captures input hashes before collection and verifies them again before writing evidence; an operation failure or changed input cannot produce a successful report.
 It also hashes and rechecks separately supplied fixture-input files and compares the loaded browser inventory with the independently exported build inventory before sampling.
 Every fixture registers its actual application-script URL; the kit hashes the response body fetched by the browser and rejects a response that differs from the captured bundle before sampling.
@@ -495,6 +516,10 @@ Both full and narrow component collection validate these registrations against t
 Registered benchmark methods have explicit idle, update, input, resize, preparation or release phases; an unknown method requires a reviewed phase assignment.
 `:quality:component-benchmarks:captureRuntimeSurfaceInventory` stages a prospective baseline for review without rewriting the checked-in registry.
 The binary inventory deliberately includes Kotlin internal declarations exposed publicly in JVM bytecode, so changing those declarations also requires a reviewed registry update.
+For a frozen runtime pair with different binary surfaces, register complete per-module TSV inventories through the existing `strata.performance.fixtureInputs` manifest using `runtime-api-variant.<module>.<full-archive-sha256>` labels.
+Both sides use the same input union; verification selects each module's complete inventory by the hash of its actual loaded archive and checks every member against that inventory.
+Supply all four registered modules, at most two archives per module, and nonempty unique-member tables bounded to 4 MiB and 16,384 rows each.
+Malformed bindings, missing actual archive matches, duplicate members and cross-module assignments fail before sampling; ordinary checks without variant inputs retain the checked-in registry.
 Registration associates module surfaces with executable workload families; it does not establish that each member executes, or substitute for loaded Fabric, Web, remote, Paper or Velocity evidence.
 
 For local selection, pass `-Pstrata.performance.changedPaths=<UTF-8-path-list>` to the component check or JMH task.
@@ -548,6 +573,21 @@ Generated `@Fork` arguments are checked alongside CLI overrides, so benchmark an
 Collector changes require fresh evidence; earlier receipts without child verification cannot satisfy this contract.
 
 The separate stress corpus is selected with `-Pstrata.performance.benchmarks=StressRenderingBenchmark -Pstrata.performance.suite=stress` on `jmhComponents` and writes separate `stress` or `stress-sample` directories.
+
+The supplemental `TextLineLayoutBenchmark` corpus selects the actual retained TextArea and multiline Text public entry points with `-Pstrata.performance.benchmarks=TextLineLayoutBenchmark -Pstrata.performance.suite=text-line-layout` on `:quality:component-benchmarks:jmhComponents`.
+Its 82 generated cases separate 60 keyed initial construction, content-edit and width-reflow opportunities from 22 clean, restoring caret and complete preedit/focused-range/loss controls.
+Initial construction replaces a retained component within an already primed host/font lifetime; it does not include profile/backend creation.
+Each CPU and allocation interval includes the complete public mutation/input/frame cycle, with no per-invocation setup, reflection or oracle work.
+Inputs cover empty, short, 128 and 32,767 BMP scalars, 32,767 supplementary scalars with sufficient explicit UTF-16 state capacity, character wrapping, CRLF/hard breaks, signed/zero/exceptional advances, font spans and first/middle/last ellipsis cuts.
+TextArea font changes select a whole editor font; multiline display text also supplies mixed spans.
+The deterministic custom ordering probe preserves original logical caret metrics and does not establish native bidi or IME acceptance.
+The generated fixture gate verifies independent original boundaries and forward Float-prefix/native rounding, compact visible arrays, nearest/caret/range lookups, semantics, bounded synthetic reference pixels at densities one through three, immutable old lines/frames and zero terminal faces/backends.
+Raster checks cover a 64-by-64 logical window; long-line suffix admission is checked by complete scalar/run oracles, not by a full-width image claim.
+Both runtime sides must load the same compiled fixture and helper/generated classes, collector, harness and reviewed API inputs, with only the target Minecraft runtime archive varied.
+Freeze a reviewed neutral factory baseline retaining the original copies before measuring the owned-array candidate so both sides share the exact internal host inventory registration.
+Prepare with fully qualified JVM tasks and the generic `-Pstrata.jvmOnly=true` model; quote dotted properties in PowerShell and keep final aggregate/platform verification unscoped.
+Collect three independent Standard repetitions per side and retain every case, control and regression through the existing shared processor.
+This native-free JVM fixture measures layout opportunity CPU/allocation, without GPU uploads, native input latency or FPS evidence.
 
 The supplemental `-Pstrata.performance.benchmarks=ExceptionalTextFieldBenchmark -Pstrata.performance.suite=exceptional-text` corpus uses public TextField operations with fixed synthetic TrueType metrics for signed fractional spacing, inexact large cancellation and infinite tails under both native rounding contracts.
 Its 18 independent idle/update/lifecycle cases use the unchanged JMH defaults and shared processing, with `exceptional-text` / `exceptional-text-sample` outputs; it does not change the existing stress matrix or font inputs.
@@ -605,18 +645,29 @@ These native-free retained owners do not replace real Paper/Velocity scheduling,
 
 ## Opt-in paired JVM CI
 
-The `JVM checks` workflow runs a complete frozen JVM comparison in one Windows runner when the final driver commit declares its input producer.
-Prepare the manifest and its frozen input files under `.github/performance/` in a producer commit.
-Its single-parent successor removes that entire subtree, preserves every other path, mode and blob, and declares exactly one Git commit trailer: `Performance-Inputs: <producer-sha>:<manifest-path>`.
-The producer is the full 40-character lowercase commit SHA of that sole parent; the manifest is a canonical repository-relative JSON path under `.github/performance/`.
-The reconstructed candidate must also match every non-data path, mode and blob of the final driver revision.
-This keeps experiment data reachable through Git history without including it in the merged product tree.
+The `JVM checks` workflow accepts complete frozen comparison metadata through `workflow_dispatch` inputs on the existing product branch.
+Prepare the manifest and any patches under `.github/performance/` in a local staging directory outside the repository; do not commit that directory or create measurement branches.
+Encode it with `python -B gradle/performance/paired-jvm.py --pack-inputs <staging-directory> --manifest .github/performance/<campaign>/manifest.json --output <new-request.json>`.
+Pass the resulting input object to `gh workflow run jvm.yml --ref <product-branch> --json` through standard input.
+The `paired_manifest` input names the manifest inside the metadata ZIP; `paired_inputs` contains its base64-encoded XZ stream.
+Compression covers the complete ZIP so repeated baseline/candidate inventories share the same compression window.
+The runner reads the immutable event file directly, including on Windows, rather than putting the payload in shell code or an environment variable.
+The payload admits at most 45,000 compressed bytes, 256 regular metadata files and 4 MiB expanded; oversized inputs fail before dispatch packaging completes.
+Source pins outside the metadata subtree resolve against the selected driver checkout.
+Large generated inputs may remain in a previous same-repository Actions artifact instead of the dispatch payload.
+An optional local `.github/performance/dispatch-artifacts.json` list binds each provider's `id`, `bytes`, `sha256`, inner ZIP `archive` and `files` mappings from `member` to `target`.
+Each target must be an existing manifest input pin under the metadata subtree; packing omits its bytes and execution restores only byte-identical declared inputs.
+Providers are limited to four 128 MiB archives, expansion to 4 MiB per provider, and XZ decoding to 64 MiB memory and 6 MiB output.
+The runner uses the job's read-only Actions token and keeps hash-checked downloads only in that job's temporary directory.
+An expired or changed provider fails before Java starts; no Git input branch is created as a fallback.
 
-Pull request planning and execution check out the same exact head and independently validate the trailer, producer, manifest digest, source trees and file pins before Java starts.
-The selector returns the manifest path, producer SHA and manifest SHA-256; the paired job passes all three with the expected driver head and preserves their binding in the attempt evidence.
-A nonempty manual `paired_manifest` input must match the declared trailer path; a different path, missing producer, malformed or duplicate trailer, retained data subtree or changed non-data source fails without fallback.
-Without a declaration and without an explicit input, all three selector outputs are empty and the paired job is skipped.
-Manual dispatch uses the same declaration contract and needs no additional workflow input.
+Planning and execution independently verify the ZIP digest, manifest digest, exact source trees and every input pin before Java starts.
+The reconstructed candidate must match every non-data path, mode and blob of the actual driver revision.
+The existing `paired_data_ref` output and `input_producer` receipt contain the ZIP SHA-256 for dispatch inputs.
+Planning uploads the exact ZIP as a run artifact, and the complete attempt retains another byte-identical copy.
+Each paired dispatch has its own concurrency group, so comparisons on the same product branch do not cancel each other or ordinary PR verification.
+Manual full CI with empty paired inputs and ordinary PR verification keep their existing selection.
+Historical producer/consumer trailers remain readable by the CLI for replay, but new workflow dispatches require the direct payload and never create those Git references.
 A failed attempt is retained in full and cannot be resumed by adopting successful rows from a previous attempt.
 
 Start another comparison from [the manifest template](../../gradle/performance/paired-jvm.example.json).

@@ -26,6 +26,12 @@ public fun main() {
         )
     }
     window.asDynamic().strataDomPerformance = WebDomPerformanceFixture.protocol(theme)
+    window.asDynamic().strataButtonMeasurementInventory = { WebButtonMeasurementCheck.inventory() }
+    window.asDynamic().strataVerifyButtonMeasurement = { name: String, fixedWidth: Boolean, probe: dynamic ->
+        runCatching { WebButtonMeasurementCheck.verify(theme, WebButtonMeasurementControl.valueOf(name), fixedWidth, probe) }.getOrElse {
+            JSON.stringify(json("ok" to false, "error" to it.toString()))
+        }
+    }
     if (WebLaunchMode.decode(window.location.search) == WebLaunchMode.Prerender) {
         val html = renderWebDocument(ReactiveScenario().definition(), ReactiveScenario.viewport, "Strata runtime parity", "application.js", theme)
         window.asDynamic().strataInitialDocument = html

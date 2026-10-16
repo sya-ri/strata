@@ -160,7 +160,7 @@ internal object MinecraftCanvasVulkanPortableQuotaValidation : MinecraftCanvasIn
         fourth?.let { initialize(control, it) }
         val outcome = snapshot(control)
         val origins =
-            LoadedArtifactMetadata.capture(
+            MinecraftNativeArtifactOrigins.capture(
                 javaClass.classLoader,
                 mapOf(
                     "fixture" to javaClass.name,
@@ -170,7 +170,6 @@ internal object MinecraftCanvasVulkanPortableQuotaValidation : MinecraftCanvasIn
                     "nativeTexture" to VulkanGpuTexture::class.java.name,
                     "nativeView" to VulkanGpuTextureView::class.java.name,
                 ),
-                emptySet(),
             )
         LoadedArtifactMetadata.verifyComplete(origins)
         return JsonObject().apply {

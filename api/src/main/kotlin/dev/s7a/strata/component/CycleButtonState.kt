@@ -51,7 +51,7 @@ public class CycleButtonState<T : Any>(
         values: Collection<T>,
         initialValue: T,
         toString: (T) -> String,
-    ) : this(values.toList(), initialValue) {
+    ) : this(values as? List<T> ?: values.toList(), initialValue) {
         valueToString = toString
     }
 

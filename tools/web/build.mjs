@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { installDomPerformanceBridge } from './dom-performance-browser.mjs';
+import { buttonMeasurement } from './button-measurement.mjs';
+import { verifyRegisteredControls } from './verification-fixtures.mjs';
 import { createServer } from 'node:http';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -12,8 +14,9 @@ import { collectBrowserPerformance } from '../../performance-testkit/src/jsMain/
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(resolve(repository, 'build/js/package.json'));
 const { chromium, firefox, webkit } = require('playwright');
+const verificationFixtures = [buttonMeasurement];
 const [mode, buildArgument, collectorArgument, performanceOutputArgument, inputManifestArgument] = process.argv.slice(2);
-assert.ok(mode === 'build' || mode === 'verify' || mode === 'performance', 'Expected build, verify, or performance mode');
+assert.ok(['build', 'verify', 'performance'].includes(mode), 'Expected build, verify, or performance mode');
 assert.ok(buildArgument, 'Expected an application build directory');
 const build = resolve(buildArgument);
 const site = resolve(build, 'site');
@@ -48,6 +51,12 @@ try {
                 const inventory = JSON.parse(await page.evaluate(() => window.strataPerformanceInventory()));
                 if (route === '') await writeFile(resolve(site, 'performance-inventory.json'), JSON.stringify(inventory, null, 2));
                 else assert.deepEqual(inventory, JSON.parse(await readFile(resolve(site, 'performance-inventory.json'), 'utf8')));
+                for (const fixture of verificationFixtures) {
+                    const controls = JSON.parse(await page.evaluate(method => window[method](), fixture.inventoryMethod));
+                    const inventoryFile = resolve(site, fixture.inventoryFile);
+                    if (route === '') await writeFile(inventoryFile, JSON.stringify(controls, null, 2));
+                    else assert.deepEqual(controls, JSON.parse(await readFile(inventoryFile, 'utf8')));
+                }
             }
             console.log(`Built initial document and application bundle: ${site}`);
         } finally { await browser.close(); }
@@ -123,15 +132,19 @@ async function verifyTheme(browser, engine, theme, expected, variant) {
     await mkdir(evidence, { recursive: true });
     await page.screenshot({ path: resolve(evidence, `${engine.name()}-${theme}.png`) });
     const receipt = { theme, engine: engine.name(), version: browser.version(), snapshots: observed };
-    receipt.domUpdates = await verifyDomUpdates(browser, page, engine, theme, evidence);
-    assert.equal(await page.evaluate(() => window.strataDomPerformance.verifyAll()), true, 'Compiled changed-frame workloads match independent full rendering and release ownership');
-    receipt.domWork = await verifyDomWork(browser, page, address, variant);
+    const controlEvidence = resolve(evidence, `registered-controls-${randomUUID()}`);
+    await mkdir(controlEvidence, { recursive: true });
+    try {
+        receipt.domUpdates = await verifyDomUpdates(browser, page, engine, theme, evidence);
+        assert.equal(await page.evaluate(() => window.strataDomPerformance.verifyAll()), true, 'Compiled changed-frame workloads match independent full rendering and release ownership');
+        receipt.domWork = await verifyDomWork(browser, page, address, variant);
+        receipt.controls = await verifyRegisteredControls({ browser, page, engine, theme, site, evidence: controlEvidence, variant, fixtures: verificationFixtures });
+    } finally { await page.close(); }
     console.log(`Verified initial HTML, adoption, conditionals, native actions and keyed reorder: ${engine.name()} / ${theme}`);
-    await page.close();
     return receipt;
 }
 
-/** Adds frozen caller inputs while retaining the compiled standard workload and collector defaults. */
+/** Adds caller-supplied frozen fixture inputs without changing the standard workload. */
 async function performanceInputs(inventoryPath) {
     const inputs = { 'standard-component-inventory': inventoryPath };
     if (inputManifestArgument === undefined) return inputs;
