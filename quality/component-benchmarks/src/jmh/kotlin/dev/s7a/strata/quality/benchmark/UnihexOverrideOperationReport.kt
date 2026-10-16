@@ -1,10 +1,12 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.JvmOperationReportRow
+import dev.s7a.strata.performance.JvmPerformanceInputs
 import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
@@ -21,8 +23,20 @@ import java.nio.file.Path
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public object UnihexOverrideOperationReport : JvmOperationReportAdapter {
-    // Both font corpora consume the same registered component control files and original external inputs.
-    override val inputs: Map<String, Path> get() = FontFallbackOperationReport.inputs
+    // Retain the original control and external input labels independently of other fixtures.
+    override val inputs: Map<String, Path>
+        get() {
+            val required =
+                JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) +
+                    mapOf(
+                        "cc0-geometric-font" to Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture"))),
+                        "component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI()),
+                        "runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI()),
+                    )
+            val additional = JmhFixtureSelection.inputs()
+            require(required.keys.intersect(additional.keys).isEmpty()) { "Fixture input labels overlap required control inputs" }
+            return required + additional
+        }
 
     private enum class Operation(
         val method: String,
