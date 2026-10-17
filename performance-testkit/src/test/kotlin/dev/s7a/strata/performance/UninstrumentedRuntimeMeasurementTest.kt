@@ -79,6 +79,27 @@ class UninstrumentedRuntimeMeasurementTest {
         }
     }
 
+    @Test
+    fun completedFrameObservationRebindsAfterScreenEventsAreReplaced() {
+        val screen = UninstrumentedOwner()
+        try {
+            FabricFrameObserver(screen).use { observer ->
+                ScreenEvents.afterExtract(screen).fire()
+                assertEquals(1L, observer.frames)
+                assertEquals(1L, observer.frames)
+                ScreenEvents.release(screen)
+                assertEquals(1L, observer.frames)
+                assertEquals(1L, observer.frames)
+                ScreenEvents.afterExtract(screen).fire()
+                assertEquals(2L, observer.frames)
+                ScreenEvents.afterExtract(screen).fire()
+                assertEquals(3L, observer.frames)
+            }
+        } finally {
+            ScreenEvents.release(screen)
+        }
+    }
+
     /**
      * Test-owned operation and display-list state, with no monitoring capability or metrics fields.
      */

@@ -120,7 +120,7 @@ internal object MinecraftCanvasGameTest {
                 0 < fixture.renderCalls
         }
         // A tick count proves time passed, not that the first complete frame at the requested GUI scale was
-        // presented (issue 40). Fence on the runtime's committed host-frame counter so the screenshot reads a
+        // presented (issue 40). Fence on the test-owned framework completion event so the screenshot reads a
         // frame at or after the presentation the callback-scope signal observed.
         val frameBaseline = MinecraftCanvasFrameFence.completedFrames(context, screen)
         MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, frameBaseline)

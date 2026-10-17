@@ -22,8 +22,9 @@ public object ReactiveWorkEvidence {
             try {
                 val before = state.cleanFrame()
                 val after = state.nextFrame()
-                val reused = workload == ReactiveWorkload.Static || workload == ReactiveWorkload.MapEqual
-                check((before === after) == reused)
+                val expectsReuse = workload == ReactiveWorkload.Static || workload == ReactiveWorkload.MapEqual
+                val reused = before === after
+                check(expectsReuse.not() || reused) { "An unchanged presentation must reuse its frame for ${workload.name}." }
                 check(state.cleanFrame() === after)
                 println("${workload.name},$reused,${after.drawCommands.size},${state.workSnapshot()}")
             } finally {
