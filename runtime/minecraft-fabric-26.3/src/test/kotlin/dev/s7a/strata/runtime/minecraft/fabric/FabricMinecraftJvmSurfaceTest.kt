@@ -148,7 +148,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         assertTrue(Modifier.isPublic(background.modifiers))
 
         val screen = FabricMinecraftScreen::class.java
-        assertFalse(screen.methods.any { it.name == "startRenderMonitoring" })
+        assertFalse(screen.methods.any { it.name in setOf("startRenderMonitoring") })
         val externallyVisibleConstructors =
             screen.declaredConstructors.filter { constructor ->
                 Modifier.isPublic(constructor.modifiers) || Modifier.isProtected(constructor.modifiers)

@@ -54,9 +54,9 @@ internal class RuntimeUiSessionBridgeApiContractTest {
 
     @Test
     fun productionTreeContainsNoMonitoringEntryPointOrCollector() {
-        assertFalse(UiTree::class.java.methods.any { it.name == "startRenderMonitoring" })
-        assertFalse(UiTree::class.java.declaredFields.any { it.name == "monitoring" })
-        assertFalse(RetainedEntry::class.java.declaredFields.any { it.name == "diagnosticId" })
+        assertFalse(UiTree::class.java.methods.any { it.name in setOf("startRenderMonitoring") })
+        assertFalse(UiTree::class.java.declaredFields.any { it.name in setOf("monitoring") })
+        assertFalse(RetainedEntry::class.java.declaredFields.any { it.name in setOf("diagnosticId") })
         assertNull(UiTree::class.java.getResource("RenderMonitorImpl.class"))
         assertNull(UiTree::class.java.getResource("RenderMonitoring.class"))
         assertNull(UiTree::class.java.getResource("RenderWorkCounts.class"))

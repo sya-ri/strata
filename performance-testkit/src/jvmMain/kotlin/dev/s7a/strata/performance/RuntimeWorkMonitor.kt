@@ -22,7 +22,7 @@ public class RuntimeWorkMonitor(
             require(checkpointSamples == null || 0 < checkpointSamples)
             require(maxNodeRecords == null || maxNodeRecords in 1..65_536)
             val arguments = if (maxNodeRecords == null) emptyArray() else arrayOf(maxNodeRecords)
-            if (owner.javaClass.methods.any { it.name == "startRenderMonitoring" }) {
+            if (owner.javaClass.methods.map { it.name }.contains("startRenderMonitoring")) {
                 checkNotNull(HostReflection.invoke(owner, "startRenderMonitoring", *arguments))
             } else {
                 null
