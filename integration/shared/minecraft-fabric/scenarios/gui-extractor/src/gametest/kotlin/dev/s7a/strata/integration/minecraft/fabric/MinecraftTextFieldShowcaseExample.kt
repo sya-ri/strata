@@ -27,7 +27,7 @@ internal fun createTextFieldShowcaseScreenDefinition(
     return ScreenDefinition("TextField showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(216, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,

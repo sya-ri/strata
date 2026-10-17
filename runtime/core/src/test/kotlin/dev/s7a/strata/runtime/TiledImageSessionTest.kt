@@ -304,7 +304,7 @@ internal class TiledImageSessionTest {
                         element(
                             probe.element(
                                 TestProbe.ProbeId("revisioned-marker"),
-                                modifier = Modifier.Empty.atContentPosition(positions),
+                                modifier = Modifier.atContentPosition(positions),
                             ),
                         )
                     }
@@ -374,7 +374,7 @@ internal class TiledImageSessionTest {
                         element(
                             probe.element(
                                 TestProbe.ProbeId("replacement-marker"),
-                                modifier = Modifier.Empty.atContentPosition(holder.value),
+                                modifier = Modifier.atContentPosition(holder.value),
                             ),
                         )
                     }
@@ -550,7 +550,7 @@ internal class TiledImageSessionTest {
                         element(
                             probe.element(
                                 TestProbe.ProbeId("marker"),
-                                modifier = Modifier.Empty.atContentPosition(markerPosition.value),
+                                modifier = Modifier.atContentPosition(markerPosition.value),
                             ),
                         )
                     }

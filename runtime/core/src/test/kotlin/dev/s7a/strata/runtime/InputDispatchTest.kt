@@ -126,7 +126,7 @@ internal class InputDispatchTest {
     fun inputResetClearsHoveredNodesBelowUnplacedAncestorsWithoutRepeatingCaptureCancellation() {
         val probe = CaptureProbe()
         val hover = ArrayList<PointerHoverEvent>()
-        val child = PlacementElement(CaptureElement(probe, Modifier.Empty.onHover({ value -> hover.add(value) })))
+        val child = PlacementElement(CaptureElement(probe, Modifier.onHover({ value -> hover.add(value) })))
         UiTree().use { tree ->
             tree.update(PlacementElement(child))
             layout(tree)
@@ -274,7 +274,7 @@ internal class InputDispatchTest {
 
     private class CaptureElement(
         val probe: CaptureProbe,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ) : Element(ElementIdentity.Positional, TYPE, modifier = modifier) {
         companion object {
             val TYPE: ElementType<CaptureElement, CaptureNode> =

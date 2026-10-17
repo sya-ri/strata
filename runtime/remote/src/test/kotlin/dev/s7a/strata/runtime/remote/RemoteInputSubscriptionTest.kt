@@ -52,7 +52,7 @@ internal class RemoteInputSubscriptionTest {
     fun filtersBeforeSendingAndRunsTheServerHandlerOnlyAfterDelivery() {
         val accepted = mutableListOf<KeyboardEvent.Press>()
         val filter = KeyboardInputFilter(setOf(KeyCode('S'.code)), KeyboardModifiers(control = true))
-        Harness { Modifier.Empty.initialFocus().onKeyPress(InputResult.Consumed, filter, { accepted.add(it) }) }.use { fixture ->
+        Harness { Modifier.initialFocus().onKeyPress(InputResult.Consumed, filter, { accepted.add(it) }) }.use { fixture ->
             assertEquals(InputResult.Ignored, fixture.host.dispatchKeyboard(KeyboardEvent.Press(KeyCode('S'.code), 31)))
             assertEquals(InputResult.Ignored, fixture.host.dispatchKeyboard(KeyboardEvent.Release(KeyCode('S'.code), 31, KeyboardModifiers(control = true))))
             assertTrue(fixture.actions().isEmpty())
@@ -70,7 +70,7 @@ internal class RemoteInputSubscriptionTest {
     fun changedSubscriptionsRetireQueuedEventsWithoutInvokingReplacementHandlers() {
         val selected = mutableStateOf(KeyCode('S'.code))
         val accepted = mutableListOf<KeyCode>()
-        Harness { Modifier.Empty.initialFocus().onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(selected.value))) { accepted.add(it.key) } }.use { fixture ->
+        Harness { Modifier.initialFocus().onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(selected.value))) { accepted.add(it.key) } }.use { fixture ->
             fixture.host.dispatchKeyboard(KeyboardEvent.Press(KeyCode('S'.code), 31))
             val old = fixture.actions().single()
             selected.value = KeyCode.Enter
@@ -91,7 +91,7 @@ internal class RemoteInputSubscriptionTest {
     @Test
     fun carriesPointerCoordinatesAndDeltasWithoutWaitingForTheServer() {
         val accepted = mutableListOf<Pair<PointerEvent, IntOffset>>()
-        Harness { Modifier.Empty.onPointerEvent(InputResult.Ignored) { event, position -> accepted.add(event to position) } }.use { fixture ->
+        Harness { Modifier.onPointerEvent(InputResult.Ignored) { event, position -> accepted.add(event to position) } }.use { fixture ->
             val events =
                 listOf(
                     PointerEvent.Press(IntOffset(4, 5), PointerButton.Secondary),
@@ -110,7 +110,7 @@ internal class RemoteInputSubscriptionTest {
     @Test
     fun onlySubscribedTextVariantsCrossTheConnection() {
         val accepted = mutableListOf<TextInputEvent.Preedit>()
-        Harness { Modifier.Empty.initialFocus().onPreedit(InputResult.Ignored, { accepted.add(it) }) }.use { fixture ->
+        Harness { Modifier.initialFocus().onPreedit(InputResult.Ignored, { accepted.add(it) }) }.use { fixture ->
             fixture.host.dispatchTextInput(TextInputEvent.Character(65))
             assertTrue(fixture.actions().isEmpty())
             val event = TextInputEvent.Preedit("日本語", 2, listOf("日本", "語"), 1)
@@ -133,11 +133,11 @@ internal class RemoteInputSubscriptionTest {
             )
         val factories: List<(UiSession.(PointerEvent, IntOffset) -> Unit) -> Modifier> =
             listOf(
-                { Modifier.Empty.onPress(InputResult.Consumed, PointerButton.Secondary, it) },
-                { Modifier.Empty.onRelease(InputResult.Consumed, PointerButton.Secondary, it) },
-                { Modifier.Empty.onMove(InputResult.Consumed, it) },
-                { Modifier.Empty.onDrag(InputResult.Consumed, PointerButton.Secondary, it) },
-                { Modifier.Empty.onScroll(InputResult.Consumed, it) },
+                { Modifier.onPress(InputResult.Consumed, PointerButton.Secondary, it) },
+                { Modifier.onRelease(InputResult.Consumed, PointerButton.Secondary, it) },
+                { Modifier.onMove(InputResult.Consumed, it) },
+                { Modifier.onDrag(InputResult.Consumed, PointerButton.Secondary, it) },
+                { Modifier.onScroll(InputResult.Consumed, it) },
             )
         factories.forEachIndexed { index, factory ->
             val accepted = mutableListOf<PointerEvent>()
@@ -158,8 +158,8 @@ internal class RemoteInputSubscriptionTest {
         val release = KeyboardEvent.Release(key.key, key.scanCode)
         val keyboardFactories: List<(UiSession.(KeyboardEvent) -> Unit) -> Modifier> =
             listOf(
-                { Modifier.Empty.initialFocus().onKeyEvent(InputResult.Ignored, action = it) },
-                { Modifier.Empty.initialFocus().onKeyRelease(InputResult.Ignored, action = it) },
+                { Modifier.initialFocus().onKeyEvent(InputResult.Ignored, action = it) },
+                { Modifier.initialFocus().onKeyRelease(InputResult.Ignored, action = it) },
             )
         keyboardFactories.zip(listOf(listOf(key, release), listOf(release))).forEach { (factory, expected) ->
             val accepted = mutableListOf<KeyboardEvent>()
@@ -174,8 +174,8 @@ internal class RemoteInputSubscriptionTest {
         val preedit = TextInputEvent.Preedit("a", 1, listOf("a"), 0)
         val textFactories: List<(UiSession.(TextInputEvent) -> Unit) -> Modifier> =
             listOf(
-                { Modifier.Empty.initialFocus().onTextInput(InputResult.Ignored, it) },
-                { Modifier.Empty.initialFocus().onCharacterInput(InputResult.Ignored, it) },
+                { Modifier.initialFocus().onTextInput(InputResult.Ignored, it) },
+                { Modifier.initialFocus().onCharacterInput(InputResult.Ignored, it) },
             )
         textFactories.zip(listOf(listOf(character, preedit), listOf(character))).forEach { (factory, expected) ->
             val accepted = mutableListOf<TextInputEvent>()
@@ -192,7 +192,7 @@ internal class RemoteInputSubscriptionTest {
     fun changingCaptureButtonDoesNotRetargetAnActiveGesture() {
         val button = mutableStateOf<PointerButton>(PointerButton.Secondary)
         val accepted = mutableListOf<PointerEvent>()
-        Harness { Modifier.Empty.onCapturedPointerEvent(button.value, {}) { event, _ -> accepted.add(event) } }.use { fixture ->
+        Harness { Modifier.onCapturedPointerEvent(button.value, {}) { event, _ -> accepted.add(event) } }.use { fixture ->
             val press = PointerEvent.Press(IntOffset(3, 3), PointerButton.Secondary)
             fixture.host.dispatchPointer(press)
             fixture.server.receive(fixture.actions().last())
@@ -215,7 +215,7 @@ internal class RemoteInputSubscriptionTest {
     fun captureAndCancellationUseTheExistingClientPipeline() {
         val accepted = mutableListOf<PointerEvent>()
         val cancelled = mutableListOf<PointerButton>()
-        Harness { Modifier.Empty.onCapturedPointerEvent(PointerButton.Secondary, { cancelled.add(it) }) { event, _ -> accepted.add(event) } }.use { fixture ->
+        Harness { Modifier.onCapturedPointerEvent(PointerButton.Secondary, { cancelled.add(it) }) { event, _ -> accepted.add(event) } }.use { fixture ->
             assertEquals(InputResult.Ignored, fixture.host.dispatchPointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Primary)))
             assertTrue(fixture.actions().isEmpty())
             val press = PointerEvent.Press(IntOffset(2, 2), PointerButton.Secondary)
@@ -234,7 +234,7 @@ internal class RemoteInputSubscriptionTest {
     @Test
     fun serverRejectsForgedEventsOutsideTheDeclaredFilter() {
         var calls = 0
-        Harness { Modifier.Empty.initialFocus().onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(KeyCode.Enter))) { calls += 1 } }.use { fixture ->
+        Harness { Modifier.initialFocus().onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(KeyCode.Enter))) { calls += 1 } }.use { fixture ->
             fixture.host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 28))
             val action = fixture.actions().single()
             assertThrows(RemoteProtocolException::class.java) {
@@ -249,7 +249,7 @@ internal class RemoteInputSubscriptionTest {
     fun missingInputCapabilityRejectsTheWholeScreen() {
         val registry = RemoteRegistry().also(RemoteBuiltins::register)
         RemoteServerSession(1, ProjectionValue.Absent, registry.types - BuiltinProjection.KeyPress.type, send = {}) {
-            evaluateComponentTree { Spacer(Modifier.Empty.onKeyPress(InputResult.Ignored) {}) }
+            evaluateComponentTree { Spacer(Modifier.onKeyPress(InputResult.Ignored) {}) }
         }.use { server ->
             assertThrows(RemoteProtocolException::class.java, server::tick)
             assertEquals(RemoteSessionStatus.Closed(RemoteFailure.UnsupportedType), server.status)

@@ -96,7 +96,7 @@ internal class TextLineLayoutFixture(
                 val value = content.value
                 val viewport = size.value
                 if (consumer === Consumer.TextArea) {
-                    TextArea(states[owner], TextAreaViewport.Size(viewport), font = font(value), wrap = wrap, lineSpacing = 2, modifier = Modifier.Empty.initialFocus(), key = keys[owner])
+                    TextArea(states[owner], TextAreaViewport.Size(viewport), font = font(value), wrap = wrap, lineSpacing = 2, modifier = Modifier.initialFocus(), key = keys[owner])
                 } else {
                     Text(texts[value.ordinal], policy, style = TextStyle.TextField, key = keys[owner])
                 }

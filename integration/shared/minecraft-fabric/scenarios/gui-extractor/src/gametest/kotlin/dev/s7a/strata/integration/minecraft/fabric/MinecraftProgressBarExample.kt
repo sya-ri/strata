@@ -18,7 +18,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createProgressBarShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Progress bar") {
         Stack(
-            modifier = Modifier.Empty.size(116, 28).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(116, 28).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             ProgressBar(progress = 0.62)

@@ -42,7 +42,7 @@ internal fun createCanvasShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("Canvas showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(96, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,

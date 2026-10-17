@@ -45,7 +45,7 @@ internal class StateMutationDuringCompositionTest {
                 }
                 class Other(var value: Int) { fun scrollTo(offset: Double) {} }
                 fun UiScope.valid(state: MutableState<Int>, scroll: ScrollState, other: Other) {
-                    Text(state.value.toString(), modifier = Modifier.Empty.onPress { state.value += 1; state.value++; scroll.scrollTo(0.0) })
+                    Text(state.value.toString(), modifier = Modifier.onPress { state.value += 1; state.value++; scroll.scrollTo(0.0) })
                     val callback = { state.value = 2 }
                     other.value = 3
                     other.scrollTo(0.0)

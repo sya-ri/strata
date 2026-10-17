@@ -19,7 +19,7 @@ public abstract class Element public constructor(
     public val identity: ElementIdentity,
     public val type: ElementType<*, *>,
     children: List<Element> = emptyList(),
-    public val modifier: Modifier = Modifier.Empty,
+    public val modifier: Modifier = Modifier,
 ) {
     /**
      * Optional typed declaration export used by remote runtimes.

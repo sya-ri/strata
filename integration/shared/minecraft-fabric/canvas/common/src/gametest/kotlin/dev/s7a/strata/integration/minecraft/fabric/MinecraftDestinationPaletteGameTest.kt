@@ -111,7 +111,7 @@ internal object MinecraftDestinationPaletteGameTest {
                 }
             }
         return ScreenDefinition("Destination palette CPU acceptance") {
-            Stack(Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF102030.toInt()))) {
+            Stack(Modifier.size(viewport.width, viewport.height).background(ArgbColor(0xFF102030.toInt()))) {
                 Canvas(binding, viewport)
             }
         }

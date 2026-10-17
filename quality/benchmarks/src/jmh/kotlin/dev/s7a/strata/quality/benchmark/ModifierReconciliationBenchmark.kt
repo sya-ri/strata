@@ -123,8 +123,8 @@ public open class ModifierReconciliationBenchmark {
             val children = List(workload.entryCount) { index -> ComponentDescription(probe, index, Kind.First, originalChain) }
             val nextKind = if (workload.mutation == Mutation.ComponentType) Kind.Second else Kind.First
             val nextChildren = List(workload.entryCount) { index -> ComponentDescription(probe, index, nextKind, candidateChain) }
-            original = ComponentDescription(probe, -1, Kind.First, Modifier.Empty, children)
-            candidate = ComponentDescription(probe, -1, Kind.First, Modifier.Empty, if (workload.mutation == Mutation.Keyed) nextChildren.reversed() else nextChildren)
+            original = ComponentDescription(probe, -1, Kind.First, Modifier, children)
+            candidate = ComponentDescription(probe, -1, Kind.First, Modifier, if (workload.mutation == Mutation.Keyed) nextChildren.reversed() else nextChildren)
             tree = UiTree()
             tree.update(original)
             verifyWork()
@@ -180,7 +180,7 @@ public open class ModifierReconciliationBenchmark {
      * Untimed acceptance discovered by the generic compiled-fixture collector.
      */
     public companion object {
-        private fun chain(descriptions: List<ModifierDescription>): Modifier = descriptions.fold(Modifier.Empty) { result, description -> result.then(description) }
+        private fun chain(descriptions: List<ModifierDescription>): Modifier = descriptions.fold<ModifierElement, Modifier>(Modifier) { result, description -> result.then(description) }
 
         /**
          * Supplies all original update rows to the shared owner-thread CPU/allocation collector.

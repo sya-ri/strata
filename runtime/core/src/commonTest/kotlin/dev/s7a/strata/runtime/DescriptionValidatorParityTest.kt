@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
  */
 internal class DescriptionValidatorParityTest {
     @Test
-    fun c01KeylessLeaf() = compare { listOf(it.element(0, modifier = Modifier.Empty.then(it.modifier(0)))) }
+    fun c01KeylessLeaf() = compare { listOf(it.element(0, modifier = Modifier.then(it.modifier(0)))) }
 
     @Test
     fun c02KeylessWide() = compare { probe -> listOf(probe.element(0, List(128) { probe.element(it + 1) })) }
@@ -98,7 +98,7 @@ internal class DescriptionValidatorParityTest {
     @Test
     fun c20ModifierValidationOrder() =
         compare { probe ->
-            listOf(probe.element(0, listOf(probe.element(1, modifier = Modifier.Empty.then(probe.modifier(3)))), modifier = Modifier.Empty.then(probe.modifier(1)).then(probe.modifier(2))))
+            listOf(probe.element(0, listOf(probe.element(1, modifier = Modifier.then(probe.modifier(3)))), modifier = Modifier.then(probe.modifier(1)).then(probe.modifier(2))))
         }
 
     @Test
@@ -110,7 +110,7 @@ internal class DescriptionValidatorParityTest {
     @Test
     fun c22ModifierValidationFailure() {
         val failure = IllegalStateException("modifier failure")
-        compare(failure) { listOf(it.element(1, modifier = Modifier.Empty.then(it.modifier(1, validate = { throw failure })))) }
+        compare(failure) { listOf(it.element(1, modifier = Modifier.then(it.modifier(1, validate = { throw failure })))) }
     }
 
     @Test

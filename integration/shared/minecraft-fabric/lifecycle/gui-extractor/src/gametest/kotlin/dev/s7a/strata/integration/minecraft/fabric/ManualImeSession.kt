@@ -50,7 +50,7 @@ internal class ManualImeSession(
         createMinecraftScreen(
             ScreenDefinition("Strata OS IME verification") {
                 Column(
-                    Modifier.Empty
+                    Modifier
                         .size(420, 220)
                         .menuBackground()
                         .padding(8),
@@ -60,7 +60,7 @@ internal class ManualImeSession(
                     Text(instruction)
                     Text(label)
                     TextArea(draft, TextAreaViewport.Size(IntSize(304, 72)), key = ElementKey("manual-ime-editor"))
-                    Button("Finish test", modifier = Modifier.Empty.onActivate { completed = true })
+                    Button("Finish test", modifier = Modifier.onActivate { completed = true })
                 }
             },
             extractMinecraftUiProfile(),

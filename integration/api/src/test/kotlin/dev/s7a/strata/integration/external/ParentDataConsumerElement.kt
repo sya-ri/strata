@@ -23,7 +23,7 @@ public class ParentDataConsumerElement public constructor(
     public val parentDataKey: ParentDataKey<ParentDataValue> = ParentDataModifierElement.KEY,
     key: ElementKey<*>? = null,
     children: List<Element> = emptyList(),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,

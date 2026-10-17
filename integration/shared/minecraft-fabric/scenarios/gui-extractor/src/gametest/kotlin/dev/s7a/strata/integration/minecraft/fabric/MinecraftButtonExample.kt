@@ -24,7 +24,7 @@ internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
         val enabled = true
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(166, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -33,7 +33,7 @@ internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
                 "Continue",
                 enabled = enabled,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .onActivate(enabled) {}
                         .onHover {},
             )

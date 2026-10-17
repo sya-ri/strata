@@ -308,17 +308,17 @@ internal object MinecraftCanvasPointerGameTest {
         fun definition(): ScreenDefinition =
             ScreenDefinition("Canvas pointer capture acceptance") {
                 Stack(
-                    Modifier.Empty.onPointerEvent { event, _ ->
+                    Modifier.onPointerEvent { event, _ ->
                         fallback += event
                         InputResult.Consumed
                     },
                 ) {
                     Row(spacing = 16) {
-                        ScrollArea(scroll, Modifier.Empty.size(40, 40)) {
+                        ScrollArea(scroll, Modifier.size(40, 40)) {
                             Canvas(
                                 source,
                                 IntSize(32, 80),
-                                Modifier.Empty
+                                Modifier
                                     .onHover { event ->
                                         hoverEvents += event
                                         if (event == PointerHoverEvent.Exit) hoverExitFailure?.let { throw it }

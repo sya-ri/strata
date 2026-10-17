@@ -213,7 +213,7 @@ internal class ResponsivePanelIntegrationTest {
     ): Element =
         evaluateComponentTree {
             ResponsivePanel(minimumViewport) {
-                element(ExternalElement(probe = probe, modifier = Modifier.Empty.fillMaxSize()))
+                element(ExternalElement(probe = probe, modifier = Modifier.fillMaxSize()))
             }
         }
 

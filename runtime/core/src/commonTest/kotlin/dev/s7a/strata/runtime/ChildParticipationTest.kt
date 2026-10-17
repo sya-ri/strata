@@ -172,7 +172,7 @@ internal class ChildParticipationTest {
         val plan = Plan(listOf(0, 1), listOf(1))
         val tree = UiTree()
         try {
-            for (modifier in listOf(Modifier.Empty, Modifier.Empty.padding(1), Modifier.Empty.padding(2), Modifier.Empty)) {
+            for (modifier in listOf(Modifier, Modifier.padding(1), Modifier.padding(2), Modifier)) {
                 tree.update(ParticipationElement(plan, children, modifier))
                 frame(tree)
                 assertEquals(listOf(UiText.Literal("1")), tree.semantics().map { it.semantics.label })
@@ -288,7 +288,7 @@ internal class ChildParticipationTest {
     private class ParticipationElement(
         val plan: Plan,
         children: List<Element>,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ) : Element(ElementIdentity.Positional, TYPE, children = children, modifier = modifier) {
         /**
          * Stable parent token preserving compatible retained nodes.

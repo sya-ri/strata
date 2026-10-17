@@ -23,7 +23,7 @@ internal fun createFlowRowShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("FlowRow showcase") {
         FlowRow(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(168, 60)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .padding(8),

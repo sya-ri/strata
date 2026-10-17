@@ -112,7 +112,7 @@ public class EmptyChildProbe {
         id: Int,
         payload: Int = 0,
         children: List<Element> = emptyList(),
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
         kind: Kind = Kind.Ordinary,
         keyed: Boolean = true,
         mask: DirtyMask = DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Paint, DirtyPhase.Semantics),
@@ -125,7 +125,7 @@ public class EmptyChildProbe {
     public fun modifier(
         id: Int,
         payload: Int = 0,
-    ): Modifier = Modifier.Empty.then(ProbeModifier(this, id, payload))
+    ): Modifier = Modifier.then(ProbeModifier(this, id, payload))
 
     /**
      * Callback boundaries; values are observations, never runtime branch predictions.

@@ -37,7 +37,7 @@ public fun createApiOnlyCanvasDefinition(
         Canvas(
             source = source,
             size = size,
-            modifier = Modifier.Empty.onCapturedPointerEvent({ button -> onCancel(button) }) { event, position -> onPointerEvent(event, position) },
+            modifier = Modifier.onCapturedPointerEvent({ button -> onCancel(button) }) { event, position -> onPointerEvent(event, position) },
         )
     }
 }

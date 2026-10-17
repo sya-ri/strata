@@ -27,13 +27,13 @@ internal fun createScrollShowcaseScreenDefinition(): ScreenDefinition {
         Row(
             spacing = 8,
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(160, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
         ) {
-            ScrollArea(state = state, modifier = Modifier.Empty.size(146, 64)) {
+            ScrollArea(state = state, modifier = Modifier.size(146, 64)) {
                 Column(
-                    modifier = Modifier.Empty.size(132, 108),
+                    modifier = Modifier.size(132, 108),
                     horizontalAlignment = HorizontalAlignment.Center,
                 ) {
                     repeat(6) { index ->
@@ -41,7 +41,7 @@ internal fun createScrollShowcaseScreenDefinition(): ScreenDefinition {
                     }
                 }
             }
-            Scrollbar(state = state, modifier = Modifier.Empty.size(6, 64))
+            Scrollbar(state = state, modifier = Modifier.size(6, 64))
         }
     }
 }

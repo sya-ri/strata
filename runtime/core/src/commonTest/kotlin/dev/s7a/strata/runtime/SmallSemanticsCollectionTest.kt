@@ -39,9 +39,9 @@ internal class SmallSemanticsCollectionTest {
         root.placedIndices = setOf(0, 1, 2, 3)
         val children =
             listOf(passive, empty, one, many, hidden).map { node ->
-                fixture.element(node, modifier = if (node === one) Modifier.Empty.semantics(payload("modifier")) else Modifier.Empty)
+                fixture.element(node, modifier = if (node === one) Modifier.semantics(payload("modifier")) else Modifier)
             }
-        val session = createRuntimeUiSession { fixture.element(root, children, Modifier.Empty.semantics(payload("outer"))) }
+        val session = createRuntimeUiSession { fixture.element(root, children, Modifier.semantics(payload("outer"))) }
         try {
             session.attach()
             val frame = session.frame(Constraints.fixed(16, 4))

@@ -204,10 +204,10 @@ internal class DescriptionValidationRetainedTest {
     fun c35ModifierReplacement() {
         val probe = DescriptionValidationProbe()
         UiTree().use { tree ->
-            tree.update(probe.element(0, modifier = Modifier.Empty.then(probe.modifier(1))))
+            tree.update(probe.element(0, modifier = Modifier.then(probe.modifier(1))))
             val component = probe.nodes.single()
             tree.update(probe.element(0))
-            tree.update(probe.element(0, modifier = Modifier.Empty.then(probe.modifier(2))))
+            tree.update(probe.element(0, modifier = Modifier.then(probe.modifier(2))))
             assertSame(component, probe.nodes.single())
             assertEquals(1, probe.trace.count { it == DescriptionValidationProbe.Event.Ownership(DescriptionValidationProbe.Phase.ModifierDispose, 1) })
             assertEquals(1, probe.trace.count { it == DescriptionValidationProbe.Event.Ownership(DescriptionValidationProbe.Phase.ModifierAttach, 2) })
@@ -218,7 +218,7 @@ internal class DescriptionValidationRetainedTest {
     fun c36InitialAttach() {
         val probe = DescriptionValidationProbe()
         UiTree().use { tree ->
-            tree.update(probe.element(0, listOf(probe.element(1)), modifier = Modifier.Empty.then(probe.modifier(2))))
+            tree.update(probe.element(0, listOf(probe.element(1)), modifier = Modifier.then(probe.modifier(2))))
             val firstCreate = probe.trace.indexOfFirst { it is DescriptionValidationProbe.Event.Ownership }
             assertEquals(listOf(DescriptionValidationProbe.Event.Local(0), DescriptionValidationProbe.Event.ModifierValidation(2), DescriptionValidationProbe.Event.Local(1)), probe.trace.take(firstCreate))
         }

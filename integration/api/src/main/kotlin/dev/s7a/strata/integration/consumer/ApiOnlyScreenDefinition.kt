@@ -48,9 +48,9 @@ public fun createApiOnlyScreenDefinition(onClose: () -> Unit): UiDefinition {
     val search = TextFieldState()
     val scroll = ScrollState()
     return UiDefinition("API-only screen") {
-        Stack(modifier = Modifier.Empty.size(320, 180)) {
+        Stack(modifier = Modifier.size(320, 180)) {
             Column(
-                modifier = Modifier.Empty.fillMaxWidth().padding(left = 16, top = 12, right = 16),
+                modifier = Modifier.fillMaxWidth().padding(left = 16, top = 12, right = 16),
                 spacing = 4,
             ) {
                 Row(spacing = 4) {
@@ -61,26 +61,26 @@ public fun createApiOnlyScreenDefinition(onClose: () -> Unit): UiDefinition {
                 Grid(columns = 3, horizontalSpacing = 2, verticalSpacing = 2) {
                     repeat(3) { index -> Slot(bind = Slots.playerInventory(index)) }
                 }
-                ScrollArea(state = scroll, modifier = Modifier.Empty.size(288, 48)) {
+                ScrollArea(state = scroll, modifier = Modifier.size(288, 48)) {
                     Row(spacing = 4) {
                         PlayerHead(source = PlayerSkinSource.Name("Player0"), scale = PlayerHeadScale(3))
                         Image(
                             source = ImageSource.Resource(ResourceId("example", "textures/gui/status.png")),
-                            modifier = Modifier.Empty.size(24, 24),
+                            modifier = Modifier.size(24, 24),
                         )
                         Text("Resource-pack replaceable content")
                     }
                 }
                 Spacer(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .fillMaxWidth()
                             .height(1)
                             .background(ArgbColor(0xFF5A5A5A.toInt())),
                 )
                 Button(
                     label = "Close",
-                    modifier = Modifier.Empty.onActivate { onClose() }.align(HorizontalAlignment.Center),
+                    modifier = Modifier.onActivate { onClose() }.align(HorizontalAlignment.Center),
                 )
             }
         }

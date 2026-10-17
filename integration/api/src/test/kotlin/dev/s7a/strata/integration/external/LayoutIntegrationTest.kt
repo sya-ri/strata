@@ -60,7 +60,7 @@ internal class LayoutIntegrationTest {
             evaluateComponentTree {
                 Row(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .background(background)
                             .padding(Insets(left = 2, top = 5, right = 3, bottom = 4)),
                     spacing = 1,
@@ -96,7 +96,7 @@ internal class LayoutIntegrationTest {
                             probe = weightedProbe,
                             width = 1,
                             height = 2,
-                            modifier = Modifier.Empty.weight(1f),
+                            modifier = Modifier.weight(1f),
                         ),
                     )
                     element(
@@ -104,7 +104,7 @@ internal class LayoutIntegrationTest {
                             probe = weightedProbe,
                             width = 1,
                             height = 2,
-                            modifier = Modifier.Empty.weight(2f),
+                            modifier = Modifier.weight(2f),
                         ),
                     )
                 }
@@ -131,13 +131,13 @@ internal class LayoutIntegrationTest {
                     element(
                         ExternalElement(
                             probe = largeFirstProbe,
-                            modifier = Modifier.Empty.weight(Float.MAX_VALUE),
+                            modifier = Modifier.weight(Float.MAX_VALUE),
                         ),
                     )
                     element(
                         ExternalElement(
                             probe = largeFirstProbe,
-                            modifier = Modifier.Empty.weight(Float.MIN_VALUE),
+                            modifier = Modifier.weight(Float.MIN_VALUE),
                         ),
                     )
                 }
@@ -156,13 +156,13 @@ internal class LayoutIntegrationTest {
                     element(
                         ExternalElement(
                             probe = smallFirstProbe,
-                            modifier = Modifier.Empty.weight(Float.MIN_VALUE),
+                            modifier = Modifier.weight(Float.MIN_VALUE),
                         ),
                     )
                     element(
                         ExternalElement(
                             probe = smallFirstProbe,
-                            modifier = Modifier.Empty.weight(Float.MAX_VALUE),
+                            modifier = Modifier.weight(Float.MAX_VALUE),
                         ),
                     )
                 }
@@ -186,7 +186,7 @@ internal class LayoutIntegrationTest {
                             probe = probe,
                             width = 3,
                             height = 4,
-                            modifier = Modifier.Empty.align(Alignment.BottomEnd),
+                            modifier = Modifier.align(Alignment.BottomEnd),
                         ),
                     )
                 }

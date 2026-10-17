@@ -42,7 +42,7 @@ internal class GridLayoutIntegrationTest {
                         ExternalElement(
                             width = 2,
                             height = 1,
-                            modifier = Modifier.Empty.align(Alignment.TopStart),
+                            modifier = Modifier.align(Alignment.TopStart),
                         ),
                     )
                     element(ExternalElement(width = 4, height = 3))
@@ -218,7 +218,7 @@ internal class GridLayoutIntegrationTest {
         evaluateComponentTree {
             Grid(columns, contentAlignment = alignment, horizontalSpacing = horizontalSpacing, verticalSpacing = verticalSpacing) {
                 cells.forEachIndexed { index, cell ->
-                    val modifier = if (index == 0 && firstAlignment != null) Modifier.Empty.align(firstAlignment) else Modifier.Empty
+                    val modifier = if (index == 0 && firstAlignment != null) Modifier.align(firstAlignment) else Modifier
                     element(ExternalElement(probe = cell.probe, key = cell.key, width = cell.size.width, height = cell.size.height, modifier = modifier))
                 }
             }

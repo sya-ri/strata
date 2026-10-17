@@ -274,9 +274,9 @@ internal class LayoutRetainedCacheIntegrationTest {
             ) {
                 val firstModifier =
                     if (childAlignment == null) {
-                        Modifier.Empty
+                        Modifier
                     } else {
-                        Modifier.Empty.align(childAlignment)
+                        Modifier.align(childAlignment)
                     }
                 element(
                     ExternalElement(
@@ -317,26 +317,26 @@ internal class LayoutRetainedCacheIntegrationTest {
                 val firstModifier =
                     when {
                         firstWeight != null && childAlignment != null -> {
-                            Modifier.Empty.weight(firstWeight).align(childAlignment)
+                            Modifier.weight(firstWeight).align(childAlignment)
                         }
 
                         firstWeight != null -> {
-                            Modifier.Empty.weight(firstWeight)
+                            Modifier.weight(firstWeight)
                         }
 
                         childAlignment != null -> {
-                            Modifier.Empty.align(childAlignment)
+                            Modifier.align(childAlignment)
                         }
 
                         else -> {
-                            Modifier.Empty
+                            Modifier
                         }
                     }
                 val secondModifier =
                     if (secondWeight != null) {
-                        Modifier.Empty.weight(secondWeight)
+                        Modifier.weight(secondWeight)
                     } else {
-                        Modifier.Empty
+                        Modifier
                     }
                 element(
                     ExternalElement(

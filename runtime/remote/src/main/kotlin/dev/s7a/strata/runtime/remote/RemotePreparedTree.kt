@@ -27,8 +27,9 @@ internal class RemotePreparedTree(
             budget.visit()
             val node = tree.nodes.getValue(identity)
             val factories = decoded.getValue(identity)
+            val initialModifier: Modifier = Modifier
             val modifier =
-                factories.modifiers.zip(node.modifiers).fold(Modifier.Empty) { chain, (factory, declaration) ->
+                factories.modifiers.zip(node.modifiers).fold(initialModifier) { chain, (factory, declaration) ->
                     chain.then(factory.create(RemoteModifierContext(declaration.identity, actions, states)))
                 }
             val context = RemoteElementContext(identity, modifier, node.children.map(::visit), actions, states)

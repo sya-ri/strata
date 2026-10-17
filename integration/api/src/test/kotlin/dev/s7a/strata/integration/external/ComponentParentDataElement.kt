@@ -16,7 +16,7 @@ import dev.s7a.strata.node.DirtyMask
 public class ComponentParentDataElement public constructor(
     private val parentDataProbe: ParentDataProbe,
     children: List<Element> = emptyList(),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
 ) : Element(
         identity = ElementIdentity.Positional,
         type = TYPE,

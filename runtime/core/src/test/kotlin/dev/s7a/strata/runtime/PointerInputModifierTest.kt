@@ -39,7 +39,7 @@ internal class PointerInputModifierTest {
     fun everyTypedEventAndRawEventReceiveExactLocalInput() {
         val observations = ArrayList<Observation>()
         val modifier =
-            Modifier.Empty
+            Modifier
                 .size(10, 10)
                 .onPointerEvent { event, local ->
                     observations += Observation.Raw(event, local)
@@ -103,7 +103,7 @@ internal class PointerInputModifierTest {
     fun dragHandlersReceiveTypedLocalInputAndUpdateHover() {
         val observations = ArrayList<Observation>()
         val modifier =
-            Modifier.Empty
+            Modifier
                 .size(10, 10)
                 .onPointerEvent { event, local ->
                     observations += Observation.Raw(event, local)
@@ -135,7 +135,7 @@ internal class PointerInputModifierTest {
     fun simpleActionsUseTheirDocumentedConsumptionDefaults() {
         val calls = ArrayList<EventKind>()
         val modifier =
-            Modifier.Empty
+            Modifier
                 .size(10, 10)
                 .onPress { calls += EventKind.Press }
                 .onRelease { calls += EventKind.Release }
@@ -157,7 +157,7 @@ internal class PointerInputModifierTest {
     @Test
     fun clearingRetainedHoverEmitsOneExitAndLeavesTheTreeUsable() {
         val transitions = ArrayList<PointerHoverEvent>()
-        val tree = tree(Modifier.Empty.size(10, 10).onHover({ value -> transitions.add(value) }))
+        val tree = tree(Modifier.size(10, 10).onHover({ value -> transitions.add(value) }))
         tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
 
         tree.clearInputState()
@@ -172,7 +172,7 @@ internal class PointerInputModifierTest {
     @Test
     fun callbackFailurePoisonsTheTreeAndPreservesIdentity() {
         val primary = IllegalArgumentException("pointer callback")
-        val tree = tree(Modifier.Empty.size(10, 10).onPress { throw primary })
+        val tree = tree(Modifier.size(10, 10).onPress { throw primary })
 
         val failure =
             assertThrows(IllegalArgumentException::class.java) {
@@ -191,7 +191,7 @@ internal class PointerInputModifierTest {
         val fallback = ArrayList<PointerEvent>()
         val tree =
             tree(
-                Modifier.Empty
+                Modifier
                     .size(10, 10)
                     .onPointerEvent { event, _ ->
                         fallback += event
@@ -228,7 +228,7 @@ internal class PointerInputModifierTest {
         val events = ArrayList<PointerEvent>()
         val tree =
             tree(
-                Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
+                Modifier.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                     events += event
                     if (event is PointerEvent.Press) InputResult.Ignored else InputResult.Consumed
                 },
@@ -255,14 +255,14 @@ internal class PointerInputModifierTest {
                     probe.element(
                         TestProbe.ProbeId("capture-owner"),
                         modifier =
-                            Modifier.Empty.onCapturedPointerEvent({ _ -> }) { event, _ ->
+                            Modifier.onCapturedPointerEvent({ _ -> }) { event, _ ->
                                 firstEvents += event
                                 InputResult.Consumed
                             },
                     ),
                     probe.element(
                         TestProbe.ProbeId("pan-zoom"),
-                        modifier = Modifier.Empty.panZoom(state),
+                        modifier = Modifier.panZoom(state),
                     ),
                 ),
             ),
@@ -313,7 +313,7 @@ internal class PointerInputModifierTest {
                     probe.element(
                         TestProbe.ProbeId("first"),
                         modifier =
-                            Modifier.Empty.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
+                            Modifier.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                                 first += event
                                 InputResult.Consumed
                             },
@@ -321,7 +321,7 @@ internal class PointerInputModifierTest {
                     probe.element(
                         TestProbe.ProbeId("second"),
                         modifier =
-                            Modifier.Empty.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
+                            Modifier.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                                 second += event
                                 InputResult.Consumed
                             },
@@ -365,7 +365,7 @@ internal class PointerInputModifierTest {
         val newCancellations = ArrayList<PointerButton>()
         val tree =
             tree(
-                Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> oldCancellations.add(value) }) { event, _ ->
+                Modifier.size(10, 10).onCapturedPointerEvent({ value -> oldCancellations.add(value) }) { event, _ ->
                     oldEvents += event
                     InputResult.Consumed
                 },
@@ -377,7 +377,7 @@ internal class PointerInputModifierTest {
             evaluateComponentTree {
                 Spacer(
                     modifier =
-                        Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> newCancellations.add(value) }) { event, _ ->
+                        Modifier.size(10, 10).onCapturedPointerEvent({ value -> newCancellations.add(value) }) { event, _ ->
                             newEvents += event
                             InputResult.Ignored
                         },
@@ -398,14 +398,14 @@ internal class PointerInputModifierTest {
 
     @Test
     fun removingOrReplacingCapturedModifierCancelsBeforeItsCallbackIsDisposed() {
-        for (replacement in listOf(Modifier.Empty, Modifier.Empty.onPointerEvent { _, _ -> InputResult.Ignored })) {
+        for (replacement in listOf(Modifier, Modifier.onPointerEvent { _, _ -> InputResult.Ignored })) {
             val cancellations = ArrayList<PointerButton>()
             val tree =
                 tree(
-                    Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
+                    Modifier.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
                 )
             tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary))
-            tree.update(evaluateComponentTree { Spacer(modifier = Modifier.Empty.size(10, 10).then(replacement)) })
+            tree.update(evaluateComponentTree { Spacer(modifier = Modifier.size(10, 10).then(replacement)) })
             assertEquals(listOf(PointerButton.Primary), cancellations)
             tree.measure(Constraints.fixed(10, 10))
             tree.layout()
@@ -420,7 +420,7 @@ internal class PointerInputModifierTest {
         val cancellations = ArrayList<PointerButton>()
         val tree =
             tree(
-                Modifier.Empty.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
+                Modifier.size(10, 10).onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, _ ->
                     if (event is PointerEvent.Release) throw primary
                     InputResult.Consumed
                 },
@@ -446,7 +446,7 @@ internal class PointerInputModifierTest {
             probe.root(
                 listOf(probe.element(child)),
                 modifier =
-                    Modifier.Empty.onCapturedPointerEvent(
+                    Modifier.onCapturedPointerEvent(
                         onCancel = { _ ->
                             cancellations += 1
                             assertEquals(TreeState.Closed, tree.state)

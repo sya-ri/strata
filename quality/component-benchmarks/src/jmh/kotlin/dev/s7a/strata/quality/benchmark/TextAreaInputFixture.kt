@@ -368,7 +368,7 @@ internal class TextAreaInputFixture(
 
     private fun fresh(state: TextAreaState): MinecraftUiHost =
         createMinecraftUiHost(
-            UiDefinition("Logical TextArea input") { TextArea(state, TextAreaViewport.Size(size), wrap = if (shape === Shape.ShortWrapped) TextWrap.Character else TextWrap.None, lineSpacing = 2, modifier = Modifier.Empty.initialFocus()) },
+            UiDefinition("Logical TextArea input") { TextArea(state, TextAreaViewport.Size(size), wrap = if (shape === Shape.ShortWrapped) TextWrap.Character else TextWrap.None, lineSpacing = 2, modifier = Modifier.initialFocus()) },
             profile,
             fontBackend = MinecraftFontBackendFactory { backend() },
         )

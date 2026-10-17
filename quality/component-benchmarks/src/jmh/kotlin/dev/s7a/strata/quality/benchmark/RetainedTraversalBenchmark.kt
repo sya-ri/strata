@@ -385,9 +385,9 @@ public open class RetainedTraversalBenchmark {
             val width = payload.phase.extent + generation.extent - 4
             val modifier =
                 if (payload.change == Change.ModifierReplacement && payload.phase == Phase.Second) {
-                    Modifier.Empty.then(ParticipantModifierElement(this))
+                    Modifier.then(ParticipantModifierElement(this))
                 } else {
-                    Modifier.Empty
+                    Modifier
                 }
             val leaf = primitive(ordinal + 1, ordinal < workload.participants, width, modifier = modifier)
             val children =
@@ -404,7 +404,7 @@ public open class RetainedTraversalBenchmark {
             participant: Boolean = false,
             width: Int = 4,
             children: List<Element> = emptyList(),
-            modifier: Modifier = Modifier.Empty,
+            modifier: Modifier = Modifier,
         ): PrimitiveElement = PrimitiveElement(this, id, participant, width, children, modifier)
     }
 

@@ -235,7 +235,7 @@ public open class RenderingBenchmark {
                 val root =
                     evaluateComponentTree {
                         Stack(
-                            modifier = Modifier.Empty.fillMaxSize().background(BACKGROUND_COLOR),
+                            modifier = Modifier.fillMaxSize().background(BACKGROUND_COLOR),
                             contentAlignment = Alignment.Center,
                         ) {
                             Grid(

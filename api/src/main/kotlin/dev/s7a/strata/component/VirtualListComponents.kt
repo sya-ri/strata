@@ -51,7 +51,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -115,7 +115,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -223,7 +223,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {

@@ -98,7 +98,7 @@ internal class MinecraftRemoteScreenTest {
         var released = 0
         Pairing {
             Spacer(
-                Modifier.Empty
+                Modifier
                     .size(30, 30)
                     .onHover({ value -> hover.add(value) })
                     .onFocusChanged({ value -> focus.add(value) })
@@ -123,7 +123,7 @@ internal class MinecraftRemoteScreenTest {
         val state = SelectionListState<Int>()
         val selected = mutableListOf<Int>()
         Pairing {
-            SelectionList((0 until 100).toList(), { it }, state, IntSize(80, 60), 20, modifier = Modifier.Empty.onSelectionChange<Int>({ value -> selected.add(value) })) {
+            SelectionList((0 until 100).toList(), { it }, state, IntSize(80, 60), 20, modifier = Modifier.onSelectionChange<Int>({ value -> selected.add(value) })) {
                 Text("Row $it")
             }
         }.use { pair ->
@@ -183,8 +183,8 @@ internal class MinecraftRemoteScreenTest {
         source: Tiles,
         state: PanZoomState,
     ) {
-        TiledImage(source, state, IntSize(96, 96), cachePolicy = TiledImageCachePolicy(16, 16384), modifier = Modifier.Empty.panZoom(state)) {
-            Text("Pin", modifier = Modifier.Empty.atContentPosition(DoubleOffset(32.0, 32.0)))
+        TiledImage(source, state, IntSize(96, 96), cachePolicy = TiledImageCachePolicy(16, 16384), modifier = Modifier.panZoom(state)) {
+            Text("Pin", modifier = Modifier.atContentPosition(DoubleOffset(32.0, 32.0)))
         }
     }
 
@@ -255,7 +255,7 @@ internal class MinecraftRemoteScreenTest {
     fun checkboxChangesAuthoritativeStateAndCallsBusinessHandlerExactlyOnce() {
         val state = CheckboxState()
         val received = mutableListOf<Boolean>()
-        Pairing { Checkbox("Check", state, modifier = Modifier.Empty.onCheckedChange({ value -> received.add(value) })) }.use { pair ->
+        Pairing { Checkbox("Check", state, modifier = Modifier.onCheckedChange({ value -> received.add(value) })) }.use { pair ->
             pair.click(2, 2)
             assertFalse(state.checked)
             val action = pair.incoming.filterIsInstance<RemoteMessage.Action>().single()
@@ -282,7 +282,7 @@ internal class MinecraftRemoteScreenTest {
         val second = Choice("Second", Any())
         val state = CycleButtonState(listOf(first, second))
         val selected = mutableListOf<Choice>()
-        Pairing { CycleButton(state, modifier = Modifier.Empty.onCycle<Choice>({ value -> selected.add(value) }), label = { UiText.Literal(it.label) }) }.use { pair ->
+        Pairing { CycleButton(state, modifier = Modifier.onCycle<Choice>({ value -> selected.add(value) }), label = { UiText.Literal(it.label) }) }.use { pair ->
             pair.click(2, 2)
             pair.synchronize()
             assertEquals(second, state.value)
@@ -294,7 +294,7 @@ internal class MinecraftRemoteScreenTest {
     fun sliderDragUsesLocalCaptureAndValidatedServerValues() {
         val state = SliderState(0.0)
         val changes = mutableListOf<Double>()
-        Pairing { Slider("Amount", state, width = 100, modifier = Modifier.Empty.onSliderChange({ value -> changes.add(value) })) }.use { pair ->
+        Pairing { Slider("Amount", state, width = 100, modifier = Modifier.onSliderChange({ value -> changes.add(value) })) }.use { pair ->
             pair.click(10, 10)
             pair.host.dispatchPointer(PointerEvent.Drag(IntOffset(90, 10), PointerButton.Primary, 80.0, 0.0))
             pair.host.dispatchPointer(PointerEvent.Release(IntOffset(90, 10), PointerButton.Primary))
@@ -311,7 +311,7 @@ internal class MinecraftRemoteScreenTest {
         Pairing {
             Column {
                 TextField(state, IntSize(100, 20))
-                Button("Submit", modifier = Modifier.Empty.onActivate { submitted.add(state.value) })
+                Button("Submit", modifier = Modifier.onActivate { submitted.add(state.value) })
             }
         }.use { pair ->
             pair.click(5, 5)
@@ -338,7 +338,7 @@ internal class MinecraftRemoteScreenTest {
         val state = TextAreaState((1..50).joinToString("\n") { "Line" })
         Pairing {
             Row {
-                Scrollbar(state.scrollState, Modifier.Empty.height(40))
+                Scrollbar(state.scrollState, Modifier.height(40))
                 TextArea(state, TextAreaViewport.Lines(100, 3))
             }
         }.use { pair ->

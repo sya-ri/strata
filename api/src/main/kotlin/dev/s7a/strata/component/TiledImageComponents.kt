@@ -35,7 +35,7 @@ public fun UiScope.TiledImage(
     size: IntSize,
     fit: PanZoomFit = PanZoomFit.Contain,
     cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: TiledImageScope.() -> Unit = {},
 ) {

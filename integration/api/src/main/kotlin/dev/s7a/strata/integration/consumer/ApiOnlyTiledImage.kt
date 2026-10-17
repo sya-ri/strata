@@ -58,11 +58,11 @@ public fun createApiOnlyTiledImageDefinition(
             source = source,
             state = navigation,
             size = size,
-            modifier = Modifier.Empty.panZoom(navigation),
+            modifier = Modifier.panZoom(navigation),
         ) {
             Spacer(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(1, 1)
                         .atContentPosition(markerPositions),
             )

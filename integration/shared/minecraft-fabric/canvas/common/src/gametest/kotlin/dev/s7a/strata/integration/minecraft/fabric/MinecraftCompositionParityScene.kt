@@ -79,10 +79,10 @@ internal fun createMinecraftCompositionParityScene(
             }
         }
     return ScreenDefinition("Ordered transparent composition parity") {
-        Stack(modifier = Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF102030.toInt()))) {
+        Stack(modifier = Modifier.size(viewport.width, viewport.height).background(ArgbColor(0xFF102030.toInt()))) {
             Canvas(boundary, IntSize(1, 1))
             Canvas(background, viewport)
-            Text("Overlapping glyphs 0123456789", modifier = Modifier.Empty.padding(16))
+            Text("Overlapping glyphs 0123456789", modifier = Modifier.padding(16))
             Canvas(overlay, viewport)
         }
     }

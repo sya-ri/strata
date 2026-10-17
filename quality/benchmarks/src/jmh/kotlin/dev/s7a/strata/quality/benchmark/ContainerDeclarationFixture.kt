@@ -127,34 +127,34 @@ internal class ContainerDeclarationFixture(
             }
             when (container) {
                 Container.Row -> {
-                    Row(modifier = parentModifier) { content(Modifier.Empty) }
+                    Row(modifier = parentModifier) { content(Modifier) }
                 }
 
                 Container.FlowRow -> {
-                    FlowRow(modifier = parentModifier) { content(Modifier.Empty) }
+                    FlowRow(modifier = parentModifier) { content(Modifier) }
                 }
 
                 Container.Column -> {
-                    Column(modifier = parentModifier) { content(Modifier.Empty) }
+                    Column(modifier = parentModifier) { content(Modifier) }
                 }
 
                 Container.Stack -> {
-                    Stack(modifier = parentModifier) { content(Modifier.Empty) }
+                    Stack(modifier = parentModifier) { content(Modifier) }
                 }
 
                 Container.Grid -> {
-                    Grid(columns = 4, modifier = parentModifier) { content(Modifier.Empty) }
+                    Grid(columns = 4, modifier = parentModifier) { content(Modifier) }
                 }
 
                 Container.TiledImage -> {
                     TiledImage(source, state, IntSize(1_024, 1_024), modifier = parentModifier) {
-                        content(Modifier.Empty.atContentPosition(DoubleOffset.Zero, Alignment.TopStart))
+                        content(Modifier.atContentPosition(DoubleOffset.Zero, Alignment.TopStart))
                     }
                 }
             }
         }
         return evaluateComponentTree {
-            if (shape.groups == 1) branch(shape.depth, Modifier.Empty) else Stack { repeat(shape.groups) { branch(shape.depth, Modifier.Empty) } }
+            if (shape.groups == 1) branch(shape.depth, Modifier) else Stack { repeat(shape.groups) { branch(shape.depth, Modifier) } }
         }
     }
 
@@ -269,11 +269,11 @@ internal class ContainerDeclarationFixture(
     private fun rasterSize(size: IntSize): IntSize = IntSize(maxOf(1, size.width), maxOf(1, size.height))
 
     private fun templateModifier(): Modifier {
-        if (container != Container.TiledImage) return Modifier.Empty
-        var result = Modifier.Empty
+        if (container != Container.TiledImage) return Modifier
+        var result: Modifier = Modifier
         evaluateComponentTree {
             TiledImage(source, states[0], IntSize(1_024, 1_024)) {
-                result = Modifier.Empty.atContentPosition(DoubleOffset.Zero, Alignment.TopStart)
+                result = Modifier.atContentPosition(DoubleOffset.Zero, Alignment.TopStart)
             }
         }
         return result
@@ -347,7 +347,7 @@ internal class ContainerDeclarationFixture(
         val ordinal: Int,
         val value: Int,
         val counts: Counts,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ) : Element(ElementIdentity.Positional, TYPE, modifier = modifier) {
         companion object {
             val TYPE: ElementType<LeafElement, LeafNode> =
@@ -496,9 +496,9 @@ internal class ContainerDeclarationFixture(
             val counts = Counts()
             val declaration =
                 evaluateComponentTree {
-                    Row(modifier = Modifier.Empty.size(12, 4), spacing = 2) {
-                        element(LeafElement(0, 0, counts, Modifier.Empty.weight(1f).align(VerticalAlignment.Bottom)))
-                        element(LeafElement(1, 0, counts, Modifier.Empty.weight(1f).align(VerticalAlignment.Top)))
+                    Row(modifier = Modifier.size(12, 4), spacing = 2) {
+                        element(LeafElement(0, 0, counts, Modifier.weight(1f).align(VerticalAlignment.Bottom)))
+                        element(LeafElement(1, 0, counts, Modifier.weight(1f).align(VerticalAlignment.Top)))
                     }
                 }
             val session = createRuntimeUiSession { declaration }

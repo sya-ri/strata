@@ -21,7 +21,7 @@ public fun UiScope.Text(
     text: StateSource<UiText>,
     layout: TextLayout = TextLayout.SingleLine,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(text), key) { values -> Text(values[0] as UiText, layout, style, modifier) }
@@ -35,7 +35,7 @@ public fun UiScope.Text(
     text: StateSource<String>,
     layout: TextLayout = TextLayout.SingleLine,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(text), key) { values -> Text(values[0] as String, layout, style, modifier) }
@@ -50,7 +50,7 @@ public fun UiScope.Text(
     font: ResourceId,
     layout: TextLayout = TextLayout.SingleLine,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(text), key) { values -> Text((values[0] as UiText).withFont(font), layout, style, modifier) }
@@ -65,7 +65,7 @@ public fun UiScope.Text(
     font: ResourceId,
     layout: TextLayout = TextLayout.SingleLine,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(text), key) { values -> Text(UiText.Literal(values[0] as String).withFont(font), layout, style, modifier) }

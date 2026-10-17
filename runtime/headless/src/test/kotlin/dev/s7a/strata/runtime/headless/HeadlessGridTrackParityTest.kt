@@ -51,7 +51,7 @@ internal class HeadlessGridTrackParityTest {
                     Grid(scene.columns, horizontalSpacing = scene.spacing, verticalSpacing = scene.spacing, contentAlignment = scene.alignment) {
                         scene.cells.forEach { cell ->
                             var modifier =
-                                Modifier.Empty
+                                Modifier
                                     .size(cell.size.width, cell.size.height)
                                     .background(cell.color)
                                     .semantics(cell.semantics)

@@ -22,7 +22,7 @@ internal fun createRowShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Row showcase") {
         Row(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(136, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,

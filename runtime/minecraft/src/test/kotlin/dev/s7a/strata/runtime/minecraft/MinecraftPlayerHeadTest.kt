@@ -109,16 +109,16 @@ internal class MinecraftPlayerHeadTest {
         assertEquals(firstSkin, equalSkin)
         assertNotSame(firstSkin, equalSkin)
         UiTree().use { tree ->
-            tree.update(createMinecraftPlayerHeadElement(firstSkin, 10, false, Modifier.Empty, null))
+            tree.update(createMinecraftPlayerHeadElement(firstSkin, 10, false, Modifier, null))
             tree.measure(Constraints.fixed(10, 10))
             tree.layout()
             val first = tree.paint().single() as DrawCommand.SampledImage
 
-            tree.update(createMinecraftPlayerHeadElement(equalSkin, 10, false, Modifier.Empty, null))
+            tree.update(createMinecraftPlayerHeadElement(equalSkin, 10, false, Modifier, null))
             val replacedSkin = tree.paint().single() as DrawCommand.SampledImage
             assertNotSame(first.image, replacedSkin.image)
 
-            tree.update(createMinecraftPlayerHeadElement(equalSkin, 11, false, Modifier.Empty, null))
+            tree.update(createMinecraftPlayerHeadElement(equalSkin, 11, false, Modifier, null))
             tree.measure(Constraints.fixed(11, 11))
             tree.layout()
             val replacedSize = tree.paint().single() as DrawCommand.SampledImage

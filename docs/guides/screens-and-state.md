@@ -33,10 +33,10 @@ Every `onXxx` callback receives its owning `UiSession` as `this`:
 ```kotlin
 UiDefinition(presentation = UiPresentation.Hud) {
     Column {
-        Button("Open as screen", modifier = Modifier.Empty.onActivate {
+        Button("Open as screen", modifier = Modifier.onActivate {
             switch(UiPresentation.Screen)
         })
-        Button("Close", modifier = Modifier.Empty.onActivate { close() })
+        Button("Close", modifier = Modifier.onActivate { close() })
     }
 }.open()
 ```

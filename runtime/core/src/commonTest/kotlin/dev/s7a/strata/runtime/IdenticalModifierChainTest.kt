@@ -112,7 +112,7 @@ internal class IdenticalModifierChainTest {
             )
         }
 
-        var root = reconciler.reconcileRoot(null, description(false, Modifier.Empty))
+        var root = reconciler.reconcileRoot(null, description(false, Modifier))
         reconciler.markInstalled(root)
         lifecycle.attachPending(root)
         try {
@@ -120,7 +120,7 @@ internal class IdenticalModifierChainTest {
             val secondChild = root.children[1]
             val oldModifiers = firstChild.modifiers.toList()
             val revision = dirty.structureRevision
-            val unchanged = description(false, Modifier.Empty)
+            val unchanged = description(false, Modifier)
             validator.validate(unchanged)
             root = reconciler.reconcileRoot(root, unchanged)
             assertEquals(revision, dirty.structureRevision)
@@ -327,7 +327,7 @@ internal class IdenticalModifierChainTest {
         tree.semantics()
     }
 
-    private fun chain(descriptions: List<CountingModifier>): Modifier = descriptions.fold(Modifier.Empty) { result, description -> result.then(description) }
+    private fun chain(descriptions: List<CountingModifier>): Modifier = descriptions.fold<CountingModifier, Modifier>(Modifier) { result, description -> result.then(description) }
 
     private fun oldEntriesReleased(probe: ModifierProbe) {
         for (node in probe.nodes) assertFailsWith<IllegalStateException> { node.invalidateForTest() }

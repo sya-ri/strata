@@ -68,14 +68,14 @@ internal class MinecraftCycleButtonSelectionScene(
     internal fun definition(): UiDefinition =
         UiDefinition("Native CycleButton selection") {
             revision.value
-            Stack(modifier = Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
+            Stack(modifier = Modifier.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
                 CycleButton(
                     selection.value,
                     width = 80,
                     enabled = enabled,
                     label = { value -> label(value, alternateLabel) },
                     modifier =
-                        Modifier.Empty.onCycle<Choice>({ value ->
+                        Modifier.onCycle<Choice>({ value ->
                             events.add(Event.Action to value.id)
                             actionValues.add(value.id)
                             if (case == MinecraftCycleButtonSelectionCase.ActionReentry) selection.value.value = values[1]
@@ -227,7 +227,7 @@ internal class MinecraftCycleButtonSelectionScene(
         val reference = CycleButtonState(order, values[case.expectedValue])
         val definition =
             UiDefinition("Independent native CycleButton reference") {
-                Stack(modifier = Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
+                Stack(modifier = Modifier.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
                     CycleButton(reference, width = 80, enabled = enabled, label = { value -> label(value, alternate) })
                 }
             }

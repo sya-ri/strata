@@ -28,25 +28,25 @@ internal fun createSlotScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Chest") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
             Stack(
-                modifier = Modifier.Empty.containerBackground(rows = 3),
+                modifier = Modifier.containerBackground(rows = 3),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    modifier = Modifier.Empty.size(162, 156),
+                    modifier = Modifier.size(162, 156),
                     spacing = 3,
                 ) {
                     Column(spacing = 2) {
                         Text(
                             "Chest",
                             style = TextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
+                            modifier = Modifier.padding(left = 1),
                         )
                         Grid(columns = 9) {
                             repeat(27) {
@@ -58,14 +58,14 @@ internal fun createSlotScreenDefinition(): ScreenDefinition =
                         Text(
                             "Inventory",
                             style = TextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
+                            modifier = Modifier.padding(left = 1),
                         )
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
+                        Grid(columns = 9, modifier = Modifier.padding(top = 1)) {
                             repeat(27) {
                                 Slot()
                             }
                         }
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                        Grid(columns = 9, modifier = Modifier.padding(top = 4)) {
                             repeat(9) {
                                 Slot()
                             }

@@ -22,7 +22,7 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
  * @param content owner-thread callback that emits exactly one root component when evaluated by a runtime.
  */
 @OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
-@Deprecated("Use UiDefinition and its returned UiSession.")
+@Deprecated("Use UiDefinition and its returned UiSession. Scheduled for removal in 1.0.0.")
 public class ScreenDefinition(
     title: UiText,
     pausesGame: Boolean = false,

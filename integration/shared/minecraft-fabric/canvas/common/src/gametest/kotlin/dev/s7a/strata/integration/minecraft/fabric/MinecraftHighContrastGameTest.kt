@@ -129,7 +129,7 @@ internal object MinecraftHighContrastGameTest {
 
     private fun definition(): UiDefinition =
         UiDefinition("High contrast regression") {
-            Column(Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
+            Column(Modifier.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
                 Button("Enabled")
                 Button("Disabled", enabled = false)
                 Slider("Slider", SliderState(0.5))

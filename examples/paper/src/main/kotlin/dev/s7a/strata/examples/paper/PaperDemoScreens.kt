@@ -25,13 +25,13 @@ public object PaperDemoScreens {
         val name = TextFieldState("Player", 32)
         val greeting = mutableStateOf("Enter a name and press the button.")
         return UiDefinition("Paper screen") {
-            Column(modifier = Modifier.Empty.padding(8), spacing = 4) {
+            Column(modifier = Modifier.padding(8), spacing = 4) {
                 Text(greeting.value)
                 TextField(name, IntSize(160, 20))
                 Button(
                     "Count: ${clicks.value}",
                     modifier =
-                        Modifier.Empty.onActivate {
+                        Modifier.onActivate {
                             clicks.value += 1
                             greeting.value = "Hello, ${name.value}."
                         },

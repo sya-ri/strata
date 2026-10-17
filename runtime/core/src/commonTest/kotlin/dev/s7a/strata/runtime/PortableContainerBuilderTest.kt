@@ -135,28 +135,28 @@ internal class PortableContainerBuilderTest {
     ) {
         when (kind) {
             Kind.Row -> {
-                Row(spacing = 1) { content(Modifier.Empty) }
+                Row(spacing = 1) { content(Modifier) }
             }
 
             Kind.FlowRow -> {
-                FlowRow(horizontalSpacing = 1) { content(Modifier.Empty) }
+                FlowRow(horizontalSpacing = 1) { content(Modifier) }
             }
 
             Kind.Column -> {
-                Column(spacing = 1) { content(Modifier.Empty) }
+                Column(spacing = 1) { content(Modifier) }
             }
 
             Kind.Stack -> {
-                Stack { content(Modifier.Empty) }
+                Stack { content(Modifier) }
             }
 
             Kind.Grid -> {
-                Grid(columns = 2) { content(Modifier.Empty) }
+                Grid(columns = 2) { content(Modifier) }
             }
 
             Kind.TiledImage -> {
                 TiledImage(source, state, IntSize(8, 8)) {
-                    content(Modifier.Empty.atContentPosition(DoubleOffset.Zero, Alignment.TopStart))
+                    content(Modifier.atContentPosition(DoubleOffset.Zero, Alignment.TopStart))
                 }
             }
         }

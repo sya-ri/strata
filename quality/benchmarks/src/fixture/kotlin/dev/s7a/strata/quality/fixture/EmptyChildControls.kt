@@ -333,7 +333,7 @@ public object EmptyChildControls {
     private fun reorder(modified: Boolean) {
         val probe = EmptyChildProbe()
 
-        fun leaf(id: Int) = probe.element(id, modifier = if (modified) probe.modifier(id) else Modifier.Empty)
+        fun leaf(id: Int) = probe.element(id, modifier = if (modified) probe.modifier(id) else Modifier)
 
         UiTree().use { tree ->
             tree.update(probe.element(0, children = listOf(leaf(1), leaf(2))))

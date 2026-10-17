@@ -336,7 +336,7 @@ internal class ChildTransformPipelineTest {
             evaluateComponentTree {
                 Spacer(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .size(10, 5)
                             .scaleToFit(IntSize(4, 5), contentAlignment = Alignment.CenterEnd)
                             .onFocusChanged({ value -> clippedTransitions.add(value) }),
@@ -347,7 +347,7 @@ internal class ChildTransformPipelineTest {
             evaluateComponentTree {
                 Spacer(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .size(4, 5)
                             .onFocusChanged({ value -> visibleTransitions.add(value) }),
                 )

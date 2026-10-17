@@ -68,11 +68,11 @@ public fun inboxScreen(
 
     return UiDefinition("Inbox") {
         Column(
-            modifier = Modifier.Empty.size(160, 160),
+            modifier = Modifier.size(160, 160),
             spacing = 4,
         ) {
-            Text(clockLabel, layout = TextLayout.Multiline(), modifier = Modifier.Empty.size(160, 12))
-            Observe(loading, modifier = Modifier.Empty.size(160, 12)) { active ->
+            Text(clockLabel, layout = TextLayout.Multiline(), modifier = Modifier.size(160, 12))
+            Observe(loading, modifier = Modifier.size(160, 12)) { active ->
                 if (active) {
                     Text("Loading...", layout = TextLayout.Multiline())
                 }
@@ -94,7 +94,7 @@ public fun inboxScreen(
                 label = sendLabel,
                 width = 160,
                 enabled = sendEnabled,
-                modifier = Modifier.Empty.size(160, 20).onActivate(sendEnabled) { onSend() },
+                modifier = Modifier.size(160, 20).onActivate(sendEnabled) { onSend() },
             )
         }
     }

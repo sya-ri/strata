@@ -16,12 +16,12 @@ internal class ModifierCompositionTest {
     fun extendingAndReusingPrefixesKeepsEveryEarlierValueStable() {
         val descriptions =
             List(32) {
-                Modifier.Empty
+                Modifier
                     .padding(it)
                     .elements()
                     .single()
             }
-        var current = Modifier.Empty
+        var current: Modifier = Modifier
         val prefixes =
             descriptions.map { description ->
                 current = current.then(description)
@@ -45,20 +45,20 @@ internal class ModifierCompositionTest {
     @Test
     fun concatenationRetainsRepeatedDescriptionIdentityAndValueOrder() {
         val first =
-            Modifier.Empty
+            Modifier
                 .padding(1)
                 .elements()
                 .single()
         val second =
-            Modifier.Empty
+            Modifier
                 .padding(2)
                 .elements()
                 .single()
-        val left = Modifier.Empty.then(first).then(second)
-        val right = Modifier.Empty.then(first)
+        val left = Modifier.then(first).then(second)
+        val right = Modifier.then(first)
         val combined = left.then(right)
         val equal =
-            Modifier.Empty
+            Modifier
                 .padding(1)
                 .padding(2)
                 .padding(1)
@@ -80,7 +80,7 @@ internal class ModifierCompositionTest {
 
     @Test
     fun emptyAndConditionalCompositionPreservesTheExistingIdentity() {
-        val empty = Modifier.Empty
+        val empty = Modifier
         val chain = empty.padding(3).padding(4)
         val conditional = listOf(false, true).map { enabled -> if (enabled) chain.padding(5) else chain }
 

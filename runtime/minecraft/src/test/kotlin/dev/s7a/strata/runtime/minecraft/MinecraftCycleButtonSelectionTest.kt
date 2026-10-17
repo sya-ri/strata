@@ -139,7 +139,7 @@ internal class MinecraftCycleButtonSelectionTest {
         val host =
             host(
                 state,
-                Modifier.Empty.onCycle<Choice>(
+                Modifier.onCycle<Choice>(
                     { value ->
                         actions.add(value)
                         state.value = values[6]
@@ -226,7 +226,7 @@ internal class MinecraftCycleButtonSelectionTest {
 
     private fun host(
         state: CycleButtonState<Choice>,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ): MinecraftUiHost = createMinecraftUiHost(UiDefinition("Selection") { Stack { CycleButton(state, width = 80, modifier = modifier, label = { UiText.Literal("V" + it.id.toString().padStart(6, '0')) }) } }, MinecraftProfileFixture.create())
 
     private fun assertLabel(

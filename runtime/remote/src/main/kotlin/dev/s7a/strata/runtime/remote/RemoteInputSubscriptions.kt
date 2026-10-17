@@ -35,34 +35,34 @@ internal object RemoteInputSubscriptions {
      * Registers the complete typed standard input family before capability negotiation.
      */
     fun register(registry: RemoteRegistry) {
-        keyboard(registry, BuiltinProjection.KeyboardEvents) { result, filter, action -> Modifier.Empty.onKeyEvent(result, filter, action) }
-        keyboard(registry, BuiltinProjection.KeyPress) { result, filter, action -> Modifier.Empty.onKeyPress(result, filter, action) }
-        keyboard(registry, BuiltinProjection.KeyRelease) { result, filter, action -> Modifier.Empty.onKeyRelease(result, filter, action) }
+        keyboard(registry, BuiltinProjection.KeyboardEvents) { result, filter, action -> Modifier.onKeyEvent(result, filter, action) }
+        keyboard(registry, BuiltinProjection.KeyPress) { result, filter, action -> Modifier.onKeyPress(result, filter, action) }
+        keyboard(registry, BuiltinProjection.KeyRelease) { result, filter, action -> Modifier.onKeyRelease(result, filter, action) }
         pointer(registry, BuiltinProjection.PointerEvents) { result, button, action ->
             require(button == null)
-            Modifier.Empty.onPointerEvent(result, action)
+            Modifier.onPointerEvent(result, action)
         }
-        pointer(registry, BuiltinProjection.PointerPress) { result, button, action -> Modifier.Empty.onPress(result, button, action) }
-        pointer(registry, BuiltinProjection.PointerRelease) { result, button, action -> Modifier.Empty.onRelease(result, button, action) }
+        pointer(registry, BuiltinProjection.PointerPress) { result, button, action -> Modifier.onPress(result, button, action) }
+        pointer(registry, BuiltinProjection.PointerRelease) { result, button, action -> Modifier.onRelease(result, button, action) }
         pointer(registry, BuiltinProjection.PointerMove) { result, button, action ->
             require(button == null)
-            Modifier.Empty.onMove(result, action)
+            Modifier.onMove(result, action)
         }
-        pointer(registry, BuiltinProjection.PointerDrag) { result, button, action -> Modifier.Empty.onDrag(result, button, action) }
+        pointer(registry, BuiltinProjection.PointerDrag) { result, button, action -> Modifier.onDrag(result, button, action) }
         pointer(registry, BuiltinProjection.PointerScroll) { result, button, action ->
             require(button == null)
-            Modifier.Empty.onScroll(result, action)
+            Modifier.onScroll(result, action)
         }
-        text(registry, BuiltinProjection.TextInput) { result, action -> Modifier.Empty.onTextInput(result, action) }
-        text(registry, BuiltinProjection.CharacterInput) { result, action -> Modifier.Empty.onCharacterInput(result, action) }
-        text(registry, BuiltinProjection.PreeditInput) { result, action -> Modifier.Empty.onPreedit(result, action) }
+        text(registry, BuiltinProjection.TextInput) { result, action -> Modifier.onTextInput(result, action) }
+        text(registry, BuiltinProjection.CharacterInput) { result, action -> Modifier.onCharacterInput(result, action) }
+        text(registry, BuiltinProjection.PreeditInput) { result, action -> Modifier.onPreedit(result, action) }
         registry.modifier(BuiltinProjection.PointerCapture.type, { value ->
             val fields = ProjectionFields(value)
             val subscription = Triple(ProjectionInputCodec.button(fields.value()), endpoint(fields), endpoint(fields))
             fields.finish()
             subscription
         }) { (button, endpoint, cancellation), actions ->
-            Modifier.Empty.onCapturedPointerEvent(button, { cancelled ->
+            Modifier.onCapturedPointerEvent(button, { cancelled ->
                 actions.send(cancellation, BuiltinProjection.PointerCapture.type, ProjectionInputCodec.button(cancelled))
             }) { event, position -> actions.send(endpoint, BuiltinProjection.PointerCapture.type, ProjectionInputCodec.pointer(event, position)) }
         }

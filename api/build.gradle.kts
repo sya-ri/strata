@@ -46,7 +46,7 @@ fun observeOverloads(): String = buildString {
         appendLine(" */")
         appendLine("public fun <$types> UiScope.Observe(")
         indices.forEach { appendLine("    state$it: StateSource<V$it>,") }
-        appendLine("    modifier: Modifier = Modifier.Empty,")
+        appendLine("    modifier: Modifier = Modifier,")
         appendLine("    key: ElementKey<*>? = null,")
         appendLine("    content: UiScope.($types) -> Unit,")
         appendLine(") {")

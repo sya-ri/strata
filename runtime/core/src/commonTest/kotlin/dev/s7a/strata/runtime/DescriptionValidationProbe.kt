@@ -55,7 +55,7 @@ internal class DescriptionValidationProbe {
         id: Int,
         children: List<Element> = emptyList(),
         key: Key? = null,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
         validate: () -> Unit = {},
         dispose: () -> Unit = {},
     ): ProbeElement = ProbeElement(this, id, children, key, modifier, validate, dispose)

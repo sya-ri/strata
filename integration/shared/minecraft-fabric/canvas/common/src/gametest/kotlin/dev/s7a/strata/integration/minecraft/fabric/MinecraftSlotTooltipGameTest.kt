@@ -173,10 +173,10 @@ internal object MinecraftSlotTooltipGameTest {
         inventoryIndex: Int?,
     ): ScreenDefinition =
         ScreenDefinition("Native Slot tooltip acceptance") {
-            Stack(Modifier.Empty.size(logical.width, logical.height).background(ArgbColor(black))) {
-                Slot(bind = inventoryIndex?.let(Slots::playerInventory), highlightable = false, modifier = Modifier.Empty.padding(left = origin.x, top = origin.y))
+            Stack(Modifier.size(logical.width, logical.height).background(ArgbColor(black))) {
+                Slot(bind = inventoryIndex?.let(Slots::playerInventory), highlightable = false, modifier = Modifier.padding(left = origin.x, top = origin.y))
                 // This noninteractive paint plane isolates the native tooltip without replacing the actual Slot hit test.
-                Spacer(Modifier.Empty.size(logical.width, logical.height).background(ArgbColor(black)))
+                Spacer(Modifier.size(logical.width, logical.height).background(ArgbColor(black)))
             }
         }
 

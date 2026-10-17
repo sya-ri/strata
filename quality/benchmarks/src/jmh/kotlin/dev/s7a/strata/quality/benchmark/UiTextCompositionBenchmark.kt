@@ -150,7 +150,7 @@ public open class UiTextCompositionBenchmark {
         private fun declarations(label: () -> UiText): Element =
             evaluateComponentTree {
                 Column {
-                    repeat(128) { Spacer(modifier = Modifier.Empty.semantics(Semantics(label = label()))) }
+                    repeat(128) { Spacer(modifier = Modifier.semantics(Semantics(label = label()))) }
                 }
             }
 

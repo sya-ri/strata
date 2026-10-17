@@ -75,7 +75,7 @@ internal class HeadlessNonpaintingConsumerTest {
                                 if (paints == 1) observer(StateSnapshot(StateRevision(1), blue))
                             },
                             modifier =
-                                Modifier.Empty.onPointerEvent { event, _ ->
+                                Modifier.onPointerEvent { event, _ ->
                                     events.add(event)
                                     InputResult.Consumed
                                 },

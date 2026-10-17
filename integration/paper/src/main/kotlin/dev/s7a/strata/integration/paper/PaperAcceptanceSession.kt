@@ -171,14 +171,14 @@ internal class PaperAcceptanceSession(
     private fun controls(): ScreenDefinition =
         ScreenDefinition("Strata verification controls") {
             Column(
-                Modifier.Empty
+                Modifier
                     .size(176, 120)
                     .background(ArgbColor(0xFF202020.toInt()))
                     .padding(8),
                 spacing = 4,
             ) {
                 TextField(field, IntSize(160, 20))
-                Button("Apply", 160, modifier = Modifier.Empty.onActivate { applied++ })
+                Button("Apply", 160, modifier = Modifier.onActivate { applied++ })
                 element(DemoRemoteExtensions.marker(ArgbColor(0xFFFF0000.toInt()), DemoRemoteExtensions.activation { activated++ }))
                 Text("Updates: ${updates.value}")
             }
@@ -187,7 +187,7 @@ internal class PaperAcceptanceSession(
     private fun inventory(): ScreenDefinition =
         ScreenDefinition("Strata verification inventory") {
             Column(
-                Modifier.Empty
+                Modifier
                     .size(176, 80)
                     .background(ArgbColor(0xFF202020.toInt()))
                     .padding(8),

@@ -35,16 +35,16 @@ internal class LayoutTokenContractTest {
     fun layoutElementTypesAreStableAndLinearVariantsShareOneToken() {
         val row = linearRow()
         val column = linearColumn()
-        val stack = StackElement(Alignment.TopStart, null, emptyList(), Modifier.Empty)
+        val stack = StackElement(Alignment.TopStart, null, emptyList(), Modifier)
         val grid = grid()
         val flowRow = flowRow()
-        val spacer = SpacerElement(null, Modifier.Empty)
+        val spacer = SpacerElement(null, Modifier)
 
         assertSame(row.type, column.type)
-        assertSame(stack.type, StackElement(Alignment.Center, null, emptyList(), Modifier.Empty).type)
+        assertSame(stack.type, StackElement(Alignment.Center, null, emptyList(), Modifier).type)
         assertSame(grid.type, grid(alignment = Alignment.Center).type)
         assertSame(flowRow.type, flowRow(alignment = VerticalAlignment.Center).type)
-        assertSame(spacer.type, SpacerElement(null, Modifier.Empty).type)
+        assertSame(spacer.type, SpacerElement(null, Modifier).type)
         assertNotSame(row.type, stack.type)
         assertNotSame(row.type, spacer.type)
         assertNotSame(stack.type, spacer.type)
@@ -113,7 +113,7 @@ internal class LayoutTokenContractTest {
             ),
         )
 
-        val stack = StackElement(Alignment.TopStart, null, emptyList(), Modifier.Empty)
+        val stack = StackElement(Alignment.TopStart, null, emptyList(), Modifier)
         assertEquals(
             DirtyMask.None,
             StackElement.TYPE.updateErased(stack, stack, StackElement.TYPE.createErased(stack)),
@@ -122,12 +122,12 @@ internal class LayoutTokenContractTest {
             DirtyMask.of(DirtyPhase.Layout),
             StackElement.TYPE.updateErased(
                 stack,
-                StackElement(Alignment.BottomEnd, null, emptyList(), Modifier.Empty),
+                StackElement(Alignment.BottomEnd, null, emptyList(), Modifier),
                 StackElement.TYPE.createErased(stack),
             ),
         )
 
-        val spacer = SpacerElement(null, Modifier.Empty)
+        val spacer = SpacerElement(null, Modifier)
         val spacerNode = SpacerElement.TYPE.createErased(spacer)
         assertEquals(DirtyMask.None, SpacerElement.TYPE.updateErased(spacer, spacer, spacerNode))
     }
@@ -287,7 +287,7 @@ internal class LayoutTokenContractTest {
             arrangement = arrangement,
             key = null,
             children = emptyList(),
-            modifier = Modifier.Empty,
+            modifier = Modifier,
         )
 
     private fun linearColumn(): LinearElement =
@@ -297,7 +297,7 @@ internal class LayoutTokenContractTest {
             arrangement = Arrangement.Start,
             key = null,
             children = emptyList(),
-            modifier = Modifier.Empty,
+            modifier = Modifier,
         )
 
     private fun grid(
@@ -311,7 +311,7 @@ internal class LayoutTokenContractTest {
             contentAlignment = alignment,
             key = null,
             children = emptyList(),
-            modifier = Modifier.Empty,
+            modifier = Modifier,
         )
 
     private fun flowRow(
@@ -327,6 +327,6 @@ internal class LayoutTokenContractTest {
             verticalAlignment = alignment,
             key = null,
             children = emptyList(),
-            modifier = Modifier.Empty,
+            modifier = Modifier,
         )
 }

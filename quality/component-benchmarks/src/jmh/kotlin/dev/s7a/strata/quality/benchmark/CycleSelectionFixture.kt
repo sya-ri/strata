@@ -396,7 +396,7 @@ internal class CycleSelectionFixture(
                         width = width,
                         enabled = enabled,
                         modifier =
-                            Modifier.Empty.onCycle<Choice>({ value ->
+                            Modifier.onCycle<Choice>({ value ->
                                 if (verify) {
                                     events.add(Event.Action to value.id)
                                     actionValues.add(value)

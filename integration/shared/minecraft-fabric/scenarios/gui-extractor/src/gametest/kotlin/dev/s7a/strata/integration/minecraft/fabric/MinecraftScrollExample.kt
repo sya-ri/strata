@@ -25,14 +25,14 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createScrollScreenDefinition(): ScreenDefinition {
     val state = ScrollState()
     return ScreenDefinition("Strata Scroll parity") {
-        Stack(modifier = Modifier.Empty.size(320, 180).menuBackground()) {
+        Stack(modifier = Modifier.size(320, 180).menuBackground()) {
             // Native ObjectSelectionList geometry reserves distinct 33-pixel header and 53-pixel footer bands.
             ScrollArea(
                 state = state,
-                modifier = Modifier.Empty.padding(top = 33, bottom = 53).fillMaxSize(),
+                modifier = Modifier.padding(top = 33, bottom = 53).fillMaxSize(),
             ) {
                 Column(
-                    modifier = Modifier.Empty.size(270, 216),
+                    modifier = Modifier.size(270, 216),
                     horizontalAlignment = HorizontalAlignment.Center,
                 ) {
                     listOf(
@@ -49,13 +49,13 @@ internal fun createScrollScreenDefinition(): ScreenDefinition {
                         "Entry 11",
                         "Entry 12",
                     ).forEach { label ->
-                        Text(label, modifier = Modifier.Empty.padding(top = 5, bottom = 4))
+                        Text(label, modifier = Modifier.padding(top = 5, bottom = 4))
                     }
                 }
             }
             Scrollbar(
                 state = state,
-                modifier = Modifier.Empty.padding(left = 303, top = 33, bottom = 53),
+                modifier = Modifier.padding(left = 303, top = 33, bottom = 53),
             )
         }
     }

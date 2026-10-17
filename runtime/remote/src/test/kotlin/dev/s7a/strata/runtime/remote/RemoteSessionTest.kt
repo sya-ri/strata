@@ -38,7 +38,7 @@ internal class RemoteSessionTest {
             RemoteServerSession(1, ProjectionValue.Text("test"), registry.types, send = { outbound.add(codec.decode(codec.encode(it))) }) {
                 evaluateComponentTree {
                     val color = if (clicks.value == 0) ArgbColor(-65536) else ArgbColor(-16776961)
-                    Spacer(modifier = Modifier.Empty.background(color).onActivate { clicks.value += 1 })
+                    Spacer(modifier = Modifier.background(color).onActivate { clicks.value += 1 })
                 }
             }
         server.use {
@@ -81,7 +81,7 @@ internal class RemoteSessionTest {
 
     private fun localFrame(): RuntimeUiFrame =
         createRuntimeUiSession {
-            evaluateComponentTree { Spacer(modifier = Modifier.Empty.background(ArgbColor(-16776961))) }
+            evaluateComponentTree { Spacer(modifier = Modifier.background(ArgbColor(-16776961))) }
         }.use { local ->
             local.attach()
             local.frame(Constraints.fixed(8, 8))

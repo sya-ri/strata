@@ -33,7 +33,7 @@ internal class ModifierRuntimePipelineTest {
         val child = componentProbe.element(TestProbe.ProbeId("child"))
         val modifier = modifierFixture.modifier(modifierProbe, 1, ModifierTestFixture.Kind.First)
 
-        tree.update(componentProbe.root(listOf(child), modifier = Modifier.Empty.then(modifier)))
+        tree.update(componentProbe.root(listOf(child), modifier = Modifier.then(modifier)))
         assertEquals(IntSize(2, 2), tree.measure(Constraints(maxWidth = 10, maxHeight = 10)))
         tree.layout()
         assertEquals(2, tree.paint().size)
@@ -64,7 +64,7 @@ internal class ModifierRuntimePipelineTest {
                 ModifierTestFixture.Behavior.ExcludeChild,
             )
 
-        tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(modifier)))
+        tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(modifier)))
         assertEquals(IntSize(3, 3), tree.measure(Constraints(maxWidth = 10, maxHeight = 10)))
         tree.layout()
         assertEquals(
@@ -92,7 +92,7 @@ internal class ModifierRuntimePipelineTest {
         val modifier = modifierFixture.modifier(modifierProbe, 4, ModifierTestFixture.Kind.First)
         val thrown =
             assertThrows(IllegalStateException::class.java) {
-                tree.update(componentProbe.root(listOf(failingChild), modifier = Modifier.Empty.then(modifier)))
+                tree.update(componentProbe.root(listOf(failingChild), modifier = Modifier.then(modifier)))
             }
 
         assertSame(failure, thrown)
@@ -108,7 +108,7 @@ internal class ModifierRuntimePipelineTest {
         val modifierProbe = ModifierTestFixture.Probe()
         val tree = UiTree()
         val initial = modifierFixture.modifier(modifierProbe, 74, ModifierTestFixture.Kind.First)
-        tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(initial)))
+        tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(initial)))
         modifierProbe.events.clear()
         val failure = IllegalStateException("modifier update")
         val updated =
@@ -121,7 +121,7 @@ internal class ModifierRuntimePipelineTest {
 
         val thrown =
             assertThrows(IllegalStateException::class.java) {
-                tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(updated)))
+                tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(updated)))
             }
 
         assertSame(failure, thrown)
@@ -148,7 +148,7 @@ internal class ModifierRuntimePipelineTest {
         val modifierProbe = ModifierTestFixture.Probe()
         val tree = UiTree()
         val modifier = modifierFixture.modifier(modifierProbe, 75, ModifierTestFixture.Kind.First)
-        tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(modifier)))
+        tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(modifier)))
         tree.measure(Constraints.fixed(10, 10))
         tree.layout()
         tree.paint()
@@ -169,7 +169,7 @@ internal class ModifierRuntimePipelineTest {
         tree.update(
             componentProbe.root(
                 emptyList(),
-                modifier = Modifier.Empty.then(PassiveModifierElement()),
+                modifier = Modifier.then(PassiveModifierElement()),
             ),
         )
 

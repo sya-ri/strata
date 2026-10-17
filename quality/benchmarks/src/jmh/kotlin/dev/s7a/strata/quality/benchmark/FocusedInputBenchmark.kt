@@ -296,7 +296,7 @@ public open class FocusedInputBenchmark {
         private fun element(owner: Int): InputElement {
             val node = InputNode(owner, owner == anchor && workload.focused, workload, counters)
             nodes += node
-            var modifier: Modifier = Modifier.Empty
+            var modifier: Modifier = Modifier
             repeat(workload.modifiers) { index -> modifier = modifier.then(DispatchElement(owner, index, workload, counters)) }
             return InputElement(node, modifier = modifier)
         }
@@ -408,7 +408,7 @@ public open class FocusedInputBenchmark {
     private class InputElement(
         val node: InputNode,
         children: List<Element> = emptyList(),
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ) : Element(ElementIdentity.Positional, inputType, children, modifier)
 
     private data class DispatchElement(

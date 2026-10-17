@@ -66,7 +66,7 @@ internal class RemoteCanvasLifetimeTest {
             evaluateComponentTree {
                 Column {
                     if (visible.value) Canvas(RemoteCanvas.source(type, color.value) { ProjectionValue.Integer(it.toLong()) }, IntSize(10, 10))
-                    Spacer(Modifier.Empty.size(10, 1).background(ArgbColor(background.value)))
+                    Spacer(Modifier.size(10, 1).background(ArgbColor(background.value)))
                 }
             }
         }.use { server ->

@@ -122,7 +122,7 @@ This component accepts a modifier but never uses it:
 <!-- checked-example: invalid -->
 
 ```kotlin
-fun UiScope.IgnoringPanel(modifier: Modifier = Modifier.Empty) {
+fun UiScope.IgnoringPanel(modifier: Modifier = Modifier) {
     Column { Text("Title") }
 }
 ```
@@ -132,7 +132,7 @@ Forward it to the outer root:
 <!-- checked-example: valid -->
 
 ```kotlin
-fun UiScope.ForwardingPanel(modifier: Modifier = Modifier.Empty) {
+fun UiScope.ForwardingPanel(modifier: Modifier = Modifier) {
     Column(modifier = modifier) { Text("Title") }
 }
 ```
@@ -151,7 +151,7 @@ The padding below never reaches the component:
 <!-- checked-example: invalid -->
 
 ```kotlin
-fun UiScope.UnpaddedPanel(modifier: Modifier = Modifier.Empty) {
+fun UiScope.UnpaddedPanel(modifier: Modifier = Modifier) {
     modifier.padding(8)
     Column(modifier = modifier) { Text("Title") }
 }
@@ -162,7 +162,7 @@ Use the returned chain; conditional expressions can supply it too:
 <!-- checked-example: valid -->
 
 ```kotlin
-fun UiScope.ConditionalPanel(enabled: Boolean, modifier: Modifier = Modifier.Empty) {
+fun UiScope.ConditionalPanel(enabled: Boolean, modifier: Modifier = Modifier) {
     val applied = if (enabled) {
         modifier.padding(4)
     } else {
@@ -187,7 +187,7 @@ Avoid applying the caller's modifier to two nodes:
 <!-- checked-example: invalid -->
 
 ```kotlin
-fun UiScope.RepeatedPanel(modifier: Modifier = Modifier.Empty) {
+fun UiScope.RepeatedPanel(modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Text("Title", modifier = modifier)
     }
@@ -199,9 +199,9 @@ Use it once on the root and give children independent modifiers:
 <!-- checked-example: valid -->
 
 ```kotlin
-fun UiScope.SingleBoundaryPanel(modifier: Modifier = Modifier.Empty) {
+fun UiScope.SingleBoundaryPanel(modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text("Title", modifier = Modifier.Empty.padding(2))
+        Text("Title", modifier = Modifier.padding(2))
     }
 }
 ```
@@ -225,7 +225,7 @@ fun UiScope.MisplacedWeight() {
     Row {
         val row = this
         Stack {
-            Text("Content", modifier = row.run { Modifier.Empty.weight(1f) })
+            Text("Content", modifier = row.run { Modifier.weight(1f) })
         }
     }
 }
@@ -238,7 +238,7 @@ Attach the weight to Stack, the Row's direct child:
 ```kotlin
 fun UiScope.DirectChildWeight() {
     Row {
-        Stack(modifier = Modifier.Empty.weight(1f)) {
+        Stack(modifier = Modifier.weight(1f)) {
             Text("Content")
         }
     }
@@ -272,7 +272,7 @@ Perform the change in an event or in the owner outside evaluation:
 
 ```kotlin
 fun UiScope.CounterAction(state: MutableState<Int>) {
-    Text("Reset", modifier = Modifier.Empty.onPress { state.value = 0 })
+    Text("Reset", modifier = Modifier.onPress { state.value = 0 })
 }
 ```
 
@@ -334,7 +334,7 @@ Open it from a deferred navigation event:
 
 ```kotlin
 fun UiScope.NavigationLabel(next: UiDefinition) {
-    Text("Next", modifier = Modifier.Empty.onPress { next.open() })
+    Text("Next", modifier = Modifier.onPress { next.open() })
 }
 ```
 

@@ -106,7 +106,7 @@ internal class GridTrackMeasureTest {
     private fun element(
         columns: Int,
         alignment: Alignment,
-    ): GridElement = GridElement(columns, 1, 2, alignment, null, emptyList(), Modifier.Empty)
+    ): GridElement = GridElement(columns, 1, 2, alignment, null, emptyList(), Modifier)
 
     // Deliberately scans each track independently instead of repeating Grid's row-major aggregation.
     private fun reference(

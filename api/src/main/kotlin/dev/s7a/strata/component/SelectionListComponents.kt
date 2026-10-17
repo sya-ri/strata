@@ -43,7 +43,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -63,7 +63,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
         val itemKey = keyOf(item)
         val row = buildComponentTree { content(item) }
         val rowModifier =
-            Modifier.Empty
+            Modifier
                 .semantics(Semantics(selected = state.selectedKey == itemKey))
                 .onPress {
                     if (state.select(itemKey)) actions.dispatch(this, ComponentActions.SelectionChange, itemKey)

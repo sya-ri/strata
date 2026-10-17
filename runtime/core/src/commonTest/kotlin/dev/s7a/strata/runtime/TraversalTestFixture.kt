@@ -54,7 +54,7 @@ internal class TraversalTestFixture {
         id: Int,
         kind: Kind = Kind.Plain,
         children: List<Element> = emptyList(),
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
         width: Int = 4,
         accepting: Boolean = true,
         initial: Boolean = false,
@@ -68,7 +68,7 @@ internal class TraversalTestFixture {
         id: Int,
         participant: Boolean = true,
         initial: Boolean = false,
-    ): Modifier = Modifier.Empty.then(ProbeModifierElement(this, id, participant, initial))
+    ): Modifier = Modifier.then(ProbeModifierElement(this, id, participant, initial))
 
     /**
      * Returns a detached retained root for direct summary and ownership tests.

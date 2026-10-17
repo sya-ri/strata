@@ -407,7 +407,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         return ScreenDefinition("Resource image memoization") {
             Stack(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(viewportSize.width, viewportSize.height)
                         .imageBackground(resourceImageSource(), ImageScale.Stretch),
             ) {
@@ -443,7 +443,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                                 Column {
                                     StrataButton(
                                         "Replacement",
-                                        modifier = Modifier.Empty.initialFocus().onActivate { replacementActivations.incrementAndGet() },
+                                        modifier = Modifier.initialFocus().onActivate { replacementActivations.incrementAndGet() },
                                     )
                                 }
                             },
@@ -458,7 +458,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                                         StrataButton(
                                             "First",
                                             modifier =
-                                                Modifier.Empty.onActivate {
+                                                Modifier.onActivate {
                                                     if (firstActivations.incrementAndGet() == 2) {
                                                         MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), replacement)
                                                     }
@@ -466,7 +466,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                                         )
                                         StrataButton(
                                             "Second",
-                                            modifier = Modifier.Empty.onActivate { secondActivations.incrementAndGet() },
+                                            modifier = Modifier.onActivate { secondActivations.incrementAndGet() },
                                         )
                                     }
                                 },
@@ -564,7 +564,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         TextField(
                             firstState,
                             modifier =
-                                Modifier.Empty
+                                Modifier
                                     .initialFocus()
                                     .onPreedit {
                                         firstPreeditCalls += 1
@@ -581,12 +581,12 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         TextField(
                             secondState,
                             modifier =
-                                Modifier.Empty.onPreedit {
+                                Modifier.onPreedit {
                                     secondPreeditCalls += 1
                                     InputResult.Ignored
                                 },
                         )
-                        Spacer(modifier = Modifier.Empty.size(200, 20).onTextInput { InputResult.Ignored })
+                        Spacer(modifier = Modifier.size(200, 20).onTextInput { InputResult.Ignored })
                     }
                 }
             screen = createMinecraftScreen(definition, profile, parent = null)

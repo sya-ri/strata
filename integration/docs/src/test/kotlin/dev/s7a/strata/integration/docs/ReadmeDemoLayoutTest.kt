@@ -129,11 +129,11 @@ internal class ReadmeDemoLayoutTest {
                 val screen =
                     UiDefinition("Width comparison") {
                         Column {
-                            Column(Modifier.Empty.width(width), spacing = 6) {
+                            Column(Modifier.width(width), spacing = 6) {
                                 assets.players.forEach { player ->
                                     Row(
                                         modifier =
-                                            Modifier.Empty
+                                            Modifier
                                                 .background(ArgbColor(0xFF4A4A4A.toInt()))
                                                 .padding(6)
                                                 .fillMaxWidth(),
@@ -142,7 +142,7 @@ internal class ReadmeDemoLayoutTest {
                                     ) {
                                         PlayerHead(player.skin, PlayerHeadScale(3))
                                         Column(
-                                            modifier = Modifier.Empty.weight(1f),
+                                            modifier = Modifier.weight(1f),
                                             spacing = 4,
                                             horizontalAlignment = Start,
                                         ) {

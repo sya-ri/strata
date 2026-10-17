@@ -37,9 +37,9 @@ internal object MinecraftTextReadabilityScene {
      */
     fun definition(): ScreenDefinition =
         ScreenDefinition("Default font readability") {
-            Stack(modifier = Modifier.Empty.fillMaxSize().background(ArgbColor(BACKGROUND))) {
+            Stack(modifier = Modifier.fillMaxSize().background(ArgbColor(BACKGROUND))) {
                 rows.forEach { row ->
-                    Text(row.text, style = TextStyle.ContainerLabel, modifier = Modifier.Empty.padding(left = LEFT, top = row.top))
+                    Text(row.text, style = TextStyle.ContainerLabel, modifier = Modifier.padding(left = LEFT, top = row.top))
                 }
             }
         }

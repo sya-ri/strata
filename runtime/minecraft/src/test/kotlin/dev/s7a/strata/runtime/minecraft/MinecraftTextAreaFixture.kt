@@ -133,7 +133,7 @@ internal class MinecraftTextAreaFixture(
                     textStyle = style,
                     wrap = wrap,
                     lineSpacing = lineSpacing,
-                    modifier = if (focused) Modifier.Empty.initialFocus() else Modifier.Empty,
+                    modifier = if (focused) Modifier.initialFocus() else Modifier,
                     key = ElementKey(Unit),
                 )
             },

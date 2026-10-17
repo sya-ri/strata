@@ -27,7 +27,7 @@ internal class ModifierDeclarationParityTest {
         for (length in listOf(0, 1, 8, 32, 128)) {
             val descriptions =
                 List(length) {
-                    Modifier.Empty
+                    Modifier
                         .padding(it % 4)
                         .elements()
                         .single()
@@ -63,7 +63,7 @@ internal class ModifierDeclarationParityTest {
         evaluateComponentTree {
             Column {
                 repeat(CHILD_COUNT) {
-                    var modifier = Modifier.Empty
+                    var modifier: Modifier = Modifier
                     for (description in descriptions) modifier = modifier.then(description)
                     Spacer(modifier = modifier)
                 }

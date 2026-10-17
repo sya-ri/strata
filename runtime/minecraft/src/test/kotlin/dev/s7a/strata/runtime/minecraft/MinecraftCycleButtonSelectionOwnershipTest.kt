@@ -90,7 +90,7 @@ internal class MinecraftCycleButtonSelectionOwnershipTest {
                 MinecraftTextRun.createNormal(text) { glyph } to MinecraftTextRun.createInactive(text) { glyph }
             }
         val sprite = MinecraftButtonSpriteSnapshot.create(createDrawImage(IntSize(200, 20), IntArray(4_000) { -1 }), 3, NineSliceCenterMode.Tiled)
-        return createMinecraftCycleButtonElement(sprite, sprite, sprite, state, labels, 80, true, Modifier.Empty.actionDispatcher(), Modifier.Empty, null)
+        return createMinecraftCycleButtonElement(sprite, sprite, sprite, state, labels, 80, true, Modifier.actionDispatcher(), Modifier, null)
     }
 
     private fun label(node: Any): UiText {

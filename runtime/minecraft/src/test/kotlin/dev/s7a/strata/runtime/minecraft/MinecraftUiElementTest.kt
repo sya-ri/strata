@@ -66,7 +66,7 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun menuBackgroundUsesFullSourceAndRowMajorThirtyTwoPixelTiles() {
-        val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.menuBackground()) {} } }
+        val host = host { evaluateComponentTree { Stack(modifier = Modifier.menuBackground()) {} } }
         host.attach()
 
         val frame = host.frame(IntSize(64, 48))
@@ -95,7 +95,7 @@ internal class MinecraftUiElementTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition(UiText.Literal("menu")) {
-                    Stack(modifier = Modifier.Empty.menuBackground()) {}
+                    Stack(modifier = Modifier.menuBackground()) {}
                 },
                 MinecraftProfileFixture.create(source),
             )
@@ -121,7 +121,7 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun zeroMenuAxisEmitsNoCommands() {
-        val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.menuBackground()) {} } }
+        val host = host { evaluateComponentTree { Stack(modifier = Modifier.menuBackground()) {} } }
         host.attach()
         assertEquals(emptyList<DrawCommand>(), host.frame(IntSize(0, 8)).drawCommands)
         assertEquals(emptyList<DrawCommand>(), host.frame(IntSize(8, 0)).drawCommands)
@@ -130,7 +130,7 @@ internal class MinecraftUiElementTest {
 
     @Test
     fun menuPreflightsFinalTileOverflowBeforeIteration() {
-        val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.menuBackground()) {} } }
+        val host = host { evaluateComponentTree { Stack(modifier = Modifier.menuBackground()) {} } }
         host.attach()
         assertThrows(ArithmeticException::class.java) {
             host.frame(IntSize(Int.MAX_VALUE - 1, 1))
@@ -144,7 +144,7 @@ internal class MinecraftUiElementTest {
         val host =
             host {
                 evaluateComponentTree {
-                    Spacer(modifier = Modifier.Empty.size(7, 5).menuBackground())
+                    Spacer(modifier = Modifier.size(7, 5).menuBackground())
                 }.also { element = it }
             }
         host.attach()
@@ -285,7 +285,7 @@ internal class MinecraftUiElementTest {
             }
         val tree = UiTree()
         try {
-            tree.update(createMinecraftTextElement(run, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(run, Modifier, null))
             tree.measure(Constraints.fixed(5, 9))
             tree.layout()
             val commands = tree.paint().filterIsInstance<DrawCommand.BlitImage>()
@@ -309,7 +309,7 @@ internal class MinecraftUiElementTest {
         val run = MinecraftTextRun.createInactive(UiText.Literal("A")) { glyph }
         val tree = UiTree()
         try {
-            tree.update(createMinecraftTextElement(run, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(run, Modifier, null))
             tree.measure(Constraints.fixed(2, 9))
             tree.layout()
             val commands = tree.paint().filterIsInstance<DrawCommand.BlitImage>()
@@ -336,13 +336,13 @@ internal class MinecraftUiElementTest {
         val secondRun = MinecraftTextRun.createNormal(UiText.Literal("B")) { secondGlyph }
         val tree = UiTree()
         try {
-            tree.update(createMinecraftTextElement(firstRun, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(firstRun, Modifier, null))
             tree.measure(Constraints.fixed(2, 9))
             tree.layout()
             assertSame(firstForeground, tree.paint().filterIsInstance<DrawCommand.BlitImage>()[1].image)
-            tree.update(createMinecraftTextElement(equalRun, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(equalRun, Modifier, null))
             assertSame(firstForeground, tree.paint().filterIsInstance<DrawCommand.BlitImage>()[1].image)
-            tree.update(createMinecraftTextElement(secondRun, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(secondRun, Modifier, null))
             tree.measure(Constraints.fixed(3, 9))
             tree.layout()
             assertSame(secondForeground, tree.paint().filterIsInstance<DrawCommand.BlitImage>()[1].image)
@@ -360,9 +360,9 @@ internal class MinecraftUiElementTest {
         val constraints = Constraints(maxWidth = 10, maxHeight = 10)
         val tree = UiTree()
         try {
-            tree.update(createMinecraftTextElement(narrowRun, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(narrowRun, Modifier, null))
             assertEquals(IntSize(2, 9), tree.measure(constraints))
-            tree.update(createMinecraftTextElement(wideRun, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(wideRun, Modifier, null))
             assertEquals(IntSize(3, 9), tree.measure(constraints))
         } finally {
             tree.close()
@@ -435,8 +435,8 @@ internal class MinecraftUiElementTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition(UiText.Literal("test")) {
-                    escaped = { Modifier.Empty.menuBackground() }
-                    Stack(modifier = Modifier.Empty.menuBackground()) {}
+                    escaped = { Modifier.menuBackground() }
+                    Stack(modifier = Modifier.menuBackground()) {}
                 },
                 MinecraftProfileFixture.create(),
             )
@@ -454,12 +454,12 @@ internal class MinecraftUiElementTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition(UiText.Literal("test")) {
-                    val task = FutureTask<Throwable?> { runCatching { Modifier.Empty.menuBackground() }.exceptionOrNull() }
+                    val task = FutureTask<Throwable?> { runCatching { Modifier.menuBackground() }.exceptionOrNull() }
                     val runner = Thread(task)
                     wrongThreadRunner = runner
                     runner.start()
                     wrongThreadFailure = task.get(5, TimeUnit.SECONDS)
-                    Stack(modifier = Modifier.Empty.menuBackground()) {}
+                    Stack(modifier = Modifier.menuBackground()) {}
                 },
                 MinecraftProfileFixture.create(),
             )
@@ -482,7 +482,7 @@ internal class MinecraftUiElementTest {
         evaluateComponentTree {
             Spacer(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(32, 32)
                         .then(createMinecraftMenuBackgroundModifier(image)),
             )

@@ -111,7 +111,7 @@ internal fun createRowShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Row showcase") {
         Row(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(136, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,
@@ -187,7 +187,7 @@ internal fun createFlowRowShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("FlowRow showcase") {
         FlowRow(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(168, 60)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .padding(8),
@@ -268,7 +268,7 @@ internal fun createColumnShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Column showcase") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(120, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,
@@ -343,7 +343,7 @@ internal fun createStackShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Stack showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(64, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -351,7 +351,7 @@ internal fun createStackShowcaseScreenDefinition(): ScreenDefinition =
             Button("Open", width = 56)
             Spacer(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(10, 10)
                         .background(ArgbColor(0xFFE53935.toInt()))
                         .align(Alignment.CenterEnd),
@@ -421,7 +421,7 @@ internal fun createGridShowcaseScreenDefinition(): ScreenDefinition =
         Grid(
             columns = 3,
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(64, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             horizontalSpacing = 2,
@@ -504,14 +504,14 @@ internal fun createSpacerShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Spacer showcase") {
         Row(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(160, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = VerticalAlignment.Center,
         ) {
             Button("Left", width = 60)
-            Spacer(modifier = Modifier.Empty.size(16, 20))
+            Spacer(modifier = Modifier.size(16, 20))
             Button("Right", width = 60)
         }
     }
@@ -587,7 +587,7 @@ internal fun createObserveShowcaseScreenDefinition(): ScreenDefinition {
         Observe(
             status,
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(160, 48)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .padding(8),
@@ -668,7 +668,7 @@ internal fun createTextShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Text showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(192, 88)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .padding(8),
@@ -751,7 +751,7 @@ internal fun createTextFieldShowcaseScreenDefinition(
     return ScreenDefinition("TextField showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(216, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -841,13 +841,13 @@ internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
         )
     return ScreenDefinition("TextArea showcase") {
         Row(
-            modifier = Modifier.Empty.size(226, 80).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(226, 80).background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = VerticalAlignment.Center,
         ) {
             TextArea(state, viewport = TextAreaViewport.Size(size))
-            Scrollbar(state.scrollState, modifier = Modifier.Empty.size(6, size.height))
+            Scrollbar(state.scrollState, modifier = Modifier.size(6, size.height))
         }
     }
 }
@@ -917,7 +917,7 @@ internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
         val enabled = true
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(166, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -926,7 +926,7 @@ internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
                 "Continue",
                 enabled = enabled,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .onActivate(enabled) {}
                         .onHover {},
             )
@@ -993,7 +993,7 @@ internal fun createCheckboxShowcaseScreenDefinition(): ScreenDefinition {
     val state = CheckboxState(initialChecked = true)
     return ScreenDefinition("Checkbox showcase") {
         Stack(
-            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             Checkbox("Allow invites", state)
@@ -1073,7 +1073,7 @@ internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
     val state = CycleButtonState(Difficulty.Normal) { value -> "Difficulty: ${value.label}" }
     return ScreenDefinition("CycleButton showcase") {
         Stack(
-            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             CycleButton(state = state)
@@ -1141,7 +1141,7 @@ internal fun createSliderShowcaseScreenDefinition(): ScreenDefinition {
     val state = SliderState(initialValue = 0.65)
     return ScreenDefinition("Slider showcase") {
         Stack(
-            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             Slider("Volume", state)
@@ -1213,7 +1213,7 @@ internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Tab showcase") {
         Row(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(160, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             spacing = 1,
@@ -1225,13 +1225,13 @@ internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
                 selected = true,
                 width = 73,
                 indicator = TabSelectionIndicator.Underline,
-                modifier = Modifier.Empty.onActivate {},
+                modifier = Modifier.onActivate {},
             )
             Tab(
                 "Hidden",
                 selected = false,
                 width = 73,
-                modifier = Modifier.Empty.onActivate {},
+                modifier = Modifier.onActivate {},
             )
         }
     }
@@ -1299,9 +1299,9 @@ internal fun createScrollAreaShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("ScrollArea showcase") {
         ScrollArea(
             state = state,
-            modifier = Modifier.Empty.size(120, 48).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(120, 48).background(ArgbColor(0xFF000000.toInt())),
         ) {
-            Column(modifier = Modifier.Empty.size(120, 72), horizontalAlignment = HorizontalAlignment.Center) {
+            Column(modifier = Modifier.size(120, 72), horizontalAlignment = HorizontalAlignment.Center) {
                 repeat(4) { index -> Text("Entry ${index + 1}") }
             }
         }
@@ -1375,14 +1375,14 @@ internal fun createScrollbarShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("Scrollbar showcase") {
         Row(
             spacing = 8,
-            modifier = Modifier.Empty.size(94, 48).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(94, 48).background(ArgbColor(0xFF000000.toInt())),
         ) {
-            ScrollArea(state = state, modifier = Modifier.Empty.size(80, 48)) {
-                Column(modifier = Modifier.Empty.size(80, 96)) {
+            ScrollArea(state = state, modifier = Modifier.size(80, 48)) {
+                Column(modifier = Modifier.size(80, 96)) {
                     repeat(6) { index -> Text("Row ${index + 1}") }
                 }
             }
-            Scrollbar(state = state, modifier = Modifier.Empty.size(6, 48))
+            Scrollbar(state = state, modifier = Modifier.size(6, 48))
         }
     }
 }
@@ -1459,7 +1459,7 @@ internal fun createVirtualListShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("VirtualList showcase") {
         VirtualList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
             Stack(
-                modifier = Modifier.Empty.size(120, 16).background(ArgbColor(0xFF202020.toInt())),
+                modifier = Modifier.size(120, 16).background(ArgbColor(0xFF202020.toInt())),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(item)
@@ -1532,7 +1532,7 @@ internal fun createSelectionListShowcaseScreenDefinition(): ScreenDefinition {
         SelectionList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
             val color = if (state.selectedKey == item) ArgbColor(0xFF4A4A4A.toInt()) else ArgbColor(0xFF202020.toInt())
             Stack(
-                modifier = Modifier.Empty.size(120, 16).background(color),
+                modifier = Modifier.size(120, 16).background(color),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(item)
@@ -1604,7 +1604,7 @@ internal fun createImageShowcaseScreenDefinition(source: ImageSource): ScreenDef
     ScreenDefinition("Image showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(64, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -1695,7 +1695,7 @@ internal fun createCanvasShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("Canvas showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(96, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -1788,17 +1788,17 @@ internal fun createTiledImageShowcaseScreenDefinition(
     val source = createTiledImageShowcaseSource()
     return ScreenDefinition("Tiled image showcase") {
         Stack(
-            modifier = Modifier.Empty.size(112, 88).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(112, 88).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             TiledImage(
                 source = source,
                 state = navigation,
                 size = IntSize(96, 72),
-                modifier = Modifier.Empty.panZoom(navigation),
+                modifier = Modifier.panZoom(navigation),
             ) {
                 Spacer(
-                    Modifier.Empty
+                    Modifier
                         .size(7, 7)
                         .background(ArgbColor(0xFFFFFFFF.toInt()))
                         .atContentPosition(markerPositions),
@@ -1914,7 +1914,7 @@ internal fun createSlotShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Slot showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(64, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -1988,7 +1988,7 @@ internal fun createPlayerHeadShowcaseScreenDefinition(
 ): ScreenDefinition =
     ScreenDefinition("Player head") {
         Stack(
-            modifier = Modifier.Empty.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             PlayerHead(source = skin, scale = PlayerHeadScale(3))
@@ -2053,7 +2053,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createLoadingIndicatorShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Loading indicator") {
         Stack(
-            modifier = Modifier.Empty.size(32, 24).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(32, 24).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             LoadingIndicator()
@@ -2118,7 +2118,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createProgressBarShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Progress bar") {
         Stack(
-            modifier = Modifier.Empty.size(116, 28).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(116, 28).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             ProgressBar(progress = 0.62)

@@ -110,7 +110,7 @@ internal class KeyedLayoutIntegrationTest {
         val transitions = ArrayList<FocusEvent>()
         var focusedKeys = 0
         val secondModifier =
-            Modifier.Empty
+            Modifier
                 .onKeyPress {
                     focusedKeys += 1
                     InputResult.Consumed

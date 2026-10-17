@@ -23,7 +23,7 @@ public object VelocityScreens {
      * Construct owner-thread state inside [definition]; capturing state created on another thread is unsupported.
      * Unavailable clients and declarations return a terminal handle with a typed failure.
      */
-    @Deprecated("Use VelocityUi.open with a UiDefinition factory.")
+    @Deprecated("Use VelocityUi.open with a UiDefinition factory. Scheduled for removal in 1.0.0.")
     public fun open(
         ownerPlugin: Any,
         player: Player,

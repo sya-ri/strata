@@ -18,7 +18,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createLoadingIndicatorShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Loading indicator") {
         Stack(
-            modifier = Modifier.Empty.size(32, 24).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(32, 24).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             LoadingIndicator()

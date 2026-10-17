@@ -40,7 +40,7 @@ public object ApiOnlyResponsivePanel {
             ResponsivePanel(minimumViewport) {
                 Spacer(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .fillMaxSize()
                             .background(ArgbColor(0xFF303030.toInt()))
                             .onActivate { close() }
@@ -58,12 +58,12 @@ public object ApiOnlyResponsivePanel {
     @Suppress("FunctionName")
     public fun UiScope.ResponsivePanel(
         minimumViewport: IntSize = IntSize(480, 270),
-        panelModifier: Modifier = Modifier.Empty,
+        panelModifier: Modifier = Modifier,
         content: UiScope.() -> Unit,
     ) {
-        Stack(modifier = Modifier.Empty.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Stack(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Stack(
-                modifier = Modifier.Empty.then(Description(minimumViewport)).then(panelModifier),
+                modifier = Modifier.then(Description(minimumViewport)).then(panelModifier),
                 contentAlignment = Alignment.Center,
             ) {
                 content()

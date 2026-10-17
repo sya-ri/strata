@@ -31,7 +31,7 @@ import dev.s7a.strata.modifier.Modifier
  * @throws Throwable when [content] fails; the exact callback failure is propagated.
  */
 public fun UiScope.Row(
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     spacing: Int = 0,
     horizontalArrangement: Arrangement = Arrangement.Start,
@@ -80,7 +80,7 @@ public fun UiScope.Row(
  * @throws Throwable when [content] fails; the exact callback failure is propagated.
  */
 public fun UiScope.FlowRow(
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     horizontalSpacing: Int = 0,
     verticalSpacing: Int = 0,
@@ -126,7 +126,7 @@ public fun UiScope.FlowRow(
  * @throws Throwable when [content] fails; the exact callback failure is propagated.
  */
 public fun UiScope.Column(
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     spacing: Int = 0,
     verticalArrangement: Arrangement = Arrangement.Start,
@@ -166,7 +166,7 @@ public fun UiScope.Column(
  * @throws Throwable when [content] fails; the exact callback failure is propagated.
  */
 public fun UiScope.Stack(
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     contentAlignment: Alignment = Alignment.TopStart,
     content: StackScope.() -> Unit,
@@ -208,7 +208,7 @@ public fun UiScope.Stack(
  */
 public fun UiScope.Grid(
     columns: Int,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     horizontalSpacing: Int = 0,
     verticalSpacing: Int = 0,
@@ -246,7 +246,7 @@ public fun UiScope.Grid(
  * @throws IllegalStateException when the enclosing scope has escaped its callback or constructing thread.
  */
 public fun UiScope.Spacer(
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()

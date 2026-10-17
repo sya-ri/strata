@@ -78,7 +78,7 @@ public open class ModifierCompositionBenchmark {
         public fun setup() {
             descriptions =
                 List(length) {
-                    Modifier.Empty
+                    Modifier
                         .padding(it % 4)
                         .elements()
                         .single()
@@ -87,7 +87,7 @@ public open class ModifierCompositionBenchmark {
             right = chain(descriptions.drop(length / 2))
             complete = appended()
             extra =
-                Modifier.Empty
+                Modifier
                     .padding(7)
                     .elements()
                     .single()
@@ -132,7 +132,7 @@ public open class ModifierCompositionBenchmark {
             }
 
         private fun chain(elements: List<ModifierElement>): Modifier {
-            var result = Modifier.Empty
+            var result: Modifier = Modifier
             for (element in elements) result = result.then(element)
             return result
         }

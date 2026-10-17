@@ -83,7 +83,7 @@ internal class MinecraftReactiveComponentTest {
         var sent = 0
         createMinecraftUiHost(
             ScreenDefinition("button") {
-                Button(label, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled) { sent += 1 }.initialFocus())
+                Button(label, enabled = enabled, modifier = Modifier.onActivate(enabled) { sent += 1 }.initialFocus())
             },
             MinecraftProfileFixture.create(),
         ).use { host ->
@@ -127,7 +127,7 @@ internal class MinecraftReactiveComponentTest {
                         editor,
                         TextAreaViewport.Size(IntSize(80, 30)),
                         enabled,
-                        modifier = Modifier.Empty.initialFocus(),
+                        modifier = Modifier.initialFocus(),
                         key = ElementKey("editor"),
                     )
                 }
@@ -158,8 +158,8 @@ internal class MinecraftReactiveComponentTest {
         createMinecraftUiHost(
             ScreenDefinition("weighted") {
                 Row {
-                    Text(label, layout = TextLayout.Multiline(), modifier = Modifier.Empty.weight(1f))
-                    Text("B", layout = TextLayout.Multiline(), modifier = Modifier.Empty.weight(1f))
+                    Text(label, layout = TextLayout.Multiline(), modifier = Modifier.weight(1f))
+                    Text("B", layout = TextLayout.Multiline(), modifier = Modifier.weight(1f))
                 }
             },
             MinecraftProfileFixture.create(),

@@ -244,7 +244,7 @@ internal class PortableFocusedInputTest {
                     Row {
                         Spacer(
                             modifier =
-                                Modifier.Empty
+                                Modifier
                                     .size(10, 10)
                                     .initialFocus()
                                     .onKeyPress {
@@ -255,9 +255,9 @@ internal class PortableFocusedInputTest {
                         Spacer(
                             modifier =
                                 if (disabled.value) {
-                                    Modifier.Empty.size(10, 10)
+                                    Modifier.size(10, 10)
                                 } else {
-                                    Modifier.Empty.size(10, 10).onFocusChanged { observed += it }
+                                    Modifier.size(10, 10).onFocusChanged { observed += it }
                                 },
                         )
                     }
@@ -287,7 +287,7 @@ internal class PortableFocusedInputTest {
             val probe = TestProbe()
             var disposals = 0
             val modifier =
-                Modifier.Empty
+                Modifier
                     .initialFocus()
                     .onKeyEvent { throw primary }
                     .onTextInput { throw primary }

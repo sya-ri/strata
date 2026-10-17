@@ -115,7 +115,7 @@ internal object MinecraftUiSessionGameTest {
                     evaluations++
                     Column {
                         Spacer(
-                            Modifier.Empty
+                            Modifier
                                 .size(16, 16)
                                 .background(ArgbColor(0xFFFF0000.toInt()))
                                 .onActivate { switch(UiPresentation.Hud) },
@@ -126,7 +126,7 @@ internal object MinecraftUiSessionGameTest {
         val above =
             context.onClient {
                 UiDefinition(presentation = UiPresentation.Hud, hudOrder = 1) {
-                    Column { Spacer(Modifier.Empty.size(16, 16).background(ArgbColor(0xFF0000FF.toInt()))) }
+                    Column { Spacer(Modifier.size(16, 16).background(ArgbColor(0xFF0000FF.toInt()))) }
                 }.open().also(sessions::add)
             }
         context.waitFor { 0 < evaluations }
@@ -239,7 +239,7 @@ internal object MinecraftUiSessionGameTest {
                 options.keyUp.setKey(InputConstants.getKey("key.keyboard.enter"))
                 KeyMapping.resetMapping()
                 UiDefinition(inputPolicy = UiInputPolicy.Movement) {
-                    Spacer(Modifier.Empty.size(16, 16).onActivate { close() })
+                    Spacer(Modifier.size(16, 16).onActivate { close() })
                 }.open().also(sessions::add)
             }
         context.waitTicks(2)

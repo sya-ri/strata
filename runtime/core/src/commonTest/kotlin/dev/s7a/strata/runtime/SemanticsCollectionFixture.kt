@@ -49,7 +49,7 @@ internal class SemanticsCollectionFixture {
     fun element(
         node: FixtureNode,
         children: List<Element> = emptyList(),
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ): FixtureElement = FixtureElement(node, children, modifier)
 
     /**
