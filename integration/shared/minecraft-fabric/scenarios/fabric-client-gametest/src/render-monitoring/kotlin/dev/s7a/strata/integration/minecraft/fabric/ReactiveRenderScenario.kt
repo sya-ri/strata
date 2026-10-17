@@ -114,12 +114,17 @@ internal object ReactiveRenderScenario {
         driver: ReactiveRenderTestDriver,
         source: ReactiveRenderSource<Int>,
     ) {
+        val callbacks = driver.onClient { ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls }
         val equal = publish(driver) { source.publish(3) }
-        driver.onClient { assertSamePresentation(equal, driver.work()) }
+        driver.onClient {
+            assertSamePresentation(equal, driver.work())
+            check(callbacks == (ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls))
+        }
         val changed = publish(driver) { source.publish(4) }
         driver.onClient {
             check(changed.commands !== driver.work().commands)
             check(changed.inputs !== driver.work().inputs)
+            check(ReactiveRenderOverlays.localCalls == callbacks.first + 1L && ReactiveRenderOverlays.rootCalls == callbacks.second + 1L)
         }
     }
 

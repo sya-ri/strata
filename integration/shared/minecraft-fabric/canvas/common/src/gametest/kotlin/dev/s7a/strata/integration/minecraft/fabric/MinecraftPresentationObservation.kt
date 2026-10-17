@@ -66,7 +66,7 @@ internal object MinecraftPresentationObservation {
      */
     fun identities(
         screen: FabricMinecraftScreen,
-        key: ElementKey,
+        key: ElementKey<*>,
     ): List<Long> {
         fun find(declaration: RuntimeDeclaration): List<Long> = (if (declaration.element.identity == ElementIdentity.Keyed(key)) listOf(declaration.identity) else emptyList()) + declaration.children.flatMap(::find)
         return find(declarations(screen))

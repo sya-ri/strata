@@ -386,7 +386,9 @@ public class EmptyChildProbe {
     /**
      * Pass-through node with an independent update callback and ordinary virtual-child ancestry.
      */
-    public class ProbeModifierNode : ModifierNode(), LifecycleNode {
+    public class ProbeModifierNode :
+        ModifierNode(),
+        LifecycleNode {
         /**
          * True after the runtime releases this fixture's modifier.
          */
