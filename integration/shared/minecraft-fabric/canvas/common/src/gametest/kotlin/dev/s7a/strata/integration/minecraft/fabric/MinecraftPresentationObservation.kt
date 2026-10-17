@@ -38,11 +38,19 @@ internal object MinecraftPresentationObservation {
         val owner = member(member(presenter, "sampledImages"), "owner")
         val images = member(owner, "images") as Map<*, *>
         val sources = images.values.map { member(checkNotNull(it), "entry") }
+        val portableInputs = prepared?.let { member(it, "images") as List<*> }.orEmpty()
+        check(portableInputs.size == textures.size)
+        val rasterTextures =
+            textures.filterIndexed { index, _ ->
+                val input = checkNotNull(portableInputs[index])
+                optional(input, "sampling") == null && optional(input, "composition") == null
+            }
         return Snapshot(
             completed,
             optional(presenter, "preparedCommands"),
             optional(presenter, "preparedInputs"),
             textures,
+            rasterTextures,
             sources,
             member(owner, "bytes") as Long,
             images.keys.map { checkNotNull(it) },
@@ -94,6 +102,7 @@ internal object MinecraftPresentationObservation {
         val commands: Any?,
         val inputs: Any?,
         val portableTextures: List<Any>,
+        val rasterTextures: List<Any>,
         val sources: List<Any>,
         val sourceBytes: Long,
         val sourceImages: List<Any>,
@@ -103,6 +112,11 @@ internal object MinecraftPresentationObservation {
          * Requires ordered reuse of every actual portable texture owner.
          */
         fun samePortable(other: Snapshot): Boolean = portableTextures.size == other.portableTextures.size && portableTextures.indices.all { portableTextures[it] === other.portableTextures[it] }
+
+        /**
+         * Requires ordered reuse of CPU-rasterized texture owners, excluding destination-dependent GPU outputs.
+         */
+        fun sameRaster(other: Snapshot): Boolean = rasterTextures.size == other.rasterTextures.size && rasterTextures.indices.all { rasterTextures[it] === other.rasterTextures[it] }
 
         /**
          * Requires the same actual source entries regardless of identity-map iteration order.

@@ -373,23 +373,23 @@ internal object NativeComponentPerformanceEvidence {
             if ("NativeCanvas" in selection.ids) require(0 < release.get("${kind}_opened").asInt) { "Incomplete native resource release" }
         }
     }
+}
 
-    private fun verifyOptionalCounters(
-        phase: JsonObject,
-        samples: Int,
-    ) {
-        val nativeCounts = phase.getAsJsonObject("native_counter_delta")
-        val available = phase.getAsJsonObject("native_counter_availability")?.get("available")?.asBoolean ?: true
-        if (available) {
-            require(nativeCounts.get("renderExtractionCount").asInt == samples)
-        } else {
-            require(nativeCounts.entrySet().all { it.value.isJsonNull }) { "Unavailable runtime counters must not contain inferred values" }
-        }
-        val diagnostics = phase.getAsJsonObject("diagnostics")
-        if (diagnostics.get("available")?.asBoolean != false) {
-            require(diagnostics.get("node_inventory_truncated").asBoolean.not())
-        } else {
-            require(diagnostics.get("counts").isJsonNull && diagnostics.get("node_inventory_size").isJsonNull)
-        }
+private fun verifyOptionalCounters(
+    phase: JsonObject,
+    samples: Int,
+) {
+    val nativeCounts = phase.getAsJsonObject("native_counter_delta")
+    val available = phase.getAsJsonObject("native_counter_availability")?.get("available")?.asBoolean ?: true
+    if (available) {
+        require(nativeCounts.get("renderExtractionCount").asInt == samples)
+    } else {
+        require(nativeCounts.entrySet().all { it.value.isJsonNull }) { "Unavailable runtime counters must not contain inferred values" }
+    }
+    val diagnostics = phase.getAsJsonObject("diagnostics")
+    if (diagnostics.get("available")?.asBoolean != false) {
+        require(diagnostics.get("node_inventory_truncated").asBoolean.not())
+    } else {
+        require(diagnostics.get("counts").isJsonNull && diagnostics.get("node_inventory_size").isJsonNull)
     }
 }

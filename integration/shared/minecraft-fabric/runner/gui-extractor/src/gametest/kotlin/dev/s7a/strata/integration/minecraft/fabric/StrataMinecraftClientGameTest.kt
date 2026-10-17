@@ -1109,10 +1109,12 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         marker: TiledImageMarkerSource,
     ) {
         val beforeZoom = renderWork(context)
+        require(beforeZoom.sources.isNotEmpty() && beforeZoom.rasterTextures.isNotEmpty()) { "Tiled-image reuse must observe real source entries and CPU texture owners." }
         context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { navigation.zoomTo(2.0) })
         context.waitFor(Predicate<Minecraft> { minecraft -> beforeZoom.inputs !== readRenderWork(minecraft).inputs })
         val afterZoom = renderWork(context)
-        require(beforeZoom.sameSources(afterZoom) && beforeZoom.samePortable(afterZoom)) { "Zoom must reuse actual tile sources and localized portable textures." }
+        require(beforeZoom.sameSources(afterZoom)) { "Zoom must reuse actual tile source entries." }
+        require(beforeZoom.sameRaster(afterZoom)) { "Zoom must reuse actual localized CPU texture owners." }
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> {
                 val previous = navigation.metrics.center
@@ -1121,11 +1123,13 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         )
         context.waitFor(Predicate<Minecraft> { minecraft -> afterZoom.inputs !== readRenderWork(minecraft).inputs })
         val afterPan = renderWork(context)
-        require(afterZoom.sameSources(afterPan) && afterZoom.samePortable(afterPan)) { "Pan must reuse actual tile sources and localized portable textures." }
+        require(afterZoom.sameSources(afterPan)) { "Pan must reuse actual tile source entries." }
+        require(afterZoom.sameRaster(afterPan)) { "Pan must reuse actual localized CPU texture owners." }
         context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { marker.publish(DoubleOffset(40.0, 24.0)) })
         context.waitFor(Predicate<Minecraft> { minecraft -> afterPan.inputs !== readRenderWork(minecraft).inputs })
         val afterMarker = renderWork(context)
-        require(afterPan.sameSources(afterMarker) && afterPan.samePortable(afterMarker)) { "Marker updates must reuse actual tile sources and localized portable textures." }
+        require(afterPan.sameSources(afterMarker)) { "Marker updates must reuse actual tile source entries." }
+        require(afterPan.sameRaster(afterMarker)) { "Marker updates must reuse actual localized CPU texture owners." }
     }
 
     private fun requireCanvasKnownPixels(image: HeadlessImage) {
