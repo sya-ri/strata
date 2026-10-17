@@ -29,7 +29,6 @@ module:performance-testkit
 dev.s7a.strata.performance
 module:core
 dev.s7a.strata.runtime
-dev.s7a.strata.runtime.diagnostics
 dev.s7a.strata.runtime.render
 dev.s7a.strata.runtime.semantics
 dev.s7a.strata.runtime.spi
