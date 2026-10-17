@@ -76,6 +76,16 @@ It multiplies normalized source and tint channels without intermediate eight-bit
 The original source/destination mapping survives viewport clipping.
 Custom backends must implement every emitted command or reject unsupported commands before partial output; see [source compatibility](../reference/element-spi.md#source-compatibility).
 
+## Native inventory overlays
+
+The versioned Fabric screen presents authoritative carried items and the hovered bound Slot's tooltip after the complete portable/native command stream.
+Only the current session's pointer owner submits these overlays.
+The inventory bridge borrows its existing hit-tested binding and copied item snapshot for the call; tooltip data is not another retained cache or authoritative inventory representation.
+The target's complete ItemStack tooltip overload owns native formatting, item-provided images and style, current advanced-tooltip settings and viewport-aware positioning.
+Compile-time source families preserve the target's carried-item eligibility rule, including native item-tooltip components where the original container screen allows them while carrying.
+Detaching a binding clears its hover reference, and screen replacement or close cannot transfer that reference to another host.
+Loaded acceptance compares complete frames with the original vanilla container-screen tooltip method, using real server-owned fixture stacks and the ordinary native pointer boundary.
+
 ## Native Canvas presentation
 
 The Canvas element implements ordinary measure, paint, frame-cutoff, and session-attachment capabilities and does not add concrete-component dispatch to core or ComponentRuntime.

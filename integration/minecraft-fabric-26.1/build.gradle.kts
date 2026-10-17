@@ -33,6 +33,7 @@ fabricApi {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDirs(
             rootProject.file("integration/shared/minecraft-fabric/canvas/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/input/gui-extractor/src/gametest/kotlin"),
@@ -51,6 +52,7 @@ extensions.configure<DetektExtension> {
 
 extensions.configure<SourceSetContainer> {
     named("gametest") {
+        java.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/java"))
         resources.srcDir(rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources"))
     }
 }

@@ -50,7 +50,15 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
         }
 
         override fun movePointer(position: IntOffset) {
-            delegate.input.setCursorPos(position.x.toDouble(), position.y.toDouble())
+            val physical =
+                computeOnClient { minecraft ->
+                    val window = minecraft.window
+                    Pair(
+                        position.x.toDouble() * window.screenWidth / window.guiScaledWidth,
+                        position.y.toDouble() * window.screenHeight / window.guiScaledHeight,
+                    )
+                }
+            delegate.input.setCursorPos(physical.first, physical.second)
         }
 
         override fun takeScreenshot(

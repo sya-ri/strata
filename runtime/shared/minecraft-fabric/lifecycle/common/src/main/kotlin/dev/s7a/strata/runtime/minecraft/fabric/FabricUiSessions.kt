@@ -129,6 +129,17 @@ public object FabricUiSessions {
     }
 
     /**
+     * Submits native inventory overlays only for the current pointer owner, without retaining the submission.
+     */
+    @JvmSynthetic
+    internal inline fun renderInventoryOverlays(
+        screen: FabricMinecraftScreen,
+        submit: () -> Unit,
+    ) {
+        if (acceptsPointer(screen)) submit()
+    }
+
+    /**
      * Current native input owner, excluding passive or hidden HUDs.
      */
     @JvmSynthetic
