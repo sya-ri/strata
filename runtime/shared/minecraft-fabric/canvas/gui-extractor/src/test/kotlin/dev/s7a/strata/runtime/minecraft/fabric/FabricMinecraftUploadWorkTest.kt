@@ -67,6 +67,7 @@ internal class FabricMinecraftUploadWorkTest {
             createDrawImage(IntSize(2, 2), IntArray(4) { -1 }),
             FloatRect(0f, 0f, 2f, 2f),
             FloatRect(0f, 0f, 64f, 64f),
+            alphaCutoff = 0f,
         )
 
     private fun counter(
