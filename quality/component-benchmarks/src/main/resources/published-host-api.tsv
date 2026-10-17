@@ -1354,26 +1354,11 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentInvalidation#public static fun getEntries ()Lkotlin/enums/EnumEntries;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentInvalidation#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/node/ContentInvalidation;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentInvalidation#public static fun values ()[Ldev/s7a/strata/node/ContentInvalidation;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentKind#public final class dev/s7a/strata/node/ContentKind : java/lang/Enum {
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentKind#public static final field ObservedRegion Ldev/s7a/strata/node/ContentKind;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentKind#public static final field StateComponent Ldev/s7a/strata/node/ContentKind;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentKind#public static fun getEntries ()Lkotlin/enums/EnumEntries;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentKind#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/node/ContentKind;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentKind#public static fun values ()[Ldev/s7a/strata/node/ContentKind;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWork#public final class dev/s7a/strata/node/ContentWork : java/lang/Enum {
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWork#public static final field RowEvaluation Ldev/s7a/strata/node/ContentWork;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWork#public static fun getEntries ()Lkotlin/enums/EnumEntries;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWork#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/node/ContentWork;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWork#public static fun values ()[Ldev/s7a/strata/node/ContentWork;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWorkNode#public abstract fun getContentWorkObserver ()Lkotlin/jvm/functions/Function1;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWorkNode#public abstract fun setContentWorkObserver (Lkotlin/jvm/functions/Function1;)V
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ContentWorkNode#public abstract interface class dev/s7a/strata/node/ContentWorkNode {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeclarationProjectionNode#public abstract fun getDeclarationProjection ()Ldev/s7a/strata/projection/DeclarationProjection;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeclarationProjectionNode#public abstract interface class dev/s7a/strata/node/DeclarationProjectionNode {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeclarationProjectionNode#public fun prepareDeclaration ()V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeclarationProjectionNode$DefaultImpls#public final class dev/s7a/strata/node/DeclarationProjectionNode$DefaultImpls {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeclarationProjectionNode$DefaultImpls#public static fun prepareDeclaration (Ldev/s7a/strata/node/DeclarationProjectionNode;)V
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeferredContentNode#public abstract fun getContentKind ()Ldev/s7a/strata/node/ContentKind;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeferredContentNode#public abstract fun getPendingContentReasons ()Ljava/util/Set;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DeferredContentNode#public abstract interface class dev/s7a/strata/node/DeferredContentNode : dev/s7a/strata/node/DynamicChildrenNode {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/DirtyMask#public final class dev/s7a/strata/node/DirtyMask {
@@ -3575,29 +3560,10 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.node/ContentInvalidation.valueOf|valueOf#static(kotlin.String){}[0]#final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentInvalidation
 :api@Web	:api@Web	klib:dev.s7a.strata.node/ContentInvalidation.values|values#static(){}[0]#final fun values(): kotlin/Array<dev.s7a.strata.node/ContentInvalidation>
 :api@Web	:api@Web	klib:dev.s7a.strata.node/ContentInvalidation|null[0]#final enum class dev.s7a.strata.node/ContentInvalidation : kotlin/Enum<dev.s7a.strata.node/ContentInvalidation> {
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentKind.ObservedRegion|null[0]#enum entry ObservedRegion
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentKind.StateComponent|null[0]#enum entry StateComponent
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentKind.entries.<get-entries>|<get-entries>#static(){}[0]#final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.node/ContentKind>
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentKind.entries|#static{}entries[0]#final val entries
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentKind.valueOf|valueOf#static(kotlin.String){}[0]#final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentKind
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentKind.values|values#static(){}[0]#final fun values(): kotlin/Array<dev.s7a.strata.node/ContentKind>
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentKind|null[0]#final enum class dev.s7a.strata.node/ContentKind : kotlin/Enum<dev.s7a.strata.node/ContentKind> {
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWork.RowEvaluation|null[0]#enum entry RowEvaluation
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWork.entries.<get-entries>|<get-entries>#static(){}[0]#final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.node/ContentWork>
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWork.entries|#static{}entries[0]#final val entries
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWork.valueOf|valueOf#static(kotlin.String){}[0]#final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentWork
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWork.values|values#static(){}[0]#final fun values(): kotlin/Array<dev.s7a.strata.node/ContentWork>
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<get-contentWorkObserver>|<get-contentWorkObserver>(){}[0]#abstract fun <get-contentWorkObserver>(): kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>?
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<set-contentWorkObserver>|<set-contentWorkObserver>(kotlin.Function1<dev.s7a.strata.node.ContentWork,kotlin.Unit>?){}[0]#abstract fun <set-contentWorkObserver>(kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>?)
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWorkNode.contentWorkObserver|{}contentWorkObserver[0]#abstract var contentWorkObserver
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWorkNode|null[0]#abstract interface dev.s7a.strata.node/ContentWorkNode {
-:api@Web	:api@Web	klib:dev.s7a.strata.node/ContentWork|null[0]#final enum class dev.s7a.strata.node/ContentWork : kotlin/Enum<dev.s7a.strata.node/ContentWork> {
 :api@Web	:api@Web	klib:dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection.<get-declarationProjection>|<get-declarationProjection>(){}[0]#abstract fun <get-declarationProjection>(): dev.s7a.strata.projection/DeclarationProjection<*>?
 :api@Web	:api@Web	klib:dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection|{}declarationProjection[0]#abstract val declarationProjection
 :api@Web	:api@Web	klib:dev.s7a.strata.node/DeclarationProjectionNode.prepareDeclaration|prepareDeclaration(){}[0]#open fun prepareDeclaration()
 :api@Web	:api@Web	klib:dev.s7a.strata.node/DeclarationProjectionNode|null[0]#abstract interface dev.s7a.strata.node/DeclarationProjectionNode {
-:api@Web	:api@Web	klib:dev.s7a.strata.node/DeferredContentNode.contentKind.<get-contentKind>|<get-contentKind>(){}[0]#abstract fun <get-contentKind>(): dev.s7a.strata.node/ContentKind
-:api@Web	:api@Web	klib:dev.s7a.strata.node/DeferredContentNode.contentKind|{}contentKind[0]#abstract val contentKind
 :api@Web	:api@Web	klib:dev.s7a.strata.node/DeferredContentNode.pendingContentReasons.<get-pendingContentReasons>|<get-pendingContentReasons>(){}[0]#abstract fun <get-pendingContentReasons>(): kotlin.collections/Set<dev.s7a.strata.node/ContentInvalidation>
 :api@Web	:api@Web	klib:dev.s7a.strata.node/DeferredContentNode.pendingContentReasons|{}pendingContentReasons[0]#abstract val pendingContentReasons
 :api@Web	:api@Web	klib:dev.s7a.strata.node/DeferredContentNode|null[0]#abstract interface dev.s7a.strata.node/DeferredContentNode : dev.s7a.strata.node/DynamicChildrenNode {
@@ -4572,6 +4538,10 @@
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/CompilerApiInventory#public final class dev/s7a/strata/performance/CompilerApiInventory {
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/CompilerApiInventory#public final fun capture (Ljava/util/Map;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/CompilerApiInventory#public static final field INSTANCE Ldev/s7a/strata/performance/CompilerApiInventory;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/FabricFrameObserver#public final class dev/s7a/strata/performance/FabricFrameObserver : java/lang/AutoCloseable {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/FabricFrameObserver#public final fun getFrames ()J
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/FabricFrameObserver#public fun <init> (Ljava/lang/Object;)V
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/FabricFrameObserver#public fun close ()V
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/GpuPerformanceMeter#public final class dev/s7a/strata/performance/GpuPerformanceMeter : java/lang/AutoCloseable {
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/GpuPerformanceMeter#public final fun begin ()V
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/GpuPerformanceMeter#public final fun getCompleted ()Z
@@ -4912,6 +4882,7 @@
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkAccumulator#public fun close ()V
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkMonitor#public final class dev/s7a/strata/performance/RuntimeWorkMonitor : java/lang/AutoCloseable {
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkMonitor#public final fun checkpoint ()V
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkMonitor#public final fun getAvailable ()Z
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkMonitor#public final fun sample (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkMonitor#public final fun snapshot ()Lcom/google/gson/JsonObject;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkMonitor#public final fun verify (Ldev/s7a/strata/performance/WorkExpectation;)V
@@ -5227,7 +5198,7 @@
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/TreeState$Poisoned#public fun hashCode ()I
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/TreeState$Poisoned#public fun toString ()Ljava/lang/String;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/TreeState$Poisoned#public static final field INSTANCE Ldev/s7a/strata/runtime/TreeState$Poisoned;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public final class dev/s7a/strata/runtime/UiTree : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public final class dev/s7a/strata/runtime/UiTree : java/lang/AutoCloseable {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public final fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public final fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public final fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
@@ -5240,114 +5211,7 @@
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public fun <init> ()V
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public fun <init> (Ldev/s7a/strata/ui/UiSession;)V
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public fun close ()V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/UiTree#public synthetic fun <init> (Ldev/s7a/strata/ui/UiSession;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public final class dev/s7a/strata/runtime/diagnostics/UiRenderMetric : java/lang/Enum {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field AncestorInvalidation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field ConsumerNotification Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field ContentEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field ContentEvaluationSuccess Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field FrameAttempt Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field FrameCacheHit Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field FrameFailure Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field FrameSuccess Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field InitialContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field Layout Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field LocalInvalidation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field Measure Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field NodeCreate Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field NodeDispose Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field NodeUpdate Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field ObserveEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field OverlayPaint Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field Paint Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field ParentDefinitionContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field Projection Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field ProjectionEqual Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field RootEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field RootOverlayPaint Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field RootValueChange Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field RowEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field Semantics Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field SourceContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field SourceReplacementContent Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field StateComponentEvaluation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field StructureInvalidation Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field SubscriptionClose Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static final field SubscriptionOpen Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static fun getEntries ()Lkotlin/enums/EnumEntries;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMetric#public static fun values ()[Ldev/s7a/strata/runtime/diagnostics/UiRenderMetric;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMonitor#public abstract fun checkpoint ()V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMonitor#public abstract fun close ()V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMonitor#public abstract fun findNodes (Ldev/s7a/strata/element/ElementKey;)Ljava/util/List;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMonitor#public abstract fun snapshot ()Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderMonitor#public abstract interface class dev/s7a/strata/runtime/diagnostics/UiRenderMonitor : java/lang/AutoCloseable {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public final class dev/s7a/strata/runtime/diagnostics/UiRenderNodeId {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public final fun getValue ()J
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public final synthetic fun unbox-impl ()J
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public fun equals (Ljava/lang/Object;)Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public fun hashCode ()I
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public fun toString ()Ljava/lang/String;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public static final fun equals-impl0 (JJ)Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public static final synthetic fun box-impl (J)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeId;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public static fun constructor-impl (J)J
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public static fun equals-impl (JLjava/lang/Object;)Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public static fun hashCode-impl (J)I
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeId#public static fun toString-impl (J)Ljava/lang/String;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind#public final class dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind : java/lang/Enum {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind#public static final field Component Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind#public static final field Modifier Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind#public static fun getEntries ()Lkotlin/enums/EnumEntries;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeKind#public static fun values ()[Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final class dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun component1-qzpUuq0 ()J
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun component2-ELJ4UTI ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeId;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun component3 ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun component4 ()Ljava/lang/String;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun component5 ()Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun component6 ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun component7 ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun copy-jfsi6QE (JLdev/s7a/strata/runtime/diagnostics/UiRenderNodeId;Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;Ljava/lang/String;ZLjava/util/Map;Ljava/util/Map;)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun getCounts ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun getId-qzpUuq0 ()J
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun getKind ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun getOperations ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun getParentId-ELJ4UTI ()Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeId;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun getRetired ()Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public final fun getTypeName ()Ljava/lang/String;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public fun equals (Ljava/lang/Object;)Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public fun hashCode ()I
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public fun toString ()Ljava/lang/String;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public static synthetic fun copy-jfsi6QE$default (Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot;JLdev/s7a/strata/runtime/diagnostics/UiRenderNodeId;Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;Ljava/lang/String;ZLjava/util/Map;Ljava/util/Map;ILjava/lang/Object;)Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderNodeSnapshot#public synthetic fun <init> (JLdev/s7a/strata/runtime/diagnostics/UiRenderNodeId;Ldev/s7a/strata/runtime/diagnostics/UiRenderNodeKind;Ljava/lang/String;ZLjava/util/Map;Ljava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public final class dev/s7a/strata/runtime/diagnostics/UiRenderOperation : java/lang/Enum {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public static final field Attach Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public static final field Frame Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public static final field InputGeometry Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public static final field Other Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public static fun getEntries ()Lkotlin/enums/EnumEntries;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderOperation#public static fun values ()[Ldev/s7a/strata/runtime/diagnostics/UiRenderOperation;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final class dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun component1 ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun component2 ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun component3 ()Ljava/util/List;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun component4 ()I
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun component5 ()Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun copy (Ljava/util/Map;Ljava/util/Map;Ljava/util/List;IZ)Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun getActiveSubscriptions ()I
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun getCounts ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun getNodes ()Ljava/util/List;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun getOperations ()Ljava/util/Map;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public final fun getOverflowed ()Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/List;IZ)V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public fun equals (Ljava/lang/Object;)Z
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public fun hashCode ()I
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public fun toString ()Ljava/lang/String;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/diagnostics/UiRenderSnapshot#public static synthetic fun copy$default (Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;Ljava/util/Map;Ljava/util/Map;Ljava/util/List;IZILjava/lang/Object;)Ldev/s7a/strata/runtime/diagnostics/UiRenderSnapshot;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/render/DrawCommand#public abstract interface class dev/s7a/strata/runtime/render/DrawCommand {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/render/DrawCommand$BlitImage#public final class dev/s7a/strata/runtime/render/DrawCommand$BlitImage : dev/s7a/strata/runtime/render/DrawCommand {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/render/DrawCommand$BlitImage#public final fun component1 ()Ldev/s7a/strata/render/DrawImage;
@@ -5495,11 +5359,6 @@
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiController#public fun setInteractionMode (Ldev/s7a/strata/ui/UiInteractionMode;)Ldev/s7a/strata/ui/UiOperationResult;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiController#public fun switch (Ldev/s7a/strata/ui/UiPresentation;)Ldev/s7a/strata/ui/UiOperationResult;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiController#public synthetic fun <init> (Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiInputPolicy;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner#public abstract fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner#public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner$DefaultImpls#public final class dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner$DefaultImpls {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner$DefaultImpls#public static fun startRenderMonitoring (Ldev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner;I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiFrame#public abstract fun getDrawCommands ()Ljava/util/List;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiFrame#public abstract fun getSemantics ()Ljava/util/List;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiFrame#public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
@@ -5522,125 +5381,10 @@
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSession#public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSession#public abstract fun projectDeclarations (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSession#public abstract fun resetInputState ()V
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSession#public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSession$DefaultImpls#public final class dev/s7a/strata/runtime/spi/RuntimeUiSession$DefaultImpls {
-:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSession$DefaultImpls#public static fun startRenderMonitoring (Ldev/s7a/strata/runtime/spi/RuntimeUiSession;I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
+:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSession#public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : java/lang/AutoCloseable {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory#public final class dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory#public static final fun createRuntimeUiSession (Ldev/s7a/strata/ui/UiSession;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/runtime/spi/RuntimeUiSession;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory#public static synthetic fun createRuntimeUiSession$default (Ldev/s7a/strata/ui/UiSession;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ldev/s7a/strata/runtime/spi/RuntimeUiSession;
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.AncestorInvalidation|null[0]#enum entry AncestorInvalidation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ConsumerNotification|null[0]#enum entry ConsumerNotification
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ContentEvaluationSuccess|null[0]#enum entry ContentEvaluationSuccess
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ContentEvaluation|null[0]#enum entry ContentEvaluation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameAttempt|null[0]#enum entry FrameAttempt
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameCacheHit|null[0]#enum entry FrameCacheHit
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameFailure|null[0]#enum entry FrameFailure
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.FrameSuccess|null[0]#enum entry FrameSuccess
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.InitialContent|null[0]#enum entry InitialContent
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Layout|null[0]#enum entry Layout
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.LocalInvalidation|null[0]#enum entry LocalInvalidation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Measure|null[0]#enum entry Measure
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.NodeCreate|null[0]#enum entry NodeCreate
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.NodeDispose|null[0]#enum entry NodeDispose
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.NodeUpdate|null[0]#enum entry NodeUpdate
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ObserveEvaluation|null[0]#enum entry ObserveEvaluation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.OverlayPaint|null[0]#enum entry OverlayPaint
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Paint|null[0]#enum entry Paint
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ParentDefinitionContent|null[0]#enum entry ParentDefinitionContent
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.ProjectionEqual|null[0]#enum entry ProjectionEqual
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Projection|null[0]#enum entry Projection
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RootEvaluation|null[0]#enum entry RootEvaluation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RootOverlayPaint|null[0]#enum entry RootOverlayPaint
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RootValueChange|null[0]#enum entry RootValueChange
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.RowEvaluation|null[0]#enum entry RowEvaluation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.Semantics|null[0]#enum entry Semantics
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SourceContent|null[0]#enum entry SourceContent
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SourceReplacementContent|null[0]#enum entry SourceReplacementContent
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.StateComponentEvaluation|null[0]#enum entry StateComponentEvaluation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.StructureInvalidation|null[0]#enum entry StructureInvalidation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SubscriptionClose|null[0]#enum entry SubscriptionClose
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.SubscriptionOpen|null[0]#enum entry SubscriptionOpen
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.entries.<get-entries>|<get-entries>#static(){}[0]#final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.runtime.diagnostics/UiRenderMetric>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.entries|#static{}entries[0]#final val entries
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.valueOf|valueOf#static(kotlin.String){}[0]#final fun valueOf(kotlin/String): dev.s7a.strata.runtime.diagnostics/UiRenderMetric
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric.values|values#static(){}[0]#final fun values(): kotlin/Array<dev.s7a.strata.runtime.diagnostics/UiRenderMetric>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMetric|null[0]#final enum class dev.s7a.strata.runtime.diagnostics/UiRenderMetric : kotlin/Enum<dev.s7a.strata.runtime.diagnostics/UiRenderMetric> {
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.checkpoint|checkpoint(){}[0]#abstract fun checkpoint()
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.close|close(){}[0]#abstract fun close()
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.findNodes|findNodes(dev.s7a.strata.element.ElementKey<*>){}[0]#abstract fun findNodes(dev.s7a.strata.element/ElementKey<*>): kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeId>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMonitor.snapshot|snapshot(){}[0]#abstract fun snapshot(): dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderMonitor|null[0]#abstract interface dev.s7a.strata.runtime.diagnostics/UiRenderMonitor : kotlin/AutoCloseable {
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.<init>|<init>(kotlin.Long){}[0]#constructor <init>(kotlin/Long)
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.toString|toString(){}[0]#final fun toString(): kotlin/String
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.value.<get-value>|<get-value>(){}[0]#final fun <get-value>(): kotlin/Long
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeId.value|{}value[0]#final val value
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeId|null[0]#final value class dev.s7a.strata.runtime.diagnostics/UiRenderNodeId {
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.Component|null[0]#enum entry Component
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.Modifier|null[0]#enum entry Modifier
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.entries.<get-entries>|<get-entries>#static(){}[0]#final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.entries|#static{}entries[0]#final val entries
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.valueOf|valueOf#static(kotlin.String){}[0]#final fun valueOf(kotlin/String): dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind.values|values#static(){}[0]#final fun values(): kotlin/Array<dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind|null[0]#final enum class dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind : kotlin/Enum<dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind> {
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.<init>|<init>(dev.s7a.strata.runtime.diagnostics.UiRenderNodeId;dev.s7a.strata.runtime.diagnostics.UiRenderNodeId?;dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind;kotlin.String;kotlin.Boolean;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>){}[0]#constructor <init>(dev.s7a.strata.runtime.diagnostics/UiRenderNodeId, dev.s7a.strata.runtime.diagnostics/UiRenderNodeId?, dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind, kotlin/String, kotlin/Boolean, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>)
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component1|component1(){}[0]#final fun component1(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component2|component2(){}[0]#final fun component2(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId?
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component3|component3(){}[0]#final fun component3(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component4|component4(){}[0]#final fun component4(): kotlin/String
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component5|component5(){}[0]#final fun component5(): kotlin/Boolean
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component6|component6(){}[0]#final fun component6(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.component7|component7(){}[0]#final fun component7(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.copy|copy(dev.s7a.strata.runtime.diagnostics.UiRenderNodeId;dev.s7a.strata.runtime.diagnostics.UiRenderNodeId?;dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind;kotlin.String;kotlin.Boolean;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>){}[0]#final fun copy(dev.s7a.strata.runtime.diagnostics/UiRenderNodeId = ..., dev.s7a.strata.runtime.diagnostics/UiRenderNodeId? = ..., dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind = ..., kotlin/String = ..., kotlin/Boolean = ..., kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> = ..., kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> = ...): dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.counts.<get-counts>|<get-counts>(){}[0]#final fun <get-counts>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.counts|{}counts[0]#final val counts
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.id.<get-id>|<get-id>(){}[0]#final fun <get-id>(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.id|{}id[0]#final val id
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.kind.<get-kind>|<get-kind>(){}[0]#final fun <get-kind>(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeKind
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.kind|{}kind[0]#final val kind
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.operations.<get-operations>|<get-operations>(){}[0]#final fun <get-operations>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.operations|{}operations[0]#final val operations
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.parentId.<get-parentId>|<get-parentId>(){}[0]#final fun <get-parentId>(): dev.s7a.strata.runtime.diagnostics/UiRenderNodeId?
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.parentId|{}parentId[0]#final val parentId
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.retired.<get-retired>|<get-retired>(){}[0]#final fun <get-retired>(): kotlin/Boolean
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.retired|{}retired[0]#final val retired
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.toString|toString(){}[0]#final fun toString(): kotlin/String
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.typeName.<get-typeName>|<get-typeName>(){}[0]#final fun <get-typeName>(): kotlin/String
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot.typeName|{}typeName[0]#final val typeName
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot|null[0]#final class dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot {
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.Attach|null[0]#enum entry Attach
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.Frame|null[0]#enum entry Frame
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.InputGeometry|null[0]#enum entry InputGeometry
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.Other|null[0]#enum entry Other
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.entries.<get-entries>|<get-entries>#static(){}[0]#final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.runtime.diagnostics/UiRenderOperation>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.entries|#static{}entries[0]#final val entries
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.valueOf|valueOf#static(kotlin.String){}[0]#final fun valueOf(kotlin/String): dev.s7a.strata.runtime.diagnostics/UiRenderOperation
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation.values|values#static(){}[0]#final fun values(): kotlin/Array<dev.s7a.strata.runtime.diagnostics/UiRenderOperation>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderOperation|null[0]#final enum class dev.s7a.strata.runtime.diagnostics/UiRenderOperation : kotlin/Enum<dev.s7a.strata.runtime.diagnostics/UiRenderOperation> {
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.<init>|<init>(kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>;kotlin.collections.List<dev.s7a.strata.runtime.diagnostics.UiRenderNodeSnapshot>;kotlin.Int;kotlin.Boolean){}[0]#constructor <init>(kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>, kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot>, kotlin/Int, kotlin/Boolean)
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.activeSubscriptions.<get-activeSubscriptions>|<get-activeSubscriptions>(){}[0]#final fun <get-activeSubscriptions>(): kotlin/Int
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.activeSubscriptions|{}activeSubscriptions[0]#final val activeSubscriptions
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component1|component1(){}[0]#final fun component1(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component2|component2(){}[0]#final fun component2(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component3|component3(){}[0]#final fun component3(): kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component4|component4(){}[0]#final fun component4(): kotlin/Int
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.component5|component5(){}[0]#final fun component5(): kotlin/Boolean
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.copy|copy(kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>;kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderOperation,kotlin.collections.Map<dev.s7a.strata.runtime.diagnostics.UiRenderMetric,kotlin.Long>>;kotlin.collections.List<dev.s7a.strata.runtime.diagnostics.UiRenderNodeSnapshot>;kotlin.Int;kotlin.Boolean){}[0]#final fun copy(kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long> = ..., kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>> = ..., kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot> = ..., kotlin/Int = ..., kotlin/Boolean = ...): dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.counts.<get-counts>|<get-counts>(){}[0]#final fun <get-counts>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.counts|{}counts[0]#final val counts
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.nodes.<get-nodes>|<get-nodes>(){}[0]#final fun <get-nodes>(): kotlin.collections/List<dev.s7a.strata.runtime.diagnostics/UiRenderNodeSnapshot>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.nodes|{}nodes[0]#final val nodes
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.operations.<get-operations>|<get-operations>(){}[0]#final fun <get-operations>(): kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderOperation, kotlin.collections/Map<dev.s7a.strata.runtime.diagnostics/UiRenderMetric, kotlin/Long>>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.operations|{}operations[0]#final val operations
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.overflowed.<get-overflowed>|<get-overflowed>(){}[0]#final fun <get-overflowed>(): kotlin/Boolean
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.overflowed|{}overflowed[0]#final val overflowed
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot.toString|toString(){}[0]#final fun toString(): kotlin/String
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot|null[0]#final class dev.s7a.strata.runtime.diagnostics/UiRenderSnapshot {
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.render/DrawCommand.BlitImage.<init>|<init>(dev.s7a.strata.render.DrawImage;dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.IntRect){}[0]#constructor <init>(dev.s7a.strata.render/DrawImage, dev.s7a.strata.geometry/IntRect, dev.s7a.strata.geometry/IntRect)
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.render/DrawCommand.BlitImage.component1|component1(){}[0]#final fun component1(): dev.s7a.strata.render/DrawImage
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.render/DrawCommand.BlitImage.component2|component2(){}[0]#final fun component2(): dev.s7a.strata.geometry/IntRect
@@ -5811,9 +5555,6 @@
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiController.transaction|transaction(kotlin.Function0<0:0>){0§<kotlin.Any?>}[0]#final fun <#A1: kotlin/Any?> transaction(kotlin/Function0<#A1>): #A1
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiController|null[0]#final class dev.s7a.strata.runtime.spi/RuntimeUiController : dev.s7a.strata.ui/UiSession {
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiControl|null[0]#final class dev.s7a.strata.runtime.spi/RuntimeUiControl {
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner.startRenderMonitoring|startRenderMonitoring(){}[0]#abstract fun startRenderMonitoring(): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner.startRenderMonitoring|startRenderMonitoring(kotlin.Int){}[0]#open fun startRenderMonitoring(kotlin/Int): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner|null[0]#abstract interface dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner {
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiFrame.drawCommands.<get-drawCommands>|<get-drawCommands>(){}[0]#abstract fun <get-drawCommands>(): kotlin.collections/List<dev.s7a.strata.runtime.render/DrawCommand>
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiFrame.drawCommands|{}drawCommands[0]#abstract val drawCommands
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiFrame.semantics.<get-semantics>|<get-semantics>(){}[0]#abstract fun <get-semantics>(): kotlin.collections/List<dev.s7a.strata.runtime.semantics/SemanticsEntry>
@@ -5840,7 +5581,7 @@
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiSession.resetInputState|resetInputState(){}[0]#abstract fun resetInputState()
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus.<get-textInputFocus>|<get-textInputFocus>(){}[0]#abstract fun <get-textInputFocus>(): dev.s7a.strata.runtime.spi/RuntimeTextInputFocus?
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiSession.textInputFocus|{}textInputFocus[0]#abstract val textInputFocus
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiSession|null[0]#sealed interface dev.s7a.strata.runtime.spi/RuntimeUiSession : dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner, kotlin/AutoCloseable {
+:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiSession|null[0]#sealed interface dev.s7a.strata.runtime.spi/RuntimeUiSession : kotlin/AutoCloseable {
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/createRuntimeUiSession|createRuntimeUiSession(dev.s7a.strata.ui.UiSession?;kotlin.Function0<dev.s7a.strata.element.Element>){}[0]#final fun dev.s7a.strata.runtime.spi/createRuntimeUiSession(dev.s7a.strata.ui/UiSession? = ..., kotlin/Function0<dev.s7a.strata.element/Element>): dev.s7a.strata.runtime.spi/RuntimeUiSession
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/TreeState.Active.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/TreeState.Active.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
@@ -5864,12 +5605,10 @@
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.measure|measure(dev.s7a.strata.geometry.Constraints){}[0]#final fun measure(dev.s7a.strata.geometry/Constraints): dev.s7a.strata.geometry/IntSize
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.paint|paint(){}[0]#final fun paint(): kotlin.collections/List<dev.s7a.strata.runtime.render/DrawCommand>
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.semantics|semantics(){}[0]#final fun semantics(): kotlin.collections/List<dev.s7a.strata.runtime.semantics/SemanticsEntry>
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.startRenderMonitoring|startRenderMonitoring(){}[0]#final fun startRenderMonitoring(): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.startRenderMonitoring|startRenderMonitoring(kotlin.Int){}[0]#final fun startRenderMonitoring(kotlin/Int): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.state.<get-state>|<get-state>(){}[0]#final fun <get-state>(): dev.s7a.strata.runtime/TreeState
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.state|{}state[0]#final val state
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.update|update(dev.s7a.strata.element.Element){}[0]#final fun update(dev.s7a.strata.element/Element)
-:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree|null[0]#final class dev.s7a.strata.runtime/UiTree : dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner, kotlin/AutoCloseable {
+:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree|null[0]#final class dev.s7a.strata.runtime/UiTree : kotlin/AutoCloseable {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteAddress#public final class dev/s7a/strata/runtime/remote/RemoteAddress {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteAddress#public final fun component1 ()Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteAddress#public final fun component2 ()Ljava/util/UUID;
@@ -6651,9 +6390,7 @@
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiHost#public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiHost#public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiHost#public abstract fun resetInputState ()V
-:runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiHost#public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
-:runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiHost$DefaultImpls#public final class dev/s7a/strata/runtime/minecraft/MinecraftUiHost$DefaultImpls {
-:runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiHost$DefaultImpls#public static fun startRenderMonitoring (Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
+:runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiHost#public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : java/lang/AutoCloseable {
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiPlatform#public abstract fun close ()V
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiPlatform#public abstract fun image (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/render/DrawImage;
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/MinecraftUiPlatform#public abstract fun inventorySlot (Ldev/s7a/strata/component/SlotBinding;)Ldev/s7a/strata/runtime/minecraft/MinecraftInventorySlotBinding;
@@ -7132,7 +6869,7 @@
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -7148,8 +6885,6 @@
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.20@Minecraft	:runtime:minecraft-fabric-1.20@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -7253,7 +6988,7 @@
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -7269,8 +7004,6 @@
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.20.1@Minecraft	:runtime:minecraft-fabric-1.20.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -7374,7 +7107,7 @@
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -7391,8 +7124,6 @@
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.20.2@Minecraft	:runtime:minecraft-fabric-1.20.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -7509,7 +7240,7 @@
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -7526,8 +7257,6 @@
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.20.3@Minecraft	:runtime:minecraft-fabric-1.20.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -7644,7 +7373,7 @@
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -7661,8 +7390,6 @@
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.20.4@Minecraft	:runtime:minecraft-fabric-1.20.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -7779,7 +7506,7 @@
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -7796,8 +7523,6 @@
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.20.5@Minecraft	:runtime:minecraft-fabric-1.20.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -7916,7 +7641,7 @@
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -7933,8 +7658,6 @@
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.20.6@Minecraft	:runtime:minecraft-fabric-1.20.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -8053,7 +7776,7 @@
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -8070,8 +7793,6 @@
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21@Minecraft	:runtime:minecraft-fabric-1.21@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -8190,7 +7911,7 @@
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -8207,8 +7928,6 @@
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.1@Minecraft	:runtime:minecraft-fabric-1.21.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -8327,7 +8046,7 @@
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -8344,8 +8063,6 @@
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.10@Minecraft	:runtime:minecraft-fabric-1.21.10@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -8469,7 +8186,7 @@
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -8486,8 +8203,6 @@
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.11@Minecraft	:runtime:minecraft-fabric-1.21.11@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -8611,7 +8326,7 @@
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -8628,8 +8343,6 @@
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.2@Minecraft	:runtime:minecraft-fabric-1.21.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -8748,7 +8461,7 @@
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -8765,8 +8478,6 @@
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.3@Minecraft	:runtime:minecraft-fabric-1.21.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -8885,7 +8596,7 @@
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -8902,8 +8613,6 @@
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.4@Minecraft	:runtime:minecraft-fabric-1.21.4@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -9022,7 +8731,7 @@
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -9039,8 +8748,6 @@
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.5@Minecraft	:runtime:minecraft-fabric-1.21.5@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -9160,7 +8867,7 @@
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -9177,8 +8884,6 @@
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.6@Minecraft	:runtime:minecraft-fabric-1.21.6@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -9302,7 +9007,7 @@
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -9319,8 +9024,6 @@
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.7@Minecraft	:runtime:minecraft-fabric-1.21.7@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -9444,7 +9147,7 @@
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -9461,8 +9164,6 @@
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.8@Minecraft	:runtime:minecraft-fabric-1.21.8@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -9586,7 +9287,7 @@
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/class_310;)V
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/class_437, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun close ()V
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_16014 (DD)V
@@ -9603,8 +9304,6 @@
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25421 ()Z
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_25432 ()V
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun method_49589 ()V
-:runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-1.21.9@Minecraft	:runtime:minecraft-fabric-1.21.9@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/class_437;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -9728,7 +9427,7 @@
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/client/Minecraft;)V
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun added ()V
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun charTyped (Lnet/minecraft/client/input/CharacterEvent;)Z
@@ -9746,8 +9445,6 @@
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun onClose ()V
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun preeditUpdated (Lnet/minecraft/client/input/PreeditEvent;)Z
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun removed ()V
-:runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-26.1@Minecraft	:runtime:minecraft-fabric-26.1@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -9871,7 +9568,7 @@
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/client/Minecraft;)V
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun added ()V
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun charTyped (Lnet/minecraft/client/input/CharacterEvent;)Z
@@ -9889,8 +9586,6 @@
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun onClose ()V
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun preeditUpdated (Lnet/minecraft/client/input/PreeditEvent;)Z
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun removed ()V
-:runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-26.2@Minecraft	:runtime:minecraft-fabric-26.2@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;
@@ -10020,7 +9715,7 @@
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCanvasHooks#public static fun resetActiveInput (Lnet/minecraft/client/Minecraft;)V
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles {
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfiles#public static final fun extractMinecraftUiProfile ()Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
-:runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+:runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen : net/minecraft/client/gui/screens/Screen, dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInputReset, java/lang/AutoCloseable {
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public final fun captureCanvasFrame ()Ljava/util/List;
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun added ()V
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun charTyped (Lnet/minecraft/client/input/CharacterEvent;)Z
@@ -10038,8 +9733,6 @@
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun onClose ()V
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun preeditUpdated (Lnet/minecraft/client/input/PreeditEvent;)Z
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun removed ()V
-:runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
-:runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen#public synthetic fun resetInputFromNative ()V
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens {
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreens#public static final fun createMinecraftScreen (Ldev/s7a/strata/screen/ScreenDefinition;Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;Lnet/minecraft/client/gui/screens/Screen;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen;

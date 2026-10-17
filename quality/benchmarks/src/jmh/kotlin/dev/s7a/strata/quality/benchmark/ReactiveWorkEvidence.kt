@@ -1,8 +1,11 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+
 /**
  * Verifies complete frame reuse and changed operations without requiring production diagnostic hooks.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 public object ReactiveWorkEvidence {
     /**
      * Exercises every scene and reports optional legacy diagnostics as explicitly unavailable on current runtimes.

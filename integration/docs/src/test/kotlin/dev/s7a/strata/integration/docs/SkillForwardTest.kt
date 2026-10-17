@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.docs
 
+import InboxMessage
 import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
@@ -10,6 +11,7 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import inboxScreen
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame

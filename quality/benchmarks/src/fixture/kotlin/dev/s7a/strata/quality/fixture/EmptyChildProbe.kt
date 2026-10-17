@@ -395,9 +395,9 @@ public class EmptyChildProbe {
         public var disposed: Boolean = false
             private set
 
-        override fun attach() = Unit
+        override fun attach(): Unit = Unit
 
-        override fun detach() = Unit
+        override fun detach(): Unit = Unit
 
         override fun dispose() {
             check(disposed.not())
