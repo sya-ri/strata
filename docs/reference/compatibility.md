@@ -2,8 +2,8 @@
 
 # Minecraft compatibility
 
-Choose the Strata runtime that matches the Minecraft version of your client.
-Install exactly one versioned runtime together with Fabric Language Kotlin; each runtime includes the common Strata libraries.
+Choose the Strata runtime that matches the Minecraft version of your client or Fabric server.
+Install exactly one versioned runtime together with Fabric API and Fabric Language Kotlin; each runtime includes the common Strata libraries.
 The table is generated from the build's target matrix and describes supported artifacts and Java requirements.
 
 | Minecraft | Fabric runtime artifact | Required Java | Paper distribution |
@@ -37,6 +37,6 @@ For changes between Strata releases, read the [changelog](../../CHANGELOG.md).
 
 See [adapter development](../development/minecraft-versions.md) for native boundaries and [verification](../development/build.md) for the executable checks.
 This table does not record a test run or replace release acceptance evidence.
-All listed clients compile the native Strata remote transport without requiring Fabric API.
+All listed runtimes require Fabric API and support both Fabric clients and logical servers.
 Paper acceptance uses an exact Minecraft version from the [official distribution inventory](https://fill.papermc.io/v3/projects/paper); distribution availability alone is not a successful test receipt.
 See [Paper screens](../guides/paper.md) and [Velocity screens](../guides/velocity.md) for installation, and [remote protocol](remote-protocol.md) for connection and extension contracts.

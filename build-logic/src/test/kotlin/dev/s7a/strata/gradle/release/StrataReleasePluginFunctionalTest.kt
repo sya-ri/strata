@@ -14,7 +14,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 
-/** Verifies plugin application, lazy target wiring, task dependencies, and generated bundle structure with TestKit. */
+/**
+ * Verifies plugin application, lazy target wiring, task dependencies, and generated bundle structure with TestKit.
+ */
 internal class StrataReleasePluginFunctionalTest {
     @TempDir
     lateinit var projectDirectory: Path
@@ -350,7 +352,7 @@ internal class StrataReleasePluginFunctionalTest {
                     "additionalCategories" to listOf("utility"),
                     "licenseId" to "MIT",
                     "clientSide" to "required",
-                    "serverSide" to "unsupported",
+                    "serverSide" to "optional",
                     "sourceUrl" to ModrinthManifest.SOURCE_URL,
                     "issuesUrl" to ModrinthManifest.ISSUES_URL,
                     "documentationUrl" to ModrinthManifest.DOCUMENTATION_URL,

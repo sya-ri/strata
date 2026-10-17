@@ -17,7 +17,7 @@ import com.velocitypowered.api.proxy.ServerConnection
 import dev.s7a.strata.runtime.remote.RemoteEndpoint
 import dev.s7a.strata.runtime.remote.RemotePacket
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import org.slf4j.Logger
 
 /**
@@ -46,7 +46,7 @@ public class StrataVelocityPlugin
             val service = VelocityScreenService(proxy) { logger.warn("Strata Velocity screen ended", it) }
             screens = service
             VelocityScreens.install(service)
-            uiRegistration = VelocityUi.install(VelocityUiAdapter(service))
+            uiRegistration = Strata.install(VelocityUiAdapter(service))
             proxy.channelRegistrar.register(VelocityScreenService.CHANNEL)
         }
 

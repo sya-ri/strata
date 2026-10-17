@@ -112,7 +112,7 @@ internal class ModrinthRemoteContract(
             missingOrExact(
                 "environment",
                 remote.environments,
-                setOf(VersionEnvironment.CLIENT_ONLY),
+                setOf(VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL),
                 remote.environments.isEmpty() || remote.environments == setOf(VersionEnvironment.UNKNOWN),
                 allowMissing,
             )
@@ -199,13 +199,13 @@ internal class ModrinthRemoteContract(
         compare("version_type", remote.releaseType, ReleaseType.RELEASE)
         compare("loaders", remote.loaders, setOf(Loader.FABRIC))
         compare("featured", remote.featured, ModrinthManifest.FEATURED)
-        compare("environment", remote.environment, VersionEnvironment.CLIENT_ONLY)
+        compare("environment", remote.environment, VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL)
         compare(
             "dependencies",
             remote.dependencies.map { dependency ->
                 listOf(dependency.projectId, dependency.versionId, dependency.fileName, dependency.type)
             },
-            listOf(listOf(ModrinthManifest.FABRIC_LANGUAGE_KOTLIN_PROJECT_ID, null, null, DependencyType.REQUIRED)),
+            ModrinthManifest.REQUIRED_PROJECT_DEPENDENCIES.map { listOf(it, null, null, DependencyType.REQUIRED) },
         )
         compare("file count", remote.files.size, 1)
         if (remote.files.size == 1) {

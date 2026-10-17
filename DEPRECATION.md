@@ -124,7 +124,7 @@ val session = UiDefinition("Status") { Text("Ready") }.open(ownerPlugin, player)
 
 - **Deprecated in**: 0.2.0
 - **Scheduled for removal**: 1.0.0
-- **Replacement**: `PaperUi.open(ownerPlugin, player)` from `dev.s7a.strata.paper`
+- **Replacement**: `Strata.open(ownerPlugin, player)` from `dev.s7a.strata.paper`
 
 The factory creates a `UiDefinition` inside the player's execution owner.
 Continue to create mutable UI state inside this factory, outside the definition's reevaluated content.
@@ -136,7 +136,7 @@ Continue to create mutable UI state inside this factory, outside the definition'
 PaperScreens.open(ownerPlugin, player) { ScreenDefinition("Status") { Text("Ready") } }
 
 // After
-val session = PaperUi.open(ownerPlugin, player) { UiDefinition("Status") { Text("Ready") } }
+val session = Strata.open(ownerPlugin, player) { UiDefinition("Status") { Text("Ready") } }
 ```
 
 See the [Paper guide](docs/guides/paper.md) for ownership and scheduling.
@@ -147,7 +147,7 @@ See the [Paper guide](docs/guides/paper.md) for ownership and scheduling.
 
 - **Deprecated in**: 0.2.0
 - **Scheduled for removal**: 1.0.0
-- **Replacement**: `VelocityUi.open(ownerPlugin, player)` from `dev.s7a.strata.velocity`
+- **Replacement**: `Strata.open(ownerPlugin, player)` from `dev.s7a.strata.velocity`
 
 Return a common `UiDefinition` from the factory and retain the asynchronous session result.
 Create mutable UI state inside the factory and never block the UI thread on the returned future.
@@ -159,7 +159,7 @@ Create mutable UI state inside the factory and never block the UI thread on the 
 val opened = VelocityScreens.open(ownerPlugin, player) { ScreenDefinition("Status") { Text("Ready") } }
 
 // After
-val opened = VelocityUi.open(ownerPlugin, player) { UiDefinition("Status") { Text("Ready") } }
+val opened = Strata.open(ownerPlugin, player) { UiDefinition("Status") { Text("Ready") } }
 ```
 
 See the [platform events reference](docs/reference/platform-events.md) for the public platform APIs.

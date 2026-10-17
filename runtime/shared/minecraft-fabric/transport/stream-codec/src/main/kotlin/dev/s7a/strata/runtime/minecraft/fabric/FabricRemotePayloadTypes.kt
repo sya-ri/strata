@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.runtime.remote.RemoteConnection
-import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 
 /**
@@ -13,18 +12,4 @@ internal object FabricRemotePayloadTypes {
      */
     @JvmStatic
     fun create(): CustomPacketPayload.Type<FabricRemotePayload> = CustomPacketPayload.Type(parseMinecraftResourceLocation(RemoteConnection.CHANNEL))
-
-    /**
-     * Creates the standard native channel-registration payload type.
-     */
-    @JvmStatic
-    fun registration(): CustomPacketPayload.Type<FabricRemoteRegistration> = CustomPacketPayload.Type(parseMinecraftResourceLocation("minecraft:register"))
-
-    /**
-     * Uses the native identifier codec across the ResourceLocation/Identifier version boundary.
-     */
-    @JvmStatic
-    fun writeRegistrationIdentifier(buffer: FriendlyByteBuf) {
-        MinecraftResourceLocation.STREAM_CODEC.encode(buffer, FabricRemoteRegistration.TYPE.id())
-    }
 }

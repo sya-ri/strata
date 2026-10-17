@@ -134,7 +134,7 @@ Tracks `FabricNativeCanvasDestructionFactory`, `FabricMinecraftCanvasRenderFrame
 
 ## hud
 
-| Minecraft | [`float-delta`](../../runtime/shared/minecraft-fabric/hud/float-delta) | [`delta-tracker`](../../runtime/shared/minecraft-fabric/hud/delta-tracker) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/hud/gui-extractor) | [`hud-extractor`](../../runtime/shared/minecraft-fabric/hud/hud-extractor) |
+| Minecraft | [`callback-gui-graphics`](../../runtime/shared/minecraft-fabric/hud/callback-gui-graphics) | [`layer-delta-tracker`](../../runtime/shared/minecraft-fabric/hud/layer-delta-tracker) | [`registry-delta-tracker`](../../runtime/shared/minecraft-fabric/hud/registry-delta-tracker) | [`registry-extractor`](../../runtime/shared/minecraft-fabric/hud/registry-extractor) |
 | --- | --- | --- | --- | --- |
 | 1.20 | ✓ |  |  |  |
 | 1.20.1 | ✓ |  |  |  |
@@ -143,19 +143,19 @@ Tracks `FabricNativeCanvasDestructionFactory`, `FabricMinecraftCanvasRenderFrame
 | 1.20.4 | ✓ |  |  |  |
 | 1.20.5 | ✓ |  |  |  |
 | 1.20.6 | ✓ |  |  |  |
-| 1.21 |  | ✓ |  |  |
-| 1.21.1 |  | ✓ |  |  |
-| 1.21.2 |  | ✓ |  |  |
-| 1.21.3 |  | ✓ |  |  |
+| 1.21 | ✓ |  |  |  |
+| 1.21.1 | ✓ |  |  |  |
+| 1.21.2 | ✓ |  |  |  |
+| 1.21.3 | ✓ |  |  |  |
 | 1.21.4 |  | ✓ |  |  |
 | 1.21.5 |  | ✓ |  |  |
-| 1.21.6 |  | ✓ |  |  |
-| 1.21.7 |  | ✓ |  |  |
-| 1.21.8 |  | ✓ |  |  |
-| 1.21.9 |  | ✓ |  |  |
-| 1.21.10 |  | ✓ |  |  |
-| 1.21.11 |  | ✓ |  |  |
-| 26.1 |  |  | ✓ |  |
+| 1.21.6 |  |  | ✓ |  |
+| 1.21.7 |  |  | ✓ |  |
+| 1.21.8 |  |  | ✓ |  |
+| 1.21.9 |  |  | ✓ |  |
+| 1.21.10 |  |  | ✓ |  |
+| 1.21.11 |  |  | ✓ |  |
+| 26.1 |  |  |  | ✓ |
 | 26.2 |  |  |  | ✓ |
 | 26.3 |  |  |  | ✓ |
 
@@ -388,29 +388,56 @@ Tracks `FabricMinecraftWindowMixin` in each runtime's configured main sources.
 | 26.2 |  |  |  |  |  |  | ✓ | ✓ |
 | 26.3 |  |  |  |  |  |  | ✓ | ✓ |
 
+## server
+
+| Minecraft | [`buffer-networking`](../../runtime/shared/minecraft-fabric/server/buffer-networking) |
+| --- | --- |
+| 1.20 | ✓ |
+| 1.20.1 | ✓ |
+| 1.20.2 | ✓ |
+| 1.20.3 | ✓ |
+| 1.20.4 | ✓ |
+| 1.20.5 |  |
+| 1.20.6 |  |
+| 1.21 |  |
+| 1.21.1 |  |
+| 1.21.2 |  |
+| 1.21.3 |  |
+| 1.21.4 |  |
+| 1.21.5 |  |
+| 1.21.6 |  |
+| 1.21.7 |  |
+| 1.21.8 |  |
+| 1.21.9 |  |
+| 1.21.10 |  |
+| 1.21.11 |  |
+| 26.1 |  |
+| 26.2 |  |
+| 26.3 |  |
+
 ## transport
 
-| Minecraft | [`identifier-buffer`](../../runtime/shared/minecraft-fabric/transport/identifier-buffer) | [`custom-payload`](../../runtime/shared/minecraft-fabric/transport/custom-payload) | [`stream-codec`](../../runtime/shared/minecraft-fabric/transport/stream-codec) |
-| --- | --- | --- | --- |
-| 1.20 | ✓ |  |  |
-| 1.20.1 | ✓ |  |  |
-| 1.20.2 |  | ✓ |  |
-| 1.20.3 |  | ✓ |  |
-| 1.20.4 |  | ✓ |  |
-| 1.20.5 |  |  | ✓ |
-| 1.20.6 |  |  | ✓ |
-| 1.21 |  |  | ✓ |
-| 1.21.1 |  |  | ✓ |
-| 1.21.2 |  |  | ✓ |
-| 1.21.3 |  |  | ✓ |
-| 1.21.4 |  |  | ✓ |
-| 1.21.5 |  |  | ✓ |
-| 1.21.6 |  |  | ✓ |
-| 1.21.7 |  |  | ✓ |
-| 1.21.8 |  |  | ✓ |
-| 1.21.9 |  |  | ✓ |
-| 1.21.10 |  |  | ✓ |
-| 1.21.11 |  |  | ✓ |
-| 26.1 |  |  | ✓ |
-| 26.2 |  |  | ✓ |
-| 26.3 |  |  | ✓ |
+| Minecraft | [`identifier-buffer`](../../runtime/shared/minecraft-fabric/transport/identifier-buffer) | [`custom-payload`](../../runtime/shared/minecraft-fabric/transport/custom-payload) | [`stream-codec`](../../runtime/shared/minecraft-fabric/transport/stream-codec) | [`typed-directions`](../../runtime/shared/minecraft-fabric/transport/typed-directions) | [`named-directions`](../../runtime/shared/minecraft-fabric/transport/named-directions) |
+| --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |  |
+| 1.20.1 | ✓ |  |  |  |  |
+| 1.20.2 |  | ✓ |  |  |  |
+| 1.20.3 |  | ✓ |  |  |  |
+| 1.20.4 |  | ✓ |  |  |  |
+| 1.20.5 |  |  | ✓ | ✓ |  |
+| 1.20.6 |  |  | ✓ | ✓ |  |
+| 1.21 |  |  | ✓ | ✓ |  |
+| 1.21.1 |  |  | ✓ | ✓ |  |
+| 1.21.2 |  |  | ✓ | ✓ |  |
+| 1.21.3 |  |  | ✓ | ✓ |  |
+| 1.21.4 |  |  | ✓ | ✓ |  |
+| 1.21.5 |  |  | ✓ | ✓ |  |
+| 1.21.6 |  |  | ✓ | ✓ |  |
+| 1.21.7 |  |  | ✓ | ✓ |  |
+| 1.21.8 |  |  | ✓ | ✓ |  |
+| 1.21.9 |  |  | ✓ | ✓ |  |
+| 1.21.10 |  |  | ✓ | ✓ |  |
+| 1.21.11 |  |  | ✓ | ✓ |  |
+| 26.1 |  |  | ✓ |  | ✓ |
+| 26.2 |  |  | ✓ |  | ✓ |
+| 26.3 |  |  | ✓ |  | ✓ |
