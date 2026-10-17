@@ -149,9 +149,10 @@ All 26.3 development, production, published-coordinate, and manual IME launches 
 
 Legacy automated screenshot suites also wait for the requested physical viewport to match GLFW, the native Window framebuffer, and the render target across client ticks.
 This avoids assuming that an asynchronous OS resize completed when its request returned.
-Native Canvas screenshot scenes additionally fence on the runtime's committed host-frame counter through `MinecraftCanvasFrameFence` instead of waiting a fixed tick count: a tick proves time passed, while a committed host frame after the scene signal proves the frame the signal observed completed its render call before the main framebuffer is read.
-The fence fails when the runtime counter becomes unreadable rather than silently degrading to fixed-tick behavior.
-Assertion receipts record the GUI scale, lease, and host-frame counters alongside the retained PNG, so a failed pixel assertion keeps its synchronization evidence.
+Native Canvas screenshot scenes use the test-owned `MinecraftCanvasFrameFence` to wait for a completed Fabric presentation event after their sampled baseline before reading the main framebuffer.
+Client ticks alone do not establish this ordering.
+The fence uses a bounded wait, and `FabricFrameObserver` rebinds when framework events are replaced after initialization or resize; production runtimes expose no frame counter or measurement hook.
+Assertion receipts retain GUI scale, lease observations and externally observed completed-frame counts alongside the PNG.
 Timeouts and screenshot failures report actual dimensions and do not crop, rescale, or weaken pixel assertions.
 
 ## Canvas backend and terminal checks
