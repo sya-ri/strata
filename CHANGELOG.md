@@ -5,7 +5,7 @@ Keep all Strata artifacts on the same release version.
 
 ## 0.2.3 - Unreleased
 
-Lower retained-frame, layout, text and image-processing costs; vanilla item tooltips for bound Slots; high-contrast widget borders; and more precise modifier authoring checks. Measured JVM comparisons with public 0.2.2 show lower frame and PNG allocation and regressions in sampled latency. Existing application screen definitions and remote protocol messages require no migration from 0.2.2.
+Lower retained-frame, layout, text and image-processing costs; vanilla item tooltips for bound Slots; high-contrast widget borders; and more precise modifier authoring checks. Production performance hooks and internal diagnostic APIs have been removed; optional testkit observation remains external, and unavailable work/upload metrics are explicit. Existing application screen definitions and remote protocol messages require no migration from 0.2.2.
 
 [Detailed changes and upgrade notes](docs/releases/v0.2.3.md)
 
