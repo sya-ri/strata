@@ -89,7 +89,7 @@ internal object MinecraftSamplingUploadGameTest {
             context.onClient {
                 meter.begin(
                     "sampling-upload-${phase.name}",
-                    PerformancePlan(warmup = phase.warmup, samples = phase.samples),
+                    PerformancePlan(warmup = phase.warmup, samples = phase.samples, repetitions = 1),
                     NativePerformanceFixture(
                         beforeSamples = {
                             requests = scene.requests
@@ -112,6 +112,7 @@ internal object MinecraftSamplingUploadGameTest {
             result.addProperty("gui_scale", 1)
             result.addProperty("motion_period_frames", 120)
             result.addProperty("warmup", phase.warmup)
+            result.addProperty("purpose", "Upload accounting and current-geometry reuse; timings are not a formal performance comparison")
             PerformanceJson.writeNew(context.outputDirectory.resolve("sampling-upload-${phase.name}.json"), result)
         } catch (caught: Throwable) {
             failure = caught
@@ -138,6 +139,8 @@ internal object MinecraftSamplingUploadGameTest {
         if (phase != Phase.Motion) {
             check(raster == 0L && sampling == 0L) { "Unchanged geometry repeated a portable upload: $result" }
             check(payload.get("rasterUploadByteCount").asLong == 0L && payload.get("samplingUploadByteCount").asLong == 0L) { "Reused geometry transferred portable payload bytes: $result" }
+        } else {
+            check(0L < raster + sampling) { "The motion control did not change portable output: $result" }
         }
     }
 
