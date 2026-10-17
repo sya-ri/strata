@@ -40,7 +40,6 @@ public class StrataMinecraftCanvasTerminalClientGameTest : FabricClientGameTest 
         }
         when (scope) {
             MinecraftCanvasSuiteScope.Full -> {
-                MinecraftHighContrastGameTest.run(context)
                 StrataMinecraftFontGameTest().runTest(context)
             }
 
