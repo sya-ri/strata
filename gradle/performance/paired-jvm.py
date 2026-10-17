@@ -28,6 +28,10 @@ import zipfile
 import xml.etree.ElementTree as ElementTree
 
 
+# Whole owner corpora may load many immutable input classes in one bounded VM.
+CLASS_DIAGNOSTIC_BYTES = 64 * 1024 * 1024
+
+
 class FixtureProject(Enum):
     """Decode the existing CPU collector entry points at the manifest boundary."""
     HISTORICAL = (":quality:benchmarks", "jmhHistorical", "verifyHistoricalWorkloads")
@@ -249,9 +253,12 @@ def load_manifest(root, path):
             pin(root, patch)
     projects = data["runtime_projects"]
     require(isinstance(projects, list) and projects and len(set(projects)) == len(projects), "Missing or duplicate runtime project")
-    require(all(re.fullmatch(r":(?:api|velocity-api|runtime:(?:core|headless|remote|velocity|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
+    require(all(re.fullmatch(r":(?:api|velocity-api|performance-testkit|runtime:(?:core|headless|remote|velocity|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
             "Unsupported CPU runtime project")
-    require(isinstance(data["suites"], list) and data["suites"], "No paired suites selected")
+    require(isinstance(data["suites"], list), "Invalid paired suite inventory")
+    require(data["suites"] or data.get("owner_reports"), "No complete paired corpus selected")
+    require(":performance-testkit" not in projects or (projects == [":performance-testkit"] and not data["suites"]),
+            "Measure the testkit only as an isolated standalone owner target")
     names = set()
     for suite in data["suites"]:
         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
@@ -605,7 +612,7 @@ def class_loads(directory):
     for path in sorted(owner.iterdir()):
         name = re.fullmatch(r"classes-([0-9]+)-[0-9_-]+\.log", path.name)
         require(name is not None and path.is_file() and not path.is_symlink()
-                and path.stat().st_size <= 1024 * 1024, "Invalid or oversized class-load diagnostic")
+                and path.stat().st_size <= CLASS_DIAGNOSTIC_BYTES, "Invalid or oversized class-load diagnostic")
         pid = int(name[1])
         text = path.read_text(encoding="utf-8")
         observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
@@ -888,7 +895,7 @@ def independent_class_file(directory, phase_directory, result, vm):
             else:
                 matched = target.resolve() == path.resolve()
             if matched:
-                require(path.stat().st_size <= 1024 * 1024, "Independent class-load diagnostic exceeds its retained bound")
+                require(path.stat().st_size <= CLASS_DIAGNOSTIC_BYTES, "Independent class-load diagnostic exceeds its retained bound")
                 text = path.read_text(encoding="utf-8")
                 observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
                 require(observed == {vm["pid"]} and text.endswith("\n"), "Wrong-PID or truncated independent class-load diagnostic")
@@ -914,12 +921,13 @@ def java_installation_home(executable, runtime_home, specification_versions=()):
     return home
 
 
-def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False, daemon_metaspace_mib=1024, java_exec_heap_mib=768, java_exec_metaspace_mib=384):
+def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False, daemon_metaspace_mib=1024, java_exec_heap_mib=768, java_exec_metaspace_mib=384, daemon_heap_mib=768):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
     require(type(maximum_diagnostic_bytes) is int and 0 < maximum_diagnostic_bytes <= 16 * 1024**2,
             "Invalid finite VM diagnostic byte bound")
     require(type(require_all_java_generations) is bool, "Invalid Java generation coverage mode")
     require(type(daemon_metaspace_mib) is int and 0 < daemon_metaspace_mib <= 1024, "Invalid finite daemon metaspace cap")
+    require(type(daemon_heap_mib) is int and 64 <= daemon_heap_mib <= 768, "Invalid finite daemon heap cap")
     require(type(java_exec_heap_mib) is int and 64 <= java_exec_heap_mib <= 768
             and type(java_exec_metaspace_mib) is int and 0 < java_exec_metaspace_mib <= 384, "Invalid finite JavaExec caps")
     if require_all_java_generations:
@@ -934,7 +942,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         require(len(headers) == 1, "VM diagnostic lacks a unique PID header")
         pid = int(headers[0][0])
         pid_log_counts[pid] = pid_log_counts.get(pid, 0) + 1
-    profiles = {"wrapper": (64, 256), "daemon": (768, daemon_metaspace_mib), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (java_exec_heap_mib, java_exec_metaspace_mib), "fork": (768, 384)}
+    profiles = {"wrapper": (64, 256), "daemon": (daemon_heap_mib, daemon_metaspace_mib), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (java_exec_heap_mib, java_exec_metaspace_mib), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(directory)
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]
@@ -1208,6 +1216,81 @@ def owner_processing_collector(classpath, collector):
     return selected["path"]
 
 
+def owner_runtime_mapping(runtime):
+    """The measured testkit is an input archive; it never replaces the fixed outer collector."""
+    return {project: item["path"] for project, item in runtime.items() if project != ":performance-testkit"}
+
+
+def owner_fixture_inputs(specification, inputs, runtime, side, collector, fixture):
+    """Bind actual target archives separately from immutable caller inputs and the neutral collector."""
+    result = {label: item["path"] for label, item in inputs.items()}
+    require(all(not label.startswith("owner-") for label in result), "Caller input overlaps reserved owner archive roles")
+    require(all(digest(Path(item["path"])) == item["sha256"] for item in inputs.values()), "Changed original owner input")
+    require(digest(Path(fixture["path"])) == fixture["sha256"], "Changed owner fixture archive")
+    require(Path(fixture["path"]).resolve() != Path(collector).resolve(), "Owner fixture overlaps its outer collector")
+    result["owner-fixture"] = fixture["path"]
+    result["owner-collector"] = collector
+    for label, binding in specification["runtime_classes"].items():
+        for variant in ("baseline", "candidate"):
+            archive = runtime[variant][binding["project"]]
+            require(digest(Path(archive["path"])) == archive["sha256"], "Changed owner target archive")
+            require(Path(archive["path"]).resolve() != Path(collector).resolve(), "Owner target overlaps its outer collector")
+            require(Path(archive["path"]).resolve() != Path(fixture["path"]).resolve(), "Owner target overlaps its fixture")
+            result[f"owner-{variant}-{label}"] = archive["path"]
+        result[f"owner-target-{label}"] = runtime[side][binding["project"]]["path"]
+    return result
+
+
+def archive_owner_classpath(path):
+    """Freeze directory entries as deterministic JARs outside collection, keeping original pins intact."""
+    original = prepared_classpath(path)
+    source_jars, retained_jars = path.parent / "source-jars", path.parent / "archive-jars"
+    source_jars.mkdir()
+    retained_jars.mkdir()
+    entries, conversions = [], []
+    for index, entry in enumerate(original["entries"]):
+        directory = Path(entry["path"])
+        if directory.is_file():
+            entries.append(entry)
+            continue
+        source = source_jars / f"classpath-{index}.jar"
+        members = {}
+        with zipfile.ZipFile(source, "x", compression=zipfile.ZIP_STORED) as archive:
+            for item in sorted(directory.rglob("*")):
+                if item.is_file():
+                    name = item.relative_to(directory).as_posix()
+                    require(name not in members and not item.is_symlink(), "Ambiguous owner fixture entry")
+                    members[name] = digest(item)
+                    archive.writestr(zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0)), item.read_bytes())
+        copied = preserve_file(source, retained_jars / source.name)
+        entries.append({"source": str(source), **copied})
+        conversions.append({"original": entry, "source_jar": str(source), "sha256": copied["sha256"], "members": members})
+    prepared_classpath(path)
+    destination = path.with_name("archived-classpath.json")
+    write_new(destination, {"schema": "strata-paired-jvm-classpath-v1", "entries": entries})
+    write_new(path.with_name("archive-binding.json"), {"original_classpath": str(path), "sha256": digest(path), "conversions": conversions})
+    verify_archived_owner_classpath(destination)
+    return destination
+
+
+def verify_archived_owner_classpath(path, binding_sha256=None):
+    """Retain the original source-directory and exact JAR-entry binding before every invocation."""
+    binding_path = path.with_name("archive-binding.json")
+    require(binding_sha256 is None or digest(binding_path) == binding_sha256, "Changed owner archive binding")
+    binding = read_json(binding_path)
+    original = Path(binding["original_classpath"])
+    require(digest(original) == binding["sha256"], "Changed original owner classpath pin")
+    prepared_classpath(original)
+    for conversion in binding["conversions"]:
+        jar = Path(conversion["source_jar"])
+        require(digest(jar) == conversion["sha256"], "Changed archived owner fixture")
+        with zipfile.ZipFile(jar) as archive:
+            require(len(archive.namelist()) == len(conversion["members"])
+                    and {name: hashlib.sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == conversion["members"],
+                    "Changed archived owner fixture entries")
+    return prepared_classpath(path)
+
+
 def preflight_request(input_root, output, suite, side, classpath_path, runtime, sources, java, inputs):
     """Bind one complete untimed controller request to the actual preserved and qualified input closure."""
     specification = suite["preflight"]
@@ -1359,7 +1442,8 @@ def fixture_projects(data):
     paths = [pin["path"] for pins in data["compiled_pins"].values() for pin in pins]
     pinned = {project.value[0] for project in FixtureProject
               if any(path.startswith(project.value[0].strip(":").replace(":", "/") + "/build/") for path in paths)}
-    return sorted({suite["project"] for suite in data["suites"]} | pinned)
+    owners = {report["project"] for report in data.get("owner_reports", []) if report["kind"] == "java-exec"}
+    return sorted({suite["project"] for suite in data["suites"]} | pinned | owners)
 
 
 def pinned_fixture_preparation(data, side, fixture_tasks):
@@ -1672,10 +1756,10 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         for side in ("baseline", "candidate"):
             runtime_archives[side] = {project: preserve_file(archive_file(workspaces[side], project), output / "prepared" / side / f"target-{index}.jar")
                                       for index, project in enumerate(data["runtime_projects"])}
-            mapping = {project: item["path"] for project, item in runtime_archives[side].items()}
+            mapping = owner_runtime_mapping(runtime_archives[side])
             runtime_manifests[side] = output / f"runtime-{side}.properties"
             properties(runtime_manifests[side], mapping)
-            record["archives"][side] = {project: digest(Path(path)) for project, path in mapping.items()}
+            record["archives"][side] = {project: item["sha256"] for project, item in runtime_archives[side].items()}
         inputs = output / "fixture-inputs.properties"
         external_inputs = {label for suite in data["suites"] for label in suite.get("external_runtime_inputs", {}).values()}
         input_archives = preserve_inputs(input_root, output / "prepared" / "inputs", data["inputs"], external_inputs)
@@ -1825,6 +1909,21 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         for specification in data.get("owner_reports", []):
             runs, classpaths = {"baseline": [], "candidate": []}, {}
             library_manifest = output / (specification["name"] + "-libraries.properties")
+            isolated = data["runtime_projects"] == [":performance-testkit"]
+            archive_binding, archived, fixture_archive = None, None, None
+            if isolated:
+                retained = output / "prepared-classpaths" / specification["name"] / "neutral"
+                request = output / (specification["name"] + "-classpath-owner-request.json")
+                write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
+                                    "template": specification["template"], "kind": specification["kind"], "main": specification["main"],
+                                    "arguments": [str(output / "unused-owner-output.json"), "0"], "inputs": str(library_manifest)})
+                phase(f"prepare-{specification['name']}-owner-classpath", fixture,
+                      [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
+                       f"-Pstrata.paired.preserveClasspath={retained}", "-Pstrata.paired.prepareClasspath=true"], 0)
+                archived = archive_owner_classpath(retained / "classpath.json")
+                archive_binding = digest(archived.with_name("archive-binding.json"))
+                fixture_archive = class_entry(verify_archived_owner_classpath(archived, archive_binding), specification["main"])
+                classpaths = {side: retained / "classpath.json" for side in ("baseline", "candidate")}
             for repetition in range(3):
                 for side in ("baseline", "candidate"):
                     for key, workspace in workspaces.items():
@@ -1846,8 +1945,15 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                     write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
                                         "template": specification["template"], "kind": specification["kind"], "main": specification["main"],
                                         "arguments": arguments, "inputs": str(library_manifest)})
-                    flags = [f"-Pstrata.paired.report={request}", f"-Pstrata.paired.runtime={runtime_manifests[side]}",
-                             f"-Pstrata.performance.fixtureInputs={inputs}"]
+                    owner_inputs = inputs
+                    if isolated:
+                        verify_archived_owner_classpath(archived, archive_binding)
+                        neutral = owner_processing_collector(classpaths[side], collector)
+                        owner_inputs = output / f"{specification['name']}-{side}-{repetition}-fixture-inputs.properties"
+                        properties(owner_inputs, owner_fixture_inputs(specification, input_archives, runtime_archives, side, neutral, fixture_archive))
+                    flags = [f"-Pstrata.paired.report={request}", f"-Pstrata.performance.fixtureInputs={owner_inputs}"]
+                    if owner_runtime_mapping(runtime_archives[side]):
+                        flags.append(f"-Pstrata.paired.runtime={runtime_manifests[side]}")
                     if side not in classpaths:
                         retained = output / "prepared-classpaths" / specification["name"] / side
                         flags.append(f"-Pstrata.paired.preserveClasspath={retained}")
@@ -1857,6 +1963,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                         flags.append(f"-Pstrata.paired.classpath={classpaths[side]}")
                     phase(f"collect-{specification['name']}-owner-{side}-{repetition}", fixture,
                           [specification["project"] + ":strataPairedEvidence"] + flags + paired_selectors, 0)
+                    if isolated:
+                        verify_archived_owner_classpath(archived, archive_binding)
                     prepared = prepared_classpath(classpaths[side])
                     require(class_entry(prepared, "dev.s7a.strata.performance.JvmPerformanceMeter")["sha256"] == digest(collector), "Owner report substituted its collector")
                     verify_owner_report(read_json(destination), specification, repetition, runtime_archives[side], invocation_ids | operation_ids | owner_ids)
@@ -1873,10 +1981,16 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
                                 "template": specification["template"], "kind": specification["kind"], "main": specification["comparison"],
                                 "arguments": runs["baseline"] + runs["candidate"] + [processing_collector, str(comparison_path)], "inputs": str(library_manifest)})
+            flags = [f"-Pstrata.paired.classpath={classpaths['candidate']}"]
+            if isolated:
+                verify_archived_owner_classpath(archived, archive_binding)
+                flags.append(f"-Pstrata.performance.fixtureInputs={owner_inputs}")
+            else:
+                flags += [f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.performance.fixtureInputs={inputs}"]
             phase(f"compare-{specification['name']}-owner", fixture,
-                  [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
-                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}",
-                   f"-Pstrata.performance.fixtureInputs={inputs}"])
+                  [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}"] + flags)
+            if isolated:
+                verify_archived_owner_classpath(archived, archive_binding)
             comparison = read_json(comparison_path)
             require(comparison["status"] == "passed" and len(comparison["phases"]) == len(specification["rows"]), "Incomplete owner comparison")
             owner_comparisons.append((specification, comparison))

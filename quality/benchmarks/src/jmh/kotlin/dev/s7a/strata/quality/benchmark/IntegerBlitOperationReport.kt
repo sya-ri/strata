@@ -1,12 +1,14 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.JvmOperationReportRow
 import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.quality.benchmark.IntegerBlitBenchmark.Path
 import dev.s7a.strata.quality.benchmark.IntegerBlitBenchmark.Scenario
+import java.nio.file.Path as FilePath
 
 /**
  * Collects the original complete raster operations through the shared owner-thread meter.
@@ -14,6 +16,9 @@ import dev.s7a.strata.quality.benchmark.IntegerBlitBenchmark.Scenario
  * before the next row. Reports retain no image, command, output or horizontal coordinate map.
  */
 public object IntegerBlitOperationReport : JvmOperationReportAdapter {
+    override val inputs: Map<String, FilePath>
+        get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to FilePath.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))
+
     private val controls: Set<Scenario> =
         setOf(
             Scenario.Small1,

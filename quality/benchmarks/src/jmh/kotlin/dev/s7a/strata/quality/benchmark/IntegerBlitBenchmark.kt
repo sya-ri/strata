@@ -9,6 +9,7 @@ import org.openjdk.jmh.annotations.Param
 import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
+import java.nio.file.Path as FilePath
 
 /**
  * Fixed integer-blit corpus with resident immutable inputs and fresh complete rasters per operation.
@@ -226,6 +227,9 @@ public open class IntegerBlitBenchmark {
          */
         @JvmStatic
         public fun verifyWork() {
+            check(IntegerBlitOperationReport.inputs["headless-api"] == FilePath.of(checkNotNull(IntegerBlitBenchmark::class.java.getResource("/headless-api.tsv")).toURI())) {
+                "Complete operation reports must declare the headless API control input before timing."
+            }
             check(JmhWorkloadInventory.capture(listOf(IntegerBlitBenchmark::class.java), setOf("avgt")).size == 84)
             check(IntegerBlitOperationReport.rows.size == 84)
             for (path in Path.entries) {

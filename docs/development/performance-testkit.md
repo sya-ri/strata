@@ -276,6 +276,10 @@ Historical evidence keeps its original collector and workload contract; field-na
 
 Evidence processing uses Java and the JVM testkit; Python is not a requirement and no Python compatibility package is shipped.
 CPU and native reports use `LoadedArtifactMetadata` directly; historical field-name projections and distribution adapters are removed.
+Each synchronous entry traversal and loaded class-tree capture owns one bounded read buffer; nested or concurrent calls own independent scratch and independent resource digests.
+Preserved class-tree verification streams every entry to EOF under the existing maximum-plus-one, declared-size, per-entry, total-byte and entry-count gates instead of materializing each complete class.
+Digest framing, canonical ordering, lower-case SHA-256 encoding, origin checks and unavailable/error behavior remain unchanged.
+These traversal helpers retain no input, archive, class loader or scratch for a later invocation.
 Consumers preserve the kit's distribution fields and unavailable values without translating them into an older schema.
 `JvmPerformanceEvidence` rejects mismatched collectors, copied invocations, missing controlled conditions and duplicate phases.
 Phase indexing returns canonical JSON text tuples, independent of parsed versus constructed number types and object property order.
@@ -922,6 +926,7 @@ It binds all three source trees, the exact differing source-file list, immutable
 The common driver and prepared Source subjects have separate frozen identities; preparing another change does not require that change to contain the common driver.
 Each side may select one existing model argument, `-Pstrata.webOnly=true` or `-Pstrata.jvmOnly=true`; worker, deadline, cache, task and sampling overrides are rejected.
 An optional immutable `resource_profile` file pin supplies `minimumFreePhysicalBytes` and `daemonMetaspaceMiB` for both Source sides, with an optional pair of `javaExecHeapMiB` and `javaExecMetaspaceMiB`.
+It may also tighten `daemonHeapMiB` to 64–768 MiB; omission preserves the existing 768 MiB daemon heap.
 The finite admission range is 4–16 GiB, and the positive daemon metaspace cap cannot exceed the default 1024 MiB.
 Source JavaExec heap is bounded to 64–768 MiB and positive metaspace to at most 384 MiB; supplying only one of the pair fails.
 These preparation-only limits can reduce simultaneous Gradle and verification-process memory within the existing 3 GiB Job without changing the original tasks, test gates or artifacts.
@@ -929,6 +934,11 @@ The same input is checked before and after every phase and preserved verbatim; a
 Without these inputs, Source keeps its existing 4 GiB admission, 1024 MiB daemon metaspace and 768/384 MiB JavaExec profile.
 JMH forks retain their fixed 768/384 MiB profile, and collection cannot select Source JavaExec overrides.
 Source preparation admits the existing JVM/JS archive and compilation tasks, JMH compilation/quality tasks, complete workload verification and runtime-surface inventory tasks, and explicitly declared tracked TSV source resources and compiler ABI snapshots.
+The existing `arguments` lists may append one `-Pstrata.performance.benchmarks=` selector containing at most 32 unique fully qualified JVM fixture class names, with optional `-Pstrata.jvmOnly=true` before it.
+This requires an existing complete workload-verification task and keeps every generated method, parameter combination and independent control of each selected fixture.
+The compiled JMH inventory rejects unknown classes; this selector cannot choose methods, parameter subsets, quick/smoke modes, arbitrary Gradle options or browser-only verification.
+Omitting the selector preserves the default complete fixture selection, and ordered preparations still require identical baseline/candidate argument lists.
+The existing bounded init forwards the exact property to the owned JavaExec invocation; acceptance must verify its actual VM metadata, complete fixture work, unchanged tasks/gates/outputs and naturally closed process generations.
 A requested `test` or `jvmTest` task requires its matching full test gate; multiple requested test tasks, missing gates and partial test filters fail.
 Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
 For one untimed qualification per side, optional `preparations` may partition the complete ordered task and artifact lists into separately owned invocations so compiler processes are released before later test or workload gates.
@@ -1022,3 +1032,27 @@ Adverse rows remain visible, and native work counts retain their separate untime
 Browser CPU, allocation, GPU, FPS and loaded-game gains remain unavailable.
 The attempt archive preserves both complete parity/site trees, original raw results, comparison requests/results, all process terminals, source archives, actual driver files and the file hash inventory, including after failure.
 An incomplete, copied, changed or failed collection stops the whole attempt; no subset or prior-attempt row can certify success.
+
+## Artifact provenance hashing workload
+
+The provenance consumer measures the testkit library through an isolated platform-parent loader while keeping its outer collector fixed.
+Its corpus retains all 55 measured rows and three rejected controls, including independent directory, archive, loaded/preserved class-tree, single-file and resource-selection boundaries.
+Each measured operation keeps the original 30 warmups and 60 samples; corpus construction, independent goldens, stream probes and serialization stay outside its interval.
+The separate complete-preparation/collection/verification interval and unavailable work counts retain their original meaning; rendering, upload and GPU scopes are N/A.
+
+Use the existing bounded `strataPairedEvidence` request with the `jmhHistorical` JavaExec template and `ProvenanceHashingExecution` as its main class.
+The delegate accepts the unchanged `ProvenanceHashingEvidence` six-argument collect and nine-argument compare CLI.
+For the original CLI, the existing `strata.performance.fixtureInputs` manifest binds `provenance-fixture`, `outer-collector`, `control-libraries`, `provenance-corpus`, `baseline-library` and `candidate-library` to actual immutable files.
+The control-library properties file contains only the outer collector's dependencies, and neither measured archive belongs to the outer classpath.
+The shared controller separately freezes directory entries as deterministic fixture JARs before collecting either side, preserving the original neutral classpath, its directory pins and every archive entry.
+No additional Gradle task or launcher is required.
+The unchanged collector verifies the actual fixture/collector JARs, target helpers, full archive and complete class trees before and after every collection, and the delegate checks all input bytes and loader origins.
+
+An automatic standalone corpus uses the same manifest schema with an empty `suites` list and a nonempty complete `owner_reports` list.
+The `runtime_projects` inventory selects only `:performance-testkit`; its baseline/candidate archives are explicit isolated target inputs and never replace the neutral outer collector.
+The existing `runtime_classes` roles bind the actual archive and representative class reported by the isolated target, rather than crediting a prepared archive as loaded.
+The adapter accepts the existing two-argument collect and eight-argument compare requests, delegates the original six/nine arguments, and retains each complete original raw report before adding its actual runtime-metadata envelope.
+Those standard requests use the existing input properties for `owner-fixture`, `owner-collector`, `owner-baseline-identity`, `owner-candidate-identity` and `owner-target-identity`; the adapter resolves the original CLI roles from these actual files and the resolved control libraries.
+Corpus construction runs once before the original measured intervals; subsequent invocations revalidate the same complete corpus, goldens and rejected inputs.
+Actual compiled forwarding, archive-origin and complete source/ownership controls remain necessary before this route is qualified.
+The original full three-plus-three comparison, independent work observations, rejected controls and final project acceptance remain required; execution wiring alone establishes no improvement.
