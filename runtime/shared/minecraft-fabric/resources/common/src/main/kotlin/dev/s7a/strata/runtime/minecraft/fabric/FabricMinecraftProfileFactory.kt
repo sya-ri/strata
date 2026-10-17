@@ -251,7 +251,15 @@ internal fun extractMinecraftAsciiGlyph(
     return createDrawImage(IntSize(8, 8), pixels)
 }
 
-private fun ResourceManager.requiredResource(path: String): Resource {
+/**
+ * Borrows one required Minecraft resource from this captured manager without opening a stream.
+ *
+ * @param path resource path in the Minecraft namespace.
+ * @return selected resource whose opened streams remain the caller's responsibility.
+ * @throws IllegalArgumentException when this manager has no matching resource.
+ */
+@JvmSynthetic
+internal fun ResourceManager.requiredResource(path: String): Resource {
     val identifier = minecraftResourceLocation("minecraft", path)
     return getResource(identifier).orElseThrow {
         IllegalArgumentException("Missing Minecraft resource: $identifier")

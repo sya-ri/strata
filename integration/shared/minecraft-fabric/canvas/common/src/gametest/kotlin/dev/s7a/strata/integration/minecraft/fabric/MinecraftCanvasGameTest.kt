@@ -91,6 +91,7 @@ internal object MinecraftCanvasGameTest {
         MinecraftOrderedCompositionGameTest.run(context, profile)
         MinecraftCycleButtonSelectionGameTest.run(context, profile)
         MinecraftDestinationPaletteGameTest.run(context, profile)
+        MinecraftHighContrastGameTest.run(context)
     }
 
     private fun verifyPortableOwners(
