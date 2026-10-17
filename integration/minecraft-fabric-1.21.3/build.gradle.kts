@@ -32,8 +32,15 @@ fabricApi {
     }
 }
 
+extensions.configure<SourceSetContainer> {
+    named("gametest") {
+        java.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/lookup-enchantments/src/gametest/java"))
+    }
+}
+
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/stream-codec/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))
         kotlin.exclude("**/PaperDemoPlugin.kt", "**/PaperDemoScreens.kt")

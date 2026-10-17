@@ -205,7 +205,7 @@ public class FabricMinecraftScreen private constructor(
                 presentation.present(graphics, commands, frame.size, dispatch::render)
             }
             if (attached.not()) return
-            if (FabricUiSessions.acceptsPointer(this)) inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
+            FabricUiSessions.renderInventoryOverlays(this) { inventory.renderOverlays(graphics, minecraftClient.font, mouseX, mouseY) }
         } catch (failure: Throwable) {
             guiFailure = failure
             terminalFailure(failure)

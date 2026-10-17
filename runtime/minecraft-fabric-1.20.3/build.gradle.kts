@@ -13,6 +13,7 @@ val previousRuntime = rootProject.file("runtime/minecraft-fabric-1.20.4/src/main
 
 extensions.configure<SourceSetContainer> {
     named("main") {
+        java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics/src/main/java"))
         java.srcDirs(
             previousRuntime.resolve("java"),
             rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/java"),

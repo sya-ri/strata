@@ -10,6 +10,7 @@ import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.UiScope
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
@@ -137,6 +138,7 @@ internal object MinecraftCanvasSlotGameTest {
         screen: FabricMinecraftScreen,
         scale: Int,
     ) {
+        context.movePointer(IntOffset(0, viewport.height - 1))
         val earlierLeases = context.onClient { fixture.leasesOpened }
         context.waitFor { earlierLeases < fixture.leasesOpened }
         // A tick count proves time passed, not that the first complete frame carrying every scale-dependent
