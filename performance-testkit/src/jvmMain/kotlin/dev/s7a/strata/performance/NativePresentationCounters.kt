@@ -35,11 +35,12 @@ public object NativePresentationCounters {
     public fun read(screen: Any): Map<String, Long> {
         val owner = nativeOwner(screen)
         val counters =
-            names.mapNotNull { name ->
-                val field = optionalField(owner, name) ?: return@mapNotNull null
-                check(field.trySetAccessible()) { "Inaccessible native performance metric: $name" }
-                name to field.getLong(owner)
-            }.toMap()
+            names
+                .mapNotNull { name ->
+                    val field = optionalField(owner, name) ?: return@mapNotNull null
+                    check(field.trySetAccessible()) { "Inaccessible native performance metric: $name" }
+                    name to field.getLong(owner)
+                }.toMap()
         val payloadField = optionalField(owner, "uploadWork") ?: return counters
         check(payloadField.trySetAccessible())
         val payload = payloadField.get(owner) ?: return counters
