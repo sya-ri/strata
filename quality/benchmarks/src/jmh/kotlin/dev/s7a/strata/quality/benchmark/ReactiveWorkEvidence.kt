@@ -22,10 +22,11 @@ public object ReactiveWorkEvidence {
             try {
                 val before = state.cleanFrame()
                 val after = state.nextFrame()
-                val expectsReuse = workload == ReactiveWorkload.Static || workload == ReactiveWorkload.MapEqual
-                val reused = before === after
-                check(expectsReuse.not() || reused) { "An unchanged presentation must reuse its frame for ${workload.name}." }
-                check(state.cleanFrame() === after)
+                val reused = workload == ReactiveWorkload.Static || workload == ReactiveWorkload.MapEqual
+                check((before === after) == reused) { "Unexpected presentation reuse for ${workload.name}." }
+                // Virtual-list anchor preservation can publish a scroll revision for the following frame.
+                val settled = state.cleanFrame()
+                check(state.cleanFrame() === settled) { "The presentation must settle after ${workload.name}." }
                 println("${workload.name},$reused,${after.drawCommands.size},${state.workSnapshot()}")
             } finally {
                 state.close()
