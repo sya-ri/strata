@@ -59,14 +59,15 @@ internal object MinecraftDestinationPaletteGameTest {
         try {
             context.onClient { context.setScreen(screen) }
             MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.completedFrames(context, screen))
-            val portableTiles = context.onClient {
-                val portable = MinecraftCompositionParityInputs.portable(screen)
-                check(portable.isNotEmpty()) { "Palette acceptance did not prepare a portable CPU tile." }
-                check(portable.none { MinecraftCompositionParityInputs.composed(it.first) }) {
-                    "The small source crop must preserve the existing whole-tile CPU fallback."
+            val portableTiles =
+                context.onClient {
+                    val portable = MinecraftCompositionParityInputs.portable(screen)
+                    check(portable.isNotEmpty()) { "Palette acceptance did not prepare a portable CPU tile." }
+                    check(portable.none { MinecraftCompositionParityInputs.composed(it.first) }) {
+                        "The small source crop must preserve the existing whole-tile CPU fallback."
+                    }
+                    portable.size
                 }
-                portable.size
-            }
             val name = "destination-palette-$scale-$revision"
             val path = context.takeScreenshot(name, physical)
             val actual = checkNotNull(ImageIO.read(path.toFile()))
