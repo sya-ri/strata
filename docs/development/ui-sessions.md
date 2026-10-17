@@ -23,7 +23,7 @@ HUD visibility uses category, then native screen kind, then the definition defau
 The adapter owns version-specific HUD, mouse, and native gameplay hooks; the public runtime has no Fabric API dependency.
 `RuntimeUiInput` bounds held state by the adapter's mapping set and releases it on input-session, policy, editing, focus, and terminal boundaries.
 
-Remote controls are ordered by the owning Paper, Folia, or Velocity session and confirmed after the client applies native presentation.
+Remote controls are ordered by the owning Fabric, Paper, Folia, or Velocity session and confirmed after the client applies native presentation.
 See the [remote protocol](../reference/remote-protocol.md) for application versus declaration acknowledgements and connection-wide budgets.
 
 ## Retained observed regions

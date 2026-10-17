@@ -510,6 +510,19 @@ jobs:
       env:
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}
         MINECRAFT_VERSION: ${{ matrix.version }}
+    - name: Verify dedicated Fabric server UI
+      if: needs.plan.outputs.subject_ref == ''
+      run: python3 integration/fabric/run_acceptance.py "$MINECRAFT_VERSION" --development-only
+      env:
+        MINECRAFT_VERSION: ${{ matrix.version }}
+    - name: Upload dedicated Fabric server evidence
+      if: always() && needs.plan.outputs.subject_ref == ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: fabric-server-evidence-${{ matrix.id }}
+        path: build/fabric-acceptance/${{ matrix.version }}/
+        if-no-files-found: ignore
+        retention-days: 7
     - name: Record checked archive identities
       if: always() && needs.plan.outputs.subject_ref != ''
       shell: bash

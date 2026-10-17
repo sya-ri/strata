@@ -46,12 +46,12 @@ Target-specific component adapters may differ while preserving the property/acti
 ## Remote extensions
 
 Composition from supported standard components needs no new wire schema.
-For remote screens built only from those components and compositions, the client needs Strata and Fabric Language Kotlin, with no application-specific client Mod.
+For remote screens built only from those components and compositions, the client needs Strata, Fabric API, and Fabric Language Kotlin, with no application-specific client Mod.
 A custom retained component or modifier used remotely must provide a typed declaration projection; a local `Node` implementation alone is insufficient.
 Read the [declaration projection SPI]($PROJECTION_GUIDE_URL) for `DeclarationProjection`, `ProjectionType`, detached properties, `ProjectionAction`, and `ProjectionBinding`.
 Transfer properties and typed action endpoints, keeping application models, functions, and native handles on their owning host.
 
-Choose a namespaced type ID and schema version, register it through `PaperUi.register` or `VelocityUi.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
+Choose a namespaced type ID and schema version, register it through `Strata.register` or `Strata.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
 Changed wire schemas require a new version; existing connections must reconnect to negotiate newly registered types.
 Missing projections or client capabilities reject the whole screen explicitly.
 Follow the [extension and ownership contract]($REMOTE_PROTOCOL_URL#extensions-and-ownership) for `RemoteRegistry.element`, `modifier`, `statefulModifier`, and release of retained client resources.

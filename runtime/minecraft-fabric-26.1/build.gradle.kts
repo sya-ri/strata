@@ -78,6 +78,7 @@ extensions.configure<KotlinJvmProjectExtension> {
 
 tasks.named<ProcessResources>("processResources") {
     inputs.property("version", project.version)
+    inputs.property("fabricApiVersion", libs.versions.fabric.api261)
     inputs.property("fabricLoaderVersion", libs.versions.fabric.loader)
     inputs.property("minecraftVersion", libs.versions.minecraft261)
     inputs.property("fabricLanguageKotlinVersion", libs.versions.fabric.language.kotlin)
@@ -85,6 +86,7 @@ tasks.named<ProcessResources>("processResources") {
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
+            "fabricApi" to ">=${libs.versions.fabric.api261.get()}",
             "fabricLoader" to libs.versions.fabric.loader.get(),
             "minecraft" to libs.versions.minecraft261.get(),
             "fabricLanguageKotlin" to libs.versions.fabric.language.kotlin.get(),
@@ -95,6 +97,7 @@ tasks.named<ProcessResources>("processResources") {
 
 
 dependencies {
+    implementation(libs.fabric.api261)
     testImplementation(project(":runtime:remote"))
     compileOnly(project(":runtime:remote"))
     compileOnly(project(":runtime:minecraft"))

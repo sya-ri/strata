@@ -2,7 +2,6 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
-import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.fabric.FabricRemoteScreens
 import dev.s7a.strata.runtime.remote.RemoteCanvas
 import net.fabricmc.api.ClientModInitializer
@@ -24,7 +23,7 @@ public class RemoteNativeCanvasFixture : ClientModInitializer {
      * The server uses only the schema; all native resources remain exclusively client-owned.
      */
     public companion object {
-        public val type: ProjectionType = ProjectionType(ResourceId("strata_test", "native_canvas"))
+        public val type: ProjectionType = RemoteNativeServerFixture.type
         private var fixture: MinecraftCanvasTestFixture? = null
 
         /**

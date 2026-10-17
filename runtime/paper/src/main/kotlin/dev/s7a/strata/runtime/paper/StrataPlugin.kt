@@ -2,7 +2,7 @@
 
 package dev.s7a.strata.runtime.paper
 
-import dev.s7a.strata.paper.PaperUi
+import dev.s7a.strata.paper.Strata
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteScreenService
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -23,7 +23,7 @@ import org.bukkit.scheduler.BukkitTask
 
 /**
  * Installable Paper plugin owning messaging registrations and Paper or Folia entity-region UI scheduling.
- * Other plugins use [PaperUi] and declare Strata as a dependency.
+ * Other plugins use [Strata] and declare Strata as a dependency.
  */
 public class StrataPlugin :
     JavaPlugin(),
@@ -48,7 +48,7 @@ public class StrataPlugin :
             PaperScreens.install(service)
             ticker = server.scheduler.runTaskTimer(this, Runnable(service::tick), 1L, 1L)
         }
-        uiRegistration = PaperUi.install(PaperUiAdapter())
+        uiRegistration = Strata.install(PaperUiAdapter())
         server.onlinePlayers.forEach { player ->
             screens?.join(player)
             folia?.join(player)

@@ -121,6 +121,20 @@ Exact target membership remains explicit in the build; no runtime version-string
 
 The nonpublished `integration:minecraft-fabric-1.21.11` through `integration:minecraft-fabric-1.20` modules compile the complete shared GUI-graphics loaded-client suite and the matching input-generation and version-name roots against their remapped adapters, required Java toolchains, and exact Fabric API dependencies.
 Minecraft 1.21.4 and later use the Fabric Client GameTest adapter source root, while 1.21.3 through 1.20 use a standalone client entrypoint because their exact official Fabric API fixtures predate that module; 1.20.4 through 1.20.2 share the runner bridge needed for their dirt-message and level-cleanup APIs, while 1.20 and 1.20.1 share the compiler-proven preceding readiness and level-clear variant in exact owning projects.
-Fabric API is confined to these integration modules; the published runtimes do not depend on it.
+Fabric API is required by both published runtimes and integration modules.
 The generated Minecraft CI plan invokes `ciMinecraftCheck` for every discovered version pair and writes version-qualified build evidence after exercising each remapped adapter inside its actual client.
 Those checks package and remap every applicable integration test Mod and runtime Mod, then repeat the loaded suite from the production jars with their nested common runtime jars.
+
+## Fabric API boundaries
+
+Fabric owns play payload registration, send/receive adapters, tick callbacks, connection generations, server lifecycle, and HUD insertion.
+The target matrix explicitly selects buffer versus typed-payload networking, typed versus named registry directions, and callback, layer registration, and registry HUD APIs.
+Strata retains the bounded opaque wire protocol and execution-owner queues; Fabric callbacks never execute application handlers directly.
+
+The remaining native hooks provide behavior outside these event contracts: resource invalidation before pack replacement (including failures before reload listeners), terminal resource-manager close, window focus cancellation, gameplay dispatch while a retained screen is present, and Canvas GUI consumption/discard and device teardown.
+Their tests establish ordering and safe release; ordinary tick, reload, or client-stopping events do not substitute for a GPU consumption fence.
+Play connection retirement ends remote sessions before a successor connection negotiates, including configuration transitions on a continuing socket.
+
+Run `python integration/fabric/run_acceptance.py <exact-version>` for dedicated-server acceptance against both development and production clients.
+`--development-only` selects the client run used by each exact-version CI job.
+The runner owns its loopback server and validates fresh input, revision, reconnection, closure, and shutdown receipts; installed server Mods use the same production Strata archive as clients.

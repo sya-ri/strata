@@ -14,7 +14,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import net.kyori.adventure.text.Component
 import java.nio.file.Files
 import java.nio.file.Path
@@ -83,14 +83,14 @@ internal class VelocityAcceptanceSession(
                 .start()
                 .thenCompose { startPerformance() }
                 .thenCompose {
-                    VelocityUi.execute(plugin) {
+                    Strata.execute(plugin) {
                         checkOwner()
                         Files.createDirectories(directory)
                         val run = requireNotNull(System.getProperty("strata.velocity.run"))
                         Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=${player.uniqueId}\ntext=confirmed\nactivations=$activations\nbackendSwitch=confirmed\nownerThread=confirmed\nuiPresentations=confirmed\nuiEvents=confirmed\nperformanceDirectory=$performanceDirectory\n")
                     }
                 }.thenCompose {
-                    VelocityUi.open(plugin, player) { UiDefinition("Strata proxy complete") { Column { Text("Proxy acceptance passed.") } } }
+                    Strata.open(plugin, player) { UiDefinition("Strata proxy complete") { Column { Text("Proxy acceptance passed.") } } }
                 }.whenComplete { _, failure ->
                     if (failure != null) proxy.consoleCommandSource.sendMessage(Component.text("Strata proxy HUD verification failed: $failure"))
                 }
@@ -104,7 +104,7 @@ internal class VelocityAcceptanceSession(
         performance = verification
         performanceDirectory = verification.directory.toAbsolutePath().toString()
         return verification.start().thenCompose {
-            VelocityUi.execute(plugin) {
+            Strata.execute(plugin) {
                 checkOwner()
                 verification.close()
                 performance = null

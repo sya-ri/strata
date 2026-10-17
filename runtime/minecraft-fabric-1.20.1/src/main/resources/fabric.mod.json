@@ -3,7 +3,7 @@
   "id": "strata",
   "version": "${version}",
   "name": "Strata",
-  "description": "A declarative Minecraft UI library with a separately installed Fabric client runtime.",
+  "description": "A declarative Minecraft UI library for Fabric clients and servers.",
   "authors": [
     "sya-ri"
   ],
@@ -13,21 +13,25 @@
     "issues": "https://github.com/sya-ri/strata/issues"
   },
   "license": "MIT",
-  "environment": "client",
+  "environment": "*",
   "entrypoints": {
     "client": [
       "dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"
+    ],
+    "main": [
+      "dev.s7a.strata.runtime.minecraft.fabric.StrataFabric"
     ]
   },
   "mixins": [
     "strata.client.mixins.json",
-    "strata.remote.mixins.json",
-    "strata.canvas.mixins.json"
+    "strata.canvas.mixins.json",
+    "strata.server.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${fabricLoader}",
     "minecraft": "${minecraft}",
     "fabric-language-kotlin": ">=${fabricLanguageKotlin}",
-    "java": ">=${java}"
+    "java": ">=${java}",
+    "fabric-api": "${fabricApi}"
   }
 }

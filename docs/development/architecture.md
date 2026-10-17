@@ -30,7 +30,7 @@ Use ordinary arithmetic when validated input bounds guarantee representable resu
 | `runtime:web` | Retained native DOM text, buttons, and progress indicators, including deterministic initial HTML adoption. | JavaScript browser adapter using the shared API and core; other profile capabilities currently fail explicitly. |
 | `runtime:minecraft` | Profile-backed component implementation, resources, bindings, and screen hosts. | Depends on public contracts and core without mapped game types. |
 | `runtime:minecraft-fonts-lwjgl` | Optional CPU font decoding, rasterization, and text ordering. | Uses common font contracts and target-matched native libraries. |
-| `runtime:minecraft-fabric-<version>` | Native screen, resource, input, and presentation adapters for one exact target. | Owns mapped Minecraft and Fabric dependencies. |
+| `runtime:minecraft-fabric-<version>` | Native screen, resource, input, presentation, and authenticated Fabric server adapters for one exact target. | Owns mapped Minecraft and Fabric dependencies. |
 | `integration:*` | External API, loaded-client, and documentation verification. | Not published. |
 | `detekt-rules` | Optional type-aware application authoring checks for components, modifiers, state, and UI roots. | Published build-tool plugin; Detekt API is compile-only, and Strata API/runtime modules are test dependencies only. |
 | `examples:web` | Interactive browser demos and deterministic initial-document factories. | Uses public API and web runtime contracts; not published. |

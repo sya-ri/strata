@@ -17,7 +17,7 @@ import dev.s7a.strata.ui.UiDefinition
  */
 public object VelocityDemoScreens {
     /**
-     * Creates independent state inside the factory passed to VelocityUi.open.
+     * Creates independent state inside the factory passed to Strata.open.
      */
     public fun counter(): UiDefinition {
         val name = TextFieldState("Player", 32)

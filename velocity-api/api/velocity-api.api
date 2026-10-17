@@ -1,15 +1,15 @@
-public final class dev/s7a/strata/velocity/UiDefinitionExtensionsKt {
-	public static final fun open (Ldev/s7a/strata/ui/UiDefinition;Ljava/lang/Object;Lcom/velocitypowered/api/proxy/Player;)Ljava/util/concurrent/CompletableFuture;
-}
-
-public final class dev/s7a/strata/velocity/VelocityUi {
-	public static final field INSTANCE Ldev/s7a/strata/velocity/VelocityUi;
+public final class dev/s7a/strata/velocity/Strata {
+	public static final field INSTANCE Ldev/s7a/strata/velocity/Strata;
 	public final fun capabilities (Lcom/velocitypowered/api/proxy/Player;)Ljava/util/concurrent/CompletableFuture;
 	public final fun execute (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
 	public final fun install (Ldev/s7a/strata/velocity/VelocityUiProvider;)Ljava/lang/AutoCloseable;
 	public final fun open (Ljava/lang/Object;Lcom/velocitypowered/api/proxy/Player;Lkotlin/jvm/functions/Function0;)Ljava/util/concurrent/CompletableFuture;
 	public final fun register (Ljava/lang/Object;Ldev/s7a/strata/projection/ProjectionType;)Ljava/util/concurrent/CompletableFuture;
 	public final fun release (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class dev/s7a/strata/velocity/UiDefinitionExtensionsKt {
+	public static final fun open (Ldev/s7a/strata/ui/UiDefinition;Ljava/lang/Object;Lcom/velocitypowered/api/proxy/Player;)Ljava/util/concurrent/CompletableFuture;
 }
 
 public abstract interface class dev/s7a/strata/velocity/VelocityUiProvider {
