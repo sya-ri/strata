@@ -144,7 +144,8 @@ internal class StrataMinecraftLegacyLoadedSuite {
             runCatching {
                 context.computeOnClient { minecraft -> minecraft.setScreen(screen) }
                 context.waitFor { minecraft ->
-                    minecraft.screen === screen && probe.isReady() && readRenderWork(minecraft).inputs != null
+                    minecraft.screen === screen && probe.isReady() &&
+                        readRenderWork(minecraft).let { 0L < it.renderExtractions && it.inputs != null }
                 }
                 context.computeOnClient { minecraft ->
                     probe.verify(

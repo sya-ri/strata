@@ -1493,7 +1493,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftClientScreenAccess.setScreen(it, screen) })
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
-                        MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() && readRenderWork(minecraft).inputs != null
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() &&
+                            readRenderWork(minecraft).let { 0L < it.renderExtractions && it.inputs != null }
                     },
                 )
                 context.computeOnClient(

@@ -105,7 +105,7 @@ internal object MinecraftCycleButtonSelectionGameTest {
         context: MinecraftCanvasTestContext,
         screen: FabricMinecraftScreen,
     ) {
-        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
-        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
+        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.completedFrames(context, screen))
+        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.completedFrames(context, screen))
     }
 }

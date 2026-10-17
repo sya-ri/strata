@@ -90,7 +90,7 @@ internal object MinecraftHighContrastGameTest {
                 Pointer.entries.map { pointer ->
                     context.movePointer(pointer.position)
                     repeat(2) {
-                        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
+                        MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.completedFrames(context, screen))
                     }
                     capture(context, phase, pointer)
                 }

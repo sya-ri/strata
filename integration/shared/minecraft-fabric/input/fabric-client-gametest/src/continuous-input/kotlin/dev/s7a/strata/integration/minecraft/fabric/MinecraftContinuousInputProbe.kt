@@ -70,7 +70,7 @@ internal class MinecraftContinuousInputProbe {
      * The frame counter is borrowed from the suite's existing native presentation observations.
      * A press resets scrolling, so its immediately following release must use the reset geometry as well.
      *
-     * @param frameCount completed common frames requested by the native screen.
+     * @param frameCount completed native presentation callbacks observed by the test fixture.
      * @param scroll native downward scroll of one wheel unit at [position], returning native consumption.
      * @param move native move at [position].
      * @param click native primary press followed immediately by release at [position].
@@ -101,13 +101,13 @@ internal class MinecraftContinuousInputProbe {
         click()
         verifyClick()
         val after = frameCount()
-        check(after == before) { "The input burst unexpectedly requested a host frame: before=$before, after=$after" }
+        check(after == before) { "The input burst crossed a native presentation boundary: before=$before, after=$after" }
         return buildString {
             appendLine("status=passed")
             appendLine("input=typed-native-screen-callbacks")
             appendLine("cases=scroll-move-press-release,scroll-press-release")
-            appendLine("initialHostFrames=$before")
-            appendLine("finalHostFrames=$after")
+            appendLine("initialNativeFrames=$before")
+            appendLine("finalNativeFrames=$after")
             appendLine("moveLocal=$moved")
             appendLine("pressLocal=$pressed")
             appendLine("releaseLocal=$released")

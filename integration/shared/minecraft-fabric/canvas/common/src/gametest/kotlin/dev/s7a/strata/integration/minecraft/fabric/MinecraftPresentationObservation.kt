@@ -19,10 +19,15 @@ internal object MinecraftPresentationObservation {
     private val frames = WeakHashMap<FabricMinecraftScreen, FabricFrameObserver>()
 
     /**
+     * Registers external observation on first use and reads actual completed framework callbacks thereafter.
+     */
+    fun completedFrames(screen: FabricMinecraftScreen): Long = frames.getOrPut(screen) { FabricFrameObserver(screen) }.frames
+
+    /**
      * Reads actual state; object identity proves reuse, never an inferred number of rasterizations or uploads.
      */
     fun read(screen: FabricMinecraftScreen): Snapshot {
-        val observer = frames.getOrPut(screen) { FabricFrameObserver(screen) }
+        val completed = completedFrames(screen)
         val presenter = if (optional(screen, "portableFrames") != null) screen else member(screen, "presentation")
         val prepared = optional(member(presenter, "portableFrames"), "current")
         val textures =
@@ -34,7 +39,7 @@ internal object MinecraftPresentationObservation {
         val images = member(owner, "images") as Map<*, *>
         val sources = images.values.map { member(checkNotNull(it), "entry") }
         return Snapshot(
-            observer.frames,
+            completed,
             optional(presenter, "preparedCommands"),
             optional(presenter, "preparedInputs"),
             textures,
