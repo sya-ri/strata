@@ -3,6 +3,12 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
+## 0.2.3 - 2026-10-17
+
+Lower retained-frame, layout, text and image-processing costs; vanilla item tooltips for bound Slots; high-contrast widget borders; and more precise modifier authoring checks. The measured JVM sample reduces clean-frame allocation from 112 to 32 B/op and 1024×1024 PNG allocation from 12.59 to 4.20 MB/op. Production performance hooks and internal diagnostic APIs have been removed; optional testkit observation remains external, and unavailable work/upload metrics are explicit. Existing application screen definitions and remote protocol messages require no migration from 0.2.2.
+
+[Detailed changes and upgrade notes](docs/releases/v0.2.3.md)
+
 ## 0.2.2 - 2026-10-06
 
 Shared performance testkit, lower retained-frame and text-editing costs, bounded repeated-pattern templates, faster CPU composition, and exact GPU sampled-image presentation on supported adapters. Existing screen and communication contracts remain unchanged; the release notes compare measured results with public 0.2.1 and track remaining performance work.
