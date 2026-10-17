@@ -20,7 +20,10 @@ public interface Modifier {
      * @param element the immutable description to append.
      * @return a new value whose existing descriptions remain outermost.
      */
-    public fun then(element: ModifierElement): Modifier = ModifierChain(elements() + element)
+    public fun then(element: ModifierElement): Modifier {
+        val outer = elements()
+        return ModifierChain(if (outer.isEmpty()) listOf(element) else outer + element)
+    }
 
     /**
      * Appends another chain inside the existing chain.
