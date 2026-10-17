@@ -2,6 +2,8 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
@@ -79,6 +81,25 @@ public open class NonuniformOverlayBenchmark {
         public fun next(): HeadlessImage {
             phase = 1 - phase
             return rasterizeHeadless(frames[phase], size)
+        }
+    }
+
+    /**
+     * Owns the fixed generated matrix contract for this independent corpus.
+     */
+    public companion object {
+        /**
+         * Declares the optional operation-only report without a fixture-specific launcher.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = NonuniformOverlayOperationReport
+
+        /**
+         * Checks all 6 compiled AverageTime cases before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            check(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")).size == 6)
         }
     }
 }

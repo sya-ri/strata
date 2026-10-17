@@ -5,11 +5,21 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import java.lang.reflect.InvocationTargetException
 import java.security.MessageDigest
+import java.util.concurrent.Executors
+import java.util.zip.Adler32
+import java.util.zip.CRC32
 import java.util.zip.Inflater
+import javax.imageio.ImageIO
 
 /**
  * Verifies deterministic PNG structure, checksums, and stored-block boundaries.
@@ -152,6 +162,182 @@ internal class HeadlessPngTest {
         } finally {
             inflater.end()
         }
+    }
+
+    @Test
+    fun directOutputMatchesAnIndependentCanonicalEncoderAtRowAndBlockBoundaries() {
+        val sizes =
+            listOf(
+                IntSize(1, 1),
+                IntSize(2, 3),
+                IntSize(54, 302),
+                IntSize(1, 13_106),
+                IntSize(1, 13_107),
+                IntSize(1, 13_108),
+                IntSize(2, 7_282),
+                IntSize(2, 14_564),
+                IntSize(4, 3_856),
+                IntSize(64, 256),
+                IntSize(16_384, 1),
+                IntSize(126, 131),
+                IntSize(127, 130),
+                IntSize(128, 129),
+                IntSize(129, 128),
+                IntSize(3, 13_108),
+            )
+        sizes.forEach { size ->
+            listOf(0, 127, 255).forEach { alpha ->
+                val image = patternedImage(size, alpha)
+                val expected = canonicalPng(size, image.copyArgb())
+                val actual = image.encodePng()
+                assertArrayEquals(expected, actual, "size=$size, alpha=$alpha")
+                assertTrue(parseChunks(actual).all { chunk -> chunk.crcValid })
+                verifyDecodedPixels(image, actual)
+            }
+        }
+    }
+
+    @Test
+    fun fullHdOutputPreservesEveryPartialAlphaPixelAndCanonicalByte() {
+        val image = patternedImage(IntSize(1920, 1080), 127)
+        val encoded = image.encodePng()
+        assertArrayEquals(canonicalPng(image.size, image.copyArgb()), encoded)
+        verifyDecodedPixels(image, encoded)
+    }
+
+    @Test
+    fun modifyingReturnedStorageCannotChangeAnotherEncodingOrSourcePixels() {
+        val image = patternedImage(IntSize(128, 129), 127)
+        val pixels = image.copyArgb()
+        val first = image.encodePng()
+        val second = image.encodePng()
+        val expected = second.copyOf()
+        first.fill(0)
+        assertArrayEquals(expected, second)
+        assertArrayEquals(expected, image.encodePng())
+        assertArrayEquals(pixels, image.copyArgb())
+    }
+
+    @Test
+    fun concurrentCallsKeepIndependentBlockAndChecksumState() {
+        val image = patternedImage(IntSize(126, 131), 127)
+        val expected = canonicalPng(image.size, image.copyArgb())
+        val executor = Executors.newFixedThreadPool(4)
+        try {
+            val futures = (0 until 8).map { executor.submit<ByteArray> { image.encodePng() } }
+            val outputs = futures.map { future -> future.get() }
+            outputs.forEach { output -> assertArrayEquals(expected, output) }
+            outputs.first().fill(0)
+            outputs.drop(1).forEach { output -> assertArrayEquals(expected, output) }
+            assertArrayEquals(expected, image.encodePng())
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun allDerivedLengthsFailBeforeAllocatingOutputOrReadingPixels() {
+        // Public image construction cannot supply these extents without allocating enormous valid rasters.
+        val encoder = Class.forName("dev.s7a.strata.runtime.headless.HeadlessImplementation\$PngEncoder")
+        val instance = encoder.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
+        val encode = encoder.getDeclaredMethod("encode", IntSize::class.java, IntArray::class.java).apply { isAccessible = true }
+        val cases =
+            listOf(
+                IntSize(536_870_912, 1) to "PNG row width",
+                IntSize(1, 429_496_730) to "PNG scanline data",
+                IntSize(536_829_953, 1) to "PNG deflate stream",
+                IntSize(76_689_993, 7) to "PNG zlib stream",
+                IntSize(536_829_950, 1) to "PNG chunk",
+                IntSize(536_829_939, 1) to "PNG output",
+            )
+        cases.forEach { (size, label) ->
+            val failure = assertThrows(InvocationTargetException::class.java) { encode.invoke(instance, size, IntArray(0)) }
+            assertTrue(failure.cause is ArithmeticException)
+            assertEquals("$label exceeds Int.MAX_VALUE.", failure.cause?.message)
+        }
+    }
+
+    private fun patternedImage(
+        size: IntSize,
+        alpha: Int,
+    ): HeadlessImage {
+        val source =
+            createDrawImage(
+                size,
+                IntArray(size.width * size.height) { index ->
+                    (alpha shl 24) or (index * 73_471 and 0xFFFFFF)
+                },
+            )
+        val bounds = IntRect(0, 0, size.width, size.height)
+        return rasterizeHeadless(listOf(DrawCommand.BlitImage(source, bounds, bounds)), size)
+    }
+
+    private fun verifyDecodedPixels(
+        image: HeadlessImage,
+        png: ByteArray,
+    ) {
+        val decoded = ByteArrayInputStream(png).use { input -> checkNotNull(ImageIO.read(input)) }
+        assertEquals(image.size.width, decoded.width)
+        assertEquals(image.size.height, decoded.height)
+        assertArrayEquals(image.copyArgb(), decoded.getRGB(0, 0, decoded.width, decoded.height, null, 0, decoded.width))
+    }
+
+    private fun canonicalPng(
+        size: IntSize,
+        pixels: IntArray,
+    ): ByteArray {
+        val scanlines = ByteArrayOutputStream()
+        DataOutputStream(scanlines).use { rows ->
+            pixels.forEachIndexed { index, argb ->
+                if (index % size.width == 0) rows.writeByte(0)
+                rows.writeByte(argb ushr 16)
+                rows.writeByte(argb ushr 8)
+                rows.writeByte(argb)
+                rows.writeByte(argb ushr 24)
+            }
+        }
+        val raw = scanlines.toByteArray()
+        val compressed = ByteArrayOutputStream()
+        DataOutputStream(compressed).use { zlib ->
+            zlib.writeShort(0x7801)
+            var offset = 0
+            while (offset < raw.size) {
+                val count = minOf(65_535, raw.size - offset)
+                zlib.writeByte(if (offset + count == raw.size) 1 else 0)
+                zlib.writeByte(count)
+                zlib.writeByte(count ushr 8)
+                zlib.writeByte(count.inv())
+                zlib.writeByte(count.inv() ushr 8)
+                zlib.write(raw, offset, count)
+                offset += count
+            }
+            zlib.writeInt(Adler32().apply { update(raw) }.value.toInt())
+        }
+        val header = ByteArrayOutputStream()
+        DataOutputStream(header).use { ihdr ->
+            ihdr.writeInt(size.width)
+            ihdr.writeInt(size.height)
+            ihdr.write(byteArrayOf(8, 6, 0, 0, 0))
+        }
+        val png = ByteArrayOutputStream()
+        DataOutputStream(png).use { output ->
+            output.write(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
+            listOf("IHDR" to header.toByteArray(), "IDAT" to compressed.toByteArray(), "IEND" to ByteArray(0)).forEach { (type, payload) ->
+                val bytes = type.encodeToByteArray()
+                output.writeInt(payload.size)
+                output.write(bytes)
+                output.write(payload)
+                output.writeInt(
+                    CRC32()
+                        .apply {
+                            update(bytes)
+                            update(payload)
+                        }.value
+                        .toInt(),
+                )
+            }
+        }
+        return png.toByteArray()
     }
 
     private fun parseChunks(png: ByteArray): List<PngChunk> {

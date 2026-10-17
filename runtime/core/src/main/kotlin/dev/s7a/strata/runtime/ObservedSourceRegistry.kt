@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.StateObserverNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.platform.IdentityMap
 import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -15,9 +14,7 @@ import dev.s7a.strata.state.StateSource
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions") // Subscription and dependency lifetimes must share one operation boundary.
-internal class ObservedSourceRegistry(
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
-) : AutoCloseable {
+internal class ObservedSourceRegistry : AutoCloseable {
     private val bindings = IdentityMap<StateSource<*>, ObservedSourceBinding>()
     private val owners = IdentityMap<StateObserverNode, List<StateSource<*>>>()
     private val unusedBindings = LinkedHashSet<ObservedSourceBinding>()
@@ -27,12 +24,6 @@ internal class ObservedSourceRegistry(
     private var contentUpdates = false
     private val changed = ArrayDeque<ObservedSourceBinding>()
     private val notified: MutableSet<StateObserverNode> = identitySet()
-
-    /**
-     * Number of currently acquired external subscriptions, excluding derived graph edges.
-     */
-    var activeSubscriptions: Int = 0
-        private set
 
     /**
      * Consumes the owner-thread scheduling signal without evaluating any content.
@@ -79,7 +70,6 @@ internal class ObservedSourceRegistry(
         previous?.forEach { source -> checkNotNull(bindings[source]).consumers.remove(node) }
         sources.forEach { source -> checkNotNull(bindings[source]).consumers.add(node) }
         if (previous != null) release(previous)
-        monitoring.record(UiRenderMetric.ConsumerNotification)
         node.commitObservedValues(values(sources))
         contentUpdates = true
     }
@@ -98,7 +88,6 @@ internal class ObservedSourceRegistry(
     fun commit() {
         bindings.values.forEach { binding ->
             if (binding.commit()) {
-                monitoring.record(UiRenderMetric.RootValueChange)
                 changed.addLast(binding)
             }
         }
@@ -107,12 +96,10 @@ internal class ObservedSourceRegistry(
             val binding = changed.removeFirst()
             notified.addAll(binding.consumers)
             binding.dependents.forEach { dependent ->
-                monitoring.record(UiRenderMetric.Projection)
-                if (dependent.derive()) changed.addLast(dependent) else monitoring.record(UiRenderMetric.ProjectionEqual)
+                if (dependent.derive()) changed.addLast(dependent)
             }
         }
         notified.forEach { node ->
-            monitoring.record(UiRenderMetric.ConsumerNotification)
             node.commitObservedValues(values(checkNotNull(owners[node])))
         }
         if (notified.isNotEmpty()) contentUpdates = true
@@ -141,18 +128,12 @@ internal class ObservedSourceRegistry(
         check(acquiring.add(source)) { "Derived state dependencies must be acyclic." }
         try {
             val upstream = (source as? DerivedStateSource<*>)?.let { acquire(it.upstream) }
-            if (upstream != null) monitoring.record(UiRenderMetric.Projection)
             return runCatching { ObservedSourceBinding(source, upstream) }
                 .getOrElse { failure ->
                     if (upstream != null) releaseBinding(upstream)
                     throw failure
                 }.also { binding ->
-                    if (upstream == null) {
-                        activeSubscriptions += 1
-                        monitoring.subscription(true)
-                    } else {
-                        upstream.dependents.add(binding)
-                    }
+                    upstream?.dependents?.add(binding)
                 }
         } finally {
             acquiring.remove(source)
@@ -184,7 +165,7 @@ internal class ObservedSourceRegistry(
                 upstream.dependents.remove(binding)
                 releaseBinding(upstream)
             }
-            failures.capture { closeBinding(binding) }
+            failures.capture { binding.close() }
         }
         failures.throwIfPresent()
     }
@@ -201,15 +182,7 @@ internal class ObservedSourceRegistry(
         val closing = bindings.values
         bindings.clear()
         val failures = FailureAccumulator()
-        closing.forEach { binding -> failures.capture { closeBinding(binding) } }
+        closing.forEach { binding -> failures.capture { binding.close() } }
         failures.throwIfPresent()
-    }
-
-    private fun closeBinding(binding: ObservedSourceBinding) {
-        if (binding.upstream == null) {
-            activeSubscriptions -= 1
-            monitoring.subscription(false)
-        }
-        binding.close()
     }
 }

@@ -160,5 +160,8 @@ The first admitted resource-image resolution is fixed for the host lifetime; cre
 
 `PlayerHead` uses a detached skin snapshot, including the optional hat layer.
 Live `Slot` bindings use `Slots.playerInventory`, `Slots.container`, or raw-index `Slots.activeMenu` and delegate transactions to the active server menu.
+Hovering a populated bound Slot in the active Minecraft screen displays the complete vanilla item tooltip, including native item-provided content, advanced-tooltip settings and screen-edge positioning.
+The native carried-item policy still applies, and `highlightable` controls the Slot highlight independently of its item tooltip.
+Unbound Slots have no native item tooltip; compose the ordinary `Tooltip` component for caller-defined content.
 Portable hosts can render ordinary Slot child content, but cannot draw native items.
 See the [component overview](../reference/components.md) and [inventory example](../examples/screens.md) for compositions.

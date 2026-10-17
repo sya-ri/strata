@@ -31,6 +31,19 @@ import org.openjdk.jmh.annotations.TearDown
 @OptIn(InternalStrataRuntimeApi::class)
 public open class ReactiveRenderingBenchmark {
     /**
+     * Exposes the original deterministic gate to shared fixture selection.
+     */
+    public companion object {
+        /**
+         * Verifies every original reactive workload before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            ReactiveWorkEvidence.main(emptyArray())
+        }
+    }
+
+    /**
      * Publishes one scenario input and returns a completed retained frame.
      */
     @Benchmark
@@ -99,6 +112,11 @@ public open class ReactiveRenderingBenchmark {
          * Measures source publication plus one frame; diagnostic intervals span 64 invocations.
          */
         public fun nextFrame(): RuntimeUiFrame = monitor?.sample(::publishFrame) ?: publishFrame()
+
+        /**
+         * Reads the actual settled frame without publishing a source revision.
+         */
+        public fun cleanFrame(): RuntimeUiFrame = session.frame(constraints)
 
         private fun publishFrame(): RuntimeUiFrame {
             revision += 1

@@ -654,7 +654,7 @@ Caller-owned generic option sequence, enum factory, formatting, and wraparound s
 
 ```kotlin
 class CycleButtonState<T : Any>(values: List<T>, initialValue: T)
-constructor(values: Collection<T>, initialValue: T, toString: (T) -> String) : this(values.toList(), initialValue)
+constructor(values: Collection<T>, initialValue: T, toString: (T) -> String) : this(values as? List<T> ?: values.toList(), initialValue)
 constructor(values: List<T>) : this(values, requireFirst(values))
 fun format(value: T): String
 fun next(): T

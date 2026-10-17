@@ -1,5 +1,6 @@
 package dev.s7a.strata.performance
 
+import com.google.gson.JsonObject
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
 import net.minecraft.client.Minecraft
 import org.junit.jupiter.api.Test
@@ -12,6 +13,34 @@ import kotlin.test.assertTrue
  * Host-independent callback orchestration regressions; loaded-host compatibility requires separate GameTests.
  */
 class MinecraftPerformanceMeterTest {
+    @Test
+    fun payloadDeltasRemainSeparateAndOlderRuntimeMetricsRemainUnavailable() {
+        val screen = NativeMeterFixture()
+        val unavailable = JsonObject()
+        NativePresentationCounters.append(unavailable, screen, NativePresentationCounters.read(screen))
+        assertFalse(unavailable.getAsJsonObject("native_payload").get("available").asBoolean)
+        assertFalse(unavailable.getAsJsonObject("native_gpu").get("available").asBoolean)
+        val payload = NativeMeterFixture.UploadWork()
+        screen.uploadWork = payload
+        payload.sourceUploadByteCount = 40L
+        val baseline = NativePresentationCounters.read(screen)
+        payload.sourceUploadByteCount += 24L
+        payload.rasterUploadByteCount += 320L
+        payload.samplingUploadByteCount += 96L
+        payload.tintFallbackCount += 2L
+        payload.otherIneligibleFallbackCount += 1L
+        val report = JsonObject()
+        NativePresentationCounters.append(report, screen, baseline)
+        val evidence = report.getAsJsonObject("native_payload")
+        assertTrue(evidence.get("available").asBoolean)
+        assertEquals(24L, evidence.get("sourceUploadByteCount").asLong)
+        assertEquals(320L, evidence.get("rasterUploadByteCount").asLong)
+        assertEquals(96L, evidence.get("samplingUploadByteCount").asLong)
+        assertEquals(2L, evidence.get("tintFallbackCount").asLong)
+        assertEquals(0L, evidence.get("alphaCutoffFallbackCount").asLong)
+        assertEquals(1L, evidence.get("otherIneligibleFallbackCount").asLong)
+    }
+
     @Test
     fun captureAndSettlingAreOutsideCompleteSamplesAndReleaseMonitoring() {
         val screen = NativeMeterFixture()

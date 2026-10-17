@@ -12,15 +12,12 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.map
 
 /**
- * Shared native acceptance for automatic direct updates, projected equality, and precise phase work.
+ * Shared native acceptance for automatic direct updates, projected equality, and exact output and texture reuse.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object ReactiveRenderScenario {
@@ -30,19 +27,17 @@ internal object ReactiveRenderScenario {
     fun verify(driver: ReactiveRenderTestDriver): String {
         val source = driver.onClient { ReactiveRenderSource(1) }
         val progress = driver.onClient { ReactiveRenderSource(0.25) }
-        val owner = driver.onClient { driver.open(reactiveScreen(source, progress)) }
+        driver.onClient { driver.open(reactiveScreen(source, progress)) }
         val outcome =
             runCatching {
                 awaitStableFrame(driver)
-                val monitor = driver.onClient { owner.startRenderMonitoring() }
-                verifyStableFrames(driver, monitor, source)
-                verifyProjectedText(driver, monitor, source)
-                verifyProgress(driver, monitor, progress)
-                driver.onClient { monitor.close() }
+                verifyStableFrames(driver, source)
+                verifyProjectedText(driver, source)
+                verifyProgress(driver, progress)
                 driver.assertPixels(literalReference())
                 val inputEvidence = TextInputAppearanceScenario.verify(driver)
                 val clipEvidence = FractionalClipScenario.verify(driver)
-                "stableHostFrames=100\nequalMapUiWork=0\nequalMapNativeWork=0\nchangedMapEvaluations=1\nprogressMeasure=0\nprogressLayout=0\noverlayCallbacksOnPaintOnlyLowerUpdate=0\noverlayCallbacksOnChildGeometryChange=1\noverlayComposition=clipped-translucent-and-root-opaque\nupdatedPixels=literal-headless-exact\n" + inputEvidence + clipEvidence
+                "stablePresentedFrames=100\nequalMapCommands=reused\nequalMapTextures=reused\nprogressPixels=literal-headless-exact\n" + inputEvidence + clipEvidence
             }
         val cleanup = runCatching { driver.onClient { driver.closeScreen() } }
         outcome.exceptionOrNull()?.let { failure ->
@@ -91,11 +86,11 @@ internal object ReactiveRenderScenario {
         }
 
     private fun awaitStableFrame(driver: ReactiveRenderTestDriver) {
-        driver.await { 0L < driver.work().preparations }
+        driver.await { driver.work().inputs != null }
         var previous = driver.onClient { driver.work() }
         driver.await {
             val current = driver.work()
-            val settled = previous.hostFrames < current.hostFrames && previous.preparations == current.preparations
+            val settled = previous.renderExtractions < current.renderExtractions && previous.inputs === current.inputs
             previous = current
             settled
         }
@@ -103,118 +98,69 @@ internal object ReactiveRenderScenario {
 
     private fun verifyStableFrames(
         driver: ReactiveRenderTestDriver,
-        monitor: UiRenderMonitor,
         source: ReactiveRenderSource<Int>,
     ) {
+        val callbacks = driver.onClient { ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls }
         val baseline = driver.onClient { driver.work() }
-        driver.await { 100L <= driver.work().hostFrames - baseline.hostFrames }
+        driver.await { 100L <= driver.work().renderExtractions - baseline.renderExtractions }
         driver.onClient {
-            assertNoUiWork(monitor.snapshot())
-            assertNoNativeWork(baseline, driver.work())
-            check(100L <= monitor.snapshot().counts.getValue(UiRenderMetric.FrameSuccess))
+            assertSamePresentation(baseline, driver.work())
+            check(callbacks == (ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls))
             check(source.subscriptions == 1)
         }
     }
 
     private fun verifyProjectedText(
         driver: ReactiveRenderTestDriver,
-        monitor: UiRenderMonitor,
         source: ReactiveRenderSource<Int>,
     ) {
-        val equal = publish(driver, monitor) { source.publish(3) }
+        val callbacks = driver.onClient { ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls }
+        val equal = publish(driver) { source.publish(3) }
         driver.onClient {
-            val snapshot = monitor.snapshot()
-            assertNoUiWork(snapshot)
-            check(snapshot.counts.getValue(UiRenderMetric.Projection) == 1L)
-            check(snapshot.counts.getValue(UiRenderMetric.ProjectionEqual) == 1L)
-            assertNoNativeWork(equal, driver.work())
+            assertSamePresentation(equal, driver.work())
+            check(callbacks == (ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls))
         }
-        val changed = publish(driver, monitor) { source.publish(4) }
+        val changed = publish(driver) { source.publish(4) }
         driver.onClient {
-            val snapshot = monitor.snapshot()
-            check(snapshot.overflowed.not())
-            check(snapshot.counts.getValue(UiRenderMetric.StateComponentEvaluation) == 1L)
-            check(0L < snapshot.counts.getValue(UiRenderMetric.Paint))
-            check(changed.preparations < driver.work().preparations)
-            // Ancestor paint can depend on child geometry cached during measure/layout, even at fixed outer size.
-            check(0L < snapshot.counts.getValue(UiRenderMetric.Measure))
-            check(snapshot.counts.getValue(UiRenderMetric.OverlayPaint) == 1L)
-            check(snapshot.counts.getValue(UiRenderMetric.RootOverlayPaint) == 1L)
-            val progressId = monitor.findNodes(ElementKey("progress")).single()
-            check(
-                snapshot.nodes
-                    .single { it.id == progressId }
-                    .counts
-                    .getValue(UiRenderMetric.ContentEvaluation) == 0L,
-            )
+            check(changed.commands !== driver.work().commands)
+            check(changed.inputs !== driver.work().inputs)
+            check(ReactiveRenderOverlays.localCalls == callbacks.first + 1L && ReactiveRenderOverlays.rootCalls == callbacks.second + 1L)
         }
     }
 
     private fun verifyProgress(
         driver: ReactiveRenderTestDriver,
-        monitor: UiRenderMonitor,
         progress: ReactiveRenderSource<Double>,
     ) {
-        val before = publish(driver, monitor) { progress.publish(0.75) }
+        val callbacks = driver.onClient { ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls }
+        val before = publish(driver) { progress.publish(0.75) }
         driver.onClient {
-            val snapshot = monitor.snapshot()
-            check(snapshot.counts.getValue(UiRenderMetric.StateComponentEvaluation) == 1L)
-            check(snapshot.counts.getValue(UiRenderMetric.Measure) == 0L)
-            check(snapshot.counts.getValue(UiRenderMetric.Layout) == 0L)
-            check(snapshot.counts.getValue(UiRenderMetric.Paint) == 1L)
-            assertCachedOverlays(snapshot)
             val after = driver.work()
-            check(before.preparations < after.preparations)
-            check(before.rasterizations < after.rasterizations && before.uploads < after.uploads) {
-                "Changed lower progress must recompose its portable layer, including the cached foreground: before=$before, after=$after"
-            }
+            check(before.commands !== after.commands && before.inputs !== after.inputs)
+            check(callbacks == (ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls))
+            check(before.samePortable(after).not()) { "Changed lower progress must recompose its complete portable layer." }
         }
     }
 
     private fun publish(
         driver: ReactiveRenderTestDriver,
-        monitor: UiRenderMonitor,
         action: () -> Unit,
     ): ReactiveNativeWork {
         val before =
             driver.onClient {
-                monitor.checkpoint()
+                val snapshot = driver.work()
                 action()
-                driver.work()
+                snapshot
             }
-        driver.await { before.hostFrames < driver.work().hostFrames && 0L < monitor.snapshot().counts.getValue(UiRenderMetric.FrameSuccess) }
+        driver.await { before.renderExtractions < driver.work().renderExtractions }
         return before
     }
 
-    private fun assertNoUiWork(snapshot: UiRenderSnapshot) {
-        check(snapshot.overflowed.not())
-        listOf(
-            UiRenderMetric.RootEvaluation,
-            UiRenderMetric.ContentEvaluation,
-            UiRenderMetric.NodeUpdate,
-            UiRenderMetric.Measure,
-            UiRenderMetric.Layout,
-            UiRenderMetric.Paint,
-            UiRenderMetric.OverlayPaint,
-            UiRenderMetric.RootOverlayPaint,
-            UiRenderMetric.Semantics,
-        ).forEach { metric ->
-            check(snapshot.counts.getValue(metric) == 0L) { "Unexpected reactive UI work: $metric=${snapshot.counts.getValue(metric)}" }
-        }
-    }
-
-    private fun assertCachedOverlays(snapshot: UiRenderSnapshot) {
-        check(snapshot.overflowed.not())
-        check(snapshot.counts.getValue(UiRenderMetric.OverlayPaint) == 0L)
-        check(snapshot.counts.getValue(UiRenderMetric.RootOverlayPaint) == 0L)
-    }
-
-    private fun assertNoNativeWork(
+    private fun assertSamePresentation(
         before: ReactiveNativeWork,
         after: ReactiveNativeWork,
     ) {
-        check(before.preparations == after.preparations && before.rasterizations == after.rasterizations && before.uploads == after.uploads) {
-            "Equal mapped output changed native presentation: before=$before, after=$after"
-        }
+        check(before.commands === after.commands && before.inputs === after.inputs)
+        check(before.samePortable(after) && before.sameSources(after)) { "Stable content must retain its real native owners." }
     }
 }

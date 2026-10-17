@@ -14,7 +14,7 @@ For published artifacts, use the documentation at the matching [release tag](htt
 | [Screens and state](guides/screens-and-state.md) | Declare a UI, switch Screen/HUD presentation, control input, own state, and connect resources. |
 | [Paper and Folia screens](guides/paper.md) | Install the server plugin, open player screens, and register matching client extensions. |
 | [Velocity screens](guides/velocity.md) | Own screens on a proxy, queue UI state changes, and coexist with Paper backends. |
-| [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, and alignment. |
+| [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, alignment, and responsive panels. |
 | [Modifiers](guides/modifiers.md) | Add sizing, backgrounds, input, focus, and parent-scope behavior. |
 | [Authoring checks](guides/authoring-checks.md) | Install opt-in Detekt checks and understand each rule's examples and limits. |
 | [Text and editing](guides/text.md) | Display labels, edit single-line or multiline values, and select fonts. |
@@ -51,7 +51,7 @@ See the [deprecation list](../DEPRECATION.md) for API migration examples and rem
 Start with [Contributing](../CONTRIBUTING.md) and the [architecture](development/architecture.md).
 Use [build and verification](development/build.md) for local commands, [CI](development/ci.md) for workflow ownership, [release](development/release.md) for publication, and [documentation maintenance](development/documentation.md) for generated content.
 Runtime contributors should also read [UI sessions](development/ui-sessions.md), [rendering](development/rendering.md), [performance](development/performance.md), and [font verification](development/font-verification.md).
-Use [render monitoring](development/render-monitoring.md) to verify actual update work and the [independent screen exercise](development/skill-forward-evaluation.md) to maintain the skill's authoring guidance.
+Use [measurement boundaries](development/render-monitoring.md) to keep verification outside production processing and the [independent screen exercise](development/skill-forward-evaluation.md) to maintain the skill's authoring guidance.
 Use the [performance testkit](development/performance-testkit.md) to share measurement and evidence contracts with downstream applications.
 Follow [Minecraft adapter development](development/minecraft-versions.md) when changing version support.
 The generated [shared-source matrix](development/minecraft-shared-sources.md) shows which shared runtime sources each Minecraft version compiles.

@@ -5,7 +5,6 @@ import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
@@ -19,7 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 
 /**
- * Exercises source projection, ordinary conditionals, and diagnostics together on JVM and JavaScript.
+ * Exercises source projection, ordinary conditionals, frame reuse and cleanup on JVM and JavaScript.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PortableObservedSourceTest {
@@ -127,23 +126,16 @@ internal class PortableObservedSourceTest {
         try {
             session.attach()
             session.frame(Constraints())
-            val monitor = session.startRenderMonitoring()
-            try {
-                checkNotNull(deliver)(StateSnapshot(StateRevision(1), 2))
-                session.frame(Constraints())
-                assertEquals(listOf(0), seen)
-                checkNotNull(deliver)(StateSnapshot(StateRevision(2), 3))
-                session.frame(Constraints())
-                assertEquals(listOf(0, 1), seen)
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RootEvaluation])
-                assertEquals(1, subscriptions)
-                visible.value = false
-                session.frame(Constraints())
-                assertEquals(1, releases)
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.RootEvaluation])
-            } finally {
-                monitor.close()
-            }
+            checkNotNull(deliver)(StateSnapshot(StateRevision(1), 2))
+            session.frame(Constraints())
+            assertEquals(listOf(0), seen)
+            checkNotNull(deliver)(StateSnapshot(StateRevision(2), 3))
+            session.frame(Constraints())
+            assertEquals(listOf(0, 1), seen)
+            assertEquals(1, subscriptions)
+            visible.value = false
+            session.frame(Constraints())
+            assertEquals(1, releases)
         } finally {
             session.close()
         }

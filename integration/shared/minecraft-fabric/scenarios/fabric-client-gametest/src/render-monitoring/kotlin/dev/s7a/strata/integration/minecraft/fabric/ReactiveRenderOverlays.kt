@@ -16,6 +16,14 @@ import dev.s7a.strata.render.RootOverlayPaintScope
  * Its commands are retained while the lower components change; native composition must still replay them.
  */
 internal object ReactiveRenderOverlays : ModifierElement {
+    /**
+     * Actual callbacks of this synthetic fixture; production modifiers contain no observer or counter.
+     */
+    var localCalls: Long = 0L
+        private set
+    var rootCalls: Long = 0L
+        private set
+
     override val type: ModifierNodeType<*, *>
         get() = TYPE
 
@@ -36,12 +44,14 @@ internal object ReactiveRenderOverlays : ModifierElement {
         OverlayPaintNode,
         RootOverlayPaintNode {
         override fun paintOverlay(scope: PaintScope) {
+            localCalls += 1L
             scope.withClip(IntRect(16, 8, 112, 36)) {
                 scope.fillRectangle(IntRect(0, 0, 128, 48), ArgbColor(0x80FFFFFF.toInt()))
             }
         }
 
         override fun paintRootOverlay(scope: RootOverlayPaintScope) {
+            rootCalls += 1L
             scope.withClip(IntRect(40, 20, 48, 32)) {
                 scope.fillRectangle(IntRect(0, 0, 160, 48), ArgbColor(0xFFFFCC00.toInt()))
             }

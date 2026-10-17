@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 
 /**
- * Owns prepared display layers, native frame textures, and render-work counters for one Fabric screen.
+ * Owns prepared display layers, native frame textures, for one Fabric screen.
  *
  * Every operation is confined to the owning Minecraft client thread.
  * Portable command runs are rasterized into bounded native textures, while platform commands are submitted through a borrowed callback that is never retained.
@@ -31,37 +31,6 @@ internal class FabricMinecraftFramePresenter(
     private var preparedInputs: FabricMinecraftFrameInputs? = null
     private var pointerPosition: IntOffset? = null
     private var pointerFrameCommands: List<DrawCommand>? = null
-    private var renderExtractionCount: Long = 0L
-    private var hostFrameCount: Long = 0L
-    private var extractedPointerDispatchCount: Long = 0L
-    private var framePreparationCount: Long = 0L
-    private var portableRasterizationCount: Long = 0L
-    private var textureUploadCount: Long = 0L
-    private var sampledImageDirectHitCount: Long = 0L
-    private var sampledImageDirectMissCount: Long = 0L
-    private var sampledImageUploadCount: Long = 0L
-    private var sampledImageDrawCount: Long = 0L
-    private var sampledImageEvictionCount: Long = 0L
-    private var sampledImageIneligibleFallbackCount: Long = 0L
-    private var sampledImageCapacityFallbackCount: Long = 0L
-    private var sampledImageRetainedEntryCount: Long = 0L
-    private var sampledImageRetainedByteCount: Long = 0L
-
-    /**
-     * Records one native render extraction before common frame work begins.
-     */
-    internal fun recordRenderExtraction() {
-        requireClientThread()
-        renderExtractionCount += 1L
-    }
-
-    /**
-     * Records one request for a committed common host frame.
-     */
-    internal fun recordHostFrame() {
-        requireClientThread()
-        hostFrameCount += 1L
-    }
 
     /**
      * Determines whether the extracted frame requires a native pointer move.
@@ -79,17 +48,16 @@ internal class FabricMinecraftFramePresenter(
     }
 
     /**
-     * Associates an extracted pointer dispatch with the committed display list and records its cost.
+     * Associates an extracted pointer dispatch with the committed display list.
      *
      * @param position dispatched native pointer position.
      * @param commands committed display list observed before dispatch.
      */
-    internal fun recordExtractedPointerDispatch(
+    internal fun rememberExtractedPointer(
         position: IntOffset,
         commands: List<DrawCommand>,
     ) {
         requireClientThread()
-        extractedPointerDispatchCount += 1L
         pointerPosition = position
         pointerFrameCommands = commands
     }
@@ -142,78 +110,77 @@ internal class FabricMinecraftFramePresenter(
             if (reusePreparedFrame) {
                 checkNotNull(preparedInputs)
             } else {
-                framePreparationCount += 1L
-                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling()), scale)
+                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling()), scale, compositionEnabled = supportsFabricMinecraftOrderedComposition())
             }
-        try {
-            sampledImages.present(
-                inputs,
-                { sampledImageDirectHitCount += 1L },
-                { sampledImageDirectMissCount += 1L },
-                { sampledImageUploadCount += 1L },
-                { sampledImageEvictionCount += 1L },
-            ) { resolved, textureFor, sampledQueued ->
-                sampledImageCapacityFallbackCount = Math.addExact(sampledImageCapacityFallbackCount, resolved.capacitySampledImages)
-                sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, resolved.ineligibleSampledImages)
-                portableFrames.present(
-                    resolved.portable,
-                    { portableRasterizationCount += 1L },
-                    { textureUploadCount += 1L },
-                    { sampling, retain ->
-                        // The borrow callback is nullable; resolution proves availability but does not change its Kotlin type.
-                        @Suppress("RedundantRequireNotNullCall")
-                        val source = checkNotNull(textureFor(sampling.command.image))
-                        sampledQueued(sampling.command.image)
-                        FabricMinecraftPortableTexture.create(sampling, source, retain).also { sampledImageDrawCount += 1L }
-                    },
-                ) { textures, portableQueued ->
-                    var textureIndex = 0
-                    submitFabricMinecraftFrameLayers(
-                        resolved.layers,
-                        { FabricMinecraftFrameLayerBoundary.advance(graphics) },
-                    ) { layer ->
-                        when (layer) {
-                            is FabricMinecraftFrameLayer.Portable -> {
-                                val texture = textures[textureIndex++]
+        sampledImages.present(
+            inputs,
+        ) { resolved, textureFor, sampledQueued ->
+            portableFrames.present(
+                resolved.portable,
+                { sampling, retain ->
+                    // The borrow callback is nullable; resolution proves availability but does not change its Kotlin type.
+                    @Suppress("RedundantRequireNotNullCall")
+                    val source = checkNotNull(textureFor(sampling.command.image))
+                    sampledQueued(sampling.command.image)
+                    FabricMinecraftPortableTexture.create(sampling, source, retain)
+                },
+                { composition, retain ->
+                    val sources =
+                        composition.sources.map { image ->
+                            image?.let {
+                                // Resolution proves availability, but the borrowed lookup still has a nullable return type.
+                                @Suppress("RedundantRequireNotNullCall")
+                                val source = checkNotNull(textureFor(it)) { "Resolved composition must retain every source texture." }
+                                sampledQueued(it)
+                                source.texture
+                            }
+                        }
+                    FabricMinecraftPortableTexture.create(composition, sources, retain)
+                },
+            ) { textures, portableQueued ->
+                var textureIndex = 0
+                submitFabricMinecraftFrameLayers(
+                    resolved.layers,
+                    { FabricMinecraftFrameLayerBoundary.advance(graphics) },
+                ) { layer ->
+                    when (layer) {
+                        is FabricMinecraftFrameLayer.Portable -> {
+                            val texture = textures[textureIndex++]
+                            portableQueued()
+                            FabricMinecraftTextureBlitter.blit(
+                                graphics,
+                                texture.location,
+                                layer.bounds.left,
+                                layer.bounds.top,
+                                layer.bounds.width,
+                                layer.bounds.height,
+                                Math.multiplyExact(layer.bounds.width, scale),
+                                Math.multiplyExact(layer.bounds.height, scale),
+                            )
+                        }
+
+                        is FabricMinecraftFrameLayer.Sampled -> {
+                            @Suppress("RedundantRequireNotNullCall") // The borrowed device lookup is nullable; resolved direct admission must retain that texture.
+                            val texture = checkNotNull(textureFor(layer.command.image))
+                            sampledQueued(layer.command.image)
+                            if (layer.sampling == null) {
+                                presentSampledLayer(graphics, layer, texture)
+                            } else {
+                                val output = textures[textureIndex++]
                                 portableQueued()
-                                FabricMinecraftTextureBlitter.blit(
-                                    graphics,
-                                    texture.location,
-                                    layer.bounds.left,
-                                    layer.bounds.top,
-                                    layer.bounds.width,
-                                    layer.bounds.height,
-                                    Math.multiplyExact(layer.bounds.width, scale),
-                                    Math.multiplyExact(layer.bounds.height, scale),
-                                )
+                                val bounds = layer.visibleBounds
+                                FabricMinecraftTextureBlitter.blit(graphics, output.location, bounds.left, bounds.top, bounds.width, bounds.height, Math.multiplyExact(bounds.width, scale), Math.multiplyExact(bounds.height, scale))
                             }
+                        }
 
-                            is FabricMinecraftFrameLayer.Sampled -> {
-                                @Suppress("RedundantRequireNotNullCall") // The borrowed device lookup is nullable; resolved direct admission must retain that texture.
-                                val texture = checkNotNull(textureFor(layer.command.image))
-                                sampledQueued(layer.command.image)
-                                sampledImageDrawCount += 1L
-                                if (layer.sampling == null) {
-                                    presentSampledLayer(graphics, layer, texture)
-                                } else {
-                                    val output = textures[textureIndex++]
-                                    portableQueued()
-                                    val bounds = layer.visibleBounds
-                                    FabricMinecraftTextureBlitter.blit(graphics, output.location, bounds.left, bounds.top, bounds.width, bounds.height, Math.multiplyExact(bounds.width, scale), Math.multiplyExact(bounds.height, scale))
-                                }
-                            }
-
-                            is FabricMinecraftFrameLayer.Platform -> {
-                                presentPlatformLayer(graphics, layer, viewport, platformRenderer)
-                            }
+                        is FabricMinecraftFrameLayer.Platform -> {
+                            presentPlatformLayer(graphics, layer, viewport, platformRenderer)
                         }
                     }
                 }
             }
-        } finally {
-            sampledImageRetainedEntryCount = sampledImages.retainedEntryCount().toLong()
-            sampledImageRetainedByteCount = sampledImages.retainedByteCount()
         }
+
         if (reusePreparedFrame.not() && portableFrames.releaseGeneration == generation) {
             preparedCommands = commands
             preparedViewport = viewport

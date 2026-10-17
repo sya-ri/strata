@@ -58,6 +58,13 @@ internal interface MinecraftCanvasTestContext {
     fun exchangeHudHidden(hidden: Boolean): Boolean
 
     /**
+     * Moves the actual native test pointer to an unclamped logical GUI coordinate from the runner thread.
+     *
+     * The adapter converts GUI scale at the input boundary; it does not mutate the retained hover binding directly.
+     */
+    fun movePointer(position: IntOffset)
+
+    /**
      * Delivers a primary-button press through the borrowed [screen]'s native callback on the client thread.
      *
      * [position] is an unclamped logical coordinate. The result is native consumption, and callback failures propagate unchanged.

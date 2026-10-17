@@ -15,6 +15,7 @@ import dev.s7a.strata.performance.RuntimeWorkMonitor
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
+import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -76,6 +77,18 @@ internal class OverlayScene(
      * Returns detached bounded evidence; monitoring must be enabled by the owner.
      */
     fun snapshot(): JsonObject = checkNotNull(monitor).snapshot()
+
+    /**
+     * Counts current live declarations through the existing application projection API, outside measured operations.
+     */
+    fun declarationCount(): Int = session.projectDeclarations { countDeclarations(it) }
+
+    private fun countDeclarations(declaration: RuntimeDeclaration): Int = 1 + declaration.modifiers.size + declaration.children.sumOf(::countDeclarations)
+
+    /**
+     * Observes the fixture's actual upstream subscription.
+     */
+    val subscribed: Boolean get() = source.subscribed
 
     /**
      * Independently computes the uniform expected pixel with integer opaque-destination source-over.

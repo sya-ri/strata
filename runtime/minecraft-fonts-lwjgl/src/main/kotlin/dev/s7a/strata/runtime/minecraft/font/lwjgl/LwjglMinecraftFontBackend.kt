@@ -5,7 +5,7 @@ import com.ibm.icu.text.ArabicShaping
 import com.ibm.icu.text.Bidi
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.render.createOwnedDrawImage
 import dev.s7a.strata.runtime.minecraft.font.MinecraftBoundedFontBackend
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimitException
@@ -14,6 +14,7 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
 import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.lwjgl.stb.STBImage
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
@@ -34,6 +35,7 @@ internal class LwjglMinecraftFontBackend(
 
     override fun decodePng(bytes: ByteArray): DrawImage = decodePng(bytes, MinecraftFontLoadLimits())
 
+    @OptIn(InternalStrataRuntimeApi::class)
     override fun decodePng(
         bytes: ByteArray,
         limits: MinecraftFontLoadLimits,
@@ -64,7 +66,7 @@ internal class LwjglMinecraftFontBackend(
                             val alpha = decoded[offset + 3].toInt() and 0xff
                             (alpha shl 24) or (red shl 16) or (green shl 8) or blue
                         }
-                    createDrawImage(size, pixels)
+                    createOwnedDrawImage(size, pixels)
                 } finally {
                     STBImage.stbi_image_free(decoded)
                 }

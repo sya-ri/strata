@@ -10,6 +10,7 @@ import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.UiScope
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
@@ -137,12 +138,13 @@ internal object MinecraftCanvasSlotGameTest {
         screen: FabricMinecraftScreen,
         scale: Int,
     ) {
+        context.movePointer(IntOffset(0, viewport.height - 1))
         val earlierLeases = context.onClient { fixture.leasesOpened }
         context.waitFor { earlierLeases < fixture.leasesOpened }
         // A tick count proves time passed, not that the first complete frame carrying every scale-dependent
-        // Canvas, Slot, clip, and overlay was presented (issue 40). Fence on the runtime's committed host-frame
-        // counter so the screenshot reads a frame at or after the presentation the lease signal observed.
-        val frameBaseline = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        // Canvas, Slot, clip, and overlay was presented (issue 40). Fence on the fixture's completed native-frame
+        // observation so the screenshot reads a frame at or after the presentation the lease signal observed.
+        val frameBaseline = MinecraftCanvasFrameFence.completedFrames(context, screen)
         MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, frameBaseline)
         val name = "strata-canvas-slot-order-scale-$scale"
         val path = context.takeScreenshot(name, viewport)
@@ -153,10 +155,10 @@ internal object MinecraftCanvasSlotGameTest {
         val verified = runCatching { verifyPanels(image, scale) }
         val counters = context.onClient { "leasesOpened=${fixture.leasesOpened}\nleasesClosed=${fixture.leasesClosed}" }
         // The fence already marshals its own client-thread read; never nest it inside another onClient handoff.
-        val hostFrames = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        val nativeFrames = MinecraftCanvasFrameFence.completedFrames(context, screen)
         val evidence =
             "case=$name\nphysical=640x480\nguiScale=$scale\nsourceSnapshots=absent\n" +
-                "hostFrameBaseline=$frameBaseline\nhostFramesObserved=$hostFrames\n$counters\n"
+                "nativeFrameBaseline=$frameBaseline\nnativeFramesObserved=$nativeFrames\n$counters\n"
         when (val outcome = verified.exceptionOrNull()) {
             null -> {
                 Files.writeString(

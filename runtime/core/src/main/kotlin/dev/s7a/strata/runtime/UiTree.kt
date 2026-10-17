@@ -9,14 +9,10 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.StateObserverNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
-import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.ui.UiCloseReason
@@ -43,28 +39,22 @@ import dev.s7a.strata.ui.UiSession as EventUiSession
 @Suppress("TooManyFunctions")
 public class UiTree(
     eventSession: EventUiSession? = null,
-) : AutoCloseable,
-    RuntimeUiDiagnosticsOwner {
+) : AutoCloseable {
     private val ownerGuard: OwnerGuard = OwnerGuard()
     private var closeRequested = false
     private val fallbackSession = if (eventSession == null) UnpresentedUiSession(::requestClose) else null
     private val callbackSession = eventSession ?: checkNotNull(fallbackSession)
 
     /**
-     * Shared nullable diagnostics gate used by the owning session.
-     */
-    internal val monitoring = RenderMonitoring()
-
-    /**
      * Optional session owner used to track independently evaluated deferred regions.
      */
     internal var stateObservation: StateObservation? = null
-    private val dirtyTracker = DirtyTracker(monitoring)
+    private val dirtyTracker = DirtyTracker()
     private val registry = NodeOwnershipRegistry()
-    private val pipeline = Pipeline(ownerGuard, monitoring, dirtyTracker)
-    private val observedSources = ObservedSourceRegistry(monitoring)
+    private val pipeline = Pipeline(ownerGuard, dirtyTracker)
+    private val observedSources = ObservedSourceRegistry()
     private val lifecycle =
-        LifecycleManager(registry, ownerGuard, dirtyTracker, monitoring, callbackSession) { entry ->
+        LifecycleManager(registry, ownerGuard, dirtyTracker, callbackSession) { entry ->
             val failures = FailureAccumulator()
             if (entry is RetainedNode) {
                 failures.capture { entry.contentObservation?.close() }
@@ -74,7 +64,7 @@ public class UiTree(
             failures.capture { pipeline.entryWillCleanup(entry) }
             failures.throwIfPresent()
         }
-    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources, monitoring) { stateObservation }
+    private val reconciler = Reconciler(lifecycle, dirtyTracker, observedSources) { stateObservation }
     private val validator = DescriptionValidator()
     private var currentState: TreeState = TreeState.Active
     private var root: RetainedNode? = null
@@ -117,40 +107,6 @@ public class UiTree(
             entry.declarationId = nextDeclarationId++
         }
         return entry.declarationId
-    }
-
-    @InternalStrataRuntimeApi
-    override fun startRenderMonitoring(): UiRenderMonitor = startMonitoring { }
-
-    @InternalStrataRuntimeApi
-    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = startMonitoring(maxNodeRecords) { }
-
-    /**
-     * Adds the owning session's boundary check without exposing its implementation to callers.
-     */
-    internal fun startMonitoring(
-        maxNodeRecords: Int = 4096,
-        ownerBoundary: () -> Unit,
-    ): UiRenderMonitor {
-        ownerGuard.check()
-        check(operationActive.not() && currentState === TreeState.Active) { "Monitoring requires an idle active tree." }
-        ownerBoundary()
-        require(maxNodeRecords in 1..65_536) { "Invalid render monitoring node-record capacity." }
-        check(monitoring.collector == null) { "Render monitoring is already active." }
-        val collector =
-            RenderMonitorImpl(
-                boundary = {
-                    check(operationActive.not() && currentState === TreeState.Active) { "Monitoring requires an idle active tree." }
-                    ownerBoundary()
-                },
-                onClose = { monitoring.collector = null },
-                activeSubscriptions = observedSources.activeSubscriptions,
-                monitoring = monitoring,
-                maxNodeRecords = maxNodeRecords,
-            )
-        root?.let { collector.baseline(it.effectiveRoot) }
-        monitoring.collector = collector
-        return collector
     }
 
     /**
@@ -541,7 +497,6 @@ public class UiTree(
             }
             failures.addOptional(reconciler.cleanupProvisionals())
             failures.capture(observedSources::close)
-            monitoring.release()
             failures.throwIfPresent()
         } finally {
             endOperation()
@@ -584,8 +539,6 @@ public class UiTree(
     }
 
     private fun poison(failure: Throwable): Nothing {
-        if (monitoring.operation == UiRenderOperation.Frame) monitoring.record(UiRenderMetric.FrameFailure)
-        monitoring.failed()
         currentState = TreeState.Poisoned
         fallbackSession?.finish(UiCloseReason.Failed)
         val capturedRoot = root
@@ -599,7 +552,6 @@ public class UiTree(
         }
         failures.addOptional(reconciler.cleanupProvisionals())
         failures.capture(observedSources::close)
-        monitoring.release()
         failures.throwFirst()
     }
 }

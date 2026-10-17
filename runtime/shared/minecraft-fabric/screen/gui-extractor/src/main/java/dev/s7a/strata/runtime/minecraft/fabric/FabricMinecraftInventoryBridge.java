@@ -81,7 +81,6 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     private ItemStack lastQuickMoved = ItemStack.EMPTY;
     private int refreshBatchDepth;
     private boolean refreshedInBatch;
-    private long refreshPassCount;
 
     private enum InputKind {
         MOVE,
@@ -540,7 +539,6 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         for (SkinBinding binding : skinBindings) {
             binding.refresh();
         }
-        refreshPassCount += 1L;
         if (0 < refreshBatchDepth) {
             refreshedInBatch = true;
         }
@@ -722,29 +720,25 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     }
 
     /**
-     * Renders the authoritative carried stack in Minecraft's final item stratum.
+     * Presents this bridge's current inventory overlays through the shared copied-stack submission order.
      *
-     * @param graphics native extraction target.
-     * @param font active Minecraft font for item decorations.
+     * @param graphics borrowed native GUI target.
+     * @param font active Minecraft font.
      * @param mouseX current logical pointer x.
      * @param mouseY current logical pointer y.
      */
-    void renderCarried(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
-        requireUsable();
-        LocalPlayer player = requireMinecraft().player;
-        if (player == null) {
-            return;
-        }
-        ItemStack carried = activeMenu().getCarried();
-        if (carried.isEmpty()) {
-            return;
-        }
-        ItemStack snapshot = carried.copy();
-        int x = Math.subtractExact(mouseX, 8);
-        int y = Math.subtractExact(mouseY, 8);
-        graphics.nextStratum();
-        graphics.item(snapshot, x, y);
-        graphics.itemDecorations(font, snapshot, x, y);
+    void renderOverlays(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
+        FabricMinecraftInventoryOverlays.render(
+                () -> requireMinecraft().player == null ? null : activeMenu().getCarried(),
+                () -> requireMinecraft().player == null || hovered == null ? null : hovered.snapshot,
+                (snapshot, carried) -> FabricMinecraftSlotTooltipRenderer.render(graphics, font, snapshot, carried, mouseX, mouseY),
+                snapshot -> {
+                    int x = Math.subtractExact(mouseX, 8);
+                    int y = Math.subtractExact(mouseY, 8);
+                    graphics.nextStratum();
+                    graphics.item(snapshot, x, y);
+                    graphics.itemDecorations(font, snapshot, x, y);
+                });
     }
 
     private boolean withInput(NativeInput current, BooleanSupplier operation) {

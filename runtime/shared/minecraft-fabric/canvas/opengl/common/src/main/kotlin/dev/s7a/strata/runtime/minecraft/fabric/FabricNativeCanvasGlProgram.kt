@@ -18,6 +18,24 @@ internal class FabricNativeCanvasGlProgram private constructor(
 ) : AutoCloseable {
     private var programClosed: Boolean = false
     private var vertexArrayClosed: Boolean = false
+    private var compositionBindings = false
+
+    /**
+     * Draws one ordered command using four externally bound textures and the caller's alternating framebuffer.
+     * The device owns this fixed program through terminal completion; no frame or source reference is retained.
+     */
+    @JvmSynthetic
+    internal fun drawComposition(commandIndex: Int) {
+        GL20.glUseProgram(program)
+        if (compositionBindings.not()) {
+            listOf("InSampler", "DestinationSampler", "IndexSampler", "FactorSampler").forEachIndexed { unit, name ->
+                GL20.glUniform1i(GL20.glGetUniformLocation(program, name), unit)
+            }
+            compositionBindings = true
+        }
+        GL30.glBindVertexArray(vertexArray)
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, commandIndex * 3, 3)
+    }
 
     /**
      * Draws the complete target using the source texture and framebuffer already bound by the render-thread driver.
@@ -75,11 +93,22 @@ internal class FabricNativeCanvasGlProgram private constructor(
          * @throws IllegalStateException when the OpenGL compiler or linker rejects the fixed shaders.
          */
         @JvmSynthetic
-        internal fun create(origin: MinecraftCanvasTextureOrigin): FabricNativeCanvasGlProgram {
-            val vertex = compile(GL20.GL_VERTEX_SHADER, FabricNativeCanvasShaders.vertex)
+        internal fun create(origin: MinecraftCanvasTextureOrigin): FabricNativeCanvasGlProgram = create(FabricNativeCanvasShaders.vertex, FabricNativeCanvasShaders.fragment(origin))
+
+        /**
+         * Compiles the shared exact integer composition source without retaining command or image inputs.
+         */
+        @JvmSynthetic
+        internal fun createComposition(): FabricNativeCanvasGlProgram = create(FabricMinecraftCompositionShaders.vertex, FabricMinecraftCompositionShaders.fragment)
+
+        private fun create(
+            vertexSource: String,
+            fragmentSource: String,
+        ): FabricNativeCanvasGlProgram {
+            val vertex = compile(GL20.GL_VERTEX_SHADER, vertexSource)
             val fragment =
                 try {
-                    compile(GL20.GL_FRAGMENT_SHADER, FabricNativeCanvasShaders.fragment(origin))
+                    compile(GL20.GL_FRAGMENT_SHADER, fragmentSource)
                 } catch (failure: Throwable) {
                     GL20.glDeleteShader(vertex)
                     throw failure

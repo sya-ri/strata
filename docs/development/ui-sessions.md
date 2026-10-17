@@ -54,7 +54,7 @@ Actual reconciled child differences determine pipeline invalidation.
 Transparent direct-source regions retain modifiers on the real primitive, forwarding parent data through ParentDataDelegateNode rather than moving focus or action ownership to a wrapper.
 An observed region owns a fresh content scope per evaluation and at most one logical child, retaining input nodes through ordinary type and key matching.
 
-RuntimeUiDiagnosticsOwner delegates optional bounded [render monitoring](render-monitoring.md) through the same session boundary.
+Performance collection stays outside the production session; see [measurement boundaries](render-monitoring.md).
 Collection remains absent by default; enabled collectors count actual callback execution and retain only detached interval evidence after terminal failure.
 
 ## Runtime adapter bridge

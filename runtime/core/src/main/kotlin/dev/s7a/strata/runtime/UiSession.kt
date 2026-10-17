@@ -6,14 +6,11 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.platform.currentThread
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
-import dev.s7a.strata.runtime.spi.createRuntimeUiFrame
+import dev.s7a.strata.runtime.spi.createRuntimeUiFrameWithOwnedSemantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.StateSource
@@ -47,7 +44,7 @@ import dev.s7a.strata.ui.UiSession as EventUiSession
  * @param taskFailureHandler receives non-cancellation root coroutine failures on the owner thread and selects whether the session continues or fails.
  * @param content the owner-confined content evaluator, released before terminal cleanup callbacks.
  */
-@Suppress("TooManyFunctions", "LargeClass") // One owner enforces frame, input, coroutine, and diagnostic operation boundaries.
+@Suppress("TooManyFunctions", "LargeClass") // One owner enforces frame, input, and coroutine operation boundaries.
 @OptIn(InternalStrataRuntimeApi::class, ExperimentalAtomicApi::class)
 internal class UiSession(
     private val ownerDispatcher: CoroutineDispatcher,
@@ -86,17 +83,6 @@ internal class UiSession(
     private var tree: UiTree? = null
     private var closeRequested = false
     private val fallbackSession = if (eventSession == null) UnpresentedUiSession(::requestEventClose) else null
-
-    /**
-     * Starts bounded diagnostics without changing content or requesting a frame.
-     */
-    internal fun startRenderMonitoring(maxNodeRecords: Int = 4096): UiRenderMonitor {
-        ownerGuard.check()
-        check(operationKind == null && stateMutationActive.not()) { "Monitoring requires an idle session." }
-        return checkNotNull(tree) { "Attach the session before starting monitoring." }.startMonitoring(maxNodeRecords) {
-            check(operationKind == null && stateMutationActive.not()) { "Monitoring requires an idle session." }
-        }
-    }
 
     private var frameAvailable: Boolean = false
     private var committedFrameConstraints: Constraints? = null
@@ -219,7 +205,6 @@ internal class UiSession(
                 if (tree == null) {
                     tree =
                         UiTree(eventSession ?: fallbackSession).also {
-                            it.monitoring.operation = UiRenderOperation.Attach
                             it.stateObservation = stateObservation
                         }
                 }
@@ -342,7 +327,6 @@ internal class UiSession(
             check(currentState === UiSessionState.Attached) {
                 "A session can produce a frame only while Attached."
             }
-            tree?.monitoring?.record(UiRenderMetric.FrameAttempt)
             return runCatching {
                 applyBindingCutoff()
                 var contentRebuilt = false
@@ -363,7 +347,6 @@ internal class UiSession(
                     ) {
                         committedFrameConstraints = constraints
                         frameAvailable = true
-                        retainedTree.monitoring.record(UiRenderMetric.FrameCacheHit)
                         return@runCatching retainedFrame
                     }
                 }
@@ -373,7 +356,7 @@ internal class UiSession(
                 retainedTree.layout()
                 val draw = retainedTree.paint()
                 val semantics = retainedTree.semantics()
-                val frame = createRuntimeUiFrame(size, draw, semantics)
+                val frame = createRuntimeUiFrameWithOwnedSemantics(size, draw, semantics)
                 committedFrameConstraints = constraints
                 frameAvailable = true
                 if (retainedTree.currentRevision() == revision) {
@@ -384,11 +367,8 @@ internal class UiSession(
                 frame
             }.mapCatching { frame ->
                 checkNotNull(tree) { "An attached session has no retained tree." }.finishFrameState()
-                tree?.monitoring?.record(UiRenderMetric.FrameSuccess)
                 frame
             }.getOrElse { failure ->
-                tree?.monitoring?.record(UiRenderMetric.FrameFailure)
-                tree?.monitoring?.failed()
                 fail(failure)
             }
         } finally {
@@ -487,14 +467,12 @@ internal class UiSession(
     private fun inputTree(): UiTree {
         check(operationKind === SessionOperation.Input)
         operationKind = SessionOperation.InputGeometry
-        tree?.monitoring?.operation = UiRenderOperation.InputGeometry
         return try {
             val retainedTree = checkNotNull(tree) { "An attached session has no retained tree." }
             retainedTree.synchronizeInputGeometry(checkNotNull(committedFrameConstraints) { "Input requires a committed frame." })
             retainedTree
         } finally {
             operationKind = SessionOperation.Input
-            tree?.monitoring?.operation = UiRenderOperation.Other
         }
     }
 
@@ -542,7 +520,6 @@ internal class UiSession(
 
     private fun rebuildContent() {
         val retainedTree = checkNotNull(tree) { "A session must have a tree before rebuilding." }
-        retainedTree.monitoring.record(UiRenderMetric.RootEvaluation)
         clearCachedFrame()
         evaluatingContent = true
         val description =
@@ -614,19 +591,11 @@ internal class UiSession(
         check(operationKind == null) { "A session operation is already active." }
         operationKind = kind
         stateObservation.enterOperation()
-        tree?.monitoring?.operation =
-            when (kind) {
-                SessionOperation.Attach -> UiRenderOperation.Attach
-                SessionOperation.Frame -> UiRenderOperation.Frame
-                SessionOperation.InputGeometry -> UiRenderOperation.InputGeometry
-                else -> UiRenderOperation.Other
-            }
     }
 
     private fun endOperation() {
         stateObservation.leaveOperation()
         operationKind = null
-        tree?.monitoring?.operation = UiRenderOperation.Other
         if (closeRequested) {
             closeRequested = false
             if (currentState != UiSessionState.Closed && (currentState is UiSessionState.Failed).not()) close()

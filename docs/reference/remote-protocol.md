@@ -64,7 +64,19 @@ Stateful modifier registrations prepare shared native state outside declaration 
 
 Each routed fragment has an independent strictly increasing envelope sequence.
 The receiver restores order across asynchronous proxy events using a queue bounded by bytes, entries, and gap timeout, and drains a bounded number per owner tick.
+Ingress, consecutive-sequence delivery, outgoing transport, and Velocity commands stop their drain at the first empty result or missing next sequence.
+An ingress or command arrival after that observation remains queued for a subsequent tick; arrivals before it may still use the remaining budget.
+The ingress poll observes emptiness under the queue lock, without a separate emptiness check.
+Ending a drain still permits session state cutoffs, gap and assembly checks, negotiation deadlines, and bounded outgoing flush for that tick.
 Duplicate sequences are ignored; conflicting queued duplicates fail validation.
+Public `RemotePacket.decode` detaches its inner fragment, and `RemotePacketStream.offer(Frame, nowMillis)` snapshots arbitrary public frame storage before queue admission.
+The common server and shared Fabric owner decoders use the opt-in `RemotePacketAdmission` handle for a fresh private fragment instead.
+Only decoding native bytes creates that handle; no public Frame or externally aliased payload can become a transferable handle.
+The decoder still copies out of the native envelope, and the asynchronous ingress inbox still snapshots producer input.
+After both owner checks pass, the stream consumes the handle before validation and either retains its exclusive array or releases rejected storage without a second queue copy.
+Routing that does not select a handle closes it on the decoding owner; consumed or closed handles retain neither the packet nor the owner identity.
+Immutable kind/address metadata remains readable, while reuse and consumption or release from another owner fail explicitly.
+Queue byte/entry admission, duplicate and incarnation rules, gap deadlines, ordered delivery and terminal cleanup remain shared with the public copying overload.
 The native packet bound includes the fixed envelope; negotiated fragment limits reserve its bytes.
 The binary value codec uses explicit tags, big-endian numeric fields, strict UTF-8, and bounded byte/collection lengths.
 Limits include frame/message bytes, aggregate values, structural depth, declaration count, queued bytes, fragment assembly time, and reconstruction time.
@@ -83,6 +95,13 @@ Tiled images retain only the standard bounded working set on the server, transfe
 Each client tile source replaces its complete current set; source replacement and terminal cleanup release pixels and subscribers.
 Native Slot transactions additionally require the same captured client menu identity.
 Container lifecycle changes retire affected Slot HUDs and ordinary remote Screens; unrelated HUDs retain their state.
+
+Client presentation-state close is an irreversible admission cutoff.
+Creation and value-update callbacks cannot recursively prepare an entry; retirement callbacks have no admission window, and polling cannot start preparation.
+A fresh value returned after its factory closed the store is released instead of admitted, and terminal close is never restored to an idle phase.
+Close clears both authoritative entries and derived editable membership before ordered release callbacks; duplicate values under distinct keys preserve per-key release and polling behavior.
+If a retirement callback fails before terminal close, remaining entries stay owned and pollable in their original order, with the original primary failure preserved.
+See [remote editable membership](../development/performance.md#remote-editable-membership) for its current-state bound and release contract.
 
 ## Extensions and ownership
 

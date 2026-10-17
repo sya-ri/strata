@@ -15,7 +15,6 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.minecraft.MinecraftPlatformCommands
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -24,7 +23,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.mixin.lifecycle.FabricUiKeyMappin
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiController
-import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
@@ -66,15 +64,8 @@ public class FabricMinecraftScreen private constructor(
     private val controls: RuntimeUiController?,
 ) : Screen(mapMinecraftText(host.title)),
     AutoCloseable,
-    RuntimeUiDiagnosticsOwner,
     FabricMinecraftInputReset {
     private var closed = false
-
-    @InternalStrataRuntimeApi
-    override fun startRenderMonitoring(): UiRenderMonitor = host.startRenderMonitoring()
-
-    @InternalStrataRuntimeApi
-    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = host.startRenderMonitoring(maxNodeRecords)
 
     private val canvasPresentation = FabricMinecraftCanvasPresentation()
     private var attached = false
@@ -86,22 +77,6 @@ public class FabricMinecraftScreen private constructor(
     private var preparedInputs: FabricMinecraftFrameInputs? = null
     private var pointerPosition: IntOffset? = null
     private var pointerFrameCommands: List<DrawCommand>? = null
-    private var renderExtractionCount: Long = 0L
-    private var hostFrameCount: Long = 0L
-    private var extractedPointerDispatchCount: Long = 0L
-    private var framePreparationCount: Long = 0L
-    private var portableRasterizationCount: Long = 0L
-    private var textureUploadCount: Long = 0L
-    private var sampledImageDirectHitCount: Long = 0L
-    private var sampledImageDirectMissCount: Long = 0L
-    private var sampledImageUploadCount: Long = 0L
-    private var sampledImageDrawCount: Long = 0L
-    private var sampledImageResampleCount: Long = 0L
-    private var sampledImageEvictionCount: Long = 0L
-    private var sampledImageIneligibleFallbackCount: Long = 0L
-    private var sampledImageCapacityFallbackCount: Long = 0L
-    private var sampledImageRetainedEntryCount: Long = 0L
-    private var sampledImageRetainedByteCount: Long = 0L
     private val pausePolicy = host.pausesGame
     private val textInputFocus = FabricMinecraftTextInputFocus { focused -> minecraftClient.onTextInputFocusChange(this, focused) }
     private val lifecycle =
@@ -209,13 +184,11 @@ public class FabricMinecraftScreen private constructor(
         if (FabricUiSessions.prepareRender(this).not()) return
         var guiFailure: Throwable? = null
         try {
-            renderExtractionCount += 1L
             val frameTime = FrameTime(System.nanoTime())
             val frame =
                 inventory.withRefreshBatch {
                     runHost {
                         val viewport = IntSize(width, height)
-                        hostFrameCount += 1L
                         var frame = host.frame(viewport, frameTime)
                         if (lifecycle.hasPendingExit()) return@runHost null
                         if (width == 0 || height == 0) {
@@ -225,12 +198,10 @@ public class FabricMinecraftScreen private constructor(
                         val currentPointer = IntOffset(mouseX, mouseY)
                         val pointerNeedsDispatch = needsPointerDispatch(currentPointer, frame.drawCommands)
                         if (pointerNeedsDispatch && FabricUiSessions.acceptsPointer(this)) {
-                            extractedPointerDispatchCount += 1L
                             inventory.withPointerMove { host.dispatchPointer(PointerEvent.Move(currentPointer)) == InputResult.Consumed }
                             pointerPosition = currentPointer
                             pointerFrameCommands = frame.drawCommands
                             if (lifecycle.hasPendingExit()) return@runHost null
-                            hostFrameCount += 1L
                             frame = host.frame(viewport, frameTime)
                             if (lifecycle.hasPendingExit()) return@runHost null
                         }
@@ -250,7 +221,7 @@ public class FabricMinecraftScreen private constructor(
                 extractFrame(graphics, commands, frame.size, dispatch)
             }
             if (attached.not()) return
-            renderCarried(graphics, mouseX, mouseY)
+            FabricUiSessions.renderInventoryOverlays(this) { inventory.renderOverlays(graphics, minecraftClient.font, mouseX, mouseY) }
         } catch (failure: Throwable) {
             guiFailure = failure
             terminalFailure(failure)
@@ -486,14 +457,6 @@ public class FabricMinecraftScreen private constructor(
         commands: List<DrawCommand>,
     ): Boolean = position != pointerPosition || commands !== pointerFrameCommands
 
-    private fun renderCarried(
-        graphics: GuiGraphicsExtractor,
-        mouseX: Int,
-        mouseY: Int,
-    ) {
-        if (FabricUiSessions.acceptsPointer(this)) inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
-    }
-
     private fun dispatch(event: PointerEvent): Boolean =
         try {
             runHost {
@@ -700,83 +663,77 @@ public class FabricMinecraftScreen private constructor(
             if (reusePreparedFrame) {
                 checkNotNull(preparedInputs)
             } else {
-                framePreparationCount += 1L
-                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, fractionalSource = true, exactSampling = supportsFabricMinecraftExactSampling()), scale)
+                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, fractionalSource = true, exactSampling = supportsFabricMinecraftExactSampling()), scale, compositionEnabled = supportsFabricMinecraftOrderedComposition())
             }
-        try {
-            sampledImages.present(
-                inputs,
-                { sampledImageDirectHitCount += 1L },
-                { sampledImageDirectMissCount += 1L },
-                { sampledImageUploadCount += 1L },
-                { sampledImageEvictionCount += 1L },
-            ) { resolved, textureFor, sampledQueued ->
-                sampledImageCapacityFallbackCount = Math.addExact(sampledImageCapacityFallbackCount, resolved.capacitySampledImages)
-                sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, resolved.ineligibleSampledImages)
-                portableFrames.present(
-                    resolved.portable,
-                    { portableRasterizationCount += 1L },
-                    { textureUploadCount += 1L },
-                    { sampling, retain ->
-                        // The borrow callback is nullable; resolution proves availability but does not change its Kotlin type.
-                        @Suppress("RedundantRequireNotNullCall")
-                        val source = checkNotNull(textureFor(sampling.command.image))
-                        sampledQueued(sampling.command.image)
-                        FabricMinecraftPortableTexture.create(sampling, source, retain).also {
-                            if (it.samplesDuringGui.not()) {
-                                sampledImageDrawCount += 1L
-                                sampledImageResampleCount += 1L
+        sampledImages.present(
+            inputs,
+        ) { resolved, textureFor, sampledQueued ->
+            portableFrames.present(
+                resolved.portable,
+                { sampling, retain ->
+                    // The borrow callback is nullable; resolution proves availability but does not change its Kotlin type.
+                    @Suppress("RedundantRequireNotNullCall")
+                    val source = checkNotNull(textureFor(sampling.command.image))
+                    sampledQueued(sampling.command.image)
+                    FabricMinecraftPortableTexture.create(sampling, source, retain)
+                },
+                { composition, retain ->
+                    val sources =
+                        composition.sources.map { image ->
+                            image?.let {
+                                // Resolution proves availability, but the borrowed lookup still has a nullable return type.
+                                @Suppress("RedundantRequireNotNullCall")
+                                val source = checkNotNull(textureFor(it)) { "Resolved composition must retain every source texture." }
+                                sampledQueued(it)
+                                source.texture
                             }
                         }
-                    },
-                ) { textures, portableQueued ->
-                    var textureIndex = 0
-                    submitFabricMinecraftFrameLayers(resolved.layers, graphics::nextStratum) { layer ->
-                        when (layer) {
-                            is FabricMinecraftFrameLayer.Portable -> {
-                                val texture = textures[textureIndex++].texture
+                    FabricMinecraftPortableTexture.create(composition, sources, retain)
+                },
+            ) { textures, portableQueued ->
+                var textureIndex = 0
+                submitFabricMinecraftFrameLayers(resolved.layers, graphics::nextStratum) { layer ->
+                    when (layer) {
+                        is FabricMinecraftFrameLayer.Portable -> {
+                            val texture = textures[textureIndex++].texture
+                            portableQueued()
+                            submitFabricMinecraftGuiCorners(layer.bounds) { x0, y0, x1, y1 ->
+                                graphics.blit(
+                                    texture.getTextureView(),
+                                    texture.getSampler(),
+                                    x0,
+                                    y0,
+                                    x1,
+                                    y1,
+                                    0f,
+                                    1f,
+                                    0f,
+                                    1f,
+                                )
+                            }
+                        }
+
+                        is FabricMinecraftFrameLayer.Sampled -> {
+                            @Suppress("RedundantRequireNotNullCall") // The borrowed device lookup is nullable; resolved direct admission must retain that texture.
+                            val texture = checkNotNull(textureFor(layer.command.image))
+                            sampledQueued(layer.command.image)
+                            if (layer.sampling == null) {
+                                extractSampledLayer(graphics, layer, texture)
+                            } else {
+                                val output = textures[textureIndex++].texture
                                 portableQueued()
-                                submitFabricMinecraftGuiCorners(layer.bounds) { x0, y0, x1, y1 ->
-                                    graphics.blit(
-                                        texture.getTextureView(),
-                                        texture.getSampler(),
-                                        x0,
-                                        y0,
-                                        x1,
-                                        y1,
-                                        0f,
-                                        1f,
-                                        0f,
-                                        1f,
-                                    )
-                                }
+                                drawFabricMinecraftExactSampledImage(graphics, texture.texture, output, layer.visibleBounds)
                             }
+                        }
 
-                            is FabricMinecraftFrameLayer.Sampled -> {
-                                @Suppress("RedundantRequireNotNullCall") // The borrowed device lookup is nullable; resolved direct admission must retain that texture.
-                                val texture = checkNotNull(textureFor(layer.command.image))
-                                sampledQueued(layer.command.image)
-                                sampledImageDrawCount += 1L
-                                if (layer.sampling == null) {
-                                    extractSampledLayer(graphics, layer, texture)
-                                } else {
-                                    val output = textures[textureIndex++].texture
-                                    portableQueued()
-                                    drawFabricMinecraftExactSampledImage(graphics, texture.texture, output, layer.visibleBounds)
-                                }
-                            }
-
-                            is FabricMinecraftFrameLayer.Platform -> {
-                                extractPlatformLayer(graphics, layer, viewport, platformCommands)
-                            }
+                        is FabricMinecraftFrameLayer.Platform -> {
+                            extractPlatformLayer(graphics, layer, viewport, platformCommands)
                         }
                     }
                 }
             }
-        } finally {
-            sampledImageRetainedEntryCount = sampledImages.retainedEntryCount().toLong()
-            sampledImageRetainedByteCount = sampledImages.retainedByteCount()
         }
+
         if (reusePreparedFrame.not() && portableFrames.releaseGeneration == generation) {
             preparedCommands = commands
             preparedViewport = viewport

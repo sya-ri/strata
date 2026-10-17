@@ -15,7 +15,6 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -42,23 +41,19 @@ internal class MinecraftSynchronizedSlotTest {
             host.attach()
             host.frame(IntSize(18, 18))
             host.dispatchPointer(PointerEvent.Move(IntOffset(2, 2)))
-            host.startRenderMonitoring().use { monitor ->
-                binding.publish(Slots.playerInventory(7))
-                highlightable.publish(true)
-                val bound = host.frame(IntSize(18, 18))
-                assertSame(
-                    ItemCommand.First,
-                    bound.drawCommands
-                        .filterIsInstance<DrawCommand.Platform>()
-                        .single()
-                        .command,
-                )
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.NodeCreate])
-                binding.publish(null)
-                assertTrue(host.frame(IntSize(18, 18)).drawCommands.none { it is DrawCommand.Platform })
-                assertEquals(1, platform.binding.closeCount)
-            }
+            binding.publish(Slots.playerInventory(7))
+            highlightable.publish(true)
+            val bound = host.frame(IntSize(18, 18))
+            assertSame(
+                ItemCommand.First,
+                bound.drawCommands
+                    .filterIsInstance<DrawCommand.Platform>()
+                    .single()
+                    .command,
+            )
+            binding.publish(null)
+            assertTrue(host.frame(IntSize(18, 18)).drawCommands.none { it is DrawCommand.Platform })
+            assertEquals(1, platform.binding.closeCount)
         }
     }
 

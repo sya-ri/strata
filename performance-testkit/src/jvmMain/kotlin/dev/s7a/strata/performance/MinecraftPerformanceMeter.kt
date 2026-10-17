@@ -8,7 +8,7 @@ import java.util.function.Predicate
  * Actual Fabric extraction/render adapter, confined to the measured screen's client thread.
  * Event callbacks and native counters belong to the kit; consumers supply only state changes.
  * GPU completion, model mutation, readiness, and evidence storage are outside extraction samples.
- * Complete operation frames include diagnostic instrumentation and frame pacing, rather than uninstrumented application latency.
+ * Complete operation frames include the external collector and frame pacing; unavailable runtime counters remain explicit.
  *
  * @param screen actual measured Fabric screen, not a preview or replacement presenter.
  * @param refresh application-owned state delivery before extraction.

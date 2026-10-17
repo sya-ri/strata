@@ -9,6 +9,8 @@ The API and retained core publish JVM variants at their existing `strata-api` an
 Their JVM archive names also remain unchanged so Fabric includes the same common-runtime jar names after the multiplatform migration.
 Multiplatform consumers select `strata-api-multiplatform` and `strata-runtime-core-multiplatform`; their Gradle metadata resolves JVM to those existing artifacts and JavaScript to the corresponding `-js` artifacts.
 The canonical release inventory includes all target artifacts.
+The shared JS target uses the compiler's [`-Xklib-relative-path-base` option](https://kotlinlang.org/docs/native-libraries.html#using-relative-paths-in-klibs) with the root project directory so serialized KLIB source paths are relative to the checkout.
+This compiler input belongs to the source identity; qualification must preserve complete original archive bytes and acquire fresh compiled pins when it changes.
 Common behavior tests run on JVM, Node.js, and headless Chrome, while JVM-only concurrency tests continue to exercise real threads.
 Published multiplatform modules also compile and package their common metadata during `check`, so target-specific implementations cannot conceal invalid shared declarations until publication.
 KMP documentation uses Dokka HTML in the conventional `javadoc` classifier because the Javadoc output plugin does not support multiplatform declarations.
@@ -69,6 +71,16 @@ Manual full CI and first release preparation run the complete suite:
 
 The unqualified `check` includes each selected project's checks; `:check` alone checks only the root project.
 The full command includes development and production loaded-client gates, isolated CPU font contracts, and configured native-to-offline comparisons.
+
+For isolated JVM tests, fixture verification, benchmark preparation and collection, use `-Pstrata.jvmOnly=true` as described in the [performance testkit](performance-testkit.md#collection-ownership).
+Scoped models reject complete acceptance requests instead of silently narrowing them; component benchmark `check` and published inventory acceptance also require the complete model when using `strata.webOnly`.
+IDE/Qodana imports always require the complete project model, including every versioned runtime and integration project.
+
+For local Fabric source preparation, opt into `-Pstrata.minecraftSourceOnly=true -Pstrata.minecraftVersions=26.3` with the original module test, compilation, lint and ABI tasks.
+This source model retains the selected runtime/integration projects and common dependencies; it does not replace full acceptance or change the selected tasks, compiler toolchains, native fixtures or resource limits.
+Exact nonempty distinct supported versions are required, and ordinary Gradle task options retain their normal meaning.
+Do not combine it with the JVM/Web models or IDE/Qodana; complete checks, publication, Kover and loaded clients require their existing complete/native route.
+The ordinary version flag alone keeps the complete model for mixed source requests.
 
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
 Canvas GUI-consumption hooks compile against the Mixin and MixinExtras versions already supplied by the configured Fabric Loader.
@@ -137,9 +149,10 @@ All 26.3 development, production, published-coordinate, and manual IME launches 
 
 Legacy automated screenshot suites also wait for the requested physical viewport to match GLFW, the native Window framebuffer, and the render target across client ticks.
 This avoids assuming that an asynchronous OS resize completed when its request returned.
-Native Canvas screenshot scenes additionally fence on the runtime's committed host-frame counter through `MinecraftCanvasFrameFence` instead of waiting a fixed tick count: a tick proves time passed, while a committed host frame after the scene signal proves the frame the signal observed completed its render call before the main framebuffer is read.
-The fence fails when the runtime counter becomes unreadable rather than silently degrading to fixed-tick behavior.
-Assertion receipts record the GUI scale, lease, and host-frame counters alongside the retained PNG, so a failed pixel assertion keeps its synchronization evidence.
+Native Canvas screenshot scenes use the test-owned `MinecraftCanvasFrameFence` to wait for a completed Fabric presentation event after their sampled baseline before reading the main framebuffer.
+Client ticks alone do not establish this ordering.
+The fence uses a bounded wait, and `FabricFrameObserver` rebinds when framework events are replaced after initialization or resize; production runtimes expose no frame counter or measurement hook.
+Assertion receipts retain GUI scale, lease observations and externally observed completed-frame counts alongside the PNG.
 Timeouts and screenshot failures report actual dimensions and do not crop, rescale, or weaken pixel assertions.
 
 ## Canvas backend and terminal checks

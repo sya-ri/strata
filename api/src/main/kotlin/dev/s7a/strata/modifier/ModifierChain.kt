@@ -3,15 +3,13 @@ package dev.s7a.strata.modifier
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Owns a shallow read-only snapshot of ordered modifier descriptions.
- * Construction detaches collection membership while preserving each immutable element reference.
+ * Owns internally created read-only membership without retaining a mutable alias.
+ * Callers transfer a fresh list so composition does not copy its new membership twice.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ModifierChain(
-    elements: List<ModifierElement>,
+    private val descriptions: List<ModifierElement>,
 ) : Modifier {
-    private val descriptions: List<ModifierElement> = elements.toList()
-
     @InternalStrataRuntimeApi
     override fun elements(): List<ModifierElement> = descriptions
 

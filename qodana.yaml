@@ -77,12 +77,13 @@ exclude:
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
-  # These geometry checks keep overflow-explicit comparisons instead of relying on range construction.
+  # Bounds and geometry checks keep explicit comparisons instead of relying on range construction.
   - name: ConvertTwoComparisonsToRangeCheck
     paths:
       - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
       - api/src/main/kotlin/dev/s7a/strata/geometry/IntRect.kt
       - api/src/main/kotlin/dev/s7a/strata/input/TextInputEvent.kt
+      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/RetainedDrawCommands.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftProfileImplementation.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftScrollElement.kt
   # Named domain records keep source and destination axes explicit; positional destructuring would obscure the scroll and glyph arithmetic.
@@ -435,17 +436,21 @@ exclude:
       - runtime/shared/minecraft-fabric/canvas/blaze3d/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
@@ -470,13 +475,35 @@ exclude:
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFrameLayer.kt
       # Frame presenters, portable upload adapters and exact-version tests consume these linked roots under other indexed owners.
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFrameInputs.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftUploadWork.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableReuse.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTiles.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftImageUpload.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSourceSampling.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingMap.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingBudget.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingComposition.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingShaders.kt
+      # Ordered composition is consumed through the same exact-version linked adapter owners.
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTargets.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftUploadPixels.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortablePipeline.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-format-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureAllocation.kt
+      - runtime/shared/minecraft-fabric/canvas/portable-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionInitialization.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionMap.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionShaders.kt
+      - runtime/shared/minecraft-fabric/canvas/opengl/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGlCompositionStorage.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeStorage.kt
+      - runtime/shared/minecraft-fabric/canvas/portable-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableNativeStorage.kt
+      - runtime/shared/minecraft-fabric/canvas/portable-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureOwnership.kt
+      - runtime/shared/minecraft-fabric/canvas/sampled-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureStorage.kt
+      - runtime/shared/minecraft-fabric/canvas/sampled-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageCache.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevice.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevices.kt

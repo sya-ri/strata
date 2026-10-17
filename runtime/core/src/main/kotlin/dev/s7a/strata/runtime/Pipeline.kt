@@ -18,7 +18,6 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.node.SessionAttachmentNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
@@ -34,14 +33,13 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal class Pipeline(
     private val ownerGuard: OwnerGuard,
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
-    private val dirtyTracker: DirtyTracker = DirtyTracker(monitoring),
+    private val dirtyTracker: DirtyTracker = DirtyTracker(),
 ) {
     private val frameCallbacks = FrameCallbackIndex()
-    private val paintPipeline = PaintPipeline(ownerGuard, monitoring)
+    private val paintPipeline = PaintPipeline(ownerGuard)
     private val focusedInputPipeline = FocusedInputPipeline()
     private val inputPipeline = InputPipeline(focusedInputPipeline)
-    private val semanticsPipeline = SemanticsPipeline(ownerGuard, monitoring)
+    private val semanticsPipeline = SemanticsPipeline(ownerGuard)
 
     /**
      * Detached current editable-focus identity, read outside a tree operation under its execution owner.
@@ -68,11 +66,12 @@ internal class Pipeline(
      */
     fun layout(root: RetainedNode) {
         val effective = root.effectiveRoot
+        val transformChanged = effective.localToTree != TreeTransform.Identity
         effective.transformFromParent = ChildTransform.Identity
         effective.localToTree = TreeTransform.Identity
         effective.bounds = effective.localToTree.enclosing(effective.measuredSize)
         effective.placed = true
-        layoutEntry(effective)
+        layoutEntry(effective, transformChanged)
         inputPipeline.layoutCommitted(root)
         focusedInputPipeline.layoutCommitted(root)
     }
@@ -164,7 +163,7 @@ internal class Pipeline(
      * @param root the installed logical root.
      * @return entries in effective parent-before-child order.
      */
-    fun semantics(root: RetainedNode): List<SemanticsEntry> = semanticsPipeline.semantics(root.effectiveRoot)
+    fun semantics(root: RetainedNode): List<SemanticsEntry> = if (root.hasSemantics) semanticsPipeline.semantics(root.effectiveRoot) else emptyList()
 
     /**
      * Captures pending external observations for every effective entry without committing any observation.
@@ -279,10 +278,12 @@ internal class Pipeline(
         if (DirtyPhase.Measure in retained.dirty || retained.measuredConstraints != constraints) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Measure)
             retained.dirty += DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
-            val measuredChildren = HashSet<Int>()
+            val measurePass = if (0 < retained.effectiveChildCount) Any() else null
             val guard = ScopeGuard(ownerGuard)
             val scope =
                 object : MeasureScope {
+                    var measuredAnyChild = false
+
                     override val childCount: Int
                         get() {
                             guard.check()
@@ -295,8 +296,11 @@ internal class Pipeline(
                     ): IntSize {
                         guard.check()
                         require(index in 0 until childCount) { "Child index is outside the measurement scope." }
-                        check(measuredChildren.add(index)) { "A child may be measured only once per pass." }
-                        return measureEntry(retained.effectiveChildAt(index), constraints)
+                        val child = retained.effectiveChildAt(index)
+                        check(child.parentMeasurePass !== measurePass) { "A child may be measured only once per pass." }
+                        child.parentMeasurePass = measurePass
+                        measuredAnyChild = true
+                        return measureEntry(child, constraints)
                     }
 
                     override fun <D : Any> childParentData(
@@ -311,7 +315,6 @@ internal class Pipeline(
             val measured =
                 try {
                     if (retained.node is MeasureNode) {
-                        monitoring.record(UiRenderMetric.Measure, retained)
                         retained.node.measure(scope, constraints)
                     } else {
                         constraints.constrain(IntSize.Zero)
@@ -320,22 +323,25 @@ internal class Pipeline(
                     guard.close()
                 }
             check(constraints.isSatisfiedBy(measured)) { "Node returned a size outside its constraints." }
-            if (measuredChildren.isNotEmpty()) {
+            if (scope.measuredAnyChild) {
                 check(retained.node is LayoutNode) { "A node that measures children must implement LayoutNode." }
             }
             retained.measuredSize = measured
             retained.measuredConstraints = constraints
-            retained.measuredChildren = measuredChildren
+            retained.childMeasurePass = measurePass
             retained.measured = true
         }
         return retained.measuredSize
     }
 
-    private fun layoutEntry(retained: RetainedEntry) {
+    private fun layoutEntry(
+        retained: RetainedEntry,
+        transformChanged: Boolean,
+    ) {
         val mustLayout = retained.laidOut.not() || DirtyPhase.Layout in retained.dirty
         if (mustLayout) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Layout)
-            retained.placements.clear()
+            retained.childLayoutPass = if (0 < retained.effectiveChildCount) Any() else null
             val layoutCapability = retained.node as? LayoutNode
             if (layoutCapability != null) {
                 val scope =
@@ -357,8 +363,9 @@ internal class Pipeline(
                         override fun measuredChildSize(index: Int): IntSize {
                             guard.check()
                             require(index in 0 until childCount) { "Child index is outside the layout scope." }
-                            check(index in retained.measuredChildren) { "The child was not measured in this pass." }
-                            return retained.effectiveChildAt(index).measuredSize
+                            val child = retained.effectiveChildAt(index)
+                            check(retained.measuredChild(child)) { "The child was not measured in this pass." }
+                            return child.measuredSize
                         }
 
                         override fun <D : Any> childParentData(
@@ -376,15 +383,16 @@ internal class Pipeline(
                         ) {
                             guard.check()
                             require(index in 0 until childCount) { "Child index is outside the layout scope." }
-                            check(index in retained.measuredChildren) { "The child was not measured in this pass." }
-                            check(retained.placements.containsKey(index).not()) {
+                            val child = retained.effectiveChildAt(index)
+                            check(retained.measuredChild(child)) { "The child was not measured in this pass." }
+                            check(child.parentLayoutPass !== retained.childLayoutPass) {
                                 "A child may be placed only once per pass."
                             }
-                            retained.placements[index] = offset
+                            child.parentLayoutPass = retained.childLayoutPass
+                            child.parentOffset = offset
                         }
                     }
                 try {
-                    monitoring.record(UiRenderMetric.Layout, retained)
                     layoutCapability.layout(scope)
                 } finally {
                     scope.guard.close()
@@ -394,8 +402,8 @@ internal class Pipeline(
         }
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
-            val offset = retained.placements[index]
-            if (offset == null || retained.measuredChildren.contains(index).not()) {
+            val offset = retained.childOffset(child)
+            if (offset == null || retained.measuredChild(child).not()) {
                 child.placed = false
                 child.laidOut = false
             } else {
@@ -410,12 +418,27 @@ internal class Pipeline(
                     } else {
                         child.transformFromParent
                     }
-                child.localToTree = retained.localToTree.descend(offset, childTransform)
-                child.bounds = child.localToTree.enclosing(child.measuredSize)
+                val childTransformChanged = updateChildGeometry(retained, child, offset, childTransform, mustLayout || transformChanged)
                 child.placed = true
-                layoutEntry(child)
+                layoutEntry(child, childTransformChanged)
             }
         }
+    }
+
+    private fun updateChildGeometry(
+        parent: RetainedEntry,
+        child: RetainedEntry,
+        offset: IntOffset,
+        transform: ChildTransform,
+        parentChanged: Boolean,
+    ): Boolean {
+        // Paint-only traversal preserves current geometry; layout dirtiness also covers measured-size changes.
+        val childNeedsLayout = child.laidOut.not() || DirtyPhase.Layout in child.dirty
+        if (parentChanged.not() && child.placed && childNeedsLayout.not()) return false
+        val previous = child.localToTree
+        child.localToTree = parent.localToTree.descend(offset, transform)
+        child.bounds = child.localToTree.enclosing(child.measuredSize)
+        return child.localToTree != previous
     }
 
     private fun <D : Any> resolveParentData(
@@ -445,7 +468,8 @@ internal class Pipeline(
             return true
         }
         for (index in 0 until retained.effectiveChildCount) {
-            if (retained.measuredChildren.contains(index) && pendingMeasure(retained.effectiveChildAt(index))) {
+            val child = retained.effectiveChildAt(index)
+            if (retained.measuredChild(child) && pendingMeasure(child)) {
                 return true
             }
         }

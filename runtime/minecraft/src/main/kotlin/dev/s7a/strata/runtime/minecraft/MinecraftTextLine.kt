@@ -5,7 +5,9 @@ import kotlin.math.abs
 /**
  * One detached laid-out line with scalar-aligned original offsets and logical caret metrics.
  *
- * Arrays are copied once and never exposed; the line owns no renderer or font backend.
+ * Arbitrary caller arrays are copied; the line breaker exclusively transfers its fresh compact arrays.
+ * Arrays are never exposed, and one admission flag belongs to their current immutable lifetime.
+ * The line owns no renderer, font backend, coordinate history or lookup result cache.
  * Display shaping changes only the run's visual glyphs, not the logical editing coordinates.
  *
  * @property start inclusive original UTF-16 start.
@@ -15,20 +17,32 @@ import kotlin.math.abs
  * @param offsets ordered original scalar boundaries, including both ends.
  * @param positions signed native horizontal widths corresponding to [offsets].
  */
-internal class MinecraftTextLine(
+internal class MinecraftTextLine private constructor(
+    @get:JvmSynthetic
+    internal val run: MinecraftTextRun,
     @get:JvmSynthetic
     internal val start: Int,
     @get:JvmSynthetic
     internal val end: Int,
     @get:JvmSynthetic
     internal val nextStart: Int,
-    @get:JvmSynthetic
-    internal val run: MinecraftTextRun,
-    offsets: IntArray,
-    positions: IntArray,
+    private val offsets: IntArray,
+    private val positions: IntArray,
 ) {
-    private val offsets = offsets.copyOf()
-    private val positions = positions.copyOf()
+    /**
+     * Snapshots arbitrary caller-owned arrays through the original six-argument JVM construction contract.
+     * Scalar-boundary/coordinate inputs and detached ownership follow the enclosing line contract.
+     */
+    internal constructor(
+        start: Int,
+        end: Int,
+        nextStart: Int,
+        run: MinecraftTextRun,
+        offsets: IntArray,
+        positions: IntArray,
+    ) : this(run, start, end, nextStart, offsets.copyOf(), positions.copyOf())
+
+    private val monotone = (1 until this.positions.size).all { index -> this.positions[index - 1] <= this.positions[index] }
 
     /**
      * Conservative current-run quad bounds computed once for viewport culling, without retaining a renderer or historical line.
@@ -81,20 +95,99 @@ internal class MinecraftTextLine(
     /**
      * Finds the nearest logical scalar boundary, including for non-monotonic signed font advances.
      *
+     * Nondecreasing rounded coordinates use two bounded lower-bound searches; other lines retain the complete ordered scan.
+     * Admission is computed once from this line's owned coordinates, without font calls or additional lookup storage.
+     *
      * @param x local horizontal pointer or preferred vertical-navigation position.
-     * @return original UTF-16 scalar boundary; ties select the preceding logical boundary.
+     * @return original UTF-16 scalar boundary; equal distances and coordinate plateaus select the earliest logical boundary.
      */
     @JvmSynthetic
-    internal fun offsetAt(x: Int): Int {
+    internal fun offsetAt(x: Int): Int = offsets[nearestIndex(x) { index -> positions[index] }]
+
+    /**
+     * Counts coordinate reads through the exact lookup algorithm outside timed input or rendering.
+     * The inline read hook adds no callback, counter, allocation or retained state to [offsetAt].
+     */
+    @JvmSynthetic
+    internal fun boundaryVisits(x: Int): Int {
+        var visits = 0
+        nearestIndex(x) { index ->
+            visits += 1
+            positions[index]
+        }
+        return visits
+    }
+
+    private inline fun nearestIndex(
+        x: Int,
+        position: (Int) -> Int,
+    ): Int {
+        if (monotone.not()) return scannedIndex(x, position)
+        val right = lowerBound(x, position)
+        if (right == 0) return 0
+        if (right == positions.size) return lowerBound(position(positions.lastIndex), position)
+        val leftPosition = position(right - 1)
+        val leftDistance = abs(leftPosition.toLong() - x.toLong())
+        val rightDistance = abs(position(right).toLong() - x.toLong())
+        return if (leftDistance <= rightDistance) lowerBound(leftPosition, position) else right
+    }
+
+    private inline fun lowerBound(
+        x: Int,
+        position: (Int) -> Int,
+    ): Int {
+        var first = 0
+        var end = positions.size
+        while (first < end) {
+            val middle = first + (end - first) / 2
+            if (position(middle) < x) first = middle + 1 else end = middle
+        }
+        return first
+    }
+
+    private inline fun scannedIndex(
+        x: Int,
+        position: (Int) -> Int,
+    ): Int {
         var nearest = 0
         var distance = Long.MAX_VALUE
         for (index in positions.indices) {
-            val candidate = abs(positions[index].toLong() - x.toLong())
+            val candidate = abs(position(index).toLong() - x.toLong())
             if (candidate < distance) {
                 nearest = index
                 distance = candidate
             }
         }
-        return offsets[nearest]
+        return nearest
+    }
+
+    /**
+     * Privileged construction for one completed current line; arbitrary callers use the defensive constructor.
+     */
+    companion object {
+        /**
+         * Consumes fresh producer-private scalar boundaries and their matching rounded coordinates.
+         * The producer must relinquish both arrays after this call; no array or mutable view is exposed by the result.
+         * Each array contains exactly the visible scalar boundaries, including both ends and at least one boundary.
+         * Ellipsis input must already be compact, without a discarded suffix or previous-layout history.
+         * The current layout owns the detached line until replacement or release; no renderer or resource owner is retained.
+         *
+         * @param start inclusive original UTF-16 start.
+         * @param end exclusive visible logical end before a hard break or ellipsis.
+         * @param nextStart original next-line start after any consumed break.
+         * @param run detached immutable run with original font provenance.
+         * @param offsets exclusive ordered original scalar boundaries.
+         * @param positions exclusive rounded logical caret coordinates with the same length as [offsets].
+         * @return one detached immutable current line.
+         */
+        @JvmSynthetic
+        internal fun createOwned(
+            start: Int,
+            end: Int,
+            nextStart: Int,
+            run: MinecraftTextRun,
+            offsets: IntArray,
+            positions: IntArray,
+        ): MinecraftTextLine = MinecraftTextLine(run, start, end, nextStart, offsets, positions)
     }
 }

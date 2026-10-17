@@ -67,7 +67,7 @@ internal object MinecraftCanvasCapacityGameTest {
             context.onClient { fixture.snapshotMode = MinecraftCanvasSnapshotMode.Matching }
             // Backpressure skips producer updates per committed frame, not per tick: fence one committed host
             // frame after the snapshot-mode flip so the bounded-output assertions observe a skipped attempt.
-            val frameBaseline = MinecraftCanvasFrameFence.hostFrameCount(context, owned)
+            val frameBaseline = MinecraftCanvasFrameFence.completedFrames(context, owned)
             MinecraftCanvasFrameFence.awaitCompletedFrame(context, owned, frameBaseline)
             context.onClient {
                 check(fixture.leasesOpened == 64) { "A full device must skip producer updates without allocating beyond its physical bound." }

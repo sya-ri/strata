@@ -10,7 +10,6 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.UiSession
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Runnable
@@ -49,10 +48,6 @@ private class RuntimeUiSessionBridge(
 
     override val textInputFocus: RuntimeTextInputFocus?
         get() = session.textInputFocus
-
-    override fun startRenderMonitoring(): UiRenderMonitor = session.startRenderMonitoring()
-
-    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = session.startRenderMonitoring(maxNodeRecords)
 
     override fun attach(): Unit = session.attach()
 

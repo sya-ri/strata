@@ -2,7 +2,7 @@
 
 package dev.s7a.strata.integration.minecraft.fabric
 
-import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
+import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -22,12 +22,12 @@ internal interface ReactiveRenderTestDriver {
     fun await(condition: () -> Boolean)
 
     /**
-     * Opens a normal production screen and returns its runtime diagnostics capability.
+     * Opens a normal production screen and returns the actual screen.
      */
-    fun open(definition: ScreenDefinition): RuntimeUiDiagnosticsOwner
+    fun open(definition: ScreenDefinition): FabricMinecraftScreen
 
     /**
-     * Reads existing counters from the current screen on the client thread.
+     * Reads actual presentation ownership from the current screen on the client thread.
      */
     fun work(): ReactiveNativeWork
 

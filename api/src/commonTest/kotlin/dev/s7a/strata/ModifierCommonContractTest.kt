@@ -52,7 +52,7 @@ internal class ModifierCommonContractTest {
         val first = Modifier.size(10, 20).elements().single()
         val second = Modifier.padding(3).elements().single()
         val callerElements = mutableListOf(first)
-        val original = ModifierChain(callerElements)
+        val original = ModifierChain(callerElements.toList())
         val snapshot = original.elements()
         callerElements.clear()
         val appended = original.then(second)

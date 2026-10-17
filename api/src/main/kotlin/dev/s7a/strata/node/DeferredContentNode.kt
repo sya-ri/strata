@@ -10,11 +10,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @InternalStrataRuntimeApi
 public interface DeferredContentNode : DynamicChildrenNode {
     /**
-     * Diagnostic category independent of concrete component implementation classes.
-     */
-    public val contentKind: ContentKind
-
-    /**
      * Current owner-thread evaluation reasons; callers borrow this set and must neither mutate nor retain it.
      */
     public val pendingContentReasons: Set<ContentInvalidation>

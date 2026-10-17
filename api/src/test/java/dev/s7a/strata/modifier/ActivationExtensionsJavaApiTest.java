@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 final class ActivationExtensionsJavaApiTest {
     @Test
     void bothActivationOverloadsCompileFromJava() {
-        Modifier empty = Modifier.Companion.getEmpty();
+        Modifier empty = Modifier.Companion;
         Modifier enabled = ActivationExtensionsKt.onActivate(empty, session -> Unit.INSTANCE);
         Modifier disabled = ActivationExtensionsKt.onActivate(empty, false, session -> Unit.INSTANCE);
 

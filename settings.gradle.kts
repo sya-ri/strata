@@ -1,4 +1,8 @@
+import org.gradle.api.Task
 import org.gradle.api.initialization.resolve.RepositoriesMode
+import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
+import org.gradle.api.tasks.JavaExec
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 val releaseRepository = providers.gradleProperty("strata.releaseRepository")
 
@@ -122,34 +126,98 @@ dependencyResolutionManagement {
 rootProject.name = "strata"
 
 val webOnly = providers.gradleProperty("strata.webOnly").map(String::toBooleanStrict).getOrElse(false)
+val jvmOnly = providers.gradleProperty("strata.jvmOnly").map(String::toBooleanStrict).getOrElse(false)
+val completeIdeaModel = providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false) ||
+    providers.gradleProperty("strata.completeIdeaModel").map(String::toBoolean).getOrElse(false)
+val minecraftSourceOnly = providers.gradleProperty("strata.minecraftSourceOnly").map(String::toBooleanStrict).getOrElse(false)
+val minecraftSourceVersions =
+    if (minecraftSourceOnly) {
+        require((webOnly || jvmOnly).not()) { "Choose one scoped source project model." }
+        require(completeIdeaModel.not()) { "IDE/Qodana requires the complete project model; remove strata.minecraftSourceOnly." }
+        val selected = providers.gradleProperty("strata.minecraftVersions").getOrElse("").split(',').map(String::trim)
+        require(selected.all(String::isNotEmpty) && selected.distinct().size == selected.size) { "Source preparation requires nonempty distinct Minecraft versions." }
+        selected.toSet()
+    } else {
+        emptySet()
+    }
 val requestedTasks = gradle.startParameter.taskNames
-val minecraftChecksOnly = ":ciMinecraftCheck" in requestedTasks && requestedTasks.all {
+val minecraftChecksOnly = completeIdeaModel.not() && ":ciMinecraftCheck" in requestedTasks && requestedTasks.all {
     it in setOf(":ciMinecraftCheck", ":integration:docs:checkMinecraftShowcaseParity")
 }
-val documentationChecksOnly = requestedTasks.isNotEmpty() && requestedTasks.all {
+val documentationChecksOnly = completeIdeaModel.not() && requestedTasks.isNotEmpty() && requestedTasks.all {
     it in setOf(":integration:docs:check", ":integration:docs:checkDokkaPagesStaging")
 }
+val nativeBenchmarkOnly = requestedTasks.size == 1 &&
+    requestedTasks.single().removePrefix(":") in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick") &&
+    completeIdeaModel.not()
 val minecraftCheckVersions =
-    if (minecraftChecksOnly || documentationChecksOnly) {
+    if (minecraftSourceOnly) {
+        minecraftSourceVersions
+    } else if (minecraftChecksOnly || documentationChecksOnly || nativeBenchmarkOnly) {
         providers.gradleProperty("strata.minecraftVersions").getOrElse("").split(',').map(String::trim).filter(String::isNotEmpty).toSet()
     } else {
         emptySet()
     }
-val webProjectPaths = setOf(
-    ":api", ":runtime:core", ":runtime:web", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
-    ":integration:web", ":examples:web", ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
+// This union closes the three JVM fixture source sets over their runtime, testkit and quality dependencies.
+val sharedJvmProjectPaths = setOf(
+    ":api", ":runtime:core", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
+    ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
 )
-if (webOnly) {
-    require(gradle.startParameter.taskNames.isNotEmpty() && gradle.startParameter.taskNames.all { task ->
-        task.substringBeforeLast(':') in webProjectPaths &&
-            (task.substringAfterLast(':') in setOf("check", "jsTest") ||
-                (task.substringBeforeLast(':') in setOf(":runtime:core", ":runtime:minecraft") && task.substringAfterLast(':') in setOf("formatKotlin", "updateKotlinAbi")) ||
-                (task.substringBeforeLast(':') == ":performance-testkit" && task.substringAfterLast(':') in setOf("jvmTest", "compileKotlinJs", "publishToMavenLocal", "formatKotlin", "tasks", "updateKotlinAbi", "processEvidence")) ||
-                (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhHistorical", "jmhRemote", "jmhComponents", "captureComponentInventory", "captureRuntimeSurfaceInventory", "captureHeadlessInventory", "captureRemoteInventory")) ||
-                (task.substringBeforeLast(':') == ":quality:detekt-rules" && task.substringAfterLast(':') in setOf("formatKotlin")) ||
-                (task.substringBeforeLast(':') == ":integration:web" && task.substringAfterLast(':') in setOf("formatKotlin", "measureWebPerformance")))
-    }) { "strata.webOnly supports only fully qualified shared Web/JVM quality tasks; use the complete build for other work." }
+val jvmProjectPaths = sharedJvmProjectPaths + setOf(":integration:api", ":velocity-api", ":runtime:velocity")
+val webProjectPaths = sharedJvmProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
+if (webOnly || jvmOnly) {
+    require((webOnly && jvmOnly).not()) { "Choose one scoped project model: strata.webOnly or strata.jvmOnly." }
+    require(completeIdeaModel.not()) { "IDE/Qodana requires the complete project model; remove strata.webOnly and strata.jvmOnly." }
+    require(providers.gradleProperty("strata.minecraftVersions").orNull.isNullOrBlank()) { "Minecraft target selection requires the complete project model." }
+}
+
+/** Identifies complete-build acceptance from resolved Gradle task metadata, never CLI option tokens. */
+fun requiresCompleteJvmModel(name: String, group: String?): Boolean =
+    name == "check" || (name.startsWith("kover") && group == LifecycleBasePlugin.VERIFICATION_GROUP) || group in setOf("publishing", "release") ||
+        name in setOf(
+            "ciMinecraftCheck", "verifyPublishedPerformanceInventory", "verifyPublishedHostInventory",
+            "capturePublishedHostInventory", "verifyOfflineFontParity",
+        )
+
+/** Refuses complete acceptance and loaded-game execution through resolved scoped task metadata. */
+fun installScopedSourceBoundary(property: String, minecraftProjects: Set<String> = emptySet(), scopedAcceptance: (Task) -> Boolean = { false }) {
+    fun requiresCompleteModel(task: Task): Boolean =
+        (requiresCompleteJvmModel(task.name, task.group) && scopedAcceptance(task).not()) ||
+            task.name in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick") ||
+            (minecraftProjects.isNotEmpty() &&
+                (task.name in setOf("runClientGameTest", "runProductionClientGameTest", "runPublishedCoordinateClientGameTest") ||
+                    (task is JavaExec && task.project.path in minecraftProjects)))
+
+    gradle.projectsEvaluated {
+        rootProject.allprojects.forEach { project ->
+            project.tasks.configureEach {
+                if (requiresCompleteModel(this)) {
+                    // Invalid acceptance graphs must be reconfigured to preserve refusal before task execution.
+                    notCompatibleWithConfigurationCache("$property requires the complete build for acceptance.")
+                    doFirst { error("$property requires the complete build for this acceptance task.") }
+                }
+            }
+        }
+    }
+    // Gradle resolves task selectors and their options; only actual complete-acceptance tasks are refused.
+    gradle.taskGraph.whenReady {
+        val completeAcceptance = allTasks.filter(::requiresCompleteModel)
+        require(completeAcceptance.isEmpty()) {
+            "$property cannot run complete acceptance tasks ${completeAcceptance.map { it.path }}; " +
+                "run check, publication, Kover, published inventory and native acceptance with the complete build."
+        }
+    }
+}
+
+if (jvmOnly) {
+    include(*jvmProjectPaths.toTypedArray())
+    installScopedSourceBoundary("strata.jvmOnly")
+} else if (webOnly) {
     include(*webProjectPaths.toTypedArray())
+    installScopedSourceBoundary("strata.webOnly") { task ->
+        (task.name == "check" && task.project.path in webProjectPaths && task.project.path != ":quality:component-benchmarks") ||
+            (task.project.path == ":performance-testkit" && (task.name == "publishToMavenLocal" || task is PublishToMavenLocal))
+    }
 } else {
     val commonProjectPaths = listOf(
         ":api",
@@ -193,9 +261,15 @@ if (webOnly) {
                             candidate.resolve("build.gradle.kts").isFile
                     }.map { candidate -> ":$parentName:${candidate.name}" }
             }.sorted()
+    if (minecraftSourceOnly) {
+        val availableVersions = versionedMinecraftProjectPaths.map { it.substringAfterLast("minecraft-fabric-") }.toSet()
+        val unsupportedVersions = minecraftSourceVersions - availableVersions
+        require(unsupportedVersions.isEmpty()) { "Unsupported source-preparation Minecraft versions: $unsupportedVersions" }
+    }
     val includedMinecraftProjects = versionedMinecraftProjectPaths.filter { path ->
         minecraftCheckVersions.isEmpty() || path.substringAfterLast("minecraft-fabric-") in minecraftCheckVersions ||
             (documentationChecksOnly && path.startsWith(":runtime:"))
     }
     include(*includedMinecraftProjects.toTypedArray())
+    if (minecraftSourceOnly) installScopedSourceBoundary("strata.minecraftSourceOnly", includedMinecraftProjects.toSet())
 }

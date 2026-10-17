@@ -2,11 +2,12 @@ package dev.s7a.strata.runtime.minecraft.font.lwjgl
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.render.createOwnedDrawImage
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.freetype.FT_Bitmap
@@ -107,6 +108,7 @@ internal class FreeTypeMinecraftFontFace(
         require(prospective.width() == width && prospective.rows() == height) { "FreeType glyph dimensions changed during rasterization." }
     }
 
+    @OptIn(InternalStrataRuntimeApi::class)
     private fun pixels(
         rendered: FT_Bitmap,
         width: Int,
@@ -125,7 +127,7 @@ internal class FreeTypeMinecraftFontFace(
                 val physicalRow = if (0 <= pitch) row else height - row - 1
                 (buffer[physicalRow * rowStride + offset % width].toInt() and 0xff) * 0x01010101
             }
-        return createDrawImage(IntSize(width, height), pixels)
+        return createOwnedDrawImage(IntSize(width, height), pixels)
     }
 
     override fun close() {

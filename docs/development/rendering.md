@@ -18,6 +18,7 @@ Measure, layout, paint, input, and semantics enforce their phase preconditions.
 A clean equal-constraint measurement can reuse its cached size.
 Clean layout can reuse placements.
 Clean paint reuses complete local display lists through the current accumulated transform.
+Clean paint branches share immutable subtree command concatenations; propagated paint and structural invalidation refresh their current ordered membership without changing clean local callbacks.
 Clean semantics reuses complete local payloads and combines them with current outward-projected bounds.
 Invalidation inside a callback remains pending because the current dirty bit is cleared before the callback runs.
 Capability and scope failures after pipeline work begins poison the tree only when their exceptions escape the active callback.
@@ -75,6 +76,16 @@ It multiplies normalized source and tint channels without intermediate eight-bit
 The original source/destination mapping survives viewport clipping.
 Custom backends must implement every emitted command or reject unsupported commands before partial output; see [source compatibility](../reference/element-spi.md#source-compatibility).
 
+## Native inventory overlays
+
+The versioned Fabric screen presents authoritative carried items and the hovered bound Slot's tooltip after the complete portable/native command stream.
+Only the current session's pointer owner submits these overlays.
+The inventory bridge borrows its existing hit-tested binding and copied item snapshot for the call; tooltip data is not another retained cache or authoritative inventory representation.
+The target's complete ItemStack tooltip overload owns native formatting, item-provided images and style, current advanced-tooltip settings and viewport-aware positioning.
+Compile-time source families preserve the target's carried-item eligibility rule, including native item-tooltip components where the original container screen allows them while carrying.
+Detaching a binding clears its hover reference, and screen replacement or close cannot transfer that reference to another host.
+Loaded acceptance compares complete frames with the original vanilla container-screen tooltip method, using real server-owned fixture stacks and the ordinary native pointer boundary.
+
 ## Native Canvas presentation
 
 The Canvas element implements ordinary measure, paint, frame-cutoff, and session-attachment capabilities and does not add concrete-component dispatch to core or ComponentRuntime.
@@ -115,6 +126,9 @@ The native cache key is the physical device generation and `DrawImage` referenti
 Source and destination rectangles, clip, GUI scale, overlay state, and frame revision are deliberately excluded.
 Pan and zoom may issue new destination geometry without another pixel copy or upload, player-marker movement cannot invalidate tile textures, and one replacement image uploads only that identity.
 Unsupported commands retain their exact semantics through a tightly bounded portable fallback layer.
+Exact axis-lookup adapters also admit horizontal, vertical and combined reflection with opaque-white tint and zero cutoff.
+They reverse source endpoints before the original Float interpolation and encode the selected texels without changing source storage or native blending.
+Non-identity tint and cutoff retain ordered CPU composition; the [performance evidence contract](performance-testkit.md#independent-sampled-image-gpu-and-cold-image-evidence) distinguishes their fallback cost from capacity and other unsupported causes.
 Sampled fallback runs retain their original absolute Float source-mapping coordinates while writing only the visible physical region.
 Moving a sampled run cannot reuse pixels calculated at another absolute origin solely because its translated geometry appears equal.
 

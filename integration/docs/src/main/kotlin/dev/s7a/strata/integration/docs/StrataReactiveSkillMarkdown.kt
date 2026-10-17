@@ -85,7 +85,7 @@ Cached foreground callbacks still contribute commands to composition.
 A lower-layer change can require rasterizing and uploading an unchanged translucent foreground; geometry changes can also invalidate ancestor overlays.
 Strata does not promise per-component damage rectangles or skip fully occluded updates.
 Limit full-area translucent layers around frequent updates, or measure their complete composition at the intended resolution and rate.
-Use native rasterization/upload counts and final pixels alongside UI counters; see [render monitoring](https://github.com/sya-ri/strata/blob/master/docs/development/render-monitoring.md).
+Use test-owned callback probes, actual texture identity, external timing and final pixels; production runtimes contain no measurement hooks. See [measurement boundaries](https://github.com/sya-ri/strata/blob/master/docs/development/render-monitoring.md).
 Diagnostics belong in the runtime test harness, outside application UI source."""
 
     private const val STATE_OWNERSHIP: String =

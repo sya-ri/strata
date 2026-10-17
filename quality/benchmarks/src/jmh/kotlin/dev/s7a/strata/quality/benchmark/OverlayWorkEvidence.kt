@@ -1,8 +1,5 @@
 package dev.s7a.strata.quality.benchmark
 
-import dev.s7a.strata.performance.PerformanceJson
-import dev.s7a.strata.performance.WorkExpectation
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -30,22 +27,10 @@ public object OverlayWorkEvidence {
                     check(frame.drawCommands.size <= layers + 1) { "The overlay display list grew beyond the current layers." }
                     maximumCommands = maxOf(maximumCommands, frame.drawCommands.size)
                     if ((index + 1) % 64 == 0 || index + 1 == updates) {
-                        val work = PerformanceJson.work(scene.snapshot())
-                        val count = ((index % 64) + 1).toLong()
-                        WorkExpectation(
-                            exact =
-                                mapOf(
-                                    UiRenderMetric.ObserveEvaluation.name to count,
-                                    UiRenderMetric.Paint.name to count,
-                                    UiRenderMetric.Measure.name to 0L,
-                                    UiRenderMetric.Layout.name to 0L,
-                                    UiRenderMetric.NodeCreate.name to 0L,
-                                    UiRenderMetric.NodeDispose.name to 0L,
-                                    "ActiveSubscriptions" to 1L,
-                                ),
-                            maximum = mapOf("NodeInventorySize" to (layers * 3 + 10).toLong()),
-                        ).verify(work)
-                        maximumNodes = maxOf(maximumNodes, work.getValue("NodeInventorySize").toInt())
+                        check(scene.subscribed)
+                        val nodes = scene.declarationCount()
+                        check(nodes <= layers * 3 + 10)
+                        maximumNodes = maxOf(maximumNodes, nodes)
                     }
                 }
                 repeat(rasterFrames) {

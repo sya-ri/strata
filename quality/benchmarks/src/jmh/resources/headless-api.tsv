@@ -9,6 +9,12 @@ dev.s7a.strata.runtime.headless.HeadlessImage#method:1025:copyArgb:()[I
 dev.s7a.strata.runtime.headless.HeadlessImage#method:1025:encodePng:()[B
 dev.s7a.strata.runtime.headless.HeadlessImage#method:1025:getSize:()Ldev/s7a/strata/geometry/IntSize;
 dev.s7a.strata.runtime.headless.HeadlessImage#type:1537::
+dev.s7a.strata.runtime.headless.HeadlessRasterScratch#constructor:1:()V
+dev.s7a.strata.runtime.headless.HeadlessRasterScratch#method:17:getRetainedBytes$dev_s7a_strata_headless:()I
+dev.s7a.strata.runtime.headless.HeadlessRasterScratch#method:17:requireOpen$dev_s7a_strata_headless:()V
+dev.s7a.strata.runtime.headless.HeadlessRasterScratch#method:17:weights$dev_s7a_strata_headless:(I)Ldev/s7a/strata/runtime/headless/SampledSourceWeights;
+dev.s7a.strata.runtime.headless.HeadlessRasterScratch#method:1:close:()V
+dev.s7a.strata.runtime.headless.HeadlessRasterScratch#type:17:java.lang.Object:java.lang.AutoCloseable
 dev.s7a.strata.runtime.headless.HeadlessRendering#method:25:rasterizeHeadless:(Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/headless/HeadlessImage;
 dev.s7a.strata.runtime.headless.HeadlessRendering#method:25:rasterizeHeadless:(Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;I)Ldev/s7a/strata/runtime/headless/HeadlessImage;
 dev.s7a.strata.runtime.headless.HeadlessRendering#method:25:renderHeadless:(Ldev/s7a/strata/element/Element;Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/headless/HeadlessFrame;
@@ -20,5 +26,12 @@ dev.s7a.strata.runtime.headless.RasterClips#method:17:physical:(Ldev/s7a/strata/
 dev.s7a.strata.runtime.headless.RasterClips#method:17:physical:(Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/IntSize;I)Ldev/s7a/strata/geometry/IntRect;
 dev.s7a.strata.runtime.headless.RasterClips#type:17:java.lang.Object:
 dev.s7a.strata.runtime.headless.SampledImageRasterizer#field:25:INSTANCE:Ldev/s7a/strata/runtime/headless/SampledImageRasterizer;
-dev.s7a.strata.runtime.headless.SampledImageRasterizer#method:17:paint:([ILdev/s7a/strata/geometry/IntSize;ILdev/s7a/strata/runtime/render/DrawCommand$SampledImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntOffset;)V
+dev.s7a.strata.runtime.headless.SampledImageRasterizer#method:17:paint:([ILdev/s7a/strata/geometry/IntSize;ILdev/s7a/strata/runtime/render/DrawCommand$SampledImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntOffset;Ldev/s7a/strata/runtime/headless/HeadlessRasterScratch;)V
 dev.s7a.strata.runtime.headless.SampledImageRasterizer#type:17:java.lang.Object:
+dev.s7a.strata.runtime.headless.SampledSourceWeights#constructor:1:(I)V
+dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:alpha:(I)F
+dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:channel:(III)F
+dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:getRetainedBytes:()I
+dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:inverse:(I)F
+dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:row:(I)[F
+dev.s7a.strata.runtime.headless.SampledSourceWeights#type:17:java.lang.Object:

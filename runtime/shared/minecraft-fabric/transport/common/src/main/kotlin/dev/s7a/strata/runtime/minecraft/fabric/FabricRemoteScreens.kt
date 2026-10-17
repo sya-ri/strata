@@ -11,6 +11,7 @@ import dev.s7a.strata.runtime.remote.RemoteFailure
 import dev.s7a.strata.runtime.remote.RemoteFrameInbox
 import dev.s7a.strata.runtime.remote.RemoteMessage
 import dev.s7a.strata.runtime.remote.RemotePacket
+import dev.s7a.strata.runtime.remote.RemotePacketAdmission
 import dev.s7a.strata.runtime.remote.RemotePacketStream
 import dev.s7a.strata.runtime.remote.RemoteProtocolException
 import dev.s7a.strata.runtime.remote.RemoteRegistry
@@ -103,12 +104,7 @@ public object FabricRemoteScreens {
         inboxes.keys.filter { it !== native }.forEach { inboxes.remove(it)?.close() }
         if (native == null || failed) return
         runCatching {
-            val inbox = inboxes.computeIfAbsent(native) { RemoteFrameInbox() }
-            if (inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
-            repeat(64) {
-                val bytes = inbox.poll() ?: return@repeat
-                receiveFrame(native, bytes)
-            }
+            receiveFrames(native)
             peers.values
                 .toList()
                 .filter { it.isClosed.not() }
@@ -118,6 +114,19 @@ public object FabricRemoteScreens {
             peers.values.forEach { peer -> runCatching { peer.close(RemoteFailure.InvalidMessage) }.onFailure(failure::addSuppressed) }
             inboxes.remove(native)?.close()
             logger.warn("Strata remote channel ended", failure)
+        }
+    }
+
+    /**
+     * Transfers bounded current-connection ingress on the client tick thread before peer session work.
+     * An empty poll ends only this drain; failures propagate through the tick's channel cleanup boundary.
+     */
+    private fun receiveFrames(native: Connection) {
+        val inbox = inboxes.computeIfAbsent(native) { RemoteFrameInbox() }
+        if (inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
+        for (index in 0 until 64) {
+            val bytes = inbox.poll() ?: break
+            receiveFrame(native, bytes)
         }
     }
 
@@ -137,27 +146,28 @@ public object FabricRemoteScreens {
         native: Connection,
         bytes: ByteArray,
     ) {
-        val packet = RemotePacket.decode(bytes)
-        require(packet is RemotePacket.Frame) { "Unexpected client-bound discovery." }
-        val address = packet.address
-        val previous = peers[address.endpoint]
-        val peer =
-            if (previous?.address == address) {
-                previous
-            } else {
-                previous?.close(RemoteFailure.Disconnected)
-                val stream =
-                    RemotePacketStream(address) { frame ->
-                        val endpoint = checkNotNull(Minecraft.getInstance().connection) { "Native play connection is unavailable." }
-                        check(endpoint.connection === native) { "Native connection changed." }
-                        FabricRemoteTransport.send(endpoint, frame)
-                    }
-                val transport = RemoteConnection(registry.types, RemotePacket.limits, stream::send)
-                Peer(address, stream, transport, logger) {
-                    peers.values.filter { it.address != address }.forEach { it.closeForeground() }
-                }.also { peers[address.endpoint] = it }
-            }
-        if (peer.isClosed.not()) guard(peer) { peer.stream.offer(packet, now()) }
+        RemotePacketAdmission.decode(bytes).use { packet ->
+            require(packet.kind == RemotePacketAdmission.Kind.Frame) { "Unexpected client-bound discovery." }
+            val address = checkNotNull(packet.address)
+            val previous = peers[address.endpoint]
+            val peer =
+                if (previous?.address == address) {
+                    previous
+                } else {
+                    previous?.close(RemoteFailure.Disconnected)
+                    val stream =
+                        RemotePacketStream(address) { frame ->
+                            val endpoint = checkNotNull(Minecraft.getInstance().connection) { "Native play connection is unavailable." }
+                            check(endpoint.connection === native) { "Native connection changed." }
+                            FabricRemoteTransport.send(endpoint, frame)
+                        }
+                    val transport = RemoteConnection(registry.types, RemotePacket.limits, stream::send)
+                    Peer(address, stream, transport, logger) {
+                        peers.values.filter { it.address != address }.forEach { it.closeForeground() }
+                    }.also { peers[address.endpoint] = it }
+                }
+            if (peer.isClosed.not()) guard(peer) { peer.stream.offer(packet, now()) }
+        }
     }
 
     private inline fun guard(

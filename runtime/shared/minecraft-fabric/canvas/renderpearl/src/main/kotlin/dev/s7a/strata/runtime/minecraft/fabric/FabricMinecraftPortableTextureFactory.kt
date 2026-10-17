@@ -10,7 +10,6 @@ import com.mojang.renderpearl.api.textures.FilterMode
 import com.mojang.renderpearl.api.textures.GpuTexture
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -19,19 +18,8 @@ import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.state.gui.BlitRenderState
 import net.minecraft.client.renderer.texture.AbstractTexture
 import org.joml.Matrix3x2f
-
-/**
- * Enables bounded index-texture sampling on this device-command adapter without reading source pixels.
- */
-@JvmSynthetic
-internal fun supportsFabricMinecraftExactSampling(): Boolean {
-    RenderSystem.assertOnRenderThread()
-    return 4_096 <=
-        RenderSystem
-            .getDevice()
-            .deviceInfo.limits
-            .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
-}
+import org.joml.Vector4f
+import java.util.Optional
 
 /**
  * Uploads only exact axis metadata for deferred GUI sampling, transferring ownership before allocation.
@@ -83,115 +71,75 @@ internal fun drawFabricMinecraftExactSampledImage(
 }
 
 /**
- * Checks whether one immutable image fits the active device's RGBA texture limit before direct-cache reservation.
- *
- * @param image candidate source borrowed on the render thread.
- * @return true when both source dimensions can be allocated as one RGBA texture.
- */
-@JvmSynthetic
-internal fun supportsFabricMinecraftSampledImage(image: DrawImage): Boolean {
-    RenderSystem.assertOnRenderThread()
-    val maximum =
-        RenderSystem
-            .getDevice()
-            .deviceInfo.limits
-            .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
-    return image.size.width <= maximum && image.size.height <= maximum
-}
-
-/**
- * Transfers an empty GPU storage owner before allocating and uploading one immutable portable image.
- *
- * The caller owns [pixels] throughout and seals its GUI generation after this call, including failures.
- * [retain] receives a non-owning texture view and its sole native owner before any texture or view is allocated.
- * All work belongs to the render thread; failed initialization leaves every returned native allocation with the receiving generation.
+ * Owns exact-adapter allocations and preserves partial initialization until generation-fenced destruction.
+ * Texture-manager close is inert; only the owning generation calls [destroy].
  */
 @OptIn(InternalStrataRuntimeApi::class)
-@JvmSynthetic
-internal fun initializeFabricMinecraftPortableTexture(
-    pixels: NativeImage,
-    retain: (AbstractTexture, NativeGuiResource) -> Unit,
-) {
-    RenderSystem.assertOnRenderThread()
-    val storage = FabricPortableNativeStorage()
-    retain(storage.texture, storage)
-    storage.initialize(pixels)
-}
-
-/**
- * Separates borrowed texture-manager access from staged, generation-owned native storage.
- */
-@OptIn(InternalStrataRuntimeApi::class)
-private class FabricPortableNativeStorage : NativeGuiResource {
+internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTextureStorage() {
     /**
-     * Borrows the empty or initialized texture view without transferring storage or allocating a texture.
-     */
-    @get:JvmSynthetic
-    internal val texture: AbstractTexture
-        field = Texture()
-
-    /**
-     * Initializes the retained owner on the render thread; failure preserves every partial allocation for fenced cleanup.
+     * Allocates each native object into its owned field before the next operation can fail.
+     *
+     * The image is borrowed only for this render-thread upload; its outer resource owns its CPU lifetime.
+     * Device sampler caches remain external, and no partial allocation is eagerly destroyed.
      */
     @JvmSynthetic
     internal fun initialize(pixels: NativeImage) {
-        texture.initialize(pixels)
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        texture = owned.allocate { device.createTexture({ "Strata immutable portable layer" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, pixels.width, pixels.height, 1, 1) }
+        sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+        textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
+        device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
     }
 
+    /**
+     * Records complete ordered RGBA8 composition into alternating owned destinations without native blending.
+     * Source views belong to the caller's full-presentation pin; all four texture/view pairs transfer before use.
+     * Every pass covers the complete target, preserving preceding pixels outside CPU-resolved physical coverage.
+     */
     @JvmSynthetic
-    override fun close() {
-        texture.destroy()
-    }
-
-    @JvmSynthetic
-    override fun isDestroyed(): Boolean = texture.isDestroyed()
-
-    private class Texture : AbstractTexture() {
-        private val owned = FabricMinecraftNativeStorage()
-
-        /**
-         * Allocates each native object into its owned field before the next operation can fail.
-         *
-         * The image is borrowed only for this render-thread upload; its outer resource owns its CPU lifetime.
-         * Device sampler caches remain external, and no partial allocation is eagerly destroyed.
-         */
-        @JvmSynthetic
-        internal fun initialize(pixels: NativeImage) {
-            RenderSystem.assertOnRenderThread()
-            val device = RenderSystem.getDevice()
-            texture = owned.allocate { device.createTexture({ "Strata immutable portable layer" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, pixels.width, pixels.height, 1, 1) }
-            sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
-            textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
-            device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
+    internal fun initializeComposition(
+        indices: NativeImage,
+        factors: NativeImage,
+        size: IntSize,
+        sources: List<AbstractTexture?>,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        val targets =
+            FabricMinecraftCompositionTargets.create(
+                owned,
+                size,
+                IntSize(indices.width, indices.height),
+                IntSize(factors.width, factors.height),
+                { extent -> device.createTexture({ "Strata ordered composition destination" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_COPY_SRC or GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, extent.width, extent.height, 1, 1) },
+                { label, extent -> device.createTexture({ label }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, extent.width, extent.height, 1, 1) },
+                device::createTextureView,
+            )
+        val outputs = targets.destinations
+        val (indexTexture, indexView) = targets.indices
+        val (factorTexture, factorView) = targets.factors
+        val nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+        val encoder = device.createCommandEncoder()
+        encoder.writeToTexture(indexTexture, indices)
+        encoder.writeToTexture(factorTexture, factors)
+        encoder.clearColorTexture(outputs[0].first, Vector4f(0f, 0f, 0f, 0f))
+        val compiled = RenderSystem.getCompiledPipeline(fabricMinecraftCompositionPipeline())
+        sources.forEachIndexed { index, source ->
+            val previous = outputs[index % 2].second
+            val target = outputs[(index + 1) % 2].second
+            encoder.createRenderPass({ "Strata ordered portable composition" }, target, Optional.empty()).use { pass ->
+                pass.setPipeline(compiled)
+                pass.setUniform("InSampler", source?.getTextureView() ?: previous, nearest)
+                pass.setUniform("DestinationSampler", previous, nearest)
+                pass.setUniform("IndexSampler", indexView, nearest)
+                pass.setUniform("FactorSampler", factorView, nearest)
+                pass.draw(3, 1, index * 3, 0)
+            }
         }
-
-        /**
-         * Requests independent native releases only after initialization and GUI-use fences complete.
-         *
-         * Successful release steps are not repeated after another step fails.
-         * Destruction probes retain the original allocated objects before their mutable fields are cleared.
-         */
-        @JvmSynthetic
-        internal fun destroy() {
-            RenderSystem.assertOnRenderThread()
-            owned.close()
-            textureView = null
-            texture = null
-        }
-
-        /**
-         * Acknowledges all original native allocations without waiting, after every close request has succeeded.
-         *
-         * Unknown or incomplete physical destruction retains the generation's permit through the caller's polling policy.
-         */
-        @JvmSynthetic
-        internal fun isDestroyed(): Boolean {
-            RenderSystem.assertOnRenderThread()
-            return owned.isDestroyed()
-        }
-
-        @JvmSynthetic
-        override fun close() = Unit
+        texture = outputs[sources.size % 2].first
+        textureView = outputs[sources.size % 2].second
+        sampler = nearest
     }
 }
 

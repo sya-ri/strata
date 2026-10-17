@@ -17,17 +17,16 @@ import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Executes retained local paint and transforms commands into tree coordinates.
+ * Empty subtree root-overlay results use the immutable zero-resource list; nonempty results preserve ordered concatenation.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PaintPipeline(
     private val ownerGuard: OwnerGuard,
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
     /**
      * Paints [root] in parent-before-child order.
@@ -35,36 +34,64 @@ internal class PaintPipeline(
      * @param root the laid-out retained root.
      * @return tree-coordinate draw commands.
      */
-    fun paint(root: RetainedEntry): List<DrawCommand> =
-        buildList {
-            val rootOverlays = mutableListOf<DrawCommand>()
-            paintNode(root, root.measuredSize, this, rootOverlays)
-            addAll(rootOverlays)
-        }
+    fun paint(root: RetainedEntry): List<DrawCommand> {
+        val snapshot = paintNode(root, root.measuredSize)
+        return if (snapshot.rootOverlays.isEmpty()) snapshot.commands else RetainedDrawCommands(listOf(snapshot.commands, snapshot.rootOverlays))
+    }
 
     private fun paintNode(
         retained: RetainedEntry,
         viewport: IntSize,
-        output: MutableList<DrawCommand>,
-        rootOverlays: MutableList<DrawCommand>,
-    ) {
+    ): RetainedPaintSnapshot {
+        retained.paintSnapshot?.let { if (it.matches(retained, viewport)) return it }
+        retained.paintSubtreeDirty = false
         updateLocalCommands(retained, viewport)
-        appendTransformed(retained.localCommands.orEmpty(), retained, output)
-        val clipsChildren = retained.node is ClipChildrenNode
-        if (clipsChildren) {
-            output.add(transformClip(IntRect(0, 0, retained.measuredSize.width, retained.measuredSize.height), retained.localToTree))
-        }
+        val commands = transformedCommands(retained)
+        val parts = ArrayList<List<DrawCommand>>(retained.effectiveChildCount + 2)
+        parts.add(commands.beforeChildren)
+        var rootOverlays: MutableList<List<DrawCommand>>? = null
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
             if (child.placed) {
-                paintNode(child, viewport, output, rootOverlays)
+                val snapshot = paintNode(child, viewport)
+                parts.add(snapshot.commands)
+                if (snapshot.rootOverlays.isNotEmpty()) {
+                    val overlays = rootOverlays ?: ArrayList()
+                    overlays.add(snapshot.rootOverlays)
+                    rootOverlays = overlays
+                }
             }
         }
-        if (clipsChildren) {
-            output.add(DrawCommand.PopClip)
+        parts.add(commands.afterChildren)
+        if (commands.rootOverlays.isNotEmpty()) {
+            val overlays = rootOverlays ?: ArrayList()
+            overlays.add(commands.rootOverlays)
+            rootOverlays = overlays
         }
-        appendTransformed(retained.localOverlayCommands.orEmpty(), retained, output)
-        appendUntranslated(retained.rootOverlayCommands.orEmpty(), rootOverlays)
+        val overlays = rootOverlays?.let(::RetainedDrawCommands) ?: emptyList()
+        return RetainedPaintSnapshot(commands, viewport, RetainedDrawCommands(parts), overlays).also { retained.paintSnapshot = it }
+    }
+
+    private fun transformedCommands(retained: RetainedEntry): RetainedPaintCommands {
+        retained.transformedPaint?.let { if (it.matches(retained)) return it }
+        val clipsChildren = retained.node is ClipChildrenNode
+        val commands =
+            RetainedPaintCommands(
+                retained,
+                buildList {
+                    appendTransformed(retained.localCommands.orEmpty(), retained, this)
+                    if (clipsChildren) {
+                        add(transformClip(IntRect(0, 0, retained.measuredSize.width, retained.measuredSize.height), retained.localToTree))
+                    }
+                },
+                buildList {
+                    if (clipsChildren) add(DrawCommand.PopClip)
+                    appendTransformed(retained.localOverlayCommands.orEmpty(), retained, this)
+                },
+                buildList { retained.rootOverlayCommands.orEmpty().forEach { add(translate(it, 0, 0)) } },
+            )
+        retained.transformedPaint = commands
+        return commands
     }
 
     private fun updateLocalCommands(
@@ -79,8 +106,8 @@ internal class PaintPipeline(
             DirtyPhase.Paint in retained.dirty || retained.localCommands == null || retained.localOverlayCommands == null
         if (localNeedsUpdate) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
-            retained.localCommands = collect(retained, UiRenderMetric.Paint, paintNode?.let { node -> node::paint })
-            retained.localOverlayCommands = collect(retained, UiRenderMetric.OverlayPaint, overlayNode?.let { node -> node::paintOverlay })
+            retained.localCommands = collect(retained, paintNode?.let { node -> node::paint })
+            retained.localOverlayCommands = collect(retained, overlayNode?.let { node -> node::paintOverlay })
         }
         if (localNeedsUpdate || retained.rootOverlayCommands == null || rootOverlayGeometryChanged) {
             retained.rootOverlayCommands = collectRootOverlay(retained, viewport, rootOverlayNode)
@@ -97,7 +124,6 @@ internal class PaintPipeline(
         if (node == null) return emptyList()
         val collector = RootOverlayPaintScopeImplementation(ownerGuard, viewport, retained.bounds)
         return try {
-            monitoring.record(UiRenderMetric.RootOverlayPaint, retained)
             node.paintRootOverlay(collector)
             collector.snapshot()
         } finally {
@@ -107,7 +133,6 @@ internal class PaintPipeline(
 
     private fun collect(
         retained: RetainedEntry,
-        metric: UiRenderMetric,
         callback: ((PaintScope) -> Unit)?,
     ): List<LocalDrawCommand> {
         if (callback == null) {
@@ -115,7 +140,6 @@ internal class PaintPipeline(
         }
         val collector = LocalPaintScope(ownerGuard, retained.measuredSize)
         return try {
-            monitoring.record(metric, retained)
             callback(collector)
             composeDenseBlits(collector.snapshot())
         } finally {
@@ -136,13 +160,6 @@ internal class PaintPipeline(
                 transform(command, retained.localToTree)?.let(output::add)
             }
         }
-    }
-
-    private fun appendUntranslated(
-        commands: List<LocalDrawCommand>,
-        output: MutableList<DrawCommand>,
-    ) {
-        commands.forEach { command -> output.add(translate(command, 0, 0)) }
     }
 
     private fun transform(
@@ -285,6 +302,13 @@ internal class PaintPipeline(
          */
         val commands: MutableList<LocalDrawCommand> = ArrayList()
 
+        /**
+         * Checks the shared callback guard before reading delegated root-overlay geometry.
+         */
+        fun checkActive() {
+            guard.check()
+        }
+
         override val size: IntSize
             get() {
                 guard.check()
@@ -383,7 +407,10 @@ internal class PaintPipeline(
             get() = delegate.size
 
         override val anchorBounds: IntRect
-            get() = anchor
+            get() {
+                delegate.checkActive()
+                return anchor
+            }
 
         override fun withClip(
             localBounds: IntRect,
