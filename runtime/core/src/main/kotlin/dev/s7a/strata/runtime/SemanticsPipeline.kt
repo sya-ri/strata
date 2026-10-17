@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.SemanticsNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsScope
@@ -15,7 +14,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal class SemanticsPipeline(
     private val ownerGuard: OwnerGuard,
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
     /**
      * Collects [root] semantics in parent-before-child order.
@@ -61,7 +59,6 @@ internal class SemanticsPipeline(
         }
         val collector = SemanticsCollector(ownerGuard)
         try {
-            monitoring.record(UiRenderMetric.Semantics, retained)
             semanticsCapability.semantics(collector)
             return collector.snapshot()
         } finally {

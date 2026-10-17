@@ -28,15 +28,9 @@ internal class FabricMinecraftSampledImageDeviceTest {
             val image = image(0)
 
             fixture.borrow(owner, listOf(image, image))
-
-            assertEquals(0, fixture.hits)
-            assertEquals(1, fixture.misses)
             assertEquals(1, fixture.uploads)
 
             fixture.borrow(owner, listOf(image, image))
-
-            assertEquals(1, fixture.hits)
-            assertEquals(1, fixture.misses)
             assertEquals(1, fixture.uploads)
         }
     }
@@ -51,11 +45,7 @@ internal class FabricMinecraftSampledImageDeviceTest {
             fixture.borrow(owner, listOf(first))
             fixture.borrow(owner, listOf(first))
             fixture.borrow(owner, listOf(equalPixels))
-
-            assertEquals(1, fixture.hits)
-            assertEquals(2, fixture.misses)
             assertEquals(2, fixture.uploads)
-            assertEquals(0, fixture.evictions)
             assertEquals(2, fixture.manager.retainedResourceCount())
             assertEquals(8L, fixture.manager.retainedResourceBytes())
 
@@ -79,11 +69,12 @@ internal class FabricMinecraftSampledImageDeviceTest {
             fixture.borrow(owner, images.drop(1))
 
             assertEquals(uploads + 1, fixture.uploads)
-            assertEquals(1, fixture.evictions)
             assertEquals(257, fixture.manager.retainedResourceCount())
             fixture.driver.signalAll()
             fixture.manager.poll()
             assertEquals(256, fixture.manager.retainedResourceCount())
+            assertEquals(1, fixture.resources.first().closeCalls)
+            assertTrue(fixture.resources.drop(1).all { it.closeCalls == 0 })
 
             fixture.manager.release(owner)
             fixture.manager.poll()
@@ -102,19 +93,11 @@ internal class FabricMinecraftSampledImageDeviceTest {
                 .borrow(
                     owner,
                     listOf(pinned),
-                    { fixture.hits += 1 },
-                    { fixture.misses += 1 },
-                    { fixture.uploads += 1 },
-                    { fixture.evictions += 1 },
                 ).use {
                     fixture.borrow(owner, otherImages)
                     fixture.borrow(owner, listOf(pinned))
                 }
-
-            assertEquals(1, fixture.hits)
-            assertEquals(257, fixture.misses)
             assertEquals(256, fixture.uploads)
-            assertEquals(0, fixture.evictions)
             assertEquals(256, fixture.manager.retainedResourceCount())
 
             fixture.manager.release(owner)
@@ -136,7 +119,7 @@ internal class FabricMinecraftSampledImageDeviceTest {
             val uploads = fixture.uploads
 
             fixture.manager
-                .borrow(waitingOwner, listOf(images.last()), {}, { fixture.misses += 1 }, { fixture.uploads += 1 }, { fixture.evictions += 1 })
+                .borrow(waitingOwner, listOf(images.last()))
                 .use { borrowed -> assertNull(borrowed.texture(images.last())) }
 
             assertEquals(uploads, fixture.uploads)
@@ -160,7 +143,7 @@ internal class FabricMinecraftSampledImageDeviceTest {
             val owner = fixture.manager.openOwner()
             val image = image(7)
             fixture.manager
-                .borrow(owner, listOf(image), {}, {}, {}, {})
+                .borrow(owner, listOf(image))
                 .use { borrowed -> borrowed.queued(image) }
             device.consumed()
             fixture.manager.release(owner)
@@ -205,7 +188,7 @@ internal class FabricMinecraftSampledImageDeviceTest {
             val owner = fixture.manager.openOwner()
             val image = image(9)
             fixture.manager
-                .borrow(owner, listOf(image), {}, {}, {}, {})
+                .borrow(owner, listOf(image))
                 .use { borrowed -> borrowed.queued(image) }
             fixture.driver.signalAll()
             fixture.manager.poll()
@@ -288,17 +271,14 @@ internal class FabricMinecraftSampledImageDeviceTest {
                 }
                 null
             }
-        var hits = 0
-        var misses = 0
-        var uploads = 0
-        var evictions = 0
+        val uploads: Int get() = resources.size
 
         fun borrow(
             owner: FabricMinecraftSampledImageDevice.Owner,
             images: List<DrawImage>,
         ) {
             manager
-                .borrow(owner, images, { hits += 1 }, { misses += 1 }, { uploads += 1 }, { evictions += 1 })
+                .borrow(owner, images)
                 .use {}
         }
 
@@ -307,7 +287,7 @@ internal class FabricMinecraftSampledImageDeviceTest {
             image: DrawImage,
         ) {
             manager
-                .borrow(owner, listOf(image), { hits += 1 }, { misses += 1 }, { uploads += 1 }, { evictions += 1 })
+                .borrow(owner, listOf(image))
                 .use { borrowed -> borrowed.queued(image) }
         }
 

@@ -15,9 +15,6 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.diagnostics.UiRenderNodeId
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.screen.ScreenDefinition
@@ -39,12 +36,15 @@ internal class ManualImeSession(
     private val source = ReactiveRenderSource(0)
     private val instruction = ReactiveRenderSource("Enter confirms conversion. Enter again adds a new line.")
     private val draft = TextAreaState()
-    private val label = source.map { "Updates: $it" }
+    private var labelEvaluations = 0
+    private val label = source.map {
+        labelEvaluations += 1
+        "Updates: $it"
+    }
     private var completed = false
     private var ticks = 0
     private var closed = false
-    private var monitor: UiRenderMonitor? = null
-    private var editorIds: List<UiRenderNodeId> = emptyList()
+    private var editorIds: List<Long> = emptyList()
     private val screen =
         createMinecraftScreen(
             ScreenDefinition("Strata OS IME verification") {
@@ -79,8 +79,7 @@ internal class ManualImeSession(
         if (closed) return
         ticks += 1
         if (ticks == 4) {
-            monitor = screen.startRenderMonitoring()
-            editorIds = checkNotNull(monitor).findNodes(ElementKey("manual-ime-editor"))
+            editorIds = MinecraftPresentationObservation.identities(screen, ElementKey("manual-ime-editor"))
             check(editorIds.isNotEmpty())
         }
         if (ticks % 10 == 0) source.publish(ticks / 10)
@@ -100,20 +99,15 @@ internal class ManualImeSession(
             instruction.publish(missingInput)
             return
         }
-        val collector = checkNotNull(monitor)
         try {
-            check(collector.findNodes(ElementKey("manual-ime-editor")) == editorIds)
-            val snapshot = collector.snapshot()
-            check(snapshot.overflowed.not())
-            check(0L < snapshot.counts.getValue(UiRenderMetric.StateComponentEvaluation))
+            check(MinecraftPresentationObservation.identities(screen, ElementKey("manual-ime-editor")) == editorIds)
+            check(1 < labelEvaluations)
             val output = Path.of(checkNotNull(System.getProperty("strata.ime.output")))
             Files.createDirectories(output)
             val runId = checkNotNull(System.getProperty("strata.ime.runId"))
             Files.writeString(output.resolve("manual-os-ime.txt"), "runId=$runId\ndraft=${draft.value.replace("\n", "\\n")}\nupdates=${ticks / 10}\neditorIdentity=retained\ninput=OS-keyboard-only\n")
         } finally {
             closed = true
-            collector.close()
-            monitor = null
             editorIds = emptyList()
             screen.onClose()
             minecraft.stop()

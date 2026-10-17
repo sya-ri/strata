@@ -72,6 +72,9 @@ Read the linked contract only when the change touches that area; [architecture](
 
 - Keep tests Minecraft-independent wherever the behavior does not require a loaded game.
   Use a Fabric GameTest only when the behavior genuinely needs the game environment.
+- Keep performance measurement outside production artifacts, including disabled diagnostic hooks, observers, cumulative work counters, and collector state.
+  Use test-owned probes and external collectors; preserve clocks and resource accounting required by actual behavior.
+  Follow [measurement boundaries](docs/development/render-monitoring.md) and report unavailable metrics explicitly.
 - Keep build caches separate from acceptance evidence.
   Loaded worlds, screenshots, parity receipts, and analysis or coverage reports must be recreated for the selected verification revision.
   Preserve signed release preparation and rendered documentation snapshots for reuse under [release publication](docs/development/release.md); do not regenerate historical evidence during a retry.

@@ -41,20 +41,20 @@ internal object FractionalClipScenario {
                 },
             )
         }
-        driver.await { 0L < driver.work().preparations }
+        driver.await { driver.work().inputs != null }
         var previous = driver.onClient { driver.work() }
         driver.await {
             val current = driver.work()
-            val settled = previous.hostFrames < current.hostFrames && previous.preparations == current.preparations
+            val settled = previous.renderExtractions < current.renderExtractions && previous.inputs === current.inputs
             previous = current
             settled
         }
         val baseline = driver.onClient { driver.work() }
-        driver.await { 100L <= driver.work().hostFrames - baseline.hostFrames }
+        driver.await { 100L <= driver.work().renderExtractions - baseline.renderExtractions }
         driver.onClient {
             val current = driver.work()
-            check(current.preparations == baseline.preparations)
-            check(current.rasterizations == baseline.rasterizations && current.uploads == baseline.uploads)
+            check(current.inputs === baseline.inputs && current.commands === baseline.commands)
+            check(current.samePortable(baseline) && current.sameSources(baseline))
         }
         driver.assertPixels(
             ScreenDefinition("Exact viewport coverage") {

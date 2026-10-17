@@ -23,19 +23,6 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     private var storage: NativeGuiResource? = null
     private var nativeClosed = false
     private var closed = false
-    private var inlineSampling = false
-
-    /**
-     * Distinguishes deferred source sampling from an already-materialized output for native work counters.
-     * The flag becomes true only after index upload succeeds; it owns no resource or source reference.
-     */
-    @get:JvmSynthetic
-    internal val samplesDuringGui: Boolean
-        get() {
-            RenderSystem.assertOnRenderThread()
-            check(closed.not() && storage != null) { "Exact sampling mode requires initialized live native storage." }
-            return inlineSampling
-        }
 
     /**
      * Borrows the initialized native texture and sampler on the render thread without transferring generation-owned storage.
@@ -97,7 +84,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val indices = sampling.indices
         val native = uploadPixels.stage(indices.size, indices::argbAt)
-        inlineSampling = initializeFabricMinecraftSampledTexture(native, sampling.physicalSize, source.texture, ::retainStorage)
+        initializeFabricMinecraftSampledTexture(native, sampling.physicalSize, source.texture, ::retainStorage)
     }
 
     /**

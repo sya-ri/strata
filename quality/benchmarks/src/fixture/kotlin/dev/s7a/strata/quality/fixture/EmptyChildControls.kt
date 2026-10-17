@@ -6,7 +6,6 @@ import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
-import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
@@ -17,8 +16,6 @@ import dev.s7a.strata.quality.fixture.EmptyChildWorkload.Operation
 import dev.s7a.strata.quality.fixture.EmptyChildWorkload.Payload
 import dev.s7a.strata.runtime.TreeState
 import dev.s7a.strata.runtime.UiTree
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderNodeKind
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -71,7 +68,7 @@ public object EmptyChildControls {
         FrameIdentity(EmptyChildControls::frameIdentity),
         PixelsAndGeometry({ EmptyChildPresentationControl.verify() }),
         InputAndSemantics(EmptyChildInputControl::verify),
-        MonitoringParity(EmptyChildControls::monitoringParity),
+        IndependentOwners(EmptyChildControls::independentOwners),
         OwnerIsolation(EmptyChildControls::ownerIsolation),
         TerminalRetention(EmptyChildControls::terminal),
         ;
@@ -85,7 +82,7 @@ public object EmptyChildControls {
     }
 
     /**
-     * Executes every independent group and all 60 fixed workload cases before sampling.
+     * Executes every independent group and all 30 fixed workload cases before sampling.
      */
     public fun verify() {
         Control.entries.forEach(::verify)
@@ -105,16 +102,14 @@ public object EmptyChildControls {
     public fun verifyInventory() {
         check(EmptyChildWorkload.entries.size == 30)
         EmptyChildWorkload.entries.forEach { workload ->
-            verifyInventoryCase(workload, false)
-            verifyInventoryCase(workload, true)
+            verifyInventoryCase(workload)
         }
     }
 
     private fun verifyInventoryCase(
         workload: EmptyChildWorkload,
-        monitoring: Boolean,
     ) {
-        EmptyChildFixture(workload, monitoring).use { fixture ->
+        EmptyChildFixture(workload).use { fixture ->
             val before = fixture.probe.nodes.toList()
             val result = fixture.execute()
             verifyCallbackWork(fixture)
@@ -122,7 +117,6 @@ public object EmptyChildControls {
             verifyLifecycleWork(fixture)
             verifyRetainedNodes(fixture, before)
             if (workload.operation == Operation.CleanSessionFrame) check(result === fixture.initialFrame)
-            verifyDiagnosticWork(fixture)
             fixture.settle()
         }
     }
@@ -199,25 +193,13 @@ public object EmptyChildControls {
         )
     }
 
-    private fun verifyDiagnosticWork(fixture: EmptyChildFixture) {
-        val snapshot = fixture.monitor?.snapshot() ?: return
-        val workload = fixture.workload
-        val idle = workload.operation == Operation.CleanSessionFrame || workload.operation == Operation.SameDescriptionTreeUpdate
-        val created = if (workload.payload == Payload.EmptyToOne && idle.not()) workload.count.toLong() else 0L
-        val removed = if (workload.payload == Payload.OneToEmpty && idle.not()) workload.count.toLong() else 0L
-        check(snapshot.overflowed.not())
-        check((snapshot.counts[UiRenderMetric.NodeUpdate] ?: 0L) == (expectedUpdates(workload) + if (idle) 0 else workload.count).toLong())
-        check((snapshot.counts[UiRenderMetric.NodeCreate] ?: 0L) == created)
-        check((snapshot.counts[UiRenderMetric.NodeDispose] ?: 0L) == removed)
-    }
-
     private fun checkCount(
         fixture: EmptyChildFixture,
         stage: Stage,
         expected: Int,
     ) {
         val actual = fixture.probe.count(stage)
-        check(actual == expected) { "Wrong $stage work for ${fixture.workload}, monitoring=${fixture.monitor != null}: expected $expected, actual $actual" }
+        check(actual == expected) { "Wrong $stage work for ${fixture.workload}: expected $expected, actual $actual" }
     }
 
     private fun freshLeaf() {
@@ -247,7 +229,6 @@ public object EmptyChildControls {
             UiTree().use { tree ->
                 tree.update(probe.element(1))
                 settle(tree)
-                val monitor = tree.startRenderMonitoring()
                 probe.checkpoint()
                 tree.update(probe.element(1, 1, mask = DirtyMask.of(phase)))
                 settle(tree)
@@ -255,7 +236,6 @@ public object EmptyChildControls {
                 check(probe.count(Stage.Measure) == if (phase == DirtyPhase.Measure) 1 else 0)
                 check(probe.count(Stage.Paint) == if (phase == DirtyPhase.Paint || phase == DirtyPhase.Measure) 1 else 0)
                 check(probe.count(Stage.Semantics) == if (phase == DirtyPhase.Semantics || phase == DirtyPhase.Measure) 1 else 0)
-                check((monitor.snapshot().counts[UiRenderMetric.StructureInvalidation] ?: 0L) == 0L)
                 val expectedWidth = if (phase == DirtyPhase.Measure) 2 else 1
                 check(tree.measure(Constraints()).width == expectedWidth)
                 val fill = tree.paint().single() as DrawCommand.FillRectangle
@@ -267,7 +247,6 @@ public object EmptyChildControls {
                         .single()
                         .semantics.value == UiText.Literal(if (phase == DirtyPhase.Semantics) "1" else "0"),
                 )
-                monitor.close()
             }
         }
     }
@@ -304,15 +283,12 @@ public object EmptyChildControls {
                 Payload.NonemptyToNonempty -> EmptyChildWorkload.DirectNonempty1
                 else -> error("Expected a nonempty transition")
             }
-        EmptyChildFixture(workload, true).use { fixture ->
+        EmptyChildFixture(workload).use { fixture ->
             val before = fixture.probe.nodes.toList()
-            val monitor = checkNotNull(fixture.monitor)
-            val target = monitor.findNodes(ElementKey(0)).single()
+            val target = fixture.probe.nodes.first { it.id == 0 }
             fixture.execute()
             fixture.settle()
-            check(monitor.findNodes(ElementKey(0)).single() == target)
-            val structural = monitor.snapshot().counts[UiRenderMetric.StructureInvalidation] ?: 0
-            check(structural == if (payload == Payload.NonemptyToNonempty) 0L else 1L)
+            check(fixture.probe.nodes.first { it.id == 0 } === target && target.disposed.not())
             when (payload) {
                 Payload.EmptyToOne -> {
                     check(fixture.probe.count(Stage.Create) == 1 && fixture.probe.count(Stage.Attach) == 1)
@@ -362,21 +338,17 @@ public object EmptyChildControls {
         UiTree().use { tree ->
             tree.update(probe.element(0, children = listOf(leaf(1), leaf(2))))
             settle(tree)
-            val monitor = tree.startRenderMonitoring()
-            val first = monitor.findNodes(ElementKey(1)).single()
-            val second = monitor.findNodes(ElementKey(2)).single()
-            val previous = monitor.snapshot().nodes.associateBy { it.id }
+            val first = probe.nodes.single { it.id == 1 }
+            val second = probe.nodes.single { it.id == 2 }
+            val modifiers = probe.modifiers.toList()
             probe.checkpoint()
             tree.update(probe.element(0, children = listOf(leaf(2), leaf(1))))
             settle(tree)
-            val after = monitor.snapshot()
-            check(monitor.findNodes(ElementKey(1)).single() == first && monitor.findNodes(ElementKey(2)).single() == second)
-            check(after.nodes.all { previous[it.id]?.parentId == it.parentId })
+            check(probe.nodes.single { it.id == 1 } === first && probe.nodes.single { it.id == 2 } === second)
+            check(modifiers == probe.modifiers && modifiers.all { it.disposed.not() })
             check(probe.count(Stage.Create) == 0 && probe.events.isEmpty())
             check(probe.count(Stage.ModifierUpdate) == if (modified) 2 else 0)
-            check(after.counts[UiRenderMetric.StructureInvalidation] == 1L)
             check(tree.semantics().map { it.semantics.label } == listOf(0, 2, 1).map(::devLabel))
-            monitor.close()
         }
     }
 
@@ -460,60 +432,20 @@ public object EmptyChildControls {
         UiTree().use { tree ->
             tree.update(probe.element(1))
             val node = probe.nodes.single()
-            val monitor = tree.startRenderMonitoring()
-            val componentId = monitor.findNodes(ElementKey(1)).single()
             val hoisted = probe.modifier(1)
             tree.update(probe.element(1, modifier = hoisted))
-            val modifierId =
-                monitor
-                    .snapshot()
-                    .nodes
-                    .single { it.kind == UiRenderNodeKind.Modifier }
-                    .id
+            val modifier = probe.modifiers.single()
             probe.checkpoint()
             tree.update(probe.element(1, modifier = hoisted))
             check(probe.count(Stage.Update) == 1 && probe.count(Stage.ModifierUpdate) == 0)
-            check(
-                monitor
-                    .snapshot()
-                    .nodes
-                    .single { it.kind == UiRenderNodeKind.Modifier }
-                    .id == modifierId,
-            )
+            check(probe.modifiers.single() === modifier && modifier.disposed.not())
             tree.update(probe.element(1, modifier = probe.modifier(1)))
-            check(probe.count(Stage.ModifierUpdate) == 1)
-            check(
-                monitor
-                    .snapshot()
-                    .nodes
-                    .single { it.kind == UiRenderNodeKind.Modifier }
-                    .id == modifierId,
-            )
+            check(probe.count(Stage.ModifierUpdate) == 1 && probe.modifiers.single() === modifier)
             tree.update(probe.element(1, modifier = probe.modifier(1, 1)))
-            check(probe.count(Stage.ModifierUpdate) == 2)
-            val modified = monitor.snapshot()
-            check(
-                modified.nodes
-                    .single { it.id == modifierId }
-                    .retired
-                    .not(),
-            )
-            check(
-                modified.nodes
-                    .single { it.id == componentId }
-                    .parentId == modifierId,
-            )
+            check(probe.count(Stage.ModifierUpdate) == 2 && probe.modifiers.single() === modifier)
             tree.update(probe.element(1))
             check(probe.nodes.single() === node && node.disposed.not())
-            check(monitor.findNodes(ElementKey(1)).single() == componentId)
-
-            val retired =
-                monitor
-                    .snapshot()
-                    .nodes
-                    .single { it.id == modifierId }
-            check(retired.retired)
-            monitor.close()
+            check(modifier.disposed)
         }
     }
 
@@ -569,9 +501,7 @@ public object EmptyChildControls {
             }
         session.use {
             session.attach()
-            val monitor = session.startRenderMonitoring()
             session.frame(Constraints())
-            monitor.checkpoint()
             source.publish(Output.Empty)
             check(evaluations == 1)
             session.frame(Constraints())
@@ -580,7 +510,6 @@ public object EmptyChildControls {
             val empty = session.frame(Constraints())
             check(evaluations == 3 && empty.drawCommands.isEmpty() && empty.semantics.isEmpty())
             check(session.frame(Constraints()) === empty && evaluations == 3)
-            check(monitor.snapshot().counts[UiRenderMetric.SourceContent] == 2L)
         }
         check(source.subscribed.not())
         cutoff()
@@ -618,28 +547,27 @@ public object EmptyChildControls {
     }
 
     private fun frameIdentity() {
-        EmptyChildFixture(EmptyChildWorkload.Clean128, true).use { fixture ->
+        EmptyChildFixture(EmptyChildWorkload.Clean128).use { fixture ->
             check(fixture.execute() === fixture.initialFrame)
             check(fixture.observations().all { it == 0 })
-            check(checkNotNull(fixture.monitor).snapshot().counts[UiRenderMetric.FrameCacheHit] == 1L)
         }
     }
 
-    private fun monitoringParity() {
+    private fun independentOwners() {
         EmptyChildWorkload.entries.forEach { workload ->
             val disabled =
-                EmptyChildFixture(workload, false).use { fixture ->
+                EmptyChildFixture(workload).use { fixture ->
                     fixture.execute()
                     fixture.settle()
                     fixture.observations()
                 }
             val enabled =
-                EmptyChildFixture(workload, true).use { fixture ->
+                EmptyChildFixture(workload).use { fixture ->
                     fixture.execute()
                     fixture.settle()
                     fixture.observations()
                 }
-            check(disabled == enabled) { "Monitoring changed independent callbacks: $workload" }
+            check(disabled == enabled) { "Independent owners changed callbacks: $workload" }
         }
     }
 

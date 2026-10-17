@@ -21,7 +21,6 @@ import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.RootOverlayPaintScope
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -157,30 +156,13 @@ public open class EmptyRootOverlayBenchmark {
         public fun verifyWork() {
             val initial = session.frame(CONSTRAINTS)
             val oldCommands = initial.drawCommands.toList()
-            session.startRenderMonitoring().use { monitor ->
-                repeat(4) {
-                    monitor.checkpoint()
-                    val frame = nextFrame()
-                    check(frame.size == VIEWPORT)
-                    check(frame.drawCommands == expectedCommands())
-                    check(frame.semantics.isEmpty())
-                    val snapshot = monitor.snapshot()
-                    check(snapshot.overflowed.not())
-                    val containers = if (pattern == Pattern.DescendantNonempty) 17L else 1L
-                    val geometry = invalidation == Invalidation.Geometry
-                    val overlay = if (pattern == Pattern.Absent) 0L else 1L
-                    check(snapshot.counts[UiRenderMetric.Paint] == leafCount.toLong())
-                    check(snapshot.counts[UiRenderMetric.OverlayPaint] == 0L)
-                    check(snapshot.counts[UiRenderMetric.RootOverlayPaint] == overlay)
-                    check(snapshot.counts[UiRenderMetric.Measure] == if (geometry) leafCount + containers else 0L)
-                    check(snapshot.counts[UiRenderMetric.Layout] == if (geometry) containers else 0L)
-                    check(snapshot.counts[UiRenderMetric.FrameSuccess] == 1L)
-                    monitor.checkpoint()
-                    check(session.frame(CONSTRAINTS) === frame)
-                    check(monitor.snapshot().counts[UiRenderMetric.Paint] == 0L)
-                    check(monitor.snapshot().counts[UiRenderMetric.RootOverlayPaint] == 0L)
-                    check(initial.drawCommands == oldCommands)
-                }
+            repeat(4) {
+                val frame = nextFrame()
+                check(frame.size == VIEWPORT)
+                check(frame.drawCommands == expectedCommands())
+                check(frame.semantics.isEmpty())
+                check(session.frame(CONSTRAINTS) === frame)
+                check(initial.drawCommands == oldCommands)
             }
             session.close()
             check(initial.drawCommands == oldCommands)

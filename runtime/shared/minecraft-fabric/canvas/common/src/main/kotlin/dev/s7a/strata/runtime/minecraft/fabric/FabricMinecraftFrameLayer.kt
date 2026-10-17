@@ -28,15 +28,7 @@ internal sealed interface FabricMinecraftFrameLayer {
         @get:JvmSynthetic
         internal val bounds: IntRect,
         @get:JvmSynthetic
-        internal val ineligibleSampledImages: Int = 0,
-        @get:JvmSynthetic
         internal val absoluteCoordinates: Boolean = false,
-        @get:JvmSynthetic
-        internal val capacitySampledImages: Int = 0,
-        @get:JvmSynthetic
-        internal val tintFallbackImages: Int = 0,
-        @get:JvmSynthetic
-        internal val alphaCutoffFallbackImages: Int = 0,
         @get:JvmSynthetic
         internal val orderingGroup: Any? = null,
     ) : FabricMinecraftFrameLayer
@@ -123,10 +115,6 @@ internal fun partitionFabricMinecraftFrame(
     val viewportBounds = IntRect(0, 0, viewport.width, viewport.height)
     var portable = ArrayList<DrawCommand>()
     var portableBounds: IntRect? = null
-    var portableIneligibleSampledImages = 0
-    var portableCapacitySampledImages = 0
-    var portableTintFallbackImages = 0
-    var portableAlphaCutoffFallbackImages = 0
     val samplingBudget = FabricMinecraftSamplingBudget()
     val samplingComposition = FabricMinecraftSamplingComposition(commands)
 
@@ -134,15 +122,11 @@ internal fun partitionFabricMinecraftFrame(
         val bounds = portableBounds
         if (bounds != null) {
             repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages, portableTintFallbackImages, portableAlphaCutoffFallbackImages))
+            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale))
         }
         portable = ArrayList()
         portable.addAll(activeClipCommands)
         portableBounds = null
-        portableIneligibleSampledImages = 0
-        portableCapacitySampledImages = 0
-        portableTintFallbackImages = 0
-        portableAlphaCutoffFallbackImages = 0
     }
 
     commands.forEachIndexed { occurrence, command ->
@@ -186,16 +170,6 @@ internal fun partitionFabricMinecraftFrame(
                     val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEachIndexed
                     portable.add(command)
                     portableBounds = includeFabricVisibleBounds(portableBounds, visible)
-                    if (capacity) {
-                        portableCapacitySampledImages = Math.incrementExact(portableCapacitySampledImages)
-                    } else {
-                        portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
-                    }
-                    when {
-                        capacity -> Unit
-                        command.tint != ArgbColor(-1) && (exactSampling.not() || command.hasExactFabricSamplingEffects().not()) -> portableTintFallbackImages = Math.incrementExact(portableTintFallbackImages)
-                        command.tint == ArgbColor(-1) && command.alphaCutoff != 0f && (exactSampling.not() || command.alphaCutoff != 1f) -> portableAlphaCutoffFallbackImages = Math.incrementExact(portableAlphaCutoffFallbackImages)
-                    }
                 }
             }
 

@@ -1,9 +1,7 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.diagnostics.UiRenderNodeId
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
+import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -25,8 +23,8 @@ public class PaperManualImeVerification : ClientModInitializer {
     private var stage = Stage.Title
     private var ticks = 0
     private var connectedTicks = 0
-    private var monitor: UiRenderMonitor? = null
-    private var nodes: List<UiRenderNodeId> = emptyList()
+    private var previousDeclaration: Any? = null
+    private var nodes: List<Long> = emptyList()
     private var revisions = 0L
 
     override fun onInitializeClient() {
@@ -78,14 +76,16 @@ public class PaperManualImeVerification : ClientModInitializer {
     }
 
     private fun observe(screen: FabricMinecraftScreen) {
-        val collector = monitor ?: screen.startRenderMonitoring().also { monitor = it }
-        val snapshot = collector.snapshot()
-        val current = snapshot.nodes.filter { it.retired.not() }.map { it.id }
-        if (current.isEmpty()) return
+        val root = MinecraftPresentationObservation.declarations(screen)
+        fun identities(declaration: RuntimeDeclaration): List<Long> =
+            listOf(declaration.identity) + declaration.modifiers.map { it.identity } + declaration.children.flatMap(::identities)
+        val current = identities(root)
         if (nodes.isEmpty()) nodes = current
         check(current == nodes) { "A remote revision replaced retained editor nodes." }
-        check(snapshot.overflowed.not())
-        revisions = snapshot.counts.getValue(UiRenderMetric.RootEvaluation)
+        if (previousDeclaration !== root.element) {
+            revisions += 1L
+            previousDeclaration = root.element
+        }
     }
 
     private fun finish(
@@ -98,8 +98,7 @@ public class PaperManualImeVerification : ClientModInitializer {
         val run = requireNotNull(System.getProperty("strata.paper.run"))
         Files.writeString(output.resolve("manual-client.properties"), "runId=$run\ninput=OS-keyboard-only\neditorIdentity=retained\nupdates=$revisions\n")
         stage = Stage.Closed
-        monitor?.close()
-        monitor = null
+        previousDeclaration = null
         nodes = emptyList()
         screen.onClose()
         minecraft.stop()

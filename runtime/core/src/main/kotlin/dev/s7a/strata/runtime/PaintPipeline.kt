@@ -17,7 +17,6 @@ import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -28,7 +27,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PaintPipeline(
     private val ownerGuard: OwnerGuard,
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) {
     /**
      * Paints [root] in parent-before-child order.
@@ -108,8 +106,8 @@ internal class PaintPipeline(
             DirtyPhase.Paint in retained.dirty || retained.localCommands == null || retained.localOverlayCommands == null
         if (localNeedsUpdate) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
-            retained.localCommands = collect(retained, UiRenderMetric.Paint, paintNode?.let { node -> node::paint })
-            retained.localOverlayCommands = collect(retained, UiRenderMetric.OverlayPaint, overlayNode?.let { node -> node::paintOverlay })
+            retained.localCommands = collect(retained, paintNode?.let { node -> node::paint })
+            retained.localOverlayCommands = collect(retained, overlayNode?.let { node -> node::paintOverlay })
         }
         if (localNeedsUpdate || retained.rootOverlayCommands == null || rootOverlayGeometryChanged) {
             retained.rootOverlayCommands = collectRootOverlay(retained, viewport, rootOverlayNode)
@@ -126,7 +124,6 @@ internal class PaintPipeline(
         if (node == null) return emptyList()
         val collector = RootOverlayPaintScopeImplementation(ownerGuard, viewport, retained.bounds)
         return try {
-            monitoring.record(UiRenderMetric.RootOverlayPaint, retained)
             node.paintRootOverlay(collector)
             collector.snapshot()
         } finally {
@@ -136,7 +133,6 @@ internal class PaintPipeline(
 
     private fun collect(
         retained: RetainedEntry,
-        metric: UiRenderMetric,
         callback: ((PaintScope) -> Unit)?,
     ): List<LocalDrawCommand> {
         if (callback == null) {
@@ -144,7 +140,6 @@ internal class PaintPipeline(
         }
         val collector = LocalPaintScope(ownerGuard, retained.measuredSize)
         return try {
-            monitoring.record(metric, retained)
             callback(collector)
             composeDenseBlits(collector.snapshot())
         } finally {

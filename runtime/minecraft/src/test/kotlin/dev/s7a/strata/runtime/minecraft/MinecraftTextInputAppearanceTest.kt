@@ -20,7 +20,6 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
@@ -33,7 +32,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Verifies appearance pixels and retained input through the production DSL, host, and monitoring path.
+ * Verifies appearance pixels and retained input through the production DSL and host.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftTextInputAppearanceTest {
@@ -128,34 +127,25 @@ internal class MinecraftTextInputAppearanceTest {
             val composed = host.frame(size)
             assertTrue(composed.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().any { it.color == underline })
             val offset = area.scrollState.metrics.offset
-            host.startRenderMonitoring().use { monitor ->
-                val nodes = monitor.findNodes(key)
-                val changed = appearance().copy(focused = image(0xFFE0F0E0.toInt()), caretColor = ArgbColor(0xFF102010.toInt()))
-                style.publish(changed)
-                val after = host.frame(size)
-                assertEquals(0xFFE0F0E0.toInt(), rasterizeHeadless(after.drawCommands, size).argbAt(0, 0))
-                assertSame(focus, host.textInputFocus)
-                assertEquals(nodes, monitor.findNodes(key))
-                assertEquals(offset, area.scrollState.metrics.offset)
-                assertEquals(composed.semantics, after.semantics)
-                assertTrue(after.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().any { it.color == underline })
-                assertTrue(after.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().any { it.color == changed.caretColor })
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.Measure])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.Layout])
-                monitor.checkpoint()
-                repeat(100) { assertSame(after, host.frame(size)) }
-                style.publish(changed.copy())
-                assertSame(after, host.frame(size))
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.Paint])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ObserveEvaluation])
-                host.dispatchTextInput(TextInputEvent.Character('C'.code))
-                host.frame(size)
-                assertEquals("AC", if (multiline) area.value else field.value)
-                enabled.publish(false)
-                val disabledFrame = host.frame(size)
-                assertEquals(disabled, rasterizeHeadless(disabledFrame.drawCommands, size).argbAt(0, 0))
-                assertEquals(null, host.textInputFocus)
-            }
+            val changed = appearance().copy(focused = image(0xFFE0F0E0.toInt()), caretColor = ArgbColor(0xFF102010.toInt()))
+            style.publish(changed)
+            val after = host.frame(size)
+            assertEquals(0xFFE0F0E0.toInt(), rasterizeHeadless(after.drawCommands, size).argbAt(0, 0))
+            assertSame(focus, host.textInputFocus)
+            assertEquals(offset, area.scrollState.metrics.offset)
+            assertEquals(composed.semantics, after.semantics)
+            assertTrue(after.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().any { it.color == underline })
+            assertTrue(after.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().any { it.color == changed.caretColor })
+            repeat(100) { assertSame(after, host.frame(size)) }
+            style.publish(changed.copy())
+            assertSame(after, host.frame(size))
+            host.dispatchTextInput(TextInputEvent.Character('C'.code))
+            host.frame(size)
+            assertEquals("AC", if (multiline) area.value else field.value)
+            enabled.publish(false)
+            val disabledFrame = host.frame(size)
+            assertEquals(disabled, rasterizeHeadless(disabledFrame.drawCommands, size).argbAt(0, 0))
+            assertEquals(null, host.textInputFocus)
         }
     }
 

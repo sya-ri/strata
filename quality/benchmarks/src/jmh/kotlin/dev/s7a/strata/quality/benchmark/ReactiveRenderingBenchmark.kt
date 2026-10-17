@@ -113,6 +113,11 @@ public open class ReactiveRenderingBenchmark {
          */
         public fun nextFrame(): RuntimeUiFrame = monitor?.sample(::publishFrame) ?: publishFrame()
 
+        /**
+         * Reads the actual settled frame without publishing a source revision.
+         */
+        public fun cleanFrame(): RuntimeUiFrame = session.frame(constraints)
+
         private fun publishFrame(): RuntimeUiFrame {
             revision += 1
             when (scenario) {

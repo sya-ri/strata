@@ -65,15 +65,11 @@ internal class FabricMinecraftPortableTilesTest {
                         return commands[index]
                     }
                 }
-            val actual = tileFabricMinecraftPortable(observed, bounds, scale, 7, 3, 2, 1)
+            val actual = tileFabricMinecraftPortable(observed, bounds, scale)
             assertEquals(commands.size, reads)
             assertTrue(1 < actual.size && actual.size <= 64)
             if (scale == 1) assertEquals(64, actual.size)
             assertEquals(bounds.width.toLong() * bounds.height, actual.sumOf { it.bounds.width.toLong() * it.bounds.height })
-            assertEquals(7, actual.sumOf { it.ineligibleSampledImages })
-            assertEquals(3, actual.sumOf { it.capacitySampledImages })
-            assertEquals(2, actual.sumOf { it.tintFallbackImages })
-            assertEquals(1, actual.sumOf { it.alphaCutoffFallbackImages })
             for (tile in actual) assertEquals(referenceTileCommands(commands, tile.bounds), tile.commands, "GUI$scale ${tile.bounds}")
         }
         assertThrows(IllegalArgumentException::class.java) {
@@ -135,9 +131,6 @@ internal class FabricMinecraftPortableTilesTest {
                 val inputs = inputs(commands, viewport, scale)
                 assertTrue(1 < inputs.portable.size && inputs.portable.size <= 64)
                 assertArrayEquals(rasterizeHeadless(commands, viewport, scale).copyArgb(), assemble(inputs, viewport, scale), "GUI$scale $orientation")
-                assertEquals(1L, inputs.ineligibleSampledImages)
-                assertEquals(1L, inputs.tintFallbackImages)
-                assertEquals(0L, inputs.alphaCutoffFallbackImages)
             }
         }
     }
@@ -172,23 +165,19 @@ internal class FabricMinecraftPortableTilesTest {
     }
 
     @Test
-    fun duplicatedSampleOccurrencesAreCountedOnceEachAndUnavailableLargeSourcesAreTiled() {
+    fun duplicatedSamplesAndUnavailableLargeSourcesKeepExactTiledPixels() {
         val viewport = IntSize(600, 450)
         val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
         val sampled = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 600f, 450f), alphaCutoff = 0f)
         val tinted = sampled.copy(tint = ArgbColor(0x80FFFFFF.toInt()), alphaCutoff = 0.1f)
         val cutoff = sampled.copy(alphaCutoff = 0.2f)
-        val inputs = inputs(listOf(tinted, tinted, cutoff), viewport, 1)
-        assertEquals(3L, inputs.ineligibleSampledImages)
-        assertEquals(2L, inputs.tintFallbackImages)
-        assertEquals(1L, inputs.alphaCutoffFallbackImages)
+        val commands = listOf(tinted, tinted, cutoff)
+        val inputs = inputs(commands, viewport, 1)
+        assertArrayEquals(rasterizeHeadless(commands, viewport).copyArgb(), assemble(inputs, viewport, 1))
         val direct = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(sampled), viewport, exactSampling = true), 1)
-        val capacity = direct.resolve({ false }) { true }
-        assertEquals(1L, capacity.capacitySampledImages)
-        assertEquals(0L, capacity.ineligibleSampledImages)
+        val capacity = direct.resolve { false }
         assertTrue(1 < capacity.portable.size)
         assertArrayEquals(rasterizeHeadless(listOf(sampled), viewport).copyArgb(), assemble(capacity, viewport, 1))
-        assertEquals(1L, direct.resolve({ false }) { false }.ineligibleSampledImages)
     }
 
     @Test

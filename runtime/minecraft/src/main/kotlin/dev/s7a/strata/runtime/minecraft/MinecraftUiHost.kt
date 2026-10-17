@@ -7,7 +7,6 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
-import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
@@ -25,8 +24,7 @@ import dev.s7a.strata.text.UiText
  */
 @InternalStrataRuntimeApi
 public sealed interface MinecraftUiHost :
-    AutoCloseable,
-    RuntimeUiDiagnosticsOwner {
+    AutoCloseable {
     /**
      * Exact unresolved title transferred from the one-shot definition.
      *

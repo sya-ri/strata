@@ -2,6 +2,8 @@
 
 package dev.s7a.strata.integration.minecraft.fabric
 
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
+
 import com.mojang.blaze3d.platform.InputConstants
 import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Column
@@ -45,7 +47,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
@@ -301,20 +302,11 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 context.waitForScreen(FabricMinecraftScreen::class.java)
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
-                        0L < readRenderWork(minecraft).sampledImageDirectHits
+                        0L < readRenderWork(minecraft).renderExtractions && readRenderWork(minecraft).sources.isNotEmpty()
                     },
                 )
                 val observed = renderWork(context)
                 requireSampledImageParityWork(observed, scene)
-                // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
-                val expectedDirect =
-                    when (scene) {
-                        SampledParityScene.Effects -> 8L
-                        SampledParityScene.Ordered -> if (scale == 1) 26L else 24L
-                    }
-                require(observed.sampledImageDraws == observed.renderExtractions * expectedDirect + observed.sampledImageResamples) {
-                    "Every eligible source must use its pinned GPU presentation at GUI$scale: $observed"
-                }
                 val fabricPath =
                     context.takeScreenshot(
                         TestScreenshotOptions
@@ -368,7 +360,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
                         val work = readRenderWork(minecraft)
-                        0L < work.sampledImageDirectHits && 0L < work.rasterizations
+                        0L < work.renderExtractions && work.sources.isNotEmpty() && work.portableTextures.isNotEmpty()
                     },
                 )
                 context.computeOnClient(
@@ -390,24 +382,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     private fun requireResourceImageMemoizationWork(observed: RenderWork) {
-        require(observed.sampledImageDirectMisses == 1L) {
-            "Equal resource Images must create one direct-cache entry per host: $observed"
-        }
-        require(observed.sampledImageUploads == 1L) {
-            "Equal resource Images must upload one native texture per host: $observed"
-        }
-        require(0L < observed.sampledImageDirectHits && 0L < observed.sampledImageDraws) {
-            "Equal resource Images must reuse and draw their direct-cache entry: $observed"
-        }
-        require(0L < observed.rasterizations && 0L < observed.textureUploads) {
-            "The resource ImageBackground must use the portable native layer: $observed"
-        }
-        require(observed.sampledImageEvictions == 0L) {
-            "Equal resource Images must not evict their shared entry: $observed"
-        }
-        require(observed.sampledImageIneligibleFallbacks == 0L && observed.sampledImageCapacityFallbacks == 0L) {
-            "Equal resource Images must remain on the native direct path: $observed"
-        }
+        require(observed.sources.size == 1 && 0L < observed.sourceBytes) { "Equal resource Images must share one actual native source entry: $observed" }
+        require(observed.portableTextures.isNotEmpty()) { "The ImageBackground must retain its real portable texture." }
     }
 
     private fun resourceImageIdentity(screen: FabricMinecraftScreen): DrawImage {
@@ -514,7 +490,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 )
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
-                        MinecraftClientScreenAccess.currentScreen(minecraft) === initial && 0L < readRenderWork(minecraft).framePreparations
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === initial && readRenderWork(minecraft).inputs != null
                     },
                 )
                 context.runOnClient(
@@ -535,7 +511,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 )
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
-                        MinecraftClientScreenAccess.currentScreen(minecraft) === replacement && 0L < readRenderWork(minecraft).framePreparations
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === replacement && readRenderWork(minecraft).inputs != null
                     },
                 )
                 context.runOnClient(
@@ -621,7 +597,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         context.waitFor(
             Predicate<Minecraft> { minecraft ->
                 MinecraftClientScreenAccess.currentScreen(minecraft) === screen &&
-                    0L < readRenderWork(minecraft).framePreparations && nativeTextInputEnabled(minecraft)
+                    readRenderWork(minecraft).inputs != null && nativeTextInputEnabled(minecraft)
             },
         )
         context.waitTicks(2)
@@ -874,123 +850,34 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     private fun assertCleanFabricFrameReuse(context: ClientGameTestContext) {
-        val beforeBatch =
-            context.computeOnClient(
-                FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft ->
-                    val before = readRenderWork(minecraft)
-                    val screen = activeFabricScreen(minecraft)
-                    listOf("pointerPosition", "pointerFrameCommands").forEach { name ->
-                        val field = FabricMinecraftScreen::class.java.getDeclaredField(name)
-                        check(field.trySetAccessible()) { "Fabric pointer cache field is inaccessible: $name" }
-                        field.set(screen, null)
-                    }
-                    before
-                },
-            )
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val current = readRenderWork(minecraft)
-                beforeBatch.pointerDispatches < current.pointerDispatches && beforeBatch.renderExtractions < current.renderExtractions
-            },
-        )
-        val afterBatch = renderWork(context)
-        val batchExtractions = afterBatch.renderExtractions - beforeBatch.renderExtractions
-        val batchPointerDispatches = afterBatch.pointerDispatches - beforeBatch.pointerDispatches
-        require(afterBatch.hostFrames - beforeBatch.hostFrames == batchExtractions + batchPointerDispatches) {
-            "Each extraction must produce one host frame plus one after each pointer dispatch: before=$beforeBatch, after=$afterBatch"
-        }
-        require(afterBatch.refreshPasses - beforeBatch.refreshPasses == batchExtractions) {
-            "Repeated host frames in one extraction must share one platform refresh: before=$beforeBatch, after=$afterBatch"
-        }
-
-        var previous = afterBatch
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val current = readRenderWork(minecraft)
-                val settled = previous.renderExtractions < current.renderExtractions && previous.pointerDispatches == current.pointerDispatches
-                previous = current
-                settled
-            },
-        )
+        context.waitFor(Predicate<Minecraft> { minecraft ->
+            val state = readRenderWork(minecraft)
+            0L < state.renderExtractions && state.inputs != null
+        })
         val before = renderWork(context)
         context.waitFor(Predicate<Minecraft> { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions })
         val after = renderWork(context)
-        val extractionDelta = after.renderExtractions - before.renderExtractions
-        require(0L < extractionDelta) { "The clean-frame verification observed no native render extraction." }
-        require(after.hostFrames - before.hostFrames == extractionDelta) {
-            "A clean native render extraction must produce exactly one common host frame: before=$before, after=$after"
-        }
-        require(after.refreshPasses - before.refreshPasses == extractionDelta) {
-            "A clean native render extraction must perform exactly one platform refresh: before=$before, after=$after"
-        }
-        require(after.pointerDispatches == before.pointerDispatches) {
-            "A stationary pointer must not be redispatched while the display list is unchanged: before=$before, after=$after"
-        }
-        require(after.framePreparations == before.framePreparations) {
-            "An unchanged display list must not be repartitioned: before=$before, after=$after"
-        }
-        require(after.rasterizations == before.rasterizations) {
-            "An unchanged portable layer must not be rasterized again: before=$before, after=$after"
-        }
-        require(after.textureUploads == before.textureUploads) {
-            "An unchanged portable layer must not be uploaded again: before=$before, after=$after"
-        }
-
-        val beforeEquivalentLayers =
-            context.computeOnClient(
-                FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft ->
-                    val screen = activeFabricScreen(minecraft)
-                    val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
-                    check(commandsField.trySetAccessible()) { "The Fabric prepared command cache is inaccessible." }
-                    val commands = commandsField.get(screen) as? List<*> ?: error("The Fabric screen has no prepared command list.")
-                    commandsField.set(screen, ArrayList(commands))
-                    readRenderWork(minecraft)
-                },
-            )
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                beforeEquivalentLayers.renderExtractions < readRenderWork(minecraft).renderExtractions
-            },
-        )
-        val afterEquivalentLayers = renderWork(context)
-        require(afterEquivalentLayers.framePreparations == beforeEquivalentLayers.framePreparations + 1L) {
-            "A new but equivalent display-list snapshot must be repartitioned exactly once: before=$beforeEquivalentLayers, after=$afterEquivalentLayers"
-        }
-        require(afterEquivalentLayers.rasterizations == beforeEquivalentLayers.rasterizations) {
-            "Equivalent portable layers must reuse their raster textures: before=$beforeEquivalentLayers, after=$afterEquivalentLayers"
-        }
-        require(afterEquivalentLayers.textureUploads == beforeEquivalentLayers.textureUploads) {
-            "Equivalent portable layers must not be uploaded again: before=$beforeEquivalentLayers, after=$afterEquivalentLayers"
-        }
+        require(before.commands === after.commands && before.inputs === after.inputs) { "Clean presentation must retain its exact prepared inputs." }
+        require(before.pointerCommands === after.pointerCommands) { "A stationary pointer must retain its extracted display-list identity." }
+        require(before.samePortable(after) && before.sameSources(after)) { "Clean presentation must retain all actual native texture owners." }
+        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+            val screen = activeFabricScreen(minecraft)
+            val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
+            check(commandsField.trySetAccessible())
+            val commands = commandsField.get(screen) as List<*>
+            commandsField.set(screen, ArrayList(commands))
+        })
+        val changed = renderWork(context)
+        context.waitFor(Predicate<Minecraft> { minecraft -> changed.renderExtractions < readRenderWork(minecraft).renderExtractions })
+        val equivalent = renderWork(context)
+        require(equivalent.inputs !== before.inputs) { "A different display-list snapshot must refresh preparation." }
+        require(equivalent.samePortable(before) && equivalent.sameSources(before)) { "Equivalent commands must retain the actual texture owners." }
     }
 
-    private fun requireSampledImageParityWork(
-        observed: RenderWork,
-        scene: SampledParityScene,
-    ) {
-        require(0L < observed.rasterizations) { "Sampled-image parity must rasterize portable layers: $observed" }
-        require(0L < observed.textureUploads) { "Sampled-image parity must upload portable layers: $observed" }
-        require(0L < observed.sampledImageDirectHits) { "Sampled-image parity must reuse a direct texture: $observed" }
-        require(0L < observed.sampledImageDirectMisses) { "Sampled-image parity must create a direct texture: $observed" }
-        require(0L < observed.sampledImageUploads) { "Sampled-image parity must upload a direct texture: $observed" }
-        require(0L < observed.sampledImageDraws) { "Sampled-image parity must execute the native direct path: $observed" }
-        require(observed.sampledImageEvictions == 0L) { "Sampled-image parity must not evict its direct texture: $observed" }
-        when (scene) {
-            SampledParityScene.Ordered -> {
-                require(0L < observed.sampledImageIneligibleFallbacks) {
-                    "Fractional scale-to-fit parity must mix direct images with portable transformed fallbacks: $observed"
-                }
-            }
-
-            SampledParityScene.Effects -> {
-                require(observed.sampledImageIneligibleFallbacks == 0L) {
-                    "Independent sampled effects must not fall back to CPU composition: $observed"
-                }
-            }
-        }
-        require(observed.sampledImageCapacityFallbacks == 0L) { "Sampled-image parity must fit the direct cache: $observed" }
-        require(0L < observed.sampledImageRetainedEntries) { "Sampled-image parity must retain its direct texture: $observed" }
-        require(0L < observed.sampledImageRetainedBytes) { "Sampled-image parity must retain native texture storage: $observed" }
+    private fun requireSampledImageParityWork(observed: RenderWork, scene: SampledParityScene) {
+        require(observed.portableTextures.isNotEmpty() && observed.sources.isNotEmpty() && 0L < observed.sourceBytes) { "Sampled parity must own real portable and direct native textures: $scene" }
+        val requested = MinecraftPresentationObservation.member(checkNotNull(observed.inputs), "sampled") as List<*>
+        require(requested.all { image -> observed.sourceImages.any { it === image } }) { "Every admitted sampled source must have actual native ownership: $scene" }
     }
 
     private fun renderWork(context: ClientGameTestContext): RenderWork =
@@ -998,46 +885,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft -> readRenderWork(minecraft) },
         )
 
-    private fun readRenderWork(minecraft: Minecraft): RenderWork {
-        val screen = activeFabricScreen(minecraft)
-        val fields = FabricMinecraftScreen::class.java.declaredFields.associateBy { field -> field.name }
-
-        fun counter(
-            name: String,
-            owner: Any = screen,
-        ): Long {
-            val field = if (owner === screen) fields[name] ?: error("Fabric performance counter is missing: $name") else owner.javaClass.getDeclaredField(name)
-            check(field.trySetAccessible()) { "Fabric performance counter is inaccessible: $name" }
-            return field.getLong(owner)
-        }
-
-        val inventoryField = fields["inventory"] ?: error("The Fabric performance screen has no inventory bridge.")
-        check(inventoryField.trySetAccessible()) { "The Fabric inventory bridge is inaccessible." }
-        val inventory = inventoryField.get(screen)
-        val refreshField = inventory.javaClass.getDeclaredField("refreshPassCount")
-        check(refreshField.trySetAccessible()) { "The Fabric refresh counter is inaccessible." }
-
-        return RenderWork(
-            renderExtractions = counter("renderExtractionCount"),
-            hostFrames = counter("hostFrameCount"),
-            pointerDispatches = counter("extractedPointerDispatchCount"),
-            refreshPasses = refreshField.getLong(inventory),
-            framePreparations = counter("framePreparationCount"),
-            rasterizations = counter("portableRasterizationCount"),
-            textureUploads = counter("textureUploadCount"),
-            samplingBytes = counter("samplingUploadByteCount", MinecraftCompositionParityInputs.member(screen, "uploadWork")),
-            sampledImageDirectHits = counter("sampledImageDirectHitCount"),
-            sampledImageDirectMisses = counter("sampledImageDirectMissCount"),
-            sampledImageUploads = counter("sampledImageUploadCount"),
-            sampledImageDraws = counter("sampledImageDrawCount"),
-            sampledImageResamples = counter("sampledImageResampleCount"),
-            sampledImageEvictions = counter("sampledImageEvictionCount"),
-            sampledImageIneligibleFallbacks = counter("sampledImageIneligibleFallbackCount"),
-            sampledImageCapacityFallbacks = counter("sampledImageCapacityFallbackCount"),
-            sampledImageRetainedEntries = counter("sampledImageRetainedEntryCount"),
-            sampledImageRetainedBytes = counter("sampledImageRetainedByteCount"),
-        )
-    }
+    private fun readRenderWork(minecraft: Minecraft): RenderWork = MinecraftPresentationObservation.read(activeFabricScreen(minecraft))
 
     private fun activeFabricScreen(minecraft: Minecraft): FabricMinecraftScreen {
         val activeScreen = MinecraftClientScreenAccess.currentScreen(minecraft)
@@ -1091,27 +939,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         if (image.getWidth() == expected.width && image.getHeight() == expected.height) return
         throw AssertionError("Native screenshot size was ${image.getWidth()}x${image.getHeight()}, expected ${expected.width}x${expected.height}.")
     }
-
-    private data class RenderWork(
-        val renderExtractions: Long,
-        val hostFrames: Long,
-        val pointerDispatches: Long,
-        val refreshPasses: Long,
-        val framePreparations: Long,
-        val rasterizations: Long,
-        val textureUploads: Long,
-        val samplingBytes: Long,
-        val sampledImageDirectHits: Long,
-        val sampledImageDirectMisses: Long,
-        val sampledImageUploads: Long,
-        val sampledImageDraws: Long,
-        val sampledImageResamples: Long,
-        val sampledImageEvictions: Long,
-        val sampledImageIneligibleFallbacks: Long,
-        val sampledImageCapacityFallbacks: Long,
-        val sampledImageRetainedEntries: Long,
-        val sampledImageRetainedBytes: Long,
-    )
 
     private fun requireExactPixels(
         native: NativeImage,
@@ -1270,105 +1097,23 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     @Suppress("LongMethod") // One loaded sequence distinguishes stable tile uploads from navigation and independent marker-overlay updates.
-    private fun verifyTiledImageTextureReuse(
-        context: ClientGameTestContext,
-        navigation: PanZoomState,
-        marker: TiledImageMarkerSource,
-    ) {
+    private fun verifyTiledImageTextureReuse(context: ClientGameTestContext, navigation: PanZoomState, marker: TiledImageMarkerSource) {
         val beforeZoom = renderWork(context)
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> {
-                navigation.zoomTo(2.0)
-            },
-        )
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                beforeZoom.framePreparations < readRenderWork(minecraft).framePreparations
-            },
-        )
+        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { navigation.zoomTo(2.0) })
+        context.waitFor(Predicate<Minecraft> { minecraft -> beforeZoom.inputs !== readRenderWork(minecraft).inputs })
         val afterZoom = renderWork(context)
-        require(afterZoom.sampledImageUploads == beforeZoom.sampledImageUploads) {
-            "Changing only tiled-image destinations must reuse uploaded tile identities: before=$beforeZoom, after=$afterZoom"
-        }
-        require(afterZoom.rasterizations == beforeZoom.rasterizations) {
-            "Changing only tiled-image destinations must not rasterize a portable tile layer: before=$beforeZoom, after=$afterZoom"
-        }
-        require(beforeZoom.sampledImageDirectHits < afterZoom.sampledImageDirectHits && beforeZoom.sampledImageDraws < afterZoom.sampledImageDraws) {
-            "The zoomed frame must hit and draw the direct sampled-image cache: before=$beforeZoom, after=$afterZoom"
-        }
-        require(afterZoom.sampledImageIneligibleFallbacks == beforeZoom.sampledImageIneligibleFallbacks) {
-            "Eligible tiled images must not enter the ineligible fallback after zoom: before=$beforeZoom, after=$afterZoom"
-        }
-        require(afterZoom.sampledImageCapacityFallbacks == beforeZoom.sampledImageCapacityFallbacks) {
-            "Warm tiled images must not enter the capacity fallback after zoom: before=$beforeZoom, after=$afterZoom"
-        }
-        require(afterZoom.sampledImageDirectMisses == beforeZoom.sampledImageDirectMisses && afterZoom.sampledImageEvictions == beforeZoom.sampledImageEvictions) {
-            "Changing tiled-image destinations must not churn warm cache identities: before=$beforeZoom, after=$afterZoom"
-        }
-
-        val beforePan = afterZoom
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> {
-                val previous = navigation.metrics.center
-                val current = navigation.panBy(DoubleOffset(4.0, 0.0))
-                check(previous != current) { "The loaded tiled-image pan must change its clamped center." }
-            },
-        )
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                beforePan.framePreparations < readRenderWork(minecraft).framePreparations
-            },
-        )
+        require(beforeZoom.sameSources(afterZoom) && beforeZoom.samePortable(afterZoom)) { "Zoom must reuse actual tile sources and localized portable textures." }
+        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> {
+            val previous = navigation.metrics.center
+            check(previous != navigation.panBy(DoubleOffset(4.0, 0.0)))
+        })
+        context.waitFor(Predicate<Minecraft> { minecraft -> afterZoom.inputs !== readRenderWork(minecraft).inputs })
         val afterPan = renderWork(context)
-        require(afterPan.sampledImageUploads == beforePan.sampledImageUploads) {
-            "Panning a warm tiled image must reuse uploaded tile identities: before=$beforePan, after=$afterPan"
-        }
-        require(beforePan.sampledImageDirectHits < afterPan.sampledImageDirectHits && beforePan.sampledImageDraws < afterPan.sampledImageDraws) {
-            "The panned frame must hit and draw the direct sampled-image cache: before=$beforePan, after=$afterPan"
-        }
-        require(afterPan.sampledImageIneligibleFallbacks == beforePan.sampledImageIneligibleFallbacks) {
-            "Eligible tiled images must not enter the ineligible fallback after pan: before=$beforePan, after=$afterPan"
-        }
-        require(afterPan.sampledImageCapacityFallbacks == beforePan.sampledImageCapacityFallbacks) {
-            "Warm tiled images must not enter the capacity fallback after pan: before=$beforePan, after=$afterPan"
-        }
-        require(afterPan.sampledImageDirectMisses == beforePan.sampledImageDirectMisses && afterPan.sampledImageEvictions == beforePan.sampledImageEvictions) {
-            "Panning warm tiles must not churn cache identities: before=$beforePan, after=$afterPan"
-        }
-        require(afterPan.rasterizations == beforePan.rasterizations) {
-            "Moving the content-position marker during pan must reuse its localized portable pixels: before=$beforePan, after=$afterPan"
-        }
-
-        val beforeMarker = afterPan
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> {
-                marker.publish(DoubleOffset(40.0, 24.0))
-            },
-        )
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                beforeMarker.framePreparations < readRenderWork(minecraft).framePreparations
-            },
-        )
+        require(afterZoom.sameSources(afterPan) && afterZoom.samePortable(afterPan)) { "Pan must reuse actual tile sources and localized portable textures." }
+        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { marker.publish(DoubleOffset(40.0, 24.0)) })
+        context.waitFor(Predicate<Minecraft> { minecraft -> afterPan.inputs !== readRenderWork(minecraft).inputs })
         val afterMarker = renderWork(context)
-        require(afterMarker.sampledImageUploads == beforeMarker.sampledImageUploads) {
-            "Moving only a player marker must not upload tile identities: before=$beforeMarker, after=$afterMarker"
-        }
-        require(beforeMarker.sampledImageDirectHits < afterMarker.sampledImageDirectHits && beforeMarker.sampledImageDraws < afterMarker.sampledImageDraws) {
-            "A marker-only frame must reuse and draw the direct tile cache: before=$beforeMarker, after=$afterMarker"
-        }
-        require(afterMarker.sampledImageDirectMisses == beforeMarker.sampledImageDirectMisses && afterMarker.sampledImageEvictions == beforeMarker.sampledImageEvictions) {
-            "Moving only a player marker must not churn tile cache identities: before=$beforeMarker, after=$afterMarker"
-        }
-        require(
-            afterMarker.sampledImageIneligibleFallbacks == beforeMarker.sampledImageIneligibleFallbacks &&
-                afterMarker.sampledImageCapacityFallbacks == beforeMarker.sampledImageCapacityFallbacks,
-        ) {
-            "Moving only a player marker must keep eligible tiles on the direct path: before=$beforeMarker, after=$afterMarker"
-        }
-        require(afterMarker.rasterizations == beforeMarker.rasterizations) {
-            "Moving only a player marker must reuse its localized portable pixels: before=$beforeMarker, after=$afterMarker"
-        }
+        require(afterPan.sameSources(afterMarker) && afterPan.samePortable(afterMarker)) { "Marker updates must reuse actual tile sources and localized portable textures." }
     }
 
     private fun requireCanvasKnownPixels(image: HeadlessImage) {
@@ -1736,13 +1481,13 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftClientScreenAccess.setScreen(it, screen) })
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
-                        MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() && 0L < readRenderWork(minecraft).framePreparations
+                        MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() && readRenderWork(minecraft).inputs != null
                     },
                 )
                 context.computeOnClient(
                     FailableFunction<Minecraft, String, RuntimeException> { minecraft ->
                         probe.verify(
-                            frameCount = { readRenderWork(minecraft).hostFrames },
+                            frameCount = { readRenderWork(minecraft).renderExtractions },
                             scroll = { scrollMinecraftScreen(screen, probe.position) },
                             move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
                             click = {
@@ -1779,15 +1524,14 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         context.waitFor(Predicate<Minecraft> { condition() })
                     }
 
-                    override fun open(definition: ScreenDefinition): RuntimeUiDiagnosticsOwner {
+                    override fun open(definition: ScreenDefinition): FabricMinecraftScreen {
                         val screen = createMinecraftScreen(definition, profile, parent = null)
                         MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), screen)
                         return screen
                     }
 
                     override fun work(): ReactiveNativeWork {
-                        val counters = readRenderWork(Minecraft.getInstance())
-                        return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads, counters.samplingBytes)
+                        return readRenderWork(Minecraft.getInstance())
                     }
 
                     override fun assertPixels(

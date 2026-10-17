@@ -214,7 +214,7 @@ internal class MinecraftNativePerformanceProbe(
             context.waitFor(2400) { queries.completed }
             context.onClient { queries.append(result) }
         }
-        check(result.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == plan.samples)
+        check(context.onClient { meter.receipt().get("samples").asInt } == plan.samples)
         result.addProperty("case", name)
         result.addProperty("operation", "presented")
         result.addProperty("gui_scale", scale)

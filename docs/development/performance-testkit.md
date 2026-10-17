@@ -31,7 +31,8 @@ Before accepting a performance change, repeat the affected workloads using their
 
 ## Collection ownership
 
-The kit owns clocks, sample collection, distributions, native presentation counters, runtime monitoring, and collector provenance.
+The kit owns clocks, sample collection, distributions, optional legacy diagnostic readers, and collector provenance.
+Production artifacts contain no measurement hooks; [measurement boundaries](render-monitoring.md) defines test-owned and external observation.
 Application code must not add another timing engine or interpret unavailable collection as zero work.
 Typed JVM detekt checks prohibit direct clocks and CPU/allocation/GC accounting in benchmark and server fixtures.
 Kotlin/JS lacks type-resolved detekt analysis, so the `BrowserPerformanceOwnership` source rule reserves direct browser-clock, timestamp-callback and raw JavaScript names for the kit, including imported aliases and callable references.
@@ -214,7 +215,7 @@ For example, `./gradlew benchmarkMinecraft -Pstrata.minecraftVersions=26.3 -Pstr
 Run the entry as a standalone task; it rejects other requested tasks and the quick profile, and requires a fresh output directory.
 Invoke it three times with independent directories and the same selection for each baseline and candidate, with no other builds or performance workloads running during sampling.
 The explicit `:integration:minecraft-fabric-<version>:runProductionClientGameTest` entry remains available for existing automation.
-The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
+The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase and external collection to `MinecraftPerformanceMeter`.
 It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
 The fixture borrows the formal `minimized` inactivity setting and observes the actual selected and applied limiter at the initial sampling boundary and every completed frame.
 The configured limit is not evidence of the effective limit; modern menu or extracted render-state policies remain explicit in the receipt and must stay stable during each formal interval.
@@ -308,9 +309,10 @@ Scrolling rows retain 64 ordered samples under a moving clipped layout; tiled tr
 The canonical 108-phase component corpus and its default selection are unchanged.
 Supply `sampled_images: true` in the processor request for this corpus; explicit `workloads` selects only identifiers from its registry, and the processor rejects using these reports as canonical component acceptance.
 
-Native payload counters distinguish successful source-image, CPU-raster and sampling-metadata uploads in RGBA8 bytes.
+Legacy native payload counters distinguish successful source-image, CPU-raster and sampling-metadata uploads in RGBA8 bytes.
+Current uninstrumented runtimes expose no cumulative upload counters; the kit reports missing counts and payload values as null with explicit availability, while retaining actual prepared-command inventory.
 GPU-generated output and texture reuse add no CPU-upload payload.
-Fallback counters distinguish unsupported tint composition, unsupported cutoff after identity tint, and other ineligible causes; capacity remains a separate existing counter.
+Historical reports may expose fallback classifications; current production runtimes do not collect these counters.
 Classification uses the compiled adapter's admitted effects before recording a reason, so an exact channel mask or cutoff rejected by clipping or capacity is not labeled unsupported tint or cutoff.
 The other category includes unsupported mapping, clips and adapter/source limits and does not infer a more specific reason.
 Older measured runtimes expose unavailable payload values as null rather than zero.
@@ -356,14 +358,15 @@ This corpus leaves the canonical component, font-provider and historical matrice
 | `MinecraftPerformanceMeter` | Actual Fabric before/after extraction or rendering callbacks on the measured screen. Frame intervals and render-thread CPU are separate from extraction. |
 | `BrowserPerformanceMeter` | Synchronous action wall time and a separate action-to-animation-frame interval, with untimed preparation/assertion hooks. CPU accounting, allocation, and GPU completion remain unavailable. |
 
-The Fabric adapter uses the loaded host's callbacks and counters without depending on a particular runtime artifact in its POM.
+The Fabric adapter observes framework callbacks and reads only metrics actually exposed by the loaded runtime, without depending on a particular runtime artifact in its POM.
+Absent work and upload counters remain unavailable; no production hook is introduced to recreate them.
 Missing callbacks or fields are adapter failures, rather than unsupported zero-cost work.
 `NativePerformanceFixture` supplies readiness, expensive evidence capture after warm-up, untimed settling frames, and application snapshots around collection.
 Resources and PNG files must be prepared or saved outside steady-state samples.
 Whole operation-frame intervals start after untimed readiness, evidence capture and application snapshots, then end at the next before-presentation callback.
 Success waits for the final operation frame's following boundary; it does not substitute a preceding warm-up frame or a zero interval.
-Native extraction counters and diagnostics still cover exactly the requested measured extractions, without another application action during finalization.
-Complete frames include diagnostic instrumentation and frame pacing; neither wall intervals nor render-thread CPU certify GPU completion or uninstrumented application latency.
+Completed framework callbacks and frame intervals cover exactly the requested measured presentations, without another application action during finalization.
+Complete frames include the external collector and frame pacing; neither wall intervals nor render-thread CPU certify GPU completion or collector-free application latency.
 Closing a meter clears application callbacks, screen references, monitor ownership, and bounded sample storage.
 
 Window readiness uses the loaded host's `isIconified` contract when present, including SDL hosts.
@@ -440,7 +443,7 @@ mise.exe exec -- ./gradlew.bat --no-daemon "-Pkotlin.compiler.execution.strategy
 Inspect the published POM and Gradle module metadata to ensure the kit does not pull another Strata runtime onto the measurement classpath.
 Local checks of the kit do not substitute for the full Strata release checks or the application's loaded-client delivery gates.
 
-Runtime diagnostics are captured completely after each successful sample, outside timing, before checkpointing retired node records.
+Compatibility diagnostics, when actually supported by the selected historical runtime, are captured outside timing; current runtimes explicitly report unavailable detailed work.
 The kit adds global counts with overflow checks and retains final and maximum subscription gauges, without retaining node or frame history.
 A single overflowing sample fails the whole interval; a truncated inventory is never accepted as complete evidence.
 
@@ -618,8 +621,8 @@ Raw JMH arguments, input inventories and comparison conditions remain exact, wit
 Freeze one compiled fixture and shared collector after source/work preflight, and preserve exact source, archive and input hashes for three independent Standard invocations per side and per measured mode.
 The incoming comparison baseline must already include the bounded-drain change on both sides so its saving is not counted again.
 
-The stress work gate explicitly requests 16,384 diagnostic records for the 4096-observer case, whose retained tree contains more nodes than observers.
-The normal 4,096-record runtime diagnostic bound remains the default; a requested bound is finite and declared before monitoring starts, and overflow still rejects evidence.
+The stress work gate verifies actual frame reuse, source subscriptions, complete outputs and terminal resources outside sampling.
+Production runtimes contain no diagnostic record store or record-capacity setting; historical compatibility collection remains bounded and rejects overflow when available.
 
 The separate font corpus is selected with `-Pstrata.performance.benchmarks=FontProviderBenchmark,FontTextBenchmark -Pstrata.performance.suite=fonts` on `jmhComponents` and writes independent `fonts` / `fonts-sample` directories.
 Its 42 generated cases cover bitmap and Unihex with enabled/disabled raster caching, accepted 128-level and rejected 129-level reference graphs, STB and FreeType glyphs, 17 native face descriptors against 1/16-face bounds, and ICU mixed-direction shaping at 32/16,384 UTF-16 units.

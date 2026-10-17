@@ -4,9 +4,6 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.performance.JmhWorkloadInventory
-import dev.s7a.strata.performance.PerformanceJson
-import dev.s7a.strata.performance.WorkExpectation
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -164,12 +161,10 @@ public object UnihexBoundsWorkEvidence {
             state.monitorWork()
             old = state.idle()
             check(state.idle() === old)
-            WorkExpectation(exact = mapOf(UiRenderMetric.FrameSuccess.name to 2L, UiRenderMetric.ContentEvaluation.name to 0L, UiRenderMetric.Measure.name to 0L, UiRenderMetric.Layout.name to 0L, UiRenderMetric.Paint.name to 0L, UiRenderMetric.Semantics.name to 0L)).verify(PerformanceJson.work(state.work))
             checkFrame(fixture, fractional, old, "A")
             val changed = state.update()
             check(changed !== old)
             checkFrame(fixture, fractional, changed, "B")
-            WorkExpectation(minimum = mapOf(UiRenderMetric.ContentEvaluation.name to 1L, UiRenderMetric.Measure.name to 1L, UiRenderMetric.Paint.name to 1L, UiRenderMetric.Semantics.name to 1L)).verify(PerformanceJson.work(state.work))
             check(state.ownership == listOf(1, 1))
             check(state.pointer() == InputResult.Ignored)
             checkFrame(fixture, fractional, state.reattach(), "B")

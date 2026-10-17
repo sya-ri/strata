@@ -365,14 +365,19 @@ internal object NativeComponentPerformanceEvidence {
             require(phase.get("operation").asString.contentEquals("presented") && phase.get("samples").asInt == plan.samples)
             NativeComponentGpuEvidence.verifyGpu(phase, plan.samples)
             require(phase.getAsJsonObject("frame_interval").get("samples").asInt == plan.samples)
-            require(phase.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == plan.samples)
-            require(
-                phase
-                    .getAsJsonObject("diagnostics")
-                    .get("node_inventory_truncated")
-                    .asBoolean
-                    .not(),
-            )
+            val nativeCounts = phase.getAsJsonObject("native_counter_delta")
+            val available = phase.getAsJsonObject("native_counter_availability")?.get("available")?.asBoolean ?: true
+            if (available) {
+                require(nativeCounts.get("renderExtractionCount").asInt == plan.samples)
+            } else {
+                require(nativeCounts.entrySet().all { it.value.isJsonNull }) { "Unavailable runtime counters must not contain inferred values" }
+            }
+            val diagnostics = phase.getAsJsonObject("diagnostics")
+            if (diagnostics.get("available")?.asBoolean != false) {
+                require(diagnostics.get("node_inventory_truncated").asBoolean.not())
+            } else {
+                require(diagnostics.get("counts").isJsonNull && diagnostics.get("node_inventory_size").isJsonNull)
+            }
         }
         val release = report.getAsJsonObject("native_resource_release")
         listOf("leases", "renderers").forEach { kind ->

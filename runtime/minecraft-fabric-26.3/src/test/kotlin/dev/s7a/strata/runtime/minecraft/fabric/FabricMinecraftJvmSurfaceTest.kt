@@ -11,9 +11,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.FrameTime
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
-import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -150,8 +148,7 @@ internal class FabricMinecraftJvmSurfaceTest {
         assertTrue(Modifier.isPublic(background.modifiers))
 
         val screen = FabricMinecraftScreen::class.java
-        assertTrue(RuntimeUiDiagnosticsOwner::class.java.isAssignableFrom(screen))
-        assertEquals(UiRenderMonitor::class.java, screen.getDeclaredMethod("startRenderMonitoring").returnType)
+        assertFalse(screen.methods.any { it.name == "startRenderMonitoring" })
         val externallyVisibleConstructors =
             screen.declaredConstructors.filter { constructor ->
                 Modifier.isPublic(constructor.modifiers) || Modifier.isProtected(constructor.modifiers)
@@ -400,7 +397,6 @@ internal class FabricMinecraftJvmSurfaceTest {
                         "onClose",
                         "close",
                         "captureCanvasFrame",
-                        "startRenderMonitoring",
                     ),
                 "$packageName.FabricMinecraftScreen\$Companion" to emptySet(),
                 screenFacade to setOf("createMinecraftScreen"),

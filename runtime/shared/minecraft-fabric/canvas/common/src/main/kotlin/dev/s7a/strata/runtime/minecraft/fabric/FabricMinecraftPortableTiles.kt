@@ -13,19 +13,13 @@ import kotlin.math.floor
  * Splits large CPU runs into at most 64 disjoint regions, allowing existing generation matching to reuse unchanged pixels.
  * Each region replays intersecting primitives with their original coordinates and balanced original clips.
  * Small runs keep their single tight image; large regions target 256 physical pixels per edge and grow to respect the bound.
- * Admission counts describe original command occurrences once, independently of duplicated tile coverage.
  * These render-thread descriptions contain no pixels or native resources and live only with the current prepared frame.
  */
 @JvmSynthetic
-@Suppress("LongParameterList") // Admission reasons belong to original occurrences, not duplicated tile commands.
 internal fun tileFabricMinecraftPortable(
     commands: List<DrawCommand>,
     bounds: IntRect,
     scale: Int,
-    ineligibleSampledImages: Int = 0,
-    capacitySampledImages: Int = 0,
-    tintFallbackImages: Int = 0,
-    alphaCutoffFallbackImages: Int = 0,
 ): List<FabricMinecraftFrameLayer.Portable> {
     require(0 < scale) { "Minecraft GUI scale must be positive." }
     val width = Math.multiplyExact(bounds.width, scale)
@@ -35,7 +29,7 @@ internal fun tileFabricMinecraftPortable(
     if (width.toLong() * height <= 262_144L) {
         val absolute = commands.any { it is DrawCommand.SampledImage }
         val detached = if (absolute) commands.toList() else localizeFabricPortable(commands, bounds)
-        return listOf(FabricMinecraftFrameLayer.Portable(detached, bounds, ineligibleSampledImages, absolute, capacitySampledImages, tintFallbackImages, alphaCutoffFallbackImages))
+        return listOf(FabricMinecraftFrameLayer.Portable(detached, bounds, absolute))
     }
     var extent = maxOf(1, 256 / scale)
     val orderingGroup = Any()
@@ -44,10 +38,6 @@ internal fun tileFabricMinecraftPortable(
     while (64L < count()) extent = Math.multiplyExact(extent, 2)
     val selectedCommands = partitionTileCommands(commands, bounds, extent, count().toInt())
     var tileIndex = 0
-    var ineligibleCount = ineligibleSampledImages
-    var capacityCount = capacitySampledImages
-    var tintCount = tintFallbackImages
-    var cutoffCount = alphaCutoffFallbackImages
     val result = ArrayList<FabricMinecraftFrameLayer.Portable>()
     var top = bounds.top
     while (top < bounds.bottom) {
@@ -62,18 +52,10 @@ internal fun tileFabricMinecraftPortable(
                     FabricMinecraftFrameLayer.Portable(
                         selected,
                         tile,
-                        ineligibleCount,
                         absoluteCoordinates = true,
-                        capacityCount,
-                        tintCount,
-                        cutoffCount,
-                        orderingGroup,
+                        orderingGroup = orderingGroup,
                     ),
                 )
-                ineligibleCount = 0
-                capacityCount = 0
-                tintCount = 0
-                cutoffCount = 0
             }
             left = right
         }

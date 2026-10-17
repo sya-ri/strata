@@ -15,7 +15,6 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
@@ -50,17 +49,12 @@ internal class IdenticalModifierChainTest {
                 val paint = tree.paint()
                 val semantics = tree.semantics()
                 val nodes = modifiers.nodes.toList()
-                tree.startRenderMonitoring().use { monitor ->
-                    repeat(20) {
-                        tree.update(components.root(emptyList(), chain))
-                        assertEquals(revision, tree.currentRevision())
-                        assertEquals(paint, tree.paint())
-                        assertEquals(semantics, tree.semantics())
-                        assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
-                    }
-                    assertEquals(20L, monitor.snapshot().counts[UiRenderMetric.NodeUpdate])
-                    assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.StructureInvalidation])
-                    assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.LocalInvalidation])
+                repeat(20) {
+                    tree.update(components.root(emptyList(), chain))
+                    assertEquals(revision, tree.currentRevision())
+                    assertEquals(paint, tree.paint())
+                    assertEquals(semantics, tree.semantics())
+                    assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
                 }
                 assertEquals(20, components.updateCalls)
                 assertEquals(21 * count, modifiers.validations)

@@ -12,11 +12,8 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.modifier.padding
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -39,36 +36,26 @@ internal class ModifierDeclarationParityTest {
             val expectedSize = IntSize(side, side * CHILD_COUNT)
             val nodeCount = 1 + CHILD_COUNT * (length + 1)
             val tree = UiTree()
-            val monitor = tree.startRenderMonitoring(nodeCount)
             try {
                 tree.update(declaration(descriptions))
                 assertFrame(tree, expectedSize)
-                val initial = monitor.snapshot()
-                assertFalse(initial.overflowed)
-                assertEquals(nodeCount.toLong(), initial.counts[UiRenderMetric.NodeCreate])
-                assertEquals(nodeCount, initial.nodes.size)
+                val initial = tree.projectDeclarations { root -> listOf(root.identity) + root.children.flatMap { listOf(it.identity) + it.modifiers.map { modifier -> modifier.identity } } }
+                assertEquals(nodeCount, initial.size)
 
                 tree.update(declaration(descriptions))
                 assertFrame(tree, expectedSize)
-                val rebuilt = monitor.snapshot()
-                assertEquals(initial.nodes.map { it.id }, rebuilt.nodes.map { it.id })
-                assertEquals(nodeCount.toLong(), rebuilt.counts[UiRenderMetric.NodeCreate])
-                assertEquals(0L, rebuilt.counts[UiRenderMetric.NodeDispose])
+                val rebuilt = tree.projectDeclarations { root -> listOf(root.identity) + root.children.flatMap { listOf(it.identity) + it.modifiers.map { modifier -> modifier.identity } } }
+                assertEquals(initial, rebuilt)
 
                 tree.update(declaration(emptyList()))
                 assertFrame(tree, IntSize.Zero)
-                val removed = monitor.snapshot()
-                assertFalse(removed.overflowed)
-                assertEquals((length * CHILD_COUNT).toLong(), removed.counts[UiRenderMetric.NodeDispose])
-                assertEquals(length * CHILD_COUNT, removed.nodes.count { it.retired })
-                assertEquals(1 + CHILD_COUNT, removed.nodes.count { it.retired.not() })
-                assertEquals(0, removed.activeSubscriptions)
+                val removed = tree.projectDeclarations { root -> listOf(root.identity) + root.children.map { it.identity } }
+                assertEquals(1 + CHILD_COUNT, removed.size)
+                assertTrue(initial.containsAll(removed))
             } finally {
                 tree.close()
-                monitor.close()
             }
             assertEquals(TreeState.Closed, tree.state)
-            assertNull(tree.monitoring.collector)
         }
     }
 

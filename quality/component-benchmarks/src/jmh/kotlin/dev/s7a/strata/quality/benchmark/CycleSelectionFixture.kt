@@ -16,10 +16,8 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onCycle
 import dev.s7a.strata.performance.RuntimeWorkMonitor
-import dev.s7a.strata.performance.WorkExpectation
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.FrameTime
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -488,17 +486,17 @@ internal class CycleSelectionFixture(
         val next = hover()
         check(next.semantics.single().semantics === previous.semantics.single().semantics)
         check(state.value === original)
-        checkNotNull(monitor).verify(WorkExpectation(exact = mapOf(UiRenderMetric.Paint.name to 1L, UiRenderMetric.Semantics.name to 0L)))
     }
 
     /**
      * Requires both selected-label consumers after a real validated publication.
      */
     internal fun verifyWrite() {
-        write()
+        val previous = checkNotNull(lastFrame)
+        val updated = write()
+        check(updated !== previous)
         check(state.value === alternate)
         check(notifications == 1)
-        checkNotNull(monitor).verify(WorkExpectation(exact = mapOf(UiRenderMetric.Paint.name to 1L, UiRenderMetric.Semantics.name to 1L)))
     }
 
     /**
@@ -510,7 +508,6 @@ internal class CycleSelectionFixture(
         val frame = control()
         if (control == CycleSelectionControl.CleanRetainedFrame) {
             check(frame === previous)
-            checkNotNull(monitor).verify(WorkExpectation(exact = mapOf(UiRenderMetric.Paint.name to 0L, UiRenderMetric.Semantics.name to 0L)))
         }
         if (control in setOf(CycleSelectionControl.DisabledIgnoredInput, CycleSelectionControl.IgnoredPointerButton, CycleSelectionControl.ZeroScroll, CycleSelectionControl.EqualDistinctNoOpWrite, CycleSelectionControl.InvalidOutsideValueRejected)) {
             check(notifications == 0 && actionValues.isEmpty())

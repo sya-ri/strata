@@ -6,11 +6,11 @@ import dev.s7a.strata.component.ProgressBar
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.UiText
 import dev.s7a.strata.state.mutableStateOf
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
@@ -19,7 +19,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 /**
  * Verifies native progress updates and deterministic connection to serialized HTML.
@@ -27,7 +26,7 @@ import kotlin.test.assertTrue
 @OptIn(InternalStrataRuntimeApi::class)
 internal class WebProgressTest {
     @Test
-    fun progressUpdatesPaintWithoutRepeatingMeasurement() {
+    fun progressUpdatesSemanticsAndRetainsGeometry() {
         val progress = mutableStateOf(0.25)
         val runtime = WebComponentRuntime()
         val session =
@@ -36,18 +35,12 @@ internal class WebProgressTest {
             }
         try {
             session.attach()
-            session.frame(Constraints.fixed(320, 100))
-            val monitor = session.startRenderMonitoring()
-            try {
-                progress.value = 0.5
-                session.frame(Constraints.fixed(320, 100))
-                val counts = monitor.snapshot().counts
-                assertEquals(0L, counts.getValue(UiRenderMetric.Measure))
-                assertTrue(0L < counts.getValue(UiRenderMetric.Paint))
-                assertTrue(0L < counts.getValue(UiRenderMetric.Semantics))
-            } finally {
-                monitor.close()
-            }
+            val before = session.frame(Constraints.fixed(320, 100))
+            progress.value = 0.5
+            val after = session.frame(Constraints.fixed(320, 100))
+            assertEquals(before.semantics.map { it.bounds }, after.semantics.map { it.bounds })
+            assertEquals(UiText.Literal("50%"), after.semantics.single().semantics.value)
+            assertSame(after, session.frame(Constraints.fixed(320, 100)))
         } finally {
             session.close()
         }

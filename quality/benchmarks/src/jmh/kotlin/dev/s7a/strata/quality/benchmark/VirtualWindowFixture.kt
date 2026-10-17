@@ -26,7 +26,6 @@ import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -137,37 +136,21 @@ internal class VirtualWindowFixture(
         check(session.frame(constraints) === original)
         val oldCommands = original.drawCommands.toList()
         val oldSemantics = original.semantics.toList()
-        val monitor = session.startRenderMonitoring()
-        try {
-            repeat(4) { _ ->
-                val previous = indices()
-                val before = counts.factories
-                val beforeCreated = counts.created
-                val beforeRoots = counts.roots
-                val rowWork = monitor.snapshot().counts.getValue(UiRenderMetric.RowEvaluation)
-                val nodeWork = monitor.snapshot().counts.getValue(UiRenderMetric.NodeCreate)
-                val frame = nextFrame()
-                val current = indices()
-                val actual = counts.factories - before
-                val required = requiredFactories(previous, current)
-                check(actual == required || (admitsHistoricalFullWindow() && actual == current.count())) {
-                    "$window/$factory/$motion factory work $actual, required $required or historical full window"
-                }
-                check(monitor.snapshot().counts.getValue(UiRenderMetric.RowEvaluation) - rowWork == actual.toLong())
-                check(counts.created - beforeCreated == current.count { (it in previous).not() })
-                val freshRows = current.count { (it in previous).not() }
-                val nodesPerRow =
-                    when (factory) {
-                        VirtualWindowBenchmark.Factory.Deep32 -> 34L
-                        VirtualWindowBenchmark.Factory.Observed -> 3L
-                        else -> 2L
-                    }
-                check(monitor.snapshot().counts.getValue(UiRenderMetric.NodeCreate) - nodeWork == freshRows * nodesPerRow)
-                check(counts.roots - beforeRoots == if (motion == VirtualWindowBenchmark.Motion.DefinitionReplacement) 1 else 0)
-                verifyFrame(frame)
+        repeat(4) { _ ->
+            val previous = indices()
+            val before = counts.factories
+            val beforeCreated = counts.created
+            val beforeRoots = counts.roots
+            val frame = nextFrame()
+            val current = indices()
+            val actual = counts.factories - before
+            val required = requiredFactories(previous, current)
+            check(actual == required || (admitsHistoricalFullWindow() && actual == current.count())) {
+                "$window/$factory/$motion factory work $actual, required $required or historical full window"
             }
-        } finally {
-            monitor.close()
+            check(counts.created - beforeCreated == current.count { (it in previous).not() })
+            check(counts.roots - beforeRoots == if (motion == VirtualWindowBenchmark.Motion.DefinitionReplacement) 1 else 0)
+            verifyFrame(frame)
         }
         check(original.drawCommands == oldCommands && original.semantics == oldSemantics)
         verifyObservation()

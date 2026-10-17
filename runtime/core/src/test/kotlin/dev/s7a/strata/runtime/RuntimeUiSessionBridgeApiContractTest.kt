@@ -6,7 +6,6 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -14,6 +13,7 @@ import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.lang.annotation.ElementType
@@ -50,6 +50,16 @@ internal class RuntimeUiSessionBridgeApiContractTest {
                 "close",
             ),
         )
+    }
+
+    @Test
+    fun productionTreeContainsNoMonitoringEntryPointOrCollector() {
+        assertFalse(UiTree::class.java.methods.any { it.name == "startRenderMonitoring" })
+        assertFalse(UiTree::class.java.declaredFields.any { it.name == "monitoring" })
+        assertFalse(RetainedEntry::class.java.declaredFields.any { it.name == "diagnosticId" })
+        assertNull(UiTree::class.java.getResource("RenderMonitorImpl.class"))
+        assertNull(UiTree::class.java.getResource("RenderMonitoring.class"))
+        assertNull(UiTree::class.java.getResource("RenderWorkCounts.class"))
     }
 
     @Test
@@ -115,23 +125,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         assertTrue(type.isInterface)
         assertTrue(type.declaredConstructors.isEmpty())
         assertTrue(type.declaredFields.isEmpty())
-        if (type == RuntimeUiSession::class.java) {
-            val compatibility = type.declaredClasses.single()
-            assertEquals("${type.name}\$DefaultImpls", compatibility.name)
-            assertTrue(compatibility.declaredFields.isEmpty())
-            val delegate = compatibility.declaredMethods.single()
-            assertTrue(Modifier.isPublic(delegate.modifiers) && Modifier.isStatic(delegate.modifiers))
-            assertEquals("startRenderMonitoring", delegate.name)
-            assertEquals(listOf(RuntimeUiSession::class.java, Int::class.javaPrimitiveType), delegate.parameterTypes.toList())
-            assertEquals(UiRenderMonitor::class.java, delegate.returnType)
-            val bridge = type.declaredMethods.single { it.isSynthetic }
-            assertTrue(Modifier.isPublic(bridge.modifiers) && Modifier.isStatic(bridge.modifiers))
-            assertEquals("access\$startRenderMonitoring\$jd", bridge.name)
-            assertEquals(delegate.parameterTypes.toList(), bridge.parameterTypes.toList())
-            assertEquals(delegate.returnType, bridge.returnType)
-        } else {
-            assertTrue(type.declaredClasses.isEmpty())
-        }
+        assertTrue(type.declaredClasses.isEmpty())
         val methods = type.declaredMethods.filter { it.isSynthetic.not() }.toTypedArray()
         assertEquals(expectedMethods.size, methods.size)
         assertEquals(expectedMethods.sorted(), methods.map { method -> method.name }.sorted())

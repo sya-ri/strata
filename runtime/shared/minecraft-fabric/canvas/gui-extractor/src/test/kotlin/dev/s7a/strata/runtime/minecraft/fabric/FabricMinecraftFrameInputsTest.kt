@@ -24,25 +24,19 @@ internal class FabricMinecraftFrameInputsTest {
         val commands = listOf(fill, sampled, sampled.copy(destination = FloatRect(4f, 4f, 8f, 8f)))
         for (scale in 1..4) {
             val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, IntSize(8, 8), scale), scale)
-            assertSame(inputs, inputs.resolve({ true }) { error("Available images must not fall back") })
+            assertSame(inputs, inputs.resolve { true })
             assertEquals(listOf(image, image), inputs.sampled)
             var unavailable = 0
             val fallback =
-                inputs.resolve({ false }) {
+                inputs.resolve {
                     assertSame(image, it)
                     unavailable += 1
-                    true
+                    false
                 }
             assertEquals(2, unavailable)
             assertEquals(3, fallback.portable.size)
-            assertEquals(0L, fallback.ineligibleSampledImages)
-            assertEquals(2L, fallback.capacitySampledImages)
-            val unsupported = inputs.resolve({ false }) { false }
-            assertEquals(2L, unsupported.ineligibleSampledImages)
-            assertEquals(0L, unsupported.capacitySampledImages)
-            assertEquals(0L, inputs.capacitySampledImages)
             assertEquals(1, inputs.portable.size)
-            assertSame(inputs, inputs.resolve({ true }) { error("Restored storage must be used") })
+            assertSame(inputs, inputs.resolve { true })
             assertArrayEquals(
                 rasterizeHeadless(listOf(sampled.copy(destination = FloatRect(0f, 0f, 4f, 4f))), IntSize(4, 4), scale).copyArgb(),
                 fallback.portable
@@ -54,12 +48,11 @@ internal class FabricMinecraftFrameInputsTest {
     }
 
     @Test
-    fun ineligibleCountsRemainAttachedToOriginalPortableRuns() {
+    fun unsupportedSamplingRemainsInTheOriginalPortableRun() {
         val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
         val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 2f, 2f), tint = ArgbColor(0x80FFFFFF.toInt()))
         val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(command), IntSize(2, 2)), 1)
-        assertEquals(1L, inputs.ineligibleSampledImages)
-        assertEquals(0L, inputs.capacitySampledImages)
-        assertSame(inputs, inputs.resolve({ error("No direct images") }) { error("No fallback") })
+        assertEquals(1, inputs.portable.size)
+        assertSame(inputs, inputs.resolve { error("No direct images") })
     }
 }

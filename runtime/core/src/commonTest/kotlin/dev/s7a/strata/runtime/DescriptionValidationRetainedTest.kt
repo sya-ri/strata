@@ -13,7 +13,6 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.map
@@ -347,18 +346,10 @@ internal class DescriptionValidationRetainedTest {
             session.attach()
             val frame = session.frame(Constraints.fixed(2, 2))
             val trace = probe.trace.toList()
-            val monitor = session.startRenderMonitoring()
-            try {
-                repeat(16) { assertSame(frame, session.frame(Constraints.fixed(2, 2))) }
-                assertEquals(trace, probe.trace)
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RootEvaluation])
-                session.frame(Constraints.fixed(3, 3))
-                assertEquals(trace, probe.trace)
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
-            } finally {
-                monitor.close()
-            }
+            repeat(16) { assertSame(frame, session.frame(Constraints.fixed(2, 2))) }
+            assertEquals(trace, probe.trace)
+            session.frame(Constraints.fixed(3, 3))
+            assertEquals(trace, probe.trace)
         }
     }
 

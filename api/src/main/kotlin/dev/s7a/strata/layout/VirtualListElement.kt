@@ -21,8 +21,6 @@ import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
-import dev.s7a.strata.node.ContentWork
-import dev.s7a.strata.node.ContentWorkNode
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
@@ -76,7 +74,6 @@ internal class VirtualListElement(
         initial: VirtualListElement,
     ) : RetainedNode(),
         DynamicChildrenNode,
-        ContentWorkNode,
         MeasureNode,
         LayoutNode,
         PointerInputNode,
@@ -106,7 +103,6 @@ internal class VirtualListElement(
         private var anchorIntraRowOffset = 0.0
         private var observer: ScrollStateObserver? = null
         private var attached = false
-        override var contentWorkObserver: ((ContentWork) -> Unit)? = null
 
         override fun prepareDeclaration() {
             state.scrollState.updateGeometry(viewportSize.height, (itemCount.toLong() * rowHeight).toIntExact(), checkNotNull(observer))
@@ -171,7 +167,6 @@ internal class VirtualListElement(
             if (previous != null && StateObservation.compare { previous.key == itemKey }) {
                 return previous
             }
-            contentWorkObserver?.invoke(ContentWork.RowEvaluation)
             val (child, readsState) = StateObservation.captureReads { itemContent(item) }
             return CachedRow(
                 item = item,

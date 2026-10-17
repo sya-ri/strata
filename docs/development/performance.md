@@ -31,12 +31,12 @@ Compare these costs separately:
 | Clean timed frame | The same path with an explicit unchanged host timestamp. |
 | Dirty session frame | Representative leaves invalidated across all retained phases. |
 | Headless rasterization | Fresh pixel storage from detached commands after closing the source session. |
-| Reactive scenarios | Publication, projection, shared/independent consumers, and list changes, with monitoring off and on. |
+| Reactive scenarios | Publication, projection, shared/independent consumers, and list changes, with fixture-owned callback probes outside the timed operation. |
 
 Reactive setup excludes initial subscription/layout but includes publication and snapshot allocation.
-Enabled monitoring checkpoints every 64 invocations; checkpoint cost is included.
 Lists alternate fixed immutable ranges while preserving their anchor.
-Use [render monitoring](render-monitoring.md) counters alongside timing and allocation.
+Keep instrumentation outside production artifacts under the [measurement boundary](render-monitoring.md).
+Fixture callbacks and external profilers provide independent work evidence; unavailable internal metrics remain unavailable.
 Reports under `quality/benchmarks/build/` are temporary and untracked.
 
 ## Why wall-clock time is not a hard CI gate

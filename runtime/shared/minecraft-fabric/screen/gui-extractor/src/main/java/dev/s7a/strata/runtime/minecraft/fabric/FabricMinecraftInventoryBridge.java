@@ -81,7 +81,6 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     private ItemStack lastQuickMoved = ItemStack.EMPTY;
     private int refreshBatchDepth;
     private boolean refreshedInBatch;
-    private long refreshPassCount;
 
     private enum InputKind {
         MOVE,
@@ -540,7 +539,6 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         for (SkinBinding binding : skinBindings) {
             binding.refresh();
         }
-        refreshPassCount += 1L;
         if (0 < refreshBatchDepth) {
             refreshedInBatch = true;
         }
