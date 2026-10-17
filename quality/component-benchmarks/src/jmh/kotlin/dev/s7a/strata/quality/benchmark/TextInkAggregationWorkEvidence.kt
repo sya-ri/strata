@@ -1,9 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.performance.PerformanceJson
-import dev.s7a.strata.performance.WorkExpectation
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -37,7 +34,7 @@ public object TextInkAggregationWorkEvidence {
         state.provider = provider
         state.operation = operation
         state.setup()
-        val monitor = state.monitorWork()
+        state.monitorWork()
         try {
             val first = state.frame()
             val before = state.currentValue
@@ -58,11 +55,6 @@ public object TextInkAggregationWorkEvidence {
                     }
                 }
             check(hasGlyphs == (provider == TextInkAggregationBenchmark.Provider.SpacingOnly).not())
-            if (clean) {
-                WorkExpectation(exact = mapOf(UiRenderMetric.ContentEvaluation.name to 0L, UiRenderMetric.Measure.name to 0L, UiRenderMetric.Layout.name to 0L, UiRenderMetric.Paint.name to 0L)).verify(PerformanceJson.work(monitor.snapshot()))
-            } else {
-                WorkExpectation(minimum = mapOf(UiRenderMetric.Paint.name to 1L, UiRenderMetric.Semantics.name to 1L)).verify(PerformanceJson.work(monitor.snapshot()))
-            }
             for (density in 1..3) {
                 val expected = rasterizeHeadless(first.drawCommands, first.size, density).copyArgb()
                 check(expected.contentEquals(rasterizeHeadless(next.drawCommands, next.size, density).copyArgb()))

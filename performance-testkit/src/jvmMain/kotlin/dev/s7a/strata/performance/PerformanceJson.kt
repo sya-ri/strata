@@ -85,6 +85,7 @@ public object PerformanceJson {
      * Projects complete detached diagnostic counts and gauges for declarative work expectations.
      */
     public fun work(snapshot: JsonObject): Map<String, Long> {
+        check(snapshot.get("available")?.asBoolean != false) { "Runtime work metrics are unavailable; no work expectation can be verified." }
         check(snapshot.get("node_inventory_truncated").asBoolean.not()) { "Performance diagnostics overflowed" }
         val counts = snapshot.getAsJsonObject("counts").entrySet().associate { (key, value) -> key to value.asLong }
         return counts +

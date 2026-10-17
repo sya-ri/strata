@@ -1670,26 +1670,6 @@ public final class dev/s7a/strata/node/ContentInvalidation : java/lang/Enum {
 	public static fun values ()[Ldev/s7a/strata/node/ContentInvalidation;
 }
 
-public final class dev/s7a/strata/node/ContentKind : java/lang/Enum {
-	public static final field ObservedRegion Ldev/s7a/strata/node/ContentKind;
-	public static final field StateComponent Ldev/s7a/strata/node/ContentKind;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/node/ContentKind;
-	public static fun values ()[Ldev/s7a/strata/node/ContentKind;
-}
-
-public final class dev/s7a/strata/node/ContentWork : java/lang/Enum {
-	public static final field RowEvaluation Ldev/s7a/strata/node/ContentWork;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/node/ContentWork;
-	public static fun values ()[Ldev/s7a/strata/node/ContentWork;
-}
-
-public abstract interface class dev/s7a/strata/node/ContentWorkNode {
-	public abstract fun getContentWorkObserver ()Lkotlin/jvm/functions/Function1;
-	public abstract fun setContentWorkObserver (Lkotlin/jvm/functions/Function1;)V
-}
-
 public abstract interface class dev/s7a/strata/node/DeclarationProjectionNode {
 	public abstract fun getDeclarationProjection ()Ldev/s7a/strata/projection/DeclarationProjection;
 	public fun prepareDeclaration ()V
@@ -1700,7 +1680,6 @@ public final class dev/s7a/strata/node/DeclarationProjectionNode$DefaultImpls {
 }
 
 public abstract interface class dev/s7a/strata/node/DeferredContentNode : dev/s7a/strata/node/DynamicChildrenNode {
-	public abstract fun getContentKind ()Ldev/s7a/strata/node/ContentKind;
 	public abstract fun getPendingContentReasons ()Ljava/util/Set;
 }
 

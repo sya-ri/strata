@@ -12,7 +12,6 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -36,26 +35,20 @@ internal class PortableVirtualRowReuseTest {
             val oldSemantics = original.semantics.toList()
             val retained = fixture.probe.nodeForTag(fixture.items[110])
             fixture.constructed.clear()
-            val monitor = fixture.session.startRenderMonitoring()
-            try {
-                val shifted = fixture.frame(1_010.0)
-                fixture.verifyFrame(shifted, 1_010)
-                assertEquals(listOf(fixture.items[139]), fixture.constructed)
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.RowEvaluation])
-                assertSame(retained, fixture.probe.nodeForTag(fixture.items[110]))
-                // New rows change the retained revision during measurement; the following frame establishes its clean snapshot.
-                val settled = fixture.session.frame(fixture.constraints)
-                assertEquals(shifted.drawCommands, settled.drawCommands)
-                assertEquals(shifted.semantics, settled.semantics)
-                assertSame(settled, fixture.session.frame(fixture.constraints))
-                assertEquals(InputResult.Consumed, fixture.session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
-                assertEquals(fixture.items[101], fixture.probe.inputEvents.last())
-                fixture.session.dispatchPointer(PointerEvent.Release(IntOffset.Zero, PointerButton.Primary))
-                assertEquals(oldCommands, original.drawCommands)
-                assertEquals(oldSemantics, original.semantics)
-            } finally {
-                monitor.close()
-            }
+            val shifted = fixture.frame(1_010.0)
+            fixture.verifyFrame(shifted, 1_010)
+            assertEquals(listOf(fixture.items[139]), fixture.constructed)
+            assertSame(retained, fixture.probe.nodeForTag(fixture.items[110]))
+            // New rows change the retained revision during measurement; the following frame establishes its clean snapshot.
+            val settled = fixture.session.frame(fixture.constraints)
+            assertEquals(shifted.drawCommands, settled.drawCommands)
+            assertEquals(shifted.semantics, settled.semantics)
+            assertSame(settled, fixture.session.frame(fixture.constraints))
+            assertEquals(InputResult.Consumed, fixture.session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
+            assertEquals(fixture.items[101], fixture.probe.inputEvents.last())
+            fixture.session.dispatchPointer(PointerEvent.Release(IntOffset.Zero, PointerButton.Primary))
+            assertEquals(oldCommands, original.drawCommands)
+            assertEquals(oldSemantics, original.semantics)
             fixture.session.detach()
             fixture.session.attach()
             fixture.verifyFrame(fixture.session.frame(fixture.constraints), 1_010)

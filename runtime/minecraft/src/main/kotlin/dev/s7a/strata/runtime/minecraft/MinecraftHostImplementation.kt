@@ -11,7 +11,6 @@ import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -154,14 +153,6 @@ internal object MinecraftHostImplementation {
             } finally {
                 operation = null
             }
-        }
-
-        override fun startRenderMonitoring(): UiRenderMonitor = startRenderMonitoring(4096)
-
-        override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor {
-            checkOwner()
-            check(operation == null) { "Minecraft UI host operations are non-reentrant." }
-            return session.startRenderMonitoring(maxNodeRecords)
         }
 
         override fun detach() {

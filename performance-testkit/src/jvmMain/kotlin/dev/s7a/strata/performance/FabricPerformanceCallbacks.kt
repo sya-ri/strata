@@ -27,18 +27,21 @@ internal object FabricPerformanceCallbacks {
     }
 
     /**
-     * Registers the extraction callback for the actual loaded screen-event family.
+     * Registers the callback when the loaded screen-event owner differs from the previous registration.
+     * Fabric replaces per-screen events during initialization and resize; returning the event allows test-owned rebinding.
      */
     internal fun register(
         owner: Any,
         names: List<String>,
+        previous: Any? = null,
         operation: () -> Unit,
-    ) {
+    ): Any {
         val events = Class.forName("net.fabricmc.fabric.api.client.screen.v1.ScreenEvents", true, owner.javaClass.classLoader)
         val factory =
             names.firstNotNullOfOrNull { name -> events.methods.firstOrNull { it.name == name && it.parameterCount == 1 } }
                 ?: error("Unsupported Fabric presentation callbacks: $names")
         val event = checkNotNull(HostReflection.call(factory, null, owner))
+        if (event === previous) return event
         val listener = (factory.genericReturnType as ParameterizedType).actualTypeArguments.single() as Class<*>
         val callback =
             HostReflection.callback(listener) {
@@ -47,5 +50,6 @@ internal object FabricPerformanceCallbacks {
             }
         val registration = event.javaClass.methods.single { it.name == EVENT_REGISTER_METHOD && it.parameterCount == 1 }
         HostReflection.call(registration, event, callback)
+        return event
     }
 }

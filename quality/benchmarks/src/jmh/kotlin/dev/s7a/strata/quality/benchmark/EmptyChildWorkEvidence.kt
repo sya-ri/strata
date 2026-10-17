@@ -77,27 +77,18 @@ public object EmptyChildWorkEvidence {
     private fun workRows(): JsonObject {
         val work = JsonObject()
         EmptyChildWorkload.entries.forEach { workload ->
-            work.add("$workload/false", collectWork(workload, false))
-            work.add("$workload/true", collectWork(workload, true))
+            work.add(workload.name, collectWork(workload))
         }
         return work
     }
 
     private fun collectWork(
         workload: EmptyChildWorkload,
-        monitoring: Boolean,
     ): JsonObject =
-        EmptyChildFixture(workload, monitoring).use { fixture ->
+        EmptyChildFixture(workload).use { fixture ->
             fixture.execute()
             val row = JsonObject()
             EmptyChildProbe.Stage.entries.forEach { row.addProperty(it.name, fixture.probe.count(it)) }
-            fixture.monitor?.snapshot()?.let { snapshot ->
-                val diagnostics = JsonObject()
-                snapshot.counts.toSortedMap(compareBy { it.ordinal }).forEach { (metric, count) -> diagnostics.addProperty(metric.name, count) }
-                row.add("diagnostics", diagnostics)
-                row.addProperty("active_subscriptions", snapshot.activeSubscriptions)
-                row.addProperty("overflowed", snapshot.overflowed)
-            }
             row
         }
 

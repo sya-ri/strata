@@ -28,7 +28,6 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -303,16 +302,15 @@ internal class EmptyRootOverlayTest {
     }
 
     @Test
-    fun independentSessionsAndMonitoringPreserveOrderedFramesAndBoundaries() {
+    fun independentSessionsPreserveOrderedFramesAndBoundaries() {
         val frames = ArrayList<List<DrawCommand>>()
-        for (monitoring in listOf(false, true)) {
+        repeat(2) {
             val root = RootNode(Tag.Root, ArrayList())
             val child = RootNode(Tag.First, ArrayList())
             child.rootPaint = { it.fillRectangle(FIRST_OVERLAY, FIRST) }
             val session = createRuntimeUiSession { element(root, listOf(element(child))) }
             session.attach()
             val original = session.frame(CONSTRAINTS)
-            val monitor = if (monitoring) session.startRenderMonitoring() else null
             try {
                 child.rootPaint = {}
                 child.refreshPaint()
@@ -320,18 +318,8 @@ internal class EmptyRootOverlayTest {
                 assertEquals(listOf(fill(BOUNDS, ROOT), fill(BOUNDS, FIRST)), changed.drawCommands)
                 assertEquals(listOf(fill(BOUNDS, ROOT), fill(BOUNDS, FIRST), fill(FIRST_OVERLAY, FIRST)), original.drawCommands)
                 assertSame(changed, session.frame(CONSTRAINTS))
-                monitor?.let {
-                    val snapshot = it.snapshot()
-                    assertFalse(snapshot.overflowed)
-                    assertEquals(1L, snapshot.counts[UiRenderMetric.Paint])
-                    assertEquals(1L, snapshot.counts[UiRenderMetric.RootOverlayPaint])
-                    assertEquals(1L, snapshot.counts[UiRenderMetric.FrameCacheHit])
-                    assertEquals(0L, snapshot.counts[UiRenderMetric.Measure])
-                    assertEquals(0L, snapshot.counts[UiRenderMetric.Layout])
-                }
                 frames.add(changed.drawCommands)
             } finally {
-                monitor?.close()
                 session.close()
             }
             assertEquals(listOf(fill(BOUNDS, ROOT), fill(BOUNDS, FIRST), fill(FIRST_OVERLAY, FIRST)), original.drawCommands)

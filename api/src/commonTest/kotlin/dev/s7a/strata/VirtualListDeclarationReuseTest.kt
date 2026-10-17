@@ -10,7 +10,6 @@ import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.VirtualListElement
-import dev.s7a.strata.node.ContentWork
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import kotlin.test.Test
@@ -195,12 +194,11 @@ internal class VirtualListDeclarationReuseTest {
         val keys = MutableList(1_000) { it }
         val constructed = ArrayList<Int>()
         var itemReads = 0
-        var rowWork = 0
+        val rowWork: Int get() = constructed.size
         val node = VirtualListElement.Node(declaration(content))
         private val release = node.bindRuntime {}
 
         init {
-            node.contentWorkObserver = { work -> if (work == ContentWork.RowEvaluation) rowWork += 1 }
             node.attach()
             node.prepareDeclaration()
         }
@@ -240,7 +238,6 @@ internal class VirtualListDeclarationReuseTest {
         fun resetWork() {
             constructed.clear()
             itemReads = 0
-            rowWork = 0
         }
 
         override fun close() {

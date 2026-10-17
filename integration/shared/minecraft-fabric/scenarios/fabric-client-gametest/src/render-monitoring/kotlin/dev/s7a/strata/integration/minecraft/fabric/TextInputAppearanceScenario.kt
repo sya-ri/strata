@@ -20,8 +20,6 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -51,71 +49,46 @@ internal object TextInputAppearanceScenario {
                     },
                 )
             }
-        driver.await { 0L < driver.work().preparations }
-        var previous = driver.onClient { driver.work() }
-        driver.await {
-            val current = driver.work()
-            val settled = previous.hostFrames < current.hostFrames && previous.preparations == current.preparations
-            previous = current
-            settled
-        }
-        val monitor = driver.onClient { owner.startRenderMonitoring() }
-        try {
-            val ids = driver.onClient { listOf(monitor.findNodes(fieldKey), monitor.findNodes(areaKey)) }
-            val before =
-                driver.onClient {
-                    source.publish(changed)
-                    driver.work()
-                }
-            driver.await { before.hostFrames < driver.work().hostFrames }
+        driver.await { driver.work().inputs != null }
+        val ids = driver.onClient { listOf(MinecraftPresentationObservation.identities(owner, fieldKey), MinecraftPresentationObservation.identities(owner, areaKey)) }
+        val before =
             driver.onClient {
-                val snapshot = monitor.snapshot()
-                check(snapshot.overflowed.not())
-                check(snapshot.counts.getValue(UiRenderMetric.ObserveEvaluation) == 1L)
-                check(snapshot.counts.getValue(UiRenderMetric.Measure) == 0L)
-                check(snapshot.counts.getValue(UiRenderMetric.Layout) == 0L)
-                check(0L < snapshot.counts.getValue(UiRenderMetric.Paint))
-                check(ids.all { it.size == 1 })
-                check(ids == listOf(monitor.findNodes(fieldKey), monitor.findNodes(areaKey)))
-                check(field.value == values.first && area.value == values.second)
-                check(before.preparations < driver.work().preparations)
+                val state = driver.work()
+                source.publish(changed)
+                state
             }
-            verifyStable(driver, monitor, source, changed)
-        } finally {
-            driver.onClient { monitor.close() }
+        driver.await { before.renderExtractions < driver.work().renderExtractions }
+        driver.onClient {
+            check(ids.all { it.size == 1 })
+            check(ids == listOf(MinecraftPresentationObservation.identities(owner, fieldKey), MinecraftPresentationObservation.identities(owner, areaKey)))
+            check(field.value == values.first && area.value == values.second)
+            check(before.inputs !== driver.work().inputs)
         }
+        verifyStable(driver, source, changed)
         driver.assertPixels(
             ScreenDefinition("Input appearance reference") {
                 editors(changed, TextFieldState("Search"), TextAreaState("Draft\nSecond line"))
             },
             ReactiveRenderCapture.InputAppearance,
         )
-        return "inputAppearanceMeasure=0\ninputAppearanceLayout=0\ninputAppearanceRetainedNodes=2\ninputAppearanceStableFrames=100\ninputAppearancePixels=literal-headless-exact\n"
+        return "inputAppearanceRetainedDeclarations=2\ninputAppearanceStablePresentedFrames=100\ninputAppearancePixels=literal-headless-exact\n"
     }
 
     private fun verifyStable(
         driver: ReactiveRenderTestDriver,
-        monitor: UiRenderMonitor,
         source: ReactiveRenderSource<TextInputAppearance.Custom>,
         changed: TextInputAppearance.Custom,
     ) {
         val stable =
             driver.onClient {
-                monitor.checkpoint()
                 source.publish(changed.copy())
                 driver.work()
             }
-        driver.await { 100L <= driver.work().hostFrames - stable.hostFrames }
+        driver.await { 100L <= driver.work().renderExtractions - stable.renderExtractions }
         driver.onClient {
-            val snapshot = monitor.snapshot()
-            check(snapshot.overflowed.not())
-            listOf(UiRenderMetric.ContentEvaluation, UiRenderMetric.NodeUpdate, UiRenderMetric.Measure, UiRenderMetric.Layout, UiRenderMetric.Paint).forEach {
-                check(snapshot.counts.getValue(it) == 0L) { "Unexpected static input work: metric=$it snapshot=$snapshot" }
-            }
             val after = driver.work()
-            check(stable.preparations == after.preparations && stable.rasterizations == after.rasterizations && stable.uploads == after.uploads) {
-                "Unexpected static input native work: before=$stable after=$after"
-            }
+            check(stable.commands === after.commands && stable.inputs === after.inputs)
+            check(stable.samePortable(after) && stable.sameSources(after))
         }
     }
 

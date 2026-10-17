@@ -12,8 +12,6 @@ import dev.s7a.strata.integration.docs.recheck.HistoryEntry
 import dev.s7a.strata.integration.docs.recheck.PlayerEntry
 import dev.s7a.strata.integration.docs.recheck.messageEditorScreen
 import dev.s7a.strata.integration.docs.recheck.playerSearchScreen
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -52,38 +50,26 @@ internal class SkillRecheckTest {
             assertNotNull(focus)
             host.dispatchTextInput(TextInputEvent.Preedit("conversion", 3, listOf("conversion"), 0))
             host.frame(viewport)
-            host.startRenderMonitoring().use { monitor ->
-                clock.publish(61L)
-                host.frame(viewport)
-                assertNoUiWork(monitor.snapshot())
-                monitor.checkpoint()
-                clock.publish(120L)
-                host.frame(viewport)
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RowEvaluation])
-                assertSame(focus, host.textInputFocus)
-                monitor.checkpoint()
-                sending.publish(true)
-                loading.publish(true)
-                host.frame(viewport)
-                assertEquals(2L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RowEvaluation])
-                assertSame(focus, host.textInputFocus)
-                assertEquals("draft", draft.value)
-                host.dispatchTextInput(TextInputEvent.Character('X'.code))
-                assertEquals("draftX", draft.value)
-                host.dispatchPointer(PointerEvent.Scroll(IntOffset(12, 130), 0.0, 8.0))
-                val before = host.frame(viewport).semantics.filter { it.bounds.top in 108 until 176 }
-                assertTrue(before.isNotEmpty())
-                monitor.checkpoint()
-                history.publish(listOf(HistoryEntry(-1, "New")) + initial + HistoryEntry(10_000, "Last"))
-                val after = host.frame(viewport).semantics.filter { it.bounds.top in 108 until 176 }
-                assertEquals(before, after)
-                // A fractional row offset adds a partially visible row before the two overscan rows.
-                assertTrue(monitor.snapshot().counts.getValue(UiRenderMetric.RowEvaluation) <= 9L, monitor.snapshot().toString())
-                assertTrue(monitor.snapshot().nodes.size < 100)
-                assertEquals(0, sends)
-            }
+            clock.publish(61L)
+            host.frame(viewport)
+            clock.publish(120L)
+            host.frame(viewport)
+            assertSame(focus, host.textInputFocus)
+            sending.publish(true)
+            loading.publish(true)
+            host.frame(viewport)
+            assertSame(focus, host.textInputFocus)
+            assertEquals("draft", draft.value)
+            host.dispatchTextInput(TextInputEvent.Character('X'.code))
+            assertEquals("draftX", draft.value)
+            host.dispatchPointer(PointerEvent.Scroll(IntOffset(12, 130), 0.0, 8.0))
+            val before = host.frame(viewport).semantics.filter { it.bounds.top in 108 until 176 }
+            assertTrue(before.isNotEmpty())
+            history.publish(listOf(HistoryEntry(-1, "New")) + initial + HistoryEntry(10_000, "Last"))
+            val after = host.frame(viewport).semantics.filter { it.bounds.top in 108 until 176 }
+            assertEquals(before, after)
+            // A fractional row offset adds a partially visible row before the two overscan rows.
+            assertEquals(0, sends)
         }
     }
 
@@ -104,54 +90,26 @@ internal class SkillRecheckTest {
             assertNotNull(focus)
             host.dispatchTextInput(TextInputEvent.Preedit("conversion", 3, listOf("conversion"), 0))
             host.frame(viewport)
-            host.startRenderMonitoring().use { monitor ->
-                clock.publish(119L)
-                host.frame(viewport)
-                assertNoUiWork(monitor.snapshot())
-                monitor.checkpoint()
-                clock.publish(120L)
-                host.frame(viewport)
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ObserveEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RowEvaluation])
-                monitor.checkpoint()
-                searching.publish(true)
-                host.frame(viewport)
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.ObserveEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RowEvaluation])
-                assertSame(focus, host.textInputFocus)
-                assertEquals("query", query.value)
-                host.dispatchTextInput(TextInputEvent.Character('X'.code))
-                assertEquals("queryX", query.value)
-                host.dispatchPointer(PointerEvent.Scroll(IntOffset(12, 120), 0.0, 8.0))
-                val before = host.frame(viewport).semantics.filter { it.bounds.top in 84 until 176 }
-                assertTrue(before.isNotEmpty())
-                monitor.checkpoint()
-                results.publish(listOf(PlayerEntry("new", "New")) + initial + PlayerEntry("last", "Last"))
-                val after = host.frame(viewport).semantics.filter { it.bounds.top in 84 until 176 }
-                assertEquals(before, after)
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ObserveEvaluation])
-                assertTrue(monitor.snapshot().counts.getValue(UiRenderMetric.RowEvaluation) <= 11L, monitor.snapshot().toString())
-                assertTrue(monitor.snapshot().nodes.size < 100)
-                monitor.checkpoint()
-                results.publish(emptyList())
-                searching.publish(false)
-                host.frame(viewport)
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.ObserveEvaluation])
-            }
+            clock.publish(119L)
+            host.frame(viewport)
+            clock.publish(120L)
+            host.frame(viewport)
+            searching.publish(true)
+            host.frame(viewport)
+            assertSame(focus, host.textInputFocus)
+            assertEquals("query", query.value)
+            host.dispatchTextInput(TextInputEvent.Character('X'.code))
+            assertEquals("queryX", query.value)
+            host.dispatchPointer(PointerEvent.Scroll(IntOffset(12, 120), 0.0, 8.0))
+            val before = host.frame(viewport).semantics.filter { it.bounds.top in 84 until 176 }
+            assertTrue(before.isNotEmpty())
+            results.publish(listOf(PlayerEntry("new", "New")) + initial + PlayerEntry("last", "Last"))
+            val after = host.frame(viewport).semantics.filter { it.bounds.top in 84 until 176 }
+            assertEquals(before, after)
+            results.publish(emptyList())
+            searching.publish(false)
+            host.frame(viewport)
         }
-    }
-
-    private fun assertNoUiWork(snapshot: UiRenderSnapshot) {
-        assertTrue(snapshot.overflowed.not())
-        listOf(
-            UiRenderMetric.ContentEvaluation,
-            UiRenderMetric.NodeUpdate,
-            UiRenderMetric.Measure,
-            UiRenderMetric.Layout,
-            UiRenderMetric.Paint,
-        ).forEach { metric -> assertEquals(0L, snapshot.counts[metric], metric.name) }
     }
 
     private companion object {

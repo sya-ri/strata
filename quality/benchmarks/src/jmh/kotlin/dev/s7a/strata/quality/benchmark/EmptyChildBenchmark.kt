@@ -13,7 +13,7 @@ import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 
 /**
- * Measures the frozen 60-case empty-child corpus through complete public update/frame operations.
+ * Measures the 30-case empty-child corpus through complete public update/frame operations.
  */
 public open class EmptyChildBenchmark {
     /**
@@ -35,13 +35,6 @@ public open class EmptyChildBenchmark {
         public var workload: EmptyChildWorkload = EmptyChildWorkload.DirectChanged1
 
         /**
-         * Collector-enabled and collector-disabled cases share the exact fixture.
-         */
-        @JvmField
-        @Param("false", "true")
-        public var monitoring: Boolean = false
-
-        /**
          * Invocation-owned fixture, created outside timing and released after timing.
          */
         public lateinit var fixture: EmptyChildFixture
@@ -51,7 +44,7 @@ public open class EmptyChildBenchmark {
          */
         @Setup(Level.Invocation)
         public fun setup() {
-            fixture = EmptyChildFixture(workload, monitoring)
+            fixture = EmptyChildFixture(workload)
         }
 
         /**
@@ -72,7 +65,7 @@ public open class EmptyChildBenchmark {
          */
         @JvmStatic
         public fun verifyWork() {
-            check(JmhWorkloadInventory.capture(listOf(EmptyChildBenchmark::class.java), setOf("avgt", "sample")).size == 120)
+            check(JmhWorkloadInventory.capture(listOf(EmptyChildBenchmark::class.java), setOf("avgt", "sample")).size == 60)
             EmptyChildControls.verify()
             EmptyChildWorkEvidence.verifyPixels()
             EmptyChildWorkEvidence.verifyTerminalReferences()

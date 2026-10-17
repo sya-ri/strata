@@ -16,6 +16,32 @@ import kotlin.test.assertTrue
  */
 internal class NativeComponentPerformanceEvidenceTest {
     @Test
+    internal fun uninstrumentedRuntimeKeepsMissingCountersExplicitAndRequiresRealFrameSamples() {
+        val report = complete()
+        report.getAsJsonArray("phases").forEach { entry ->
+            val phase = entry.asJsonObject
+            phase.add("native_counter_availability", JsonObject().apply { addProperty("available", false) })
+            val counters = phase.getAsJsonObject("native_counter_delta")
+            counters.keySet().toList().forEach { counters.add(it, JsonNull.INSTANCE) }
+            phase.add(
+                "diagnostics",
+                JsonObject().apply {
+                    addProperty("available", false)
+                    add("counts", JsonNull.INSTANCE)
+                    add("node_inventory_size", JsonNull.INSTANCE)
+                },
+            )
+        }
+        NativeComponentPerformanceEvidence.verify(report)
+        val first = report.getAsJsonArray("phases")[0].asJsonObject
+        first.getAsJsonObject("native_counter_delta").addProperty("renderExtractionCount", 0L)
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+        first.getAsJsonObject("native_counter_delta").add("renderExtractionCount", JsonNull.INSTANCE)
+        first.getAsJsonObject("frame_interval").addProperty("samples", 59)
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+    }
+
+    @Test
     internal fun requestedBackendRejectsActualFallbackAndUnknownMetadata() {
         val report = JsonObject().apply { addProperty("native_backend", "OpenGl") }
         NativeEvidenceBackend.OpenGl.verify(report)

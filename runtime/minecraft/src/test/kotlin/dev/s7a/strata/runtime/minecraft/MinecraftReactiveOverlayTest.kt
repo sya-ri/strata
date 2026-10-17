@@ -11,7 +11,6 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.screen.ScreenDefinition
@@ -40,30 +39,16 @@ internal class MinecraftReactiveOverlayTest {
             host.attach()
             val before = host.frame(IntSize(8, 8))
             assertPixels(rasterizeHeadless(before.drawCommands, before.size), 0xFFFF0000.toInt(), 0xFFFF8080.toInt())
-            host.startRenderMonitoring().use { monitor ->
-                val foreground = listOf("translucent", "opaque").flatMap { monitor.findNodes(ElementKey(it)) }
-                listOf(
-                    Triple(0xFF0000FF.toInt(), 0xFF0000FF.toInt(), 0xFF8080FF.toInt()),
-                    Triple(0, 0xFF000000.toInt(), 0xFF808080.toInt()),
-                    Triple(0xFFFF0000.toInt(), 0xFFFF0000.toInt(), 0xFFFF8080.toInt()),
-                ).forEach { (source, background, blended) ->
-                    monitor.checkpoint()
-                    color.publish(ArgbColor(source))
-                    val frame = host.frame(IntSize(8, 8))
-                    assertPixels(rasterizeHeadless(frame.drawCommands, frame.size), background, blended)
-                    val snapshot = monitor.snapshot()
-                    assertEquals(1L, snapshot.counts[UiRenderMetric.ObserveEvaluation])
-                    assertEquals(1L, snapshot.counts[UiRenderMetric.Paint])
-                    assertEquals(0L, snapshot.counts[UiRenderMetric.Measure])
-                    assertEquals(0L, snapshot.counts[UiRenderMetric.Layout])
-                    foreground.forEach { id -> assertEquals(0L, snapshot.nodes.single { it.id == id }.counts[UiRenderMetric.NodeUpdate]) }
-                    assertEquals(foreground, listOf("translucent", "opaque").flatMap { monitor.findNodes(ElementKey(it)) })
-                    monitor.checkpoint()
-                    color.publish(ArgbColor(source))
-                    assertSame(frame, host.frame(IntSize(8, 8)))
-                    assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
-                    assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.Paint])
-                }
+            listOf(
+                Triple(0xFF0000FF.toInt(), 0xFF0000FF.toInt(), 0xFF8080FF.toInt()),
+                Triple(0, 0xFF000000.toInt(), 0xFF808080.toInt()),
+                Triple(0xFFFF0000.toInt(), 0xFFFF0000.toInt(), 0xFFFF8080.toInt()),
+            ).forEach { (source, background, blended) ->
+                color.publish(ArgbColor(source))
+                val frame = host.frame(IntSize(8, 8))
+                assertPixels(rasterizeHeadless(frame.drawCommands, frame.size), background, blended)
+                color.publish(ArgbColor(source))
+                assertSame(frame, host.frame(IntSize(8, 8)))
             }
         }
     }

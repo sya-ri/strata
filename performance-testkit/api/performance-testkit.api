@@ -13,6 +13,12 @@ public final class dev/s7a/strata/performance/CompilerApiInventory {
 	public final fun capture (Ljava/util/Map;)Ljava/util/Map;
 }
 
+public final class dev/s7a/strata/performance/FabricFrameObserver : java/lang/AutoCloseable {
+	public fun <init> (Ljava/lang/Object;)V
+	public fun close ()V
+	public final fun getFrames ()J
+}
+
 public final class dev/s7a/strata/performance/GpuPerformanceMeter : java/lang/AutoCloseable {
 	public fun <init> (IDLjava/lang/String;Lkotlin/jvm/functions/Function1;)V
 	public final fun begin ()V
@@ -440,6 +446,7 @@ public final class dev/s7a/strata/performance/RuntimeWorkMonitor : java/lang/Aut
 	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun checkpoint ()V
 	public fun close ()V
+	public final fun getAvailable ()Z
 	public final fun sample (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 	public final fun snapshot ()Lcom/google/gson/JsonObject;
 	public final fun verify (Ldev/s7a/strata/performance/WorkExpectation;)V

@@ -18,7 +18,6 @@ import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
-import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -59,14 +58,16 @@ internal object MinecraftDestinationPaletteGameTest {
         var failure: Throwable? = null
         try {
             context.onClient { context.setScreen(screen) }
-            MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
-            val rasterizations = context.onClient { rasterizations(screen) }
-            context.onClient {
-                check(0L < rasterizations) { "Palette acceptance did not rasterize a portable CPU tile." }
-                check(MinecraftCompositionParityInputs.portable(screen).none { MinecraftCompositionParityInputs.composed(it.first) }) {
-                    "The small source crop must preserve the existing whole-tile CPU fallback."
+            MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.completedFrames(context, screen))
+            val portableTiles =
+                context.onClient {
+                    val portable = MinecraftCompositionParityInputs.portable(screen)
+                    check(portable.isNotEmpty()) { "Palette acceptance did not prepare a portable CPU tile." }
+                    check(portable.none { MinecraftCompositionParityInputs.composed(it.first) }) {
+                        "The small source crop must preserve the existing whole-tile CPU fallback."
+                    }
+                    portable.size
                 }
-            }
             val name = "destination-palette-$scale-$revision"
             val path = context.takeScreenshot(name, physical)
             val actual = checkNotNull(ImageIO.read(path.toFile()))
@@ -77,7 +78,7 @@ internal object MinecraftDestinationPaletteGameTest {
                     check(actual.getRGB(x, y) == expected) { "CPU palette GUI output differs at ($x, $y), scale=$scale, revision=$revision." }
                 }
             }
-            Files.writeString(path.resolveSibling("$name.properties"), "portable_rasterizations=$rasterizations\ngpu_tiles=0\nchecked_pixels=${physical.width * physical.height}\ntolerance=0\nresult=passed\n")
+            Files.writeString(path.resolveSibling("$name.properties"), "prepared_cpu_tiles=$portableTiles\nrasterizations=unavailable\ngpu_tiles=0\nchecked_pixels=${physical.width * physical.height}\ntolerance=0\nresult=passed\n")
         } catch (caught: Throwable) {
             failure = caught
             throw caught
@@ -160,11 +161,6 @@ internal object MinecraftDestinationPaletteGameTest {
     }
 
     private fun rounded(value: Float): Int = floor((value * 255f).toDouble() + 0.5).toInt().coerceIn(0, 255)
-
-    private fun rasterizations(screen: FabricMinecraftScreen): Long {
-        val owner = if (runCatching { screen.javaClass.getDeclaredField("portableFrames") }.isSuccess) screen else MinecraftCompositionParityInputs.member(screen, "presentation")
-        return MinecraftCompositionParityInputs.member(owner, "portableRasterizationCount") as Long
-    }
 
     private fun released(): Boolean = NativeCanvasDevices.retainedTargetCount() == 0 && NativeCanvasDevices.retainedGuiResourceSetCount() == 0
 }

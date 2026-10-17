@@ -22,9 +22,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * A failed session has already performed cleanup; closing it records the closed terminal state without repeating cleanup.
  */
 @InternalStrataRuntimeApi
-public sealed interface RuntimeUiSession :
-    AutoCloseable,
-    RuntimeUiDiagnosticsOwner {
+public sealed interface RuntimeUiSession : AutoCloseable {
     /**
      * Commits the shared declaration cutoff and calls [project] without measuring or painting.
      * The callback is owner-thread confined, read-only, and cannot reenter session operations.

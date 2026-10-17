@@ -40,16 +40,16 @@ internal object MinecraftOrderedCompositionGameTest {
         var failure: Throwable? = null
         try {
             context.onClient { context.setScreen(screen) }
-            val first = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+            val first = MinecraftCanvasFrameFence.completedFrames(context, screen)
             MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, first)
             val tiles = context.onClient { MinecraftCompositionParityInputs.portable(screen).count { MinecraftCompositionParityInputs.composed(it.first) } }
             check(0 < tiles) { "Ordered transparent parity must exercise whole-tile GPU composition." }
             val gpu = context.takeScreenshot("ordered-composition-gpu-$scale-$revision", physical)
-            val baseline = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+            val baseline = MinecraftCanvasFrameFence.completedFrames(context, screen)
             context.onClient { MinecraftCompositionParityInputs.selectCpu(screen) }
             MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, baseline)
             // Another committed frame proves the changed preparation completed ordinary native GUI consumption.
-            MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
+            MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.completedFrames(context, screen))
             context.onClient { check(MinecraftCompositionParityInputs.portable(screen).none { MinecraftCompositionParityInputs.composed(it.first) }) }
             val cpu = context.takeScreenshot("ordered-composition-cpu-$scale-$revision", physical)
             compare(cpu, gpu, physical)

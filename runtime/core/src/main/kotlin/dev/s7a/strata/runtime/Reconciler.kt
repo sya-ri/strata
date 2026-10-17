@@ -4,15 +4,12 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.ModifierElement
-import dev.s7a.strata.node.ContentInvalidation
-import dev.s7a.strata.node.ContentKind
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DynamicChildrenNode
 import dev.s7a.strata.node.ReactiveContentNode
 import dev.s7a.strata.node.StateObserverNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 
@@ -25,7 +22,6 @@ internal class Reconciler(
     private val lifecycle: LifecycleManager,
     private val dirtyTracker: DirtyTracker,
     private val observedSources: ObservedSourceRegistry = ObservedSourceRegistry(),
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
     private val observationOwner: () -> StateObservation? = { null },
 ) {
     private val provisionalRoots: MutableSet<RetainedNode> = LinkedHashSet()
@@ -190,31 +186,12 @@ internal class Reconciler(
         retained: RetainedNode,
         dynamic: DynamicChildrenNode,
     ): List<Element> {
-        val collector = monitoring.collector
         val deferred = dynamic as? DeferredContentNode
-        if (deferred == null || deferred.pendingContentReasons.isEmpty()) return dynamic.dynamicChildren()
-        if (collector == null) return evaluateObservedChildren(retained, deferred)
-        deferred.pendingContentReasons.forEach { reason ->
-            val metric =
-                when (reason) {
-                    ContentInvalidation.Initial -> UiRenderMetric.InitialContent
-                    ContentInvalidation.SourceValue -> UiRenderMetric.SourceContent
-                    ContentInvalidation.SourceReplacement -> UiRenderMetric.SourceReplacementContent
-                    ContentInvalidation.ParentDefinition -> UiRenderMetric.ParentDefinitionContent
-                }
-            monitoring.record(metric, retained)
+        return if (deferred == null || deferred.pendingContentReasons.isEmpty()) {
+            dynamic.dynamicChildren()
+        } else {
+            evaluateObservedChildren(retained, deferred)
         }
-        monitoring.record(UiRenderMetric.ContentEvaluation, retained)
-        monitoring.record(
-            when (deferred.contentKind) {
-                ContentKind.ObservedRegion -> UiRenderMetric.ObserveEvaluation
-                ContentKind.StateComponent -> UiRenderMetric.StateComponentEvaluation
-            },
-            retained,
-        )
-        val children = evaluateObservedChildren(retained, deferred)
-        monitoring.record(UiRenderMetric.ContentEvaluationSuccess, retained)
-        return children
     }
 
     private fun evaluateObservedChildren(
@@ -261,7 +238,6 @@ internal class Reconciler(
     ) {
         val previous = retained.element
         if (previous === description) return
-        monitoring.record(UiRenderMetric.NodeUpdate, retained)
         val mask = description.type.updateErased(previous, description, retained.node)
         if (retained.node is DeferredContentNode) pendingContent = true
         // Exact immutable chain identity preserves membership; structural child reconciliation still refreshes ancestry.
@@ -314,7 +290,6 @@ internal class Reconciler(
                         if (previous.element === description) {
                             DirtyMask.None
                         } else {
-                            monitoring.record(UiRenderMetric.NodeUpdate, previous)
                             description.type.updateErased(previous.element, description, previous.modifierNode)
                         }
                     previous.element = description

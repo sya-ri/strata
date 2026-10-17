@@ -10,7 +10,6 @@ import dev.s7a.strata.quality.fixture.EmptyChildProbe.Role
 import dev.s7a.strata.quality.fixture.EmptyChildWorkload.Operation
 import dev.s7a.strata.quality.fixture.EmptyChildWorkload.Payload
 import dev.s7a.strata.runtime.UiTree
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -21,7 +20,7 @@ import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
 
 /**
- * One private invocation tree/session with identical declaration construction and collector settings on both archives.
+ * One private invocation tree/session with identical declaration construction on both archives.
  * Construct and settle outside sampling, call [execute] once inside sampling, then close outside sampling.
  */
 public class EmptyChildFixture(
@@ -29,7 +28,6 @@ public class EmptyChildFixture(
      * Fixed typed case; collector selection supplies the other matrix dimension.
      */
     public val workload: EmptyChildWorkload,
-    monitoring: Boolean,
 ) : AutoCloseable {
     /**
      * Independent callback counter owner used in qualification and measured work.
@@ -42,11 +40,6 @@ public class EmptyChildFixture(
     private val initial: Element
 
     /**
-     * Retained diagnostics, absent for collector-disabled cases.
-     */
-    public val monitor: UiRenderMonitor?
-
-    /**
      * Initial settled immutable frame for exact clean-frame identity assertions.
      */
     public val initialFrame: RuntimeUiFrame?
@@ -57,7 +50,6 @@ public class EmptyChildFixture(
             Operation.DirectTreeUpdate, Operation.SameDescriptionTreeUpdate -> {
                 tree = UiTree()
                 session = null
-                monitor = if (monitoring) tree.startRenderMonitoring(16_384) else null
                 tree.update(initial)
                 settle()
                 initialFrame = null
@@ -72,12 +64,10 @@ public class EmptyChildFixture(
                         }
                     }
                 session.attach()
-                monitor = if (monitoring) session.startRenderMonitoring(16_384) else null
                 initialFrame = session.frame(constraints)
             }
         }
         probe.checkpoint()
-        monitor?.checkpoint()
     }
 
     /**
@@ -126,12 +116,11 @@ public class EmptyChildFixture(
     public val subscribed: Boolean get() = source.subscribed
 
     /**
-     * Releases the owner, source subscription and collector outside sampled work.
+     * Releases the owner, source subscription outside sampled work.
      */
     override fun close() {
         tree?.close()
         session?.close()
-        monitor?.close()
         check(source.subscribed.not())
         check(probe.nodes.all { it.disposed })
     }

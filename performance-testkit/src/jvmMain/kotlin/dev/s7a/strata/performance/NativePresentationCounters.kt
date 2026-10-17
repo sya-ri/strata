@@ -35,11 +35,12 @@ public object NativePresentationCounters {
     public fun read(screen: Any): Map<String, Long> {
         val owner = nativeOwner(screen)
         val counters =
-            names.associateWith { name ->
-                val field = field(owner, name)
-                check(field.trySetAccessible()) { "Inaccessible native performance metric: $name" }
-                field.getLong(owner)
-            }
+            names
+                .mapNotNull { name ->
+                    val field = optionalField(owner, name) ?: return@mapNotNull null
+                    check(field.trySetAccessible()) { "Inaccessible native performance metric: $name" }
+                    name to field.getLong(owner)
+                }.toMap()
         val payloadField = optionalField(owner, "uploadWork") ?: return counters
         check(payloadField.trySetAccessible())
         val payload = payloadField.get(owner) ?: return counters
@@ -62,8 +63,25 @@ public object NativePresentationCounters {
         val current = read(screen)
         val delta = current.mapValues { (name, value) -> value - baseline.getValue(name) }
         check(delta.filterKeys { it.contains("Retained").not() }.values.all { 0 <= it }) { "Native counters changed generation" }
-        report.add("native_counter_delta", gson.toJsonTree(delta))
-        report.add("native_retained", gson.toJsonTree(current.filterKeys { it.contains("Retained") }))
+        report.add(
+            "native_counter_delta",
+            gson.toJsonTree(delta).asJsonObject.apply {
+                names.forEach { if (has(it).not()) add(it, JsonNull.INSTANCE) }
+            },
+        )
+        report.add(
+            "native_counter_availability",
+            JsonObject().apply {
+                addProperty("available", names.all { it in delta })
+                if (names.any { (it in delta).not() }) addProperty("reason", "The production runtime has no internal presentation-measurement counters.")
+            },
+        )
+        report.add(
+            "native_retained",
+            gson.toJsonTree(current.filterKeys { it.contains("Retained") }).asJsonObject.apply {
+                names.filter { it.contains("Retained") }.forEach { if (has(it).not()) add(it, JsonNull.INSTANCE) }
+            },
+        )
         report.add(
             "native_payload",
             JsonObject().apply {
@@ -96,7 +114,7 @@ public object NativePresentationCounters {
     }
 
     private fun nativeOwner(screen: Any): Any {
-        if (generateSequence(screen.javaClass as Class<*>?) { it.superclass }.any { type -> type.declaredFields.any { it.name == names.first() } }) return screen
+        if (optionalField(screen, "preparedCommands") != null || optionalField(screen, names.first()) != null) return screen
         val presenter = field(screen, "presentation")
         check(presenter.trySetAccessible())
         return checkNotNull(presenter.get(screen))

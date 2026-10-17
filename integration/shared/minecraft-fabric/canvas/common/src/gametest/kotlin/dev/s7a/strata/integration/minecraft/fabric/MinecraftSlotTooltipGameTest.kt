@@ -116,8 +116,8 @@ internal object MinecraftSlotTooltipGameTest {
                         "logicalViewport=${window.guiScaledWidth}x${window.guiScaledHeight}\n" +
                         "nativeWindow=${window.screenWidth}x${window.screenHeight}\nframebuffer=${window.width}x${window.height}\n" +
                         "guiScale=${window.guiScale}\nforeground=${context.currentScreen() === screen}\noverlay=${context.hasOverlay()}\n" +
-                        "hoveredBinding=$hovered\nnormalHostFrames=${normal.hostFrameBaseline}..${normal.hostFramesObserved}\n" +
-                        "advancedHostFrames=${advanced.hostFrameBaseline}..${advanced.hostFramesObserved}\n"
+                        "hoveredBinding=$hovered\nnormalNativeFrames=${normal.nativeFrameBaseline}..${normal.nativeFramesObserved}\n" +
+                        "advancedNativeFrames=${advanced.nativeFrameBaseline}..${advanced.nativeFramesObserved}\n"
                 }
             Files.writeString(context.outputDirectory.resolve("strata-tooltip-native-input-$scale-${position.name}.txt"), nativeState)
         }
@@ -186,9 +186,9 @@ internal object MinecraftSlotTooltipGameTest {
         inventoryIndex: Int?,
         name: String,
     ): Capture {
-        val baseline = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        val baseline = MinecraftCanvasFrameFence.completedFrames(context, screen)
         MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, baseline)
-        val committed = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        val committed = MinecraftCanvasFrameFence.completedFrames(context, screen)
         val path = context.takeScreenshot("strata-slot-tooltip-$name", viewport)
         return context.onClient {
             val client = Minecraft.getInstance()
@@ -233,7 +233,7 @@ internal object MinecraftSlotTooltipGameTest {
         val receipt =
             "oracle=vanilla-AbstractContainerScreen\nfullRGBA=true\ntolerance=0\nphysical=640x480\n" +
                 "guiScale=${observation.guiScale}\nnativeWindow=${observation.nativeWindow}\n" +
-                "hostFrameBaseline=${observation.hostFrameBaseline}\nhostFramesObserved=${observation.hostFramesObserved}\n" +
+                "nativeFrameBaseline=${observation.nativeFrameBaseline}\nnativeFramesObserved=${observation.nativeFramesObserved}\n" +
                 "advanced=${observation.advanced}\ncarriedEmpty=${context.onClient { observation.carried.isEmpty }}\n" +
                 "itemTooltipImage=${context.onClient { observation.stack?.tooltipImage?.isPresent ?: false }}\n" +
                 "referenceFrameBaseline=$baseline\nreferenceFrames=${context.onClient { reference.frames }}\nmismatchedPixels=$mismatch\n"
@@ -279,8 +279,8 @@ internal object MinecraftSlotTooltipGameTest {
         val advanced: Boolean,
         val guiScale: Double,
         val nativeWindow: IntSize,
-        val hostFrameBaseline: Long,
-        val hostFramesObserved: Long,
+        val nativeFrameBaseline: Long,
+        val nativeFramesObserved: Long,
     )
 
     private enum class Position {

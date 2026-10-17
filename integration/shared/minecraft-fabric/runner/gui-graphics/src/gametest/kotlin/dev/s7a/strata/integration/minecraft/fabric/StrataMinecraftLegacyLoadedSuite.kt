@@ -22,7 +22,6 @@ import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform
@@ -33,7 +32,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
-import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -51,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import javax.imageio.ImageIO
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
  * Proves the public Strata screen, asset, input, and inventory contracts in a loaded legacy Minecraft client.
@@ -145,11 +144,12 @@ internal class StrataMinecraftLegacyLoadedSuite {
             runCatching {
                 context.computeOnClient { minecraft -> minecraft.setScreen(screen) }
                 context.waitFor { minecraft ->
-                    minecraft.screen === screen && probe.isReady() && 0L < readRenderWork(minecraft).framePreparations
+                    minecraft.screen === screen && probe.isReady() &&
+                        readRenderWork(minecraft).let { 0L < it.renderExtractions && it.inputs != null }
                 }
                 context.computeOnClient { minecraft ->
                     probe.verify(
-                        frameCount = { readRenderWork(minecraft).hostFrames },
+                        frameCount = { readRenderWork(minecraft).renderExtractions },
                         scroll = { scrollMinecraftScreen(screen, probe.position) },
                         move = { vanillaScreen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
                         click = { clickMinecraftScreen(screen, probe.position) },
@@ -181,16 +181,13 @@ internal class StrataMinecraftLegacyLoadedSuite {
                         context.waitFor { condition() }
                     }
 
-                    override fun open(definition: ScreenDefinition): RuntimeUiDiagnosticsOwner {
+                    override fun open(definition: ScreenDefinition): FabricMinecraftScreen {
                         val screen = createMinecraftScreen(definition, profile, parent = null)
                         Minecraft.getInstance().setScreen(screen)
                         return screen
                     }
 
-                    override fun work(): ReactiveNativeWork {
-                        val counters = readRenderWork(Minecraft.getInstance())
-                        return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads, counters.samplingBytes)
-                    }
+                    override fun work(): ReactiveNativeWork = readRenderWork(Minecraft.getInstance())
 
                     override fun assertPixels(
                         definition: ScreenDefinition,
@@ -266,7 +263,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
             runCatching {
                 context.computeOnClient { minecraft -> minecraft.setScreen(initial) }
                 context.waitFor { minecraft ->
-                    minecraft.screen === initial && 0L < readRenderWork(minecraft).framePreparations
+                    minecraft.screen === initial && readRenderWork(minecraft).inputs != null
                 }
                 context.computeOnClient { minecraft ->
                     check(pressMinecraftTab(initial)) { "Native Tab must be consumed by Strata focus traversal." }
@@ -281,7 +278,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                     check(firstActivations.get() == 2 && secondActivations.get() == 1)
                 }
                 context.waitFor { minecraft ->
-                    minecraft.screen === replacement && 0L < readRenderWork(minecraft).framePreparations
+                    minecraft.screen === replacement && readRenderWork(minecraft).inputs != null
                 }
                 context.computeOnClient { minecraft ->
                     check(pressMinecraftSpace(replacement)) { "The replacement screen's initial focus did not consume native Space." }
@@ -503,23 +500,13 @@ internal class StrataMinecraftLegacyLoadedSuite {
     private fun assertCleanFrameReuse(context: MinecraftLoadedTestContext) {
         context.waitFor { minecraft ->
             val initialized = readRenderWork(minecraft)
-            0 < initialized.renderExtractions && 0 < initialized.framePreparations
+            0L < initialized.renderExtractions && initialized.inputs != null
         }
         val before = renderWork(context)
         context.waitFor { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions }
         val after = renderWork(context)
-        require(after.hostFrames - before.hostFrames == after.renderExtractions - before.renderExtractions) {
-            "Each clean native render must request exactly one common host frame: before=$before, after=$after"
-        }
-        require(after.framePreparations == before.framePreparations) {
-            "An unchanged display list must not be partitioned again: before=$before, after=$after"
-        }
-        require(after.rasterizations == before.rasterizations) {
-            "An unchanged portable layer must not be rasterized again: before=$before, after=$after"
-        }
-        require(after.textureUploads == before.textureUploads) {
-            "An unchanged portable layer must not be uploaded again: before=$before, after=$after"
-        }
+        require(before.commands === after.commands && before.inputs === after.inputs) { "Clean frames must retain the actual prepared display list." }
+        require(before.samePortable(after) && before.sameSources(after)) { "Clean frames must retain their actual native textures." }
     }
 
     private fun assertPortableTextureBounds(observation: PortableTextureObservation) {
@@ -703,29 +690,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
     private fun renderWork(context: MinecraftLoadedTestContext): RenderWork = context.computeOnClient { minecraft -> readRenderWork(minecraft) }
 
-    private fun readRenderWork(minecraft: Minecraft): RenderWork {
-        val screen = activeFabricScreen(minecraft)
-        val presentation = fabricPresentation(screen)
-
-        fun counter(
-            name: String,
-            owner: Any = presentation,
-        ): Long {
-            val fields = owner.javaClass.declaredFields.associateBy { field -> field.name }
-            val field = fields[name] ?: error("Fabric render counter field is missing: $name")
-            check(field.trySetAccessible()) { "Fabric render counter field is inaccessible: $name" }
-            return field.getLong(owner)
-        }
-
-        return RenderWork(
-            renderExtractions = counter("renderExtractionCount"),
-            hostFrames = counter("hostFrameCount"),
-            framePreparations = counter("framePreparationCount"),
-            rasterizations = counter("portableRasterizationCount"),
-            textureUploads = counter("textureUploadCount"),
-            samplingBytes = counter("samplingUploadByteCount", MinecraftCompositionParityInputs.member(presentation, "uploadWork")),
-        )
-    }
+    private fun readRenderWork(minecraft: Minecraft): RenderWork = MinecraftPresentationObservation.read(activeFabricScreen(minecraft))
 
     private fun fabricPresentation(screen: FabricMinecraftScreen): Any {
         val fields = FabricMinecraftScreen::class.java.declaredFields.associateBy { field -> field.name }
@@ -791,15 +756,6 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 Slot(bind = Slots.playerInventory(playerInventoryIndex))
             }
         }
-
-    private data class RenderWork(
-        val renderExtractions: Long,
-        val hostFrames: Long,
-        val framePreparations: Long,
-        val rasterizations: Long,
-        val textureUploads: Long,
-        val samplingBytes: Long,
-    )
 
     private data class NativePresentation(
         val textures: List<NativeGuiResource>,

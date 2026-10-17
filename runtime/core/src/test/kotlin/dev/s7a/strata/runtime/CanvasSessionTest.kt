@@ -16,7 +16,6 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -49,22 +48,15 @@ internal class CanvasSessionTest {
         session.use {
             session.attach()
             session.frame(Constraints.fixed(1, 1))
-            session.startRenderMonitoring().use { monitor ->
-                descriptor.publish(canvasSource(second))
-                val replaced = session.frame(Constraints.fixed(1, 1))
-                assertEquals(1, first.closes)
-                assertEquals(1, second.subscriptions)
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.NodeCreate])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.NodeDispose])
-                monitor.checkpoint()
-                first.publish(image(3))
-                assertSame(replaced, session.frame(Constraints.fixed(1, 1)))
-                val next = image(4)
-                second.publish(next)
-                assertSame(next, images(session.frame(Constraints.fixed(1, 1))).single())
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
-            }
+            descriptor.publish(canvasSource(second))
+            val replaced = session.frame(Constraints.fixed(1, 1))
+            assertEquals(1, first.closes)
+            assertEquals(1, second.subscriptions)
+            first.publish(image(3))
+            assertSame(replaced, session.frame(Constraints.fixed(1, 1)))
+            val next = image(4)
+            second.publish(next)
+            assertSame(next, images(session.frame(Constraints.fixed(1, 1))).single())
         }
         assertEquals(1, second.closes)
         assertEquals(1, descriptor.releases)

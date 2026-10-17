@@ -7,10 +7,7 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.performance.RuntimeWorkMonitor
-import dev.s7a.strata.performance.WorkExpectation
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -98,35 +95,13 @@ internal class DescriptionValidationFixture(
      * Checks the real public phase, all placed descendants, equal-result reuse and bounded release outside timing.
      */
     fun verifyWork() {
-        RuntimeWorkMonitor(session).use { monitor ->
-            repeat(4) {
-                monitor.checkpoint()
-                val frame = nextFrame()
-                val changed = case.route == DescriptionValidationCase.Route.RootDefinition || case.route == DescriptionValidationCase.Route.ObserveRebuild
-                check(frame.drawCommands.size == case.descendants + 1)
-                check(frame.semantics.size == case.descendants + 1)
-                verifyPresentation(frame, if (changed) revision % 2 else 0)
-                monitor.verify(
-                    WorkExpectation(
-                        exact =
-                            mapOf(
-                                UiRenderMetric.FrameSuccess.name to 1L,
-                                UiRenderMetric.RootEvaluation.name to if (case.route == DescriptionValidationCase.Route.RootDefinition || case.route == DescriptionValidationCase.Route.SameDescription) 1L else 0L,
-                                UiRenderMetric.ContentEvaluation.name to if (case.route == DescriptionValidationCase.Route.ObserveRebuild) 1L else 0L,
-                                UiRenderMetric.NodeUpdate.name to if (changed) case.descendants + 1L else 0L,
-                                UiRenderMetric.NodeCreate.name to 0L,
-                                UiRenderMetric.NodeDispose.name to 0L,
-                                UiRenderMetric.Paint.name to if (changed) case.descendants + 1L else 0L,
-                                UiRenderMetric.Semantics.name to if (changed) case.descendants + 1L else 0L,
-                            ),
-                    ),
-                )
-                monitor.checkpoint()
-                check(session.frame(constraints) === frame)
-                monitor.verify(
-                    WorkExpectation(exact = mapOf(UiRenderMetric.RootEvaluation.name to 0L, UiRenderMetric.ContentEvaluation.name to 0L, UiRenderMetric.NodeUpdate.name to 0L)),
-                )
-            }
+        repeat(4) {
+            val frame = nextFrame()
+            val changed = case.route == DescriptionValidationCase.Route.RootDefinition || case.route == DescriptionValidationCase.Route.ObserveRebuild
+            check(frame.drawCommands.size == case.descendants + 1)
+            check(frame.semantics.size == case.descendants + 1)
+            verifyPresentation(frame, if (changed) revision % 2 else 0)
+            check(session.frame(constraints) === frame)
         }
         check(source.subscribed == (case.route == DescriptionValidationCase.Route.ObserveRebuild))
     }

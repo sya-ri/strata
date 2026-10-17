@@ -96,11 +96,9 @@ internal class FabricMinecraftCompositionMapTest {
         val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(command), size), 1, compositionEnabled = true)
         assertNotNull(inputs.portable.single().composition)
         assertEquals(listOf(image), inputs.sampled)
-        assertEquals(0L, inputs.tintFallbackImages)
-        assertSame(inputs, inputs.resolve({ true }) { error("No direct source fallback") })
-        val unavailable = inputs.resolve({ false }) { true }
+        assertSame(inputs, inputs.resolve { true })
+        val unavailable = inputs.resolve { false }
         assertNull(unavailable.portable.single().composition)
-        assertEquals(1L, unavailable.tintFallbackImages)
         assertArrayEquals(
             inputs.portable
                 .single()

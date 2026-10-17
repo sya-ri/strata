@@ -31,9 +31,9 @@ internal object MinecraftCompositionParityInputs {
         val field = presenter.javaClass.getDeclaredField("preparedInputs")
         check(field.trySetAccessible())
         val inputs = checkNotNull(field.get(presenter))
-        val constructor = inputs.javaClass.declaredConstructors.single { it.parameterCount == 6 }
+        val constructor = inputs.javaClass.declaredConstructors.single { it.parameterCount == 4 }
         check(constructor.trySetAccessible())
-        field.set(presenter, constructor.newInstance(member(inputs, "layers"), member(inputs, "scale"), 0L, 0L, false, null))
+        field.set(presenter, constructor.newInstance(member(inputs, "layers"), member(inputs, "scale"), false, null))
     }
 
     /**

@@ -22,11 +22,6 @@ internal sealed class RetainedEntry(
     val node: Node,
 ) {
     /**
-     * Session-local diagnostic identity, assigned lazily on first monitoring and retained without a collector.
-     */
-    var diagnosticId: Long = 0L
-
-    /**
      * Tree-local declaration identity, assigned only when a remote projection first visits this entry.
      */
     var declarationId: Long = 0L

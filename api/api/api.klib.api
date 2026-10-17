@@ -167,27 +167,6 @@ final enum class dev.s7a.strata.node/ContentInvalidation : kotlin/Enum<dev.s7a.s
     final fun values(): kotlin/Array<dev.s7a.strata.node/ContentInvalidation> // dev.s7a.strata.node/ContentInvalidation.values|values#static(){}[0]
 }
 
-final enum class dev.s7a.strata.node/ContentKind : kotlin/Enum<dev.s7a.strata.node/ContentKind> { // dev.s7a.strata.node/ContentKind|null[0]
-    enum entry ObservedRegion // dev.s7a.strata.node/ContentKind.ObservedRegion|null[0]
-    enum entry StateComponent // dev.s7a.strata.node/ContentKind.StateComponent|null[0]
-
-    final val entries // dev.s7a.strata.node/ContentKind.entries|#static{}entries[0]
-        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.node/ContentKind> // dev.s7a.strata.node/ContentKind.entries.<get-entries>|<get-entries>#static(){}[0]
-
-    final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentKind // dev.s7a.strata.node/ContentKind.valueOf|valueOf#static(kotlin.String){}[0]
-    final fun values(): kotlin/Array<dev.s7a.strata.node/ContentKind> // dev.s7a.strata.node/ContentKind.values|values#static(){}[0]
-}
-
-final enum class dev.s7a.strata.node/ContentWork : kotlin/Enum<dev.s7a.strata.node/ContentWork> { // dev.s7a.strata.node/ContentWork|null[0]
-    enum entry RowEvaluation // dev.s7a.strata.node/ContentWork.RowEvaluation|null[0]
-
-    final val entries // dev.s7a.strata.node/ContentWork.entries|#static{}entries[0]
-        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.node/ContentWork> // dev.s7a.strata.node/ContentWork.entries.<get-entries>|<get-entries>#static(){}[0]
-
-    final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentWork // dev.s7a.strata.node/ContentWork.valueOf|valueOf#static(kotlin.String){}[0]
-    final fun values(): kotlin/Array<dev.s7a.strata.node/ContentWork> // dev.s7a.strata.node/ContentWork.values|values#static(){}[0]
-}
-
 final enum class dev.s7a.strata.node/DirtyPhase : kotlin/Enum<dev.s7a.strata.node/DirtyPhase> { // dev.s7a.strata.node/DirtyPhase|null[0]
     enum entry Layout // dev.s7a.strata.node/DirtyPhase.Layout|null[0]
     enum entry Measure // dev.s7a.strata.node/DirtyPhase.Measure|null[0]
@@ -496,12 +475,6 @@ abstract interface dev.s7a.strata.node/ChildTransformNode { // dev.s7a.strata.no
 
 abstract interface dev.s7a.strata.node/ClipChildrenNode // dev.s7a.strata.node/ClipChildrenNode|null[0]
 
-abstract interface dev.s7a.strata.node/ContentWorkNode { // dev.s7a.strata.node/ContentWorkNode|null[0]
-    abstract var contentWorkObserver // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver|{}contentWorkObserver[0]
-        abstract fun <get-contentWorkObserver>(): kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>? // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<get-contentWorkObserver>|<get-contentWorkObserver>(){}[0]
-        abstract fun <set-contentWorkObserver>(kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>?) // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<set-contentWorkObserver>|<set-contentWorkObserver>(kotlin.Function1<dev.s7a.strata.node.ContentWork,kotlin.Unit>?){}[0]
-}
-
 abstract interface dev.s7a.strata.node/DeclarationProjectionNode { // dev.s7a.strata.node/DeclarationProjectionNode|null[0]
     abstract val declarationProjection // dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection|{}declarationProjection[0]
         abstract fun <get-declarationProjection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection.<get-declarationProjection>|<get-declarationProjection>(){}[0]
@@ -510,8 +483,6 @@ abstract interface dev.s7a.strata.node/DeclarationProjectionNode { // dev.s7a.st
 }
 
 abstract interface dev.s7a.strata.node/DeferredContentNode : dev.s7a.strata.node/DynamicChildrenNode { // dev.s7a.strata.node/DeferredContentNode|null[0]
-    abstract val contentKind // dev.s7a.strata.node/DeferredContentNode.contentKind|{}contentKind[0]
-        abstract fun <get-contentKind>(): dev.s7a.strata.node/ContentKind // dev.s7a.strata.node/DeferredContentNode.contentKind.<get-contentKind>|<get-contentKind>(){}[0]
     abstract val pendingContentReasons // dev.s7a.strata.node/DeferredContentNode.pendingContentReasons|{}pendingContentReasons[0]
         abstract fun <get-pendingContentReasons>(): kotlin.collections/Set<dev.s7a.strata.node/ContentInvalidation> // dev.s7a.strata.node/DeferredContentNode.pendingContentReasons.<get-pendingContentReasons>|<get-pendingContentReasons>(){}[0]
 }

@@ -18,7 +18,6 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.node.SessionAttachmentNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
@@ -34,14 +33,13 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @OptIn(InternalStrataRuntimeApi::class)
 internal class Pipeline(
     private val ownerGuard: OwnerGuard,
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
-    private val dirtyTracker: DirtyTracker = DirtyTracker(monitoring),
+    private val dirtyTracker: DirtyTracker = DirtyTracker(),
 ) {
     private val frameCallbacks = FrameCallbackIndex()
-    private val paintPipeline = PaintPipeline(ownerGuard, monitoring)
+    private val paintPipeline = PaintPipeline(ownerGuard)
     private val focusedInputPipeline = FocusedInputPipeline()
     private val inputPipeline = InputPipeline(focusedInputPipeline)
-    private val semanticsPipeline = SemanticsPipeline(ownerGuard, monitoring)
+    private val semanticsPipeline = SemanticsPipeline(ownerGuard)
 
     /**
      * Detached current editable-focus identity, read outside a tree operation under its execution owner.
@@ -317,7 +315,6 @@ internal class Pipeline(
             val measured =
                 try {
                     if (retained.node is MeasureNode) {
-                        monitoring.record(UiRenderMetric.Measure, retained)
                         retained.node.measure(scope, constraints)
                     } else {
                         constraints.constrain(IntSize.Zero)
@@ -396,7 +393,6 @@ internal class Pipeline(
                         }
                     }
                 try {
-                    monitoring.record(UiRenderMetric.Layout, retained)
                     layoutCapability.layout(scope)
                 } finally {
                     scope.guard.close()

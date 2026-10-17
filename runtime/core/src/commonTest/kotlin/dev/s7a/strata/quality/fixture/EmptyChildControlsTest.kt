@@ -152,8 +152,8 @@ internal class EmptyChildControlsTest {
     }
 
     @Test
-    fun monitoringParity() {
-        EmptyChildControls.verify(EmptyChildControls.Control.MonitoringParity)
+    fun independentOwners() {
+        EmptyChildControls.verify(EmptyChildControls.Control.IndependentOwners)
     }
 
     @Test

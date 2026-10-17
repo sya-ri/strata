@@ -31,12 +31,12 @@ Compare these costs separately:
 | Clean timed frame | The same path with an explicit unchanged host timestamp. |
 | Dirty session frame | Representative leaves invalidated across all retained phases. |
 | Headless rasterization | Fresh pixel storage from detached commands after closing the source session. |
-| Reactive scenarios | Publication, projection, shared/independent consumers, and list changes, with monitoring off and on. |
+| Reactive scenarios | Publication, projection, shared/independent consumers, and list changes, with fixture-owned callback probes outside the timed operation. |
 
 Reactive setup excludes initial subscription/layout but includes publication and snapshot allocation.
-Enabled monitoring checkpoints every 64 invocations; checkpoint cost is included.
 Lists alternate fixed immutable ranges while preserving their anchor.
-Use [render monitoring](render-monitoring.md) counters alongside timing and allocation.
+Keep instrumentation outside production artifacts under the [measurement boundary](render-monitoring.md).
+Fixture callbacks and external profilers provide independent work evidence; unavailable internal metrics remain unavailable.
 Reports under `quality/benchmarks/build/` are temporary and untracked.
 
 ## Why wall-clock time is not a hard CI gate
@@ -134,7 +134,7 @@ Removing list bookkeeping does not establish a CPU-time or FPS improvement, and 
 ### Identical immutable modifier chains
 
 A fresh compatible component description sharing the exact previous `Modifier` instance reuses its current active modifier membership without diff collections, per-position masks or comparison pairs.
-Complete incoming validation, component updates, deferred content, monitoring and ordinary child reconciliation still run.
+Complete incoming validation, component updates, deferred content and ordinary child reconciliation still run.
 Structural child reconciliation refreshes effective parent links even when a child's chain is unchanged; distinct chains retain positional type reconciliation and lifecycle/failure ordering.
 This identity guard adds no cache, shared nodes or historical references.
 Common JVM/JavaScript tests cover validation, clean revisions, effective ancestry, shared-chain owner isolation, deferred source cutoff and terminal failure cleanup; the external SPI verifies parent-scope reads.
@@ -371,7 +371,7 @@ Large-run partitioning reads each command occurrence once and routes each primit
 Temporary command lists and emitted clip depths are bounded by the same 64-tile grid and are transferred only to the current prepared descriptions; no history or spatial cache is retained.
 Disjoint tiles from one original run share an ordering identity and one native ordering group; boundaries remain between original runs, direct images and platform payloads.
 The existing generation key and resource sharing reuse unchanged tiles, including after a small primitive moves or disappears; changed tiles start from transparent black so erased pixels cannot persist.
-Unavailable direct images use the same bounded tiling, and fallback-reason counters count original command occurrences once rather than duplicated tile coverage.
+Unavailable direct images use the same bounded tiling.
 The screen owns only the current tile descriptions and generation, and unchanged frames still skip partitioning, rasterization and uploads.
 A changed layer count does not invalidate an unchanged prefix or suffix whose index shifts.
 There is no historical content lookup or new application-facing cache.
@@ -383,7 +383,7 @@ The separate `strata.performance.portableTileControls=true` corpus retains the s
 Its independent default output directory preserves the original four-case receipts and measures clip-pop distribution without claiming small-run acceleration.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
-See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
+See [measurement boundaries](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
 Changed portable inputs reserve a complete replacement generation before any GUI output, sharing immutable resources for equal layers and allocating only changed layers, rather than modifying a texture that unconsumed GUI work may still reference.
 Unchanged prefix and suffix layers retain their textures when insertion or removal shifts their indices; remaining equal layers may reuse the same previous index.
@@ -391,7 +391,7 @@ Matching scans the two lists linearly, does not hash source pixels, and retains 
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
 Prepared display-list inputs also retain their sampled-image list and portable descriptions for the same command identity, viewport and GUI scale, avoiding reconstruction during static extraction.
 Native texture availability is resolved inside every pinned borrow; resource reload or capacity exhaustion still selects the current portable fallback without retaining native handles in prepared CPU state.
-Both adapter families use the same borrow-scoped fallback classification and counts; unavailable supported images count as capacity fallback, while unsupported images count as ineligible fallback.
+Both adapter families resolve unsupported or unavailable source images to the current CPU fallback within the pinned borrow.
 Detachment, a zero-sized viewport, and terminal screen cleanup immediately clear every screen-owned texture, prepared-layer, and capture-receipt reference.
 Already queued native resources move to the screen-independent device owner and release only after their initialization and actual GUI-consumption fences complete.
 The complete prepared texture list is pinned across ordered submission, including intermediate legacy GUI flushes; reentrant screen close cannot free a later overlay or repopulate a closed screen's cache afterward.
@@ -403,7 +403,8 @@ These permits remain independent of Canvas's native target-set budget; sharing d
 Portable pool exhaustion fails before GUI output; it never attaches stale pixels to new portable commands or needs another permit to close an existing generation.
 Terminal cleanup submits as required and completes recorded work, closes both native Canvas and portable resources, drains native destruction, and checks physical acknowledgements in that order.
 Pointer dispatch and inventory or skin refresh coalescing must still invalidate the frame path when observable presentation state changes.
-Loaded-client GameTests read render-work counters from the real Fabric screen and require an unchanged display list to perform no repartition, portable rasterization, or texture upload.
+Loaded-client GameTests observe completed framework frames, verify reuse of actual preparation inputs and texture owners, and compare final pixels with independent references.
+These identity checks do not establish rasterization or upload counts; unavailable metrics remain explicit under the [measurement boundary](render-monitoring.md).
 They also require equivalent replacement portable layers to reuse their raster textures, inspect detached presenters for absent current texture generations and prepared-frame references, and wait for actual retirement before checking native destruction.
 The common portable-lifetime tests exercise incomplete initialization, pinned close, repeated queue consumption, arbitrarily delayed fences, both capacity bounds, and physical destruction acknowledgement.
 Layer-sharing regressions additionally exercise hundreds of partial replacements, both retirement orders, changed extents, owner isolation, partial failure, quarantined initialization, and terminal cleanup.
@@ -511,9 +512,6 @@ Unsupported sampled images wholly outside the logical viewport or the intersecte
 Direct-image barriers retain their exact display-list positions even when the image is clipped away; adjacent portable runs are not merged into a larger raster/upload extent.
 Fractional clip envelopes are conservative; partially covered images retain their original destinations and the existing physical pixel-center checks.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
-Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
-Sampled-image draws include GPU offscreen resampling passes; ordinary texture uploads include axis metadata writes, while sampled-image uploads count original immutable source pixels.
-CPU rasterization counters never count a GPU resample as CPU work, and measurements do not infer GPU completion time from render-thread extraction time.
 Both portable and direct-image uploads copy immutable ARGB source pixels into newly allocated NativeImage storage in one checked sequential write, preserving the native packed ABGR representation without an intermediate pixel array.
 The allocation address is borrowed only for the synchronous render-thread copy; the existing generation or sampled-image owner retains the NativeImage and GPU storage through upload and consumption fences.
 Copy preflight rejects a closed allocation, mismatched extents, non-RGBA format and overflowing address arithmetic before writing.
@@ -536,7 +534,7 @@ Resolution is lazy: the first use of an identifier observes the resource-pack st
 A new host always performs its own platform resolution and can therefore observe replacement pixels, although a platform is allowed to return the same immutable image identity from that new resolution.
 
 Common JVM tests require identity reuse across initial and far-jumped retained evaluation, mixed image components and backgrounds, independent identifiers, both admission limits, pixel bypass, failure retry without failed-entry retention, owner-thread rejection, terminal invalidation after close and construction failure, and a new platform resolution per host with replacement pixels.
-The loaded Fabric gate additionally materializes repeated identifiers through deferred `VirtualList` rows, inspects the real display list and native direct sampled-image counters, and requires one miss and upload per host.
+The loaded Fabric gate additionally materializes repeated identifiers through deferred `VirtualList` rows, inspects the real display list and verifies reuse of actual native source entries alongside final pixels and resource release.
 The concrete Fabric bridge decodes a detached snapshot on every platform resolution, so its second-host check also requires a fresh image identity without changing rendered pixels.
 
 ### Tiled-image working-set cache
@@ -558,7 +556,7 @@ Leaving the working set, source replacement, detachment, close, and failed subsc
 Cleanup attempts all removed observations and preserves later failures as suppressed exceptions.
 
 Deterministic tests cover clean identity reuse, movement within and across the overscan boundary, marker-only updates, preferred and fallback LOD budgeting, source replacement, callback and subscribe races, invalid tile rejection, detach and terminal release, and exact range planning above the double integer precision boundary for positive, negative, and non-power-of-two grids.
-Headless and loaded Fabric parity require the same pixels and row-major coarse-to-fine command order, while native sampled-image counters require stable tile images to avoid rerasterization and upload during pan, zoom, and marker movement.
+Headless and loaded Fabric parity require the same pixels and row-major coarse-to-fine command order, while native identity checks require stable source entries and preservation of unchanged portable textures during pan, zoom and marker movement.
 
 ### Canvas source and target retention
 
@@ -737,7 +735,7 @@ Each retained map descriptor stores one current projected result; changed inputs
 Current immutable dynamic-child lists are keyed by list identity and replaced after actual content evaluation; identical cached lists skip sibling validation and reconciliation.
 Pending content and measure dirtiness are separate: only the actual child difference propagates layout work, and paint-only progress updates do not remeasure ancestors.
 Parent-data delegation caches only the immutable node capability on its retained entry; layout still reads current parent data on every required pass, and replacing the node replaces this capability reference.
-Projection edges, consumer tuples, cached child descriptions, and monitoring callbacks belong to the current tree and are released with their last owner or terminal cleanup.
+Projection edges, consumer tuples and cached child descriptions belong to the current tree and are released with their last owner or terminal cleanup.
 The tree-owned registry shares one source subscription by reference identity and is bounded by the sources referenced during the current frame or standalone tree operation.
 Bindings whose last owner disappears remain available for same-operation readmission, preserving the committed cutoff and pending notifications; still-unused bindings are released before the operation returns.
 An ordered pending-release set is empty on stable frames, so frame completion does not add a full registry scan when no source was removed.
@@ -872,7 +870,7 @@ Common JVM/JavaScript tests cover broad and deep trees, absent/sparse/dense part
 Timing and allocation acceptance use the same frozen generated fixture and shared performance collector on both runtime revisions; removed visits do not establish a latency or frame-rate percentage.
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
-It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.
+It runs at 320 by 180 and 1920 by 1080 physical pixels; its optional diagnostic variant reports unavailable work metrics on current uninstrumented runtimes.
 The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and applies every ordered foreground blend, using uniform-surface scalar evaluation where exact.
 These are different costs, and the headless timings are not native GPU frame-rate measurements.
 The eligible nonuniform full-area fill run performs at most 65,536 rounded channel-state blends per layer plus one mapping per physical pixel; other nonuniform alpha composition still scales with its covered area and layers.

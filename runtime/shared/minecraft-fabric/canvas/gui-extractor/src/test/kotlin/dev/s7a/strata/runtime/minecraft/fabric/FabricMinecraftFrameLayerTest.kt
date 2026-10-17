@@ -90,7 +90,6 @@ internal class FabricMinecraftFrameLayerTest {
                     val actual = partitionFabricMinecraftFrame(commands, viewport, scale).single() as FabricMinecraftFrameLayer.Portable
                     assertEquals(expected.bounds, actual.bounds)
                     assertEquals(expected.commands, actual.commands)
-                    assertEquals(0, actual.ineligibleSampledImages)
                     assertArrayEquals(rasterizeHeadless(listOf(first, last), viewport, scale).copyArgb(), rasterizeHeadless(commands, viewport, scale).copyArgb())
                 }
                 val separated = partitionFabricMinecraftFrame(listOf(first, direct.copy(destination = destination), last), viewport, scale)
@@ -192,7 +191,6 @@ internal class FabricMinecraftFrameLayerTest {
         assertEquals(IntRect(1, 2, 8, 9), sampled.clip)
         assertEquals(IntRect(1, 2, 6, 7), sampled.visibleBounds)
         val portableLayer = layers[2] as FabricMinecraftFrameLayer.Portable
-        assertEquals(1, portableLayer.ineligibleSampledImages)
         val portableSampled = portableLayer.commands.filterIsInstance<DrawCommand.SampledImage>().single()
         assertSame(image, portableSampled.image)
         assertEquals(unsupported.source, portableSampled.source)

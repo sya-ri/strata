@@ -46,6 +46,11 @@ public class EmptyChildProbe {
     public val nodes: MutableList<ProbeNode> = mutableListOf()
 
     /**
+     * Actual test modifier lifetimes, independent of runtime collectors.
+     */
+    public val modifiers: MutableList<ProbeModifierNode> = mutableListOf()
+
+    /**
      * Ordered lifecycle attempts, bounded by the single invocation's tree.
      */
     public val events: MutableList<Event> = mutableListOf()
@@ -381,7 +386,24 @@ public class EmptyChildProbe {
     /**
      * Pass-through node with an independent update callback and ordinary virtual-child ancestry.
      */
-    private class ProbeModifierNode : ModifierNode()
+    public class ProbeModifierNode :
+        ModifierNode(),
+        LifecycleNode {
+        /**
+         * True after the runtime releases this fixture's modifier.
+         */
+        public var disposed: Boolean = false
+            private set
+
+        override fun attach(): Unit = Unit
+
+        override fun detach(): Unit = Unit
+
+        override fun dispose() {
+            check(disposed.not())
+            disposed = true
+        }
+    }
 
     /**
      * Singleton tokens make fresh descriptions compatible across all runtime variants.
@@ -431,7 +453,7 @@ public class EmptyChildProbe {
                 { it.probe.record(Stage.ModifierValidate, it.id) },
                 {
                     it.probe.record(Stage.ModifierCreate, it.id)
-                    ProbeModifierNode()
+                    ProbeModifierNode().also(it.probe.modifiers::add)
                 },
                 { _, current, _ ->
                     current.probe.record(Stage.ModifierUpdate, current.id)
