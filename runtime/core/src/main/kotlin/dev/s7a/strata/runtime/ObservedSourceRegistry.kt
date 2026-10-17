@@ -133,7 +133,7 @@ internal class ObservedSourceRegistry : AutoCloseable {
                     if (upstream != null) releaseBinding(upstream)
                     throw failure
                 }.also { binding ->
-                    if (upstream != null) upstream.dependents.add(binding)
+                    upstream?.dependents?.add(binding)
                 }
         } finally {
             acquiring.remove(source)

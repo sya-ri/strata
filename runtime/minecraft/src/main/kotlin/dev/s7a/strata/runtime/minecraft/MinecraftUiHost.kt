@@ -23,8 +23,7 @@ import dev.s7a.strata.text.UiText
  * Every factory call creates distinct retained ownership with referential identity.
  */
 @InternalStrataRuntimeApi
-public sealed interface MinecraftUiHost :
-    AutoCloseable {
+public sealed interface MinecraftUiHost : AutoCloseable {
     /**
      * Exact unresolved title transferred from the one-shot definition.
      *
