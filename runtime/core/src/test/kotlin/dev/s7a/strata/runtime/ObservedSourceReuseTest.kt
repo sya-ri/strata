@@ -22,10 +22,11 @@ internal class ObservedSourceReuseTest {
     fun oneHundredStableFramesAndEqualProjectionDoNoDependentWork() {
         val source = ObserveTestSource(1)
         var projections = 0
-        val parity = source.map {
-            projections += 1
-            it % 2
-        }
+        val parity =
+            source.map {
+                projections += 1
+                it % 2
+            }
         var evaluations = 0
         UiSession(TestOwnerDispatcher()) {
             evaluateComponentTree {
@@ -91,9 +92,11 @@ internal class ObservedSourceReuseTest {
             evaluateComponentTree {
                 Observe(visible) {
                     parentEvaluations += 1
-                    if (it) Observe(child) {
-                        childEvaluations += 1
-                        Spacer()
+                    if (it) {
+                        Observe(child) {
+                            childEvaluations += 1
+                            Spacer()
+                        }
                     }
                 }
             }

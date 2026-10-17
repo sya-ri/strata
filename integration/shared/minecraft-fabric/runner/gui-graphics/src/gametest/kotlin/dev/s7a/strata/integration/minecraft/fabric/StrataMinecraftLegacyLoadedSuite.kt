@@ -2,8 +2,6 @@
 
 package dev.s7a.strata.integration.minecraft.fabric
 
-import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
-
 import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
@@ -51,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import javax.imageio.ImageIO
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
  * Proves the public Strata screen, asset, input, and inventory contracts in a loaded legacy Minecraft client.
@@ -187,9 +186,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                         return screen
                     }
 
-                    override fun work(): ReactiveNativeWork {
-                        return readRenderWork(Minecraft.getInstance())
-                    }
+                    override fun work(): ReactiveNativeWork = readRenderWork(Minecraft.getInstance())
 
                     override fun assertPixels(
                         definition: ScreenDefinition,

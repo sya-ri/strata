@@ -65,13 +65,14 @@ public class RuntimeWorkMonitor(
      */
     public fun snapshot(): JsonObject {
         check(closed.not()) { "Runtime work monitor is closed" }
-        val measured = monitor ?: return JsonObject().apply {
-            addProperty("available", false)
-            addProperty("reason", "The production runtime contains no work-measurement hooks; use external or test-only instrumentation.")
-            add("counts", JsonNull.INSTANCE)
-            add("active_subscriptions", JsonNull.INSTANCE)
-            add("node_inventory_size", JsonNull.INSTANCE)
-        }
+        val measured =
+            monitor ?: return JsonObject().apply {
+                addProperty("available", false)
+                addProperty("reason", "The production runtime contains no work-measurement hooks; use external or test-only instrumentation.")
+                add("counts", JsonNull.INSTANCE)
+                add("active_subscriptions", JsonNull.INSTANCE)
+                add("node_inventory_size", JsonNull.INSTANCE)
+            }
         val snapshot = checkNotNull(HostReflection.invoke(measured, "snapshot"))
         return PerformanceJson.diagnostics(snapshot).apply { addProperty("available", true) }
     }

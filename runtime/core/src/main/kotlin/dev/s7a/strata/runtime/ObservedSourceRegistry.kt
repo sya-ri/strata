@@ -165,7 +165,7 @@ internal class ObservedSourceRegistry : AutoCloseable {
                 upstream.dependents.remove(binding)
                 releaseBinding(upstream)
             }
-            failures.capture { closeBinding(binding) }
+            failures.capture { binding.close() }
         }
         failures.throwIfPresent()
     }
@@ -182,11 +182,7 @@ internal class ObservedSourceRegistry : AutoCloseable {
         val closing = bindings.values
         bindings.clear()
         val failures = FailureAccumulator()
-        closing.forEach { binding -> failures.capture { closeBinding(binding) } }
+        closing.forEach { binding -> failures.capture { binding.close() } }
         failures.throwIfPresent()
-    }
-
-    private fun closeBinding(binding: ObservedSourceBinding) {
-        binding.close()
     }
 }

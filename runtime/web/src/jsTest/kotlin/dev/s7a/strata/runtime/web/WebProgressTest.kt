@@ -10,8 +10,8 @@ import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.text.UiText
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.text.UiText
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLProgressElement
@@ -39,7 +39,8 @@ internal class WebProgressTest {
             progress.value = 0.5
             val after = session.frame(Constraints.fixed(320, 100))
             assertEquals(before.semantics.map { it.bounds }, after.semantics.map { it.bounds })
-            assertEquals(UiText.Literal("50%"), after.semantics.single().semantics.value)
+            val entry = after.semantics.single()
+            assertEquals(UiText.Literal("50%"), entry.semantics.value)
             assertSame(after, session.frame(Constraints.fixed(320, 100)))
         } finally {
             session.close()

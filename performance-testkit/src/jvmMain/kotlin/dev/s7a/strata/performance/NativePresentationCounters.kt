@@ -62,16 +62,25 @@ public object NativePresentationCounters {
         val current = read(screen)
         val delta = current.mapValues { (name, value) -> value - baseline.getValue(name) }
         check(delta.filterKeys { it.contains("Retained").not() }.values.all { 0 <= it }) { "Native counters changed generation" }
-        report.add("native_counter_delta", gson.toJsonTree(delta).asJsonObject.apply {
-            names.forEach { if (has(it).not()) add(it, JsonNull.INSTANCE) }
-        })
-        report.add("native_counter_availability", JsonObject().apply {
-            addProperty("available", names.all { it in delta })
-            if (names.any { (it in delta).not() }) addProperty("reason", "The production runtime has no internal presentation-measurement counters.")
-        })
-        report.add("native_retained", gson.toJsonTree(current.filterKeys { it.contains("Retained") }).asJsonObject.apply {
-            names.filter { it.contains("Retained") }.forEach { if (has(it).not()) add(it, JsonNull.INSTANCE) }
-        })
+        report.add(
+            "native_counter_delta",
+            gson.toJsonTree(delta).asJsonObject.apply {
+                names.forEach { if (has(it).not()) add(it, JsonNull.INSTANCE) }
+            },
+        )
+        report.add(
+            "native_counter_availability",
+            JsonObject().apply {
+                addProperty("available", names.all { it in delta })
+                if (names.any { (it in delta).not() }) addProperty("reason", "The production runtime has no internal presentation-measurement counters.")
+            },
+        )
+        report.add(
+            "native_retained",
+            gson.toJsonTree(current.filterKeys { it.contains("Retained") }).asJsonObject.apply {
+                names.filter { it.contains("Retained") }.forEach { if (has(it).not()) add(it, JsonNull.INSTANCE) }
+            },
+        )
         report.add(
             "native_payload",
             JsonObject().apply {

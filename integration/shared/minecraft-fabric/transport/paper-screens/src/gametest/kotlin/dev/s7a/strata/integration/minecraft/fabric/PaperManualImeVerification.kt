@@ -77,8 +77,9 @@ public class PaperManualImeVerification : ClientModInitializer {
 
     private fun observe(screen: FabricMinecraftScreen) {
         val root = MinecraftPresentationObservation.declarations(screen)
-        fun identities(declaration: RuntimeDeclaration): List<Long> =
-            listOf(declaration.identity) + declaration.modifiers.map { it.identity } + declaration.children.flatMap(::identities)
+
+        fun identities(declaration: RuntimeDeclaration): List<Long> = listOf(declaration.identity) + declaration.modifiers.map { it.identity } + declaration.children.flatMap(::identities)
+
         val current = identities(root)
         if (nodes.isEmpty()) nodes = current
         check(current == nodes) { "A remote revision replaced retained editor nodes." }

@@ -117,7 +117,7 @@ Reflection, independent oracle scans, font/backend construction and resource gen
 The independent lookup rows isolate the actual line method, while complete initial-layout rows separately expose new-line admission and ownership costs.
 Do not interpret the cycle score as single-event latency or subtract noisy control scores to invent a dispatch-only allocation result.
 The untimed verifier independently checks complete Long-distance winners, scalar offsets, scroll/pan, focus token identity, committed semantics, exact headless pixels at scales one through three, clean frame reuse and terminal resource release.
-Candidate coordinate-read checks use the loaded runtime's inlined search diagnostic; an older runtime without that diagnostic still executes the same complete winner oracle.
+Coordinate-read observations must come from external or test-only instrumentation; the complete independent winner oracle always runs without a production diagnostic hook.
 Source-derived baseline call/read counts must be labeled separately from observed diagnostics and measured CPU/allocation.
 
 For a paired runtime comparison, freeze the fixture, its Java primitive-handle helper, generated JMH classes/resources, collector, harness and all common runtime/control archives before either side runs.
@@ -141,7 +141,7 @@ Input samples retain the complete original opportunity cycle; initial-layout sam
 Scene setup, independent oracles, coordinate-read diagnostics and surviving-owner cleanup remain outside samples.
 The six clean-frame rows are unchanged controls; small-line, signed-fallback and initial-layout costs remain visible in the complete comparison.
 Supplemental reports preserve actual owner-thread CPU, owner/all-thread allocation and wall time with unavailable counters left unavailable.
-The isolated lookup reports retain one untimed coordinate diagnostic after sampling; a baseline without that diagnostic records unavailable reads rather than an inferred zero.
+Additional coordinate-read observations are collected outside timing by external or test-only instrumentation; absent observations remain unavailable rather than becoming an inferred zero.
 
 For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
 The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.

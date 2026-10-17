@@ -22,6 +22,7 @@ class UninstrumentedRuntimeMeasurementTest {
         val report = monitor.snapshot()
         assertFalse(report.get("available").asBoolean)
         assertTrue(report.get("counts").isJsonNull)
+        assertFailsWith<IllegalStateException> { PerformanceJson.work(report) }
         assertFailsWith<IllegalStateException> { monitor.verify(WorkExpectation(exact = mapOf("Paint" to 0L))) }
         monitor.close()
         monitor.close()

@@ -96,7 +96,10 @@ internal object ReactiveRenderScenario {
         }
     }
 
-    private fun verifyStableFrames(driver: ReactiveRenderTestDriver, source: ReactiveRenderSource<Int>) {
+    private fun verifyStableFrames(
+        driver: ReactiveRenderTestDriver,
+        source: ReactiveRenderSource<Int>,
+    ) {
         val callbacks = driver.onClient { ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls }
         val baseline = driver.onClient { driver.work() }
         driver.await { 100L <= driver.work().renderExtractions - baseline.renderExtractions }
@@ -107,7 +110,10 @@ internal object ReactiveRenderScenario {
         }
     }
 
-    private fun verifyProjectedText(driver: ReactiveRenderTestDriver, source: ReactiveRenderSource<Int>) {
+    private fun verifyProjectedText(
+        driver: ReactiveRenderTestDriver,
+        source: ReactiveRenderSource<Int>,
+    ) {
         val equal = publish(driver) { source.publish(3) }
         driver.onClient { assertSamePresentation(equal, driver.work()) }
         val changed = publish(driver) { source.publish(4) }
@@ -117,7 +123,10 @@ internal object ReactiveRenderScenario {
         }
     }
 
-    private fun verifyProgress(driver: ReactiveRenderTestDriver, progress: ReactiveRenderSource<Double>) {
+    private fun verifyProgress(
+        driver: ReactiveRenderTestDriver,
+        progress: ReactiveRenderSource<Double>,
+    ) {
         val callbacks = driver.onClient { ReactiveRenderOverlays.localCalls to ReactiveRenderOverlays.rootCalls }
         val before = publish(driver) { progress.publish(0.75) }
         driver.onClient {
@@ -128,17 +137,24 @@ internal object ReactiveRenderScenario {
         }
     }
 
-    private fun publish(driver: ReactiveRenderTestDriver, action: () -> Unit): ReactiveNativeWork {
-        val before = driver.onClient {
-            val snapshot = driver.work()
-            action()
-            snapshot
-        }
+    private fun publish(
+        driver: ReactiveRenderTestDriver,
+        action: () -> Unit,
+    ): ReactiveNativeWork {
+        val before =
+            driver.onClient {
+                val snapshot = driver.work()
+                action()
+                snapshot
+            }
         driver.await { before.renderExtractions < driver.work().renderExtractions }
         return before
     }
 
-    private fun assertSamePresentation(before: ReactiveNativeWork, after: ReactiveNativeWork) {
+    private fun assertSamePresentation(
+        before: ReactiveNativeWork,
+        after: ReactiveNativeWork,
+    ) {
         check(before.commands === after.commands && before.inputs === after.inputs)
         check(before.samePortable(after) && before.sameSources(after)) { "Stable content must retain its real native owners." }
     }

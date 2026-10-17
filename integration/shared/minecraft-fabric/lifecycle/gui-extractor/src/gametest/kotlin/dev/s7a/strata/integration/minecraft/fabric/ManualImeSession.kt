@@ -37,10 +37,11 @@ internal class ManualImeSession(
     private val instruction = ReactiveRenderSource("Enter confirms conversion. Enter again adds a new line.")
     private val draft = TextAreaState()
     private var labelEvaluations = 0
-    private val label = source.map {
-        labelEvaluations += 1
-        "Updates: $it"
-    }
+    private val label =
+        source.map {
+            labelEvaluations += 1
+            "Updates: $it"
+        }
     private var completed = false
     private var ticks = 0
     private var closed = false

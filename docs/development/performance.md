@@ -383,7 +383,7 @@ The separate `strata.performance.portableTileControls=true` corpus retains the s
 Its independent default output directory preserves the original four-case receipts and measures clip-pop distribution without claiming small-run acceleration.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
-See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
+See [measurement boundaries](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
 Changed portable inputs reserve a complete replacement generation before any GUI output, sharing immutable resources for equal layers and allocating only changed layers, rather than modifying a texture that unconsumed GUI work may still reference.
 Unchanged prefix and suffix layers retain their textures when insertion or removal shifts their indices; remaining equal layers may reuse the same previous index.

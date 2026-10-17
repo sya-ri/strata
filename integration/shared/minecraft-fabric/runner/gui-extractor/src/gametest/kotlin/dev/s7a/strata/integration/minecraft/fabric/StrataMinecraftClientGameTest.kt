@@ -2,8 +2,6 @@
 
 package dev.s7a.strata.integration.minecraft.fabric
 
-import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
-
 import com.mojang.blaze3d.platform.InputConstants
 import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Column
@@ -92,6 +90,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Predicate
 import kotlin.io.path.inputStream
 import dev.s7a.strata.component.Button as StrataButton
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
  * Proves exact native, Fabric-adapter, and headless pixels for the supported Minecraft release.
@@ -850,23 +849,27 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     private fun assertCleanFabricFrameReuse(context: ClientGameTestContext) {
-        context.waitFor(Predicate<Minecraft> { minecraft ->
-            val state = readRenderWork(minecraft)
-            0L < state.renderExtractions && state.inputs != null
-        })
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                val state = readRenderWork(minecraft)
+                0L < state.renderExtractions && state.inputs != null
+            },
+        )
         val before = renderWork(context)
         context.waitFor(Predicate<Minecraft> { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions })
         val after = renderWork(context)
         require(before.commands === after.commands && before.inputs === after.inputs) { "Clean presentation must retain its exact prepared inputs." }
         require(before.pointerCommands === after.pointerCommands) { "A stationary pointer must retain its extracted display-list identity." }
         require(before.samePortable(after) && before.sameSources(after)) { "Clean presentation must retain all actual native texture owners." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-            val screen = activeFabricScreen(minecraft)
-            val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
-            check(commandsField.trySetAccessible())
-            val commands = commandsField.get(screen) as List<*>
-            commandsField.set(screen, ArrayList(commands))
-        })
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                val screen = activeFabricScreen(minecraft)
+                val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
+                check(commandsField.trySetAccessible())
+                val commands = commandsField.get(screen) as List<*>
+                commandsField.set(screen, ArrayList(commands))
+            },
+        )
         val changed = renderWork(context)
         context.waitFor(Predicate<Minecraft> { minecraft -> changed.renderExtractions < readRenderWork(minecraft).renderExtractions })
         val equivalent = renderWork(context)
@@ -874,7 +877,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(equivalent.samePortable(before) && equivalent.sameSources(before)) { "Equivalent commands must retain the actual texture owners." }
     }
 
-    private fun requireSampledImageParityWork(observed: RenderWork, scene: SampledParityScene) {
+    private fun requireSampledImageParityWork(
+        observed: RenderWork,
+        scene: SampledParityScene,
+    ) {
         require(observed.portableTextures.isNotEmpty() && observed.sources.isNotEmpty() && 0L < observed.sourceBytes) { "Sampled parity must own real portable and direct native textures: $scene" }
         val requested = MinecraftPresentationObservation.member(checkNotNull(observed.inputs), "sampled") as List<*>
         require(requested.all { image -> observed.sourceImages.any { it === image } }) { "Every admitted sampled source must have actual native ownership: $scene" }
@@ -1097,16 +1103,22 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     @Suppress("LongMethod") // One loaded sequence distinguishes stable tile uploads from navigation and independent marker-overlay updates.
-    private fun verifyTiledImageTextureReuse(context: ClientGameTestContext, navigation: PanZoomState, marker: TiledImageMarkerSource) {
+    private fun verifyTiledImageTextureReuse(
+        context: ClientGameTestContext,
+        navigation: PanZoomState,
+        marker: TiledImageMarkerSource,
+    ) {
         val beforeZoom = renderWork(context)
         context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { navigation.zoomTo(2.0) })
         context.waitFor(Predicate<Minecraft> { minecraft -> beforeZoom.inputs !== readRenderWork(minecraft).inputs })
         val afterZoom = renderWork(context)
         require(beforeZoom.sameSources(afterZoom) && beforeZoom.samePortable(afterZoom)) { "Zoom must reuse actual tile sources and localized portable textures." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> {
-            val previous = navigation.metrics.center
-            check(previous != navigation.panBy(DoubleOffset(4.0, 0.0)))
-        })
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> {
+                val previous = navigation.metrics.center
+                check(previous != navigation.panBy(DoubleOffset(4.0, 0.0)))
+            },
+        )
         context.waitFor(Predicate<Minecraft> { minecraft -> afterZoom.inputs !== readRenderWork(minecraft).inputs })
         val afterPan = renderWork(context)
         require(afterZoom.sameSources(afterPan) && afterZoom.samePortable(afterPan)) { "Pan must reuse actual tile sources and localized portable textures." }
@@ -1530,9 +1542,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         return screen
                     }
 
-                    override fun work(): ReactiveNativeWork {
-                        return readRenderWork(Minecraft.getInstance())
-                    }
+                    override fun work(): ReactiveNativeWork = readRenderWork(Minecraft.getInstance())
 
                     override fun assertPixels(
                         definition: ScreenDefinition,

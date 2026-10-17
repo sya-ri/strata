@@ -83,8 +83,7 @@ internal class OverlayScene(
      */
     fun declarationCount(): Int = session.projectDeclarations { countDeclarations(it) }
 
-    private fun countDeclarations(declaration: RuntimeDeclaration): Int =
-        1 + declaration.modifiers.size + declaration.children.sumOf(::countDeclarations)
+    private fun countDeclarations(declaration: RuntimeDeclaration): Int = 1 + declaration.modifiers.size + declaration.children.sumOf(::countDeclarations)
 
     /**
      * Observes the fixture's actual upstream subscription.

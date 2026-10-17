@@ -5,9 +5,9 @@ package dev.s7a.strata.integration.minecraft.fabric
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.performance.FabricFrameObserver
+import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
-import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.WeakHashMap
 
@@ -25,7 +25,11 @@ internal object MinecraftPresentationObservation {
         val observer = frames.getOrPut(screen) { FabricFrameObserver(screen) }
         val presenter = if (optional(screen, "portableFrames") != null) screen else member(screen, "presentation")
         val prepared = optional(member(presenter, "portableFrames"), "current")
-        val textures = prepared?.let { member(it, "textures") as List<*> }.orEmpty().map { checkNotNull(it) }
+        val textures =
+            prepared
+                ?.let { member(it, "textures") as List<*> }
+                .orEmpty()
+                .map { checkNotNull(it) }
         val owner = member(member(presenter, "sampledImages"), "owner")
         val images = member(owner, "images") as Map<*, *>
         val sources = images.values.map { member(checkNotNull(it), "entry") }
@@ -44,7 +48,10 @@ internal object MinecraftPresentationObservation {
     /**
      * Borrows a real existing owner field for synthetic fixture identity checks.
      */
-    fun member(owner: Any, name: String): Any = checkNotNull(optional(owner, name)) { "Missing presentation state: $name" }
+    fun member(
+        owner: Any,
+        name: String,
+    ): Any = checkNotNull(optional(owner, name)) { "Missing presentation state: $name" }
 
     /**
      * Uses the existing application projection contract to observe retained identities outside presentation.
@@ -57,13 +64,18 @@ internal object MinecraftPresentationObservation {
     /**
      * Returns genuine retained declaration identities for a fixture's logical key.
      */
-    fun identities(screen: FabricMinecraftScreen, key: ElementKey): List<Long> {
-        fun find(declaration: RuntimeDeclaration): List<Long> =
-            (if (declaration.element.identity == ElementIdentity.Keyed(key)) listOf(declaration.identity) else emptyList()) + declaration.children.flatMap(::find)
+    fun identities(
+        screen: FabricMinecraftScreen,
+        key: ElementKey,
+    ): List<Long> {
+        fun find(declaration: RuntimeDeclaration): List<Long> = (if (declaration.element.identity == ElementIdentity.Keyed(key)) listOf(declaration.identity) else emptyList()) + declaration.children.flatMap(::find)
         return find(declarations(screen))
     }
 
-    private fun optional(owner: Any, name: String): Any? {
+    private fun optional(
+        owner: Any,
+        name: String,
+    ): Any? {
         val field = generateSequence(owner.javaClass as Class<*>?) { it.superclass }.firstNotNullOfOrNull { type -> type.declaredFields.firstOrNull { it.name == name } } ?: return null
         check(field.trySetAccessible())
         return field.get(owner)

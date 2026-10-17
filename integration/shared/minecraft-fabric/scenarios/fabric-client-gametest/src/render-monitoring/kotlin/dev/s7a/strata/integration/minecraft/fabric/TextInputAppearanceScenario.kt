@@ -51,11 +51,12 @@ internal object TextInputAppearanceScenario {
             }
         driver.await { driver.work().inputs != null }
         val ids = driver.onClient { listOf(MinecraftPresentationObservation.identities(owner, fieldKey), MinecraftPresentationObservation.identities(owner, areaKey)) }
-        val before = driver.onClient {
-            val state = driver.work()
-            source.publish(changed)
-            state
-        }
+        val before =
+            driver.onClient {
+                val state = driver.work()
+                source.publish(changed)
+                state
+            }
         driver.await { before.renderExtractions < driver.work().renderExtractions }
         driver.onClient {
             check(ids.all { it.size == 1 })
@@ -78,10 +79,11 @@ internal object TextInputAppearanceScenario {
         source: ReactiveRenderSource<TextInputAppearance.Custom>,
         changed: TextInputAppearance.Custom,
     ) {
-        val stable = driver.onClient {
-            source.publish(changed.copy())
-            driver.work()
-        }
+        val stable =
+            driver.onClient {
+                source.publish(changed.copy())
+                driver.work()
+            }
         driver.await { 100L <= driver.work().renderExtractions - stable.renderExtractions }
         driver.onClient {
             val after = driver.work()
