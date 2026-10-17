@@ -3,6 +3,8 @@ package dev.s7a.strata.performance
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import java.net.URI
+import java.net.URL
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipFile
 
@@ -44,10 +46,15 @@ public object NativePerformanceEvidence {
                     require(identity.objectField("classResource").get("sha256") == resource.get("sha256")) { "CPU/native representative mismatch" }
                     val tree = JvmEvidenceFiles.classTree(cpuPath)
                     require(tree == identity.objectField("classTree") && tree == module.objectField("classTree") && tree == JvmEvidenceFiles.classTree(path)) { "CPU/native class-tree mismatch" }
-                    receipt.addProperty("cpu_jar_sha256", ArtifactIdentity.file(cpuPath))
+                    if (Files.isDirectory(cpuPath)) {
+                        verifyOrigin(identity.objectField("codeSource"))
+                        receipt.add("cpu_class_directory_sha256", identity.objectField("codeSource").get("sha256"))
+                    } else {
+                        receipt.addProperty("cpu_jar_sha256", ArtifactIdentity.file(cpuPath))
+                    }
                     receipt.add("native_class_tree", tree)
                 } else {
-                    receipt.add("standalone_jar_sha256", module.objectField("codeSource").get("sha256"))
+                    receipt.add(if (Files.isDirectory(path)) "class_directory_sha256" else "standalone_jar_sha256", module.objectField("codeSource").get("sha256"))
                 }
                 add(receipt)
             }
@@ -57,7 +64,19 @@ public object NativePerformanceEvidence {
     private fun verifyOrigin(origin: JsonObject): Path {
         val uri = URI(origin.textField("url"))
         require(uri.scheme.contentEquals("file") && uri.rawAuthority.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null) { "Expected a local artifact origin" }
-        return Path.of(uri).also { JvmEvidenceFiles.verifyFile(it, origin.textField("sha256")) }
+        return Path.of(uri).also { path ->
+            if (Files.isDirectory(path)) {
+                require(ArtifactResolution.decode(origin.textField("status")) == ArtifactResolution.Available) { "Unavailable class-directory identity" }
+                require(ArtifactLocationKind.decode(origin.textField("kind")) == ArtifactLocationKind.ClassDirectory) { "Expected a declared class-directory identity" }
+                require(origin.textField("hashedUrl").contentEquals(origin.textField("url"))) { "Class-directory hash origin differs" }
+                val tree = JvmEvidenceFiles.classTree(path)
+                listOf("algorithm", "entryCount", "bytes", "sha256").forEach { field -> require(origin.get(field) == tree.get(field)) { "Class-directory identity differs: $field" } }
+            } else {
+                val kind = origin.get("kind")?.let { ArtifactLocationKind.decode(it.textValue()) } ?: ArtifactLocationKind.File
+                require(kind == ArtifactLocationKind.File) { "Expected a file artifact identity" }
+                JvmEvidenceFiles.verifyFile(path, origin.textField("sha256"))
+            }
+        }
     }
 
     private fun verifyResource(
@@ -66,6 +85,14 @@ public object NativePerformanceEvidence {
         resource: JsonObject,
     ) {
         val name = "${representative.replace('.', '/')}.class"
+        if (Files.isDirectory(path)) {
+            require(ArtifactResolution.decode(resource.textField("status")) == ArtifactResolution.Available) { "Unavailable representative resource" }
+            require(ArtifactLocationKind.decode(resource.textField("kind")) == ArtifactLocationKind.File && resource.textField("hashedUrl").contentEquals(resource.textField("url"))) { "Expected a direct class-directory resource" }
+            val actual = JvmEvidenceFiles.classDirectoryResource(path, name, URL(resource.textField("url")))
+            require(Files.size(actual) <= 8L * 1024 * 1024) { "Oversized representative resource" }
+            JvmEvidenceFiles.verifyFile(actual, resource.textField("sha256"))
+            return
+        }
         require(resource.textField("entryName").contentEquals(name)) { "Unexpected representative resource" }
         val expected = resource.textField("sha256")
         JvmEvidenceFiles.validateHash(expected)

@@ -70,31 +70,55 @@ internal class MinecraftTextRun private constructor(
     @JvmSynthetic
     internal fun inkBounds(): MinecraftTextInkBounds? {
         if (paintPolicy.preparedTextBounds && hasPreparedTextBounds(0, 0).not()) return null
-        var result: MinecraftTextInkBounds? = null
-
-        fun include(
-            left: Double,
-            top: Double,
-            right: Double,
-            bottom: Double,
-        ) {
-            val next = MinecraftTextInkBounds(left, top, right, bottom)
-            result = result?.union(next) ?: next
-        }
-
-        fun includeSampled(bounds: FloatRect?) {
-            if (bounds != null) include(bounds.left.toDouble(), bounds.top.toDouble(), bounds.right.toDouble(), bounds.bottom.toDouble())
-        }
+        var present = false
+        var left = 0.0
+        var top = 0.0
+        var right = 0.0
+        var bottom = 0.0
         for (positioned in glyphs) {
             val x = positioned.x.toDouble()
-            include(x, 0.0, x + 8.0, 8.0)
-            if (positioned.shadow != null) include(x + 1.0, 1.0, x + 9.0, 9.0)
+            if (present) {
+                left = minOf(left, x)
+                top = minOf(top, 0.0)
+                right = maxOf(right, x + 8.0)
+                bottom = maxOf(bottom, 8.0)
+            } else {
+                left = x
+                top = 0.0
+                right = x + 8.0
+                bottom = 8.0
+                present = true
+            }
+            if (positioned.shadow != null) {
+                left = minOf(left, x + 1.0)
+                top = minOf(top, 1.0)
+                right = maxOf(right, x + 9.0)
+                bottom = maxOf(bottom, 9.0)
+            }
         }
         for (positioned in sampledGlyphs) {
-            includeSampled(sampledDestination(positioned, 0, 0, false))
-            if (positioned.shadow != null) includeSampled(sampledDestination(positioned, 0, 0, true))
+            var shadow = false
+            while (true) {
+                val bounds = sampledDestination(positioned, 0, 0, shadow)
+                if (bounds != null) {
+                    if (present) {
+                        left = minOf(left, bounds.left.toDouble())
+                        top = minOf(top, bounds.top.toDouble())
+                        right = maxOf(right, bounds.right.toDouble())
+                        bottom = maxOf(bottom, bounds.bottom.toDouble())
+                    } else {
+                        left = bounds.left.toDouble()
+                        top = bounds.top.toDouble()
+                        right = bounds.right.toDouble()
+                        bottom = bounds.bottom.toDouble()
+                        present = true
+                    }
+                }
+                if (shadow || positioned.shadow == null) break
+                shadow = true
+            }
         }
-        return result
+        return if (present) MinecraftTextInkBounds(left, top, right, bottom) else null
     }
 
     /**

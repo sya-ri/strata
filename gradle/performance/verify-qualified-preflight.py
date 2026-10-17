@@ -22,6 +22,7 @@ def frozen_fixture(root, output):
     workspace = output / "workspaces" / "fixture-source"
     subprocess.run(["git", "clone", "--quiet", "--shared", "--no-checkout", str(root), str(workspace)], check=True)
     PAIRED.git(workspace, "config", "core.autocrlf", "false")
+    PAIRED.git(workspace, "config", "core.longpaths", "true")
     attributes = workspace / ".git/info/attributes"
     attributes.parent.mkdir(parents=True, exist_ok=True)
     attributes.write_bytes(b"* -text\n")

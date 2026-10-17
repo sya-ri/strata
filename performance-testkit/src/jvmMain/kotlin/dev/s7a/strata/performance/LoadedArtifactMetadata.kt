@@ -14,6 +14,7 @@ import java.util.HexFormat
 /**
  * Bounded provenance from the actual loaded classes, without substituting standalone distribution JARs.
  * Missing locations remain explicit failures rather than inferred hashes.
+ * Each complete loaded class tree owns one bounded read buffer; resource digests remain independent.
  */
 public object LoadedArtifactMetadata {
     // Evidence preparation must not scan accidentally selected oversized archives without a bound.
@@ -25,7 +26,8 @@ public object LoadedArtifactMetadata {
 
     /**
      * Resolves registered representative classes without initialization through the measured host loader.
-     * Class trees validate every resource against that class's actual archive origin.
+     * Class trees validate every resource against that class's actual archive or directory origin.
+     * A directory code source declares its complete class-only tree algorithm, count and byte size separately from archive-file hashes.
      */
     public fun capture(
         loader: ClassLoader,
@@ -37,7 +39,7 @@ public object LoadedArtifactMetadata {
                 "scope",
                 "Representative classes and every class resource in registered module code sources are resolved " +
                     "without class initialization through the measured host class loader. Hashes identify the exact " +
-                    "local code-source file/JAR entry and class resource bytes at setup, " +
+                    "local code-source file/JAR entry or declared class-directory tree and class resource bytes at setup, " +
                     "not transformed in-memory bytecode. Fabric processed/nested wrappers are not substituted " +
                     "with standalone Maven JARs. Unavailable locations or hashes retain their failure reason.",
             )
@@ -108,7 +110,7 @@ public object LoadedArtifactMetadata {
                 val codeSource = type.protectionDomain?.codeSource?.location
                 addProperty("classLoader", type.classLoader?.toString())
                 addProperty("packageImplementationVersion", type.`package`?.implementationVersion)
-                add("codeSource", captureLocation { codeSource })
+                add("codeSource", captureCodeSource(type, codeSource))
                 add("classResource", captureLocation { type.getResource("/${className.replace('.', '/')}.class") })
                 if (includeClassTree) {
                     add("classTree", captureClassTree(type, codeSource))
@@ -128,17 +130,18 @@ public object LoadedArtifactMetadata {
             add("sha256", JsonNull.INSTANCE)
             runCatching {
                 require(codeSource != null) { "The loaded class did not expose a code source" }
-                val archivePath = requireLocalFile(codeSource)
+                val archivePath = requireLocalArtifact(codeSource, allowDirectory = true)
                 val entries = ClassArchiveInventory.entries(archivePath, MAX_CLASS_ENTRIES, MAX_CLASS_ENTRY_BYTES)
                 val classLoader = checkNotNull(representative.classLoader) { "The Strata class has no class loader" }
                 val treeDigest = MessageDigest.getInstance("SHA-256")
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                 var totalBytes = 0L
                 entries.forEach { entry ->
                     val resource = checkNotNull(classLoader.getResource(entry)) { "Missing classpath resource: $entry" }
                     requireLocalClassResource(resource, entry, archivePath)
                     val connection = resource.openConnection().apply { useCaches = false }
                     val (entryHash, entryBytes) =
-                        connection.getInputStream().use { input -> sha256(input, MAX_CLASS_ENTRY_BYTES) }
+                        connection.getInputStream().use { input -> sha256(input, MAX_CLASS_ENTRY_BYTES, buffer) }
                     require(0 < entryBytes) { "Empty classpath resource: $entry" }
                     totalBytes = Math.addExact(totalBytes, entryBytes)
                     require(totalBytes <= MAX_CLASS_TREE_BYTES) { "The class tree exceeds the metadata byte limit" }
@@ -147,10 +150,15 @@ public object LoadedArtifactMetadata {
                     treeDigest.update(entryHash.toByteArray(Charsets.US_ASCII))
                     treeDigest.update('\n'.code.toByte())
                 }
+                val hash = HexFormat.of().formatHex(treeDigest.digest())
+                if (Files.isDirectory(archivePath)) {
+                    val actual = JvmEvidenceFiles.classTree(archivePath)
+                    require(actual.textField("sha256").contentEquals(hash) && actual.get("bytes").asLong == totalBytes) { "Loaded class directory bytes differ from its code source" }
+                }
                 addProperty("algorithm", CLASS_TREE_ALGORITHM)
                 addProperty("entryCount", entries.size)
                 addProperty("bytes", totalBytes)
-                addProperty("sha256", HexFormat.of().formatHex(treeDigest.digest()))
+                addProperty("sha256", hash)
                 addProperty("status", "available")
             }.onFailure {
                 addProperty("status", "unavailable")
@@ -163,6 +171,10 @@ public object LoadedArtifactMetadata {
         expectedEntry: String,
         expectedArchive: Path,
     ) {
+        if (Files.isDirectory(expectedArchive)) {
+            JvmEvidenceFiles.classDirectoryResource(expectedArchive, expectedEntry, location)
+            return
+        }
         val connection = location.openConnection().apply { useCaches = false }
         require(LocalResourceProtocol.decode(location.protocol) == LocalResourceProtocol.Jar && connection is JarURLConnection) {
             "The class resource URL is not backed by a standard local JAR"
@@ -170,9 +182,36 @@ public object LoadedArtifactMetadata {
         require(connection.entryName == expectedEntry) {
             "The classpath resource resolved a different entry: ${connection.entryName}"
         }
-        val resolvedArchive = requireLocalFile(connection.jarFileURL)
+        val resolvedArchive = requireLocalArtifact(connection.jarFileURL)
         require(Files.isSameFile(expectedArchive, resolvedArchive)) {
             "The classpath resource resolved from a different code source: ${connection.jarFileURL}"
+        }
+    }
+
+    private fun captureCodeSource(
+        representative: Class<*>,
+        location: URL?,
+    ): JsonObject {
+        if (location == null || LocalResourceProtocol.decode(location.protocol) != LocalResourceProtocol.File || Files.isDirectory(Path.of(location.toURI())).not()) return captureLocation { location }
+        return JsonObject().apply {
+            add("sha256", JsonNull.INSTANCE)
+            addProperty("url", location.toExternalForm())
+            runCatching {
+                val root = requireLocalArtifact(location, allowDirectory = true)
+                val name = "${representative.name.replace('.', '/')}.class"
+                val resourceLocation = checkNotNull(representative.getResource("/$name")) { "Missing classpath resource: $name" }
+                val actual = JvmEvidenceFiles.classDirectoryResource(root, name, resourceLocation)
+                val resource = captureLocation { resourceLocation }
+                require(Files.size(actual) <= MAX_CLASS_ENTRY_BYTES) { "Oversized representative resource" }
+                JvmEvidenceFiles.verifyFile(actual, resource.textField("sha256"))
+                val tree = JvmEvidenceFiles.classTree(root)
+                tree.entrySet().forEach { (key, value) -> add(key, value) }
+                addProperty("kind", ArtifactLocationKind.ClassDirectory.token)
+                addProperty("hashedUrl", location.toExternalForm())
+            }.onFailure {
+                addProperty("status", "unavailable")
+                addProperty("reason", it.toString())
+            }
         }
     }
 
@@ -187,13 +226,13 @@ public object LoadedArtifactMetadata {
                 val connection = location.openConnection().apply { useCaches = false }
                 when (LocalResourceProtocol.decode(location.protocol)) {
                     LocalResourceProtocol.File -> {
-                        requireLocalFile(location)
+                        requireLocalArtifact(location)
                         addProperty("kind", "file")
                     }
 
                     LocalResourceProtocol.Jar -> {
                         require(connection is JarURLConnection) { "The jar URL has no standard entry metadata" }
-                        requireLocalFile(connection.jarFileURL)
+                        requireLocalArtifact(connection.jarFileURL)
                         addProperty("containerUrl", connection.jarFileURL.toExternalForm())
                         addProperty("entryName", connection.entryName)
                         if (connection.entryName == null) {
@@ -222,9 +261,14 @@ public object LoadedArtifactMetadata {
             }
         }
 
-    private fun requireLocalFile(location: URL): Path {
-        require(LocalResourceProtocol.decode(location.protocol) == LocalResourceProtocol.File && location.host.isEmpty()) { "Only local file-backed artifacts are read" }
-        val path = Path.of(location.toURI())
+    private fun requireLocalArtifact(
+        location: URL,
+        allowDirectory: Boolean = false,
+    ): Path {
+        val uri = location.toURI()
+        require(LocalResourceProtocol.decode(uri.scheme) == LocalResourceProtocol.File && uri.rawAuthority.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null) { "Only local file-backed artifacts are read" }
+        val path = Path.of(uri)
+        if (allowDirectory && Files.isDirectory(path)) return path
         require(Files.isRegularFile(path)) { "The location is not a regular file: $location" }
         require(Files.size(path) <= MAX_HASH_BYTES) { "The artifact exceeds the metadata hash limit: $location" }
         return path
@@ -233,9 +277,9 @@ public object LoadedArtifactMetadata {
     private fun sha256(
         input: InputStream,
         maxBytes: Long = MAX_HASH_BYTES,
+        buffer: ByteArray = ByteArray(DEFAULT_BUFFER_SIZE),
     ): Pair<String, Long> {
         val digest = MessageDigest.getInstance("SHA-256")
-        val buffer = ByteArray(8192)
         var bytes = 0L
         while (true) {
             val count = input.read(buffer)
@@ -244,6 +288,6 @@ public object LoadedArtifactMetadata {
             require(bytes <= maxBytes) { "The artifact entry exceeds the metadata hash limit" }
             digest.update(buffer, 0, count)
         }
-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) } to bytes
+        return HexFormat.of().formatHex(digest.digest()) to bytes
     }
 }

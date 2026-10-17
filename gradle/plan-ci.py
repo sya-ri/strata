@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Select verification jobs from changed paths and the existing Gradle source model."""
 import argparse
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -17,7 +18,7 @@ def plan(paths, model=None, full=False):
             result.update(workflow=True, preflight=True)
             continue
         result["preflight"] |= path.startswith("gradle/performance/") or path in ("gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml")
-        if path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")):
+        if path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")) or (path.startswith("gradle/performance/") and path.endswith(".py")):
             result["workflow"] = True
         elif path.startswith(("release/", ".github/workflows/publish", ".github/workflows/release", ".github/actions/use-prepared")):
             result["workflow"] = True
@@ -98,21 +99,30 @@ def client_plan(root, versions, backend, subject_ref):
 def main():
     """Write one machine-readable plan and matching GitHub job outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--base")
+    mode.add_argument("--full", action="store_true")
+    mode.add_argument("--paired-manifest", help="Validate an explicit manual measurement input instead of ordinary verification")
+    mode.add_argument("--subject-ref")
     parser.add_argument("--head", default="HEAD")
-    parser.add_argument("--full", action="store_true")
     parser.add_argument("--model", type=Path)
     parser.add_argument("--minecraft-versions", default="")
     parser.add_argument("--minecraft-backend", default="default")
-    parser.add_argument("--subject-ref", default="")
     parser.add_argument("--subject-root", type=Path, default=Path("subject"))
     parser.add_argument("--output", type=Path, default=Path("build/github-actions/ci-plan.json"))
     args = parser.parse_args()
-    selected_client = bool(args.minecraft_versions or args.subject_ref or args.minecraft_backend != "default")
+    selected_client = bool(args.minecraft_versions or args.subject_ref is not None or args.minecraft_backend != "default")
+    if selected_client and (args.paired_manifest is not None or args.base is not None or args.full or args.head != "HEAD" or args.model is not None):
+        parser.error("--subject-ref requires an isolated loaded-client request without PR, paired or model arguments")
     paths = []
-    if not args.full and not selected_client:
-        if not args.base:
-            parser.error("--base or --full is required")
+    if args.paired_manifest is not None:
+        if os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch" or not args.paired_manifest or args.head != "HEAD" or args.model is not None:
+            parser.error("--paired-manifest requires an explicit nonempty workflow_dispatch input without PR or model arguments")
+        specification = importlib.util.spec_from_file_location("paired_jvm", Path(__file__).with_name("performance") / "paired-jvm.py")
+        controller = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(controller)
+        controller.select_manifest(Path.cwd(), explicit=args.paired_manifest)
+    elif not args.full and not selected_client:
         # No rename detection: both the old and new owners must be checked.
         paths = subprocess.check_output(["git", "diff", "--no-renames", "--name-only", "-z", args.base + "..." + args.head]).decode().strip("\0").split("\0")
     model = json.loads(args.model.read_text()) if args.model else None
@@ -121,6 +131,8 @@ def main():
                   if selected_client else plan([p for p in paths if p], model, args.full))
     except ValueError as error:
         parser.error(str(error))
+    if args.paired_manifest is not None:
+        result["preflight"] = True
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     if os.environ.get("GITHUB_OUTPUT"):
