@@ -39,6 +39,30 @@ class MinecraftPerformanceMeterTest {
         assertEquals(2L, evidence.get("tintFallbackCount").asLong)
         assertEquals(0L, evidence.get("alphaCutoffFallbackCount").asLong)
         assertEquals(1L, evidence.get("otherIneligibleFallbackCount").asLong)
+        assertTrue(evidence.get("rasterUploadCount").isJsonNull)
+        assertTrue(evidence.get("samplingUploadCount").isJsonNull)
+    }
+
+    @Test
+    fun uploadGroupsAreDeltasAndMissingCountsNeverEraseOlderPayloadBytes() {
+        val screen = NativeMeterFixture()
+        val payload = NativeMeterFixture.CountedUploadWork()
+        screen.uploadWork = payload
+        payload.samplingUploadCount = 7L
+        val baseline = NativePresentationCounters.read(screen)
+        payload.rasterUploadCount += 2L
+        payload.samplingUploadCount += 3L
+        payload.rasterUploadByteCount += 128L
+        payload.samplingUploadByteCount += 96L
+        val report = JsonObject()
+        NativePresentationCounters.append(report, screen, baseline)
+        val evidence = report.getAsJsonObject("native_payload")
+        assertTrue(evidence.get("available").asBoolean)
+        assertEquals(2L, evidence.get("rasterUploadCount").asLong)
+        assertEquals(3L, evidence.get("samplingUploadCount").asLong)
+        assertEquals(128L, evidence.get("rasterUploadByteCount").asLong)
+        assertEquals(96L, evidence.get("samplingUploadByteCount").asLong)
+        assertEquals(0L, evidence.get("sourceUploadByteCount").asLong)
     }
 
     @Test

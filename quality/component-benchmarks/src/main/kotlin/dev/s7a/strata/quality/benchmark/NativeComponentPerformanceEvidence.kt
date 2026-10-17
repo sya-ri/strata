@@ -58,7 +58,7 @@ internal object NativeComponentPerformanceEvidence {
             PerformanceReportMetric("gui_gpu_p99_ns", listOf("native_gpu", "duration", "p99_ns")),
             PerformanceReportMetric("gui_completion_observation_p95_ns", listOf("native_gpu", "operation_to_completion_observation", "p95_ns")),
         ) +
-            listOf("sourceUploadByteCount", "rasterUploadByteCount", "samplingUploadByteCount", "tintFallbackCount", "alphaCutoffFallbackCount", "otherIneligibleFallbackCount").map {
+            listOf("sourceUploadByteCount", "rasterUploadCount", "rasterUploadByteCount", "samplingUploadCount", "samplingUploadByteCount", "tintFallbackCount", "alphaCutoffFallbackCount", "otherIneligibleFallbackCount").map {
                 PerformanceReportMetric("${it}_per_sample", listOf("native_payload", it), listOf("samples"))
             } +
             listOf(

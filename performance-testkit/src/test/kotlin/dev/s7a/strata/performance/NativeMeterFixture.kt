@@ -43,7 +43,7 @@ internal class NativeMeterFixture {
     /**
      * Optional newer-runtime payload surface for compatibility and delta tests.
      */
-    class UploadWork {
+    open class UploadWork {
         @JvmField var sourceUploadByteCount = 0L
 
         @JvmField var rasterUploadByteCount = 0L
@@ -55,6 +55,15 @@ internal class NativeMeterFixture {
         @JvmField var alphaCutoffFallbackCount = 0L
 
         @JvmField var otherIneligibleFallbackCount = 0L
+    }
+
+    /**
+     * Newer adapters distinguish metadata and raster payload groups without changing older payload availability.
+     */
+    class CountedUploadWork : UploadWork() {
+        @JvmField var rasterUploadCount = 0L
+
+        @JvmField var samplingUploadCount = 0L
     }
 
     /**

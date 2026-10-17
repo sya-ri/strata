@@ -7,10 +7,14 @@ import dev.s7a.strata.render.DrawImage
  * Render-thread cumulative payload counters for successful RGBA8 uploads and resolved sampled fallbacks.
  * This screen-owned diagnostic state retains no pixels, commands, native objects, or history.
  * GPU-generated output is excluded from CPU upload bytes; lookup metadata is counted separately.
+ * Portable counts describe successful layer payload groups, matching the presenter's total texture-upload counter;
+ * an ordered composition counts once even though its group contains both index and factor textures.
  */
 internal class FabricMinecraftUploadWork {
     private var sourceUploadByteCount = 0L
+    private var rasterUploadCount = 0L
     private var rasterUploadByteCount = 0L
+    private var samplingUploadCount = 0L
     private var samplingUploadByteCount = 0L
     private var tintFallbackCount = 0L
     private var alphaCutoffFallbackCount = 0L
@@ -32,10 +36,13 @@ internal class FabricMinecraftUploadWork {
         val sampling = image.sampling
         val composition = image.composition
         if (composition != null) {
+            samplingUploadCount = Math.addExact(samplingUploadCount, 1L)
             samplingUploadByteCount = Math.addExact(samplingUploadByteCount, composition.uploadBytes)
         } else if (sampling == null) {
+            rasterUploadCount = Math.addExact(rasterUploadCount, 1L)
             rasterUploadByteCount = Math.addExact(rasterUploadByteCount, bytes(image.physicalSize))
         } else {
+            samplingUploadCount = Math.addExact(samplingUploadCount, 1L)
             samplingUploadByteCount = Math.addExact(samplingUploadByteCount, bytes(sampling.indices.size))
         }
     }

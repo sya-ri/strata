@@ -309,6 +309,11 @@ The canonical 108-phase component corpus and its default selection are unchanged
 Supply `sampled_images: true` in the processor request for this corpus; explicit `workloads` selects only identifiers from its registry, and the processor rejects using these reports as canonical component acceptance.
 
 Native payload counters distinguish successful source-image, CPU-raster and sampling-metadata uploads in RGBA8 bytes.
+`rasterUploadCount` and `samplingUploadCount` partition the existing portable `textureUploadCount` into successful layer payload groups.
+A sampled layer transfers its three-row index texture; an ordered composition group includes both index and tint-factor textures and counts once.
+These counts exclude independently cached source-image uploads and do not count GPU-generated destinations as transferred pixels.
+Equivalent current geometry reuses its existing layer without adding either upload count or payload bytes; these diagnostics introduce no additional cache.
+Older adapters without the two count fields retain their available byte metrics and report the individual missing counts as null.
 GPU-generated output and texture reuse add no CPU-upload payload.
 Fallback counters distinguish unsupported tint composition, unsupported cutoff after identity tint, and other ineligible causes; capacity remains a separate existing counter.
 Classification uses the compiled adapter's admitted effects before recording a reason, so an exact channel mask or cutoff rejected by clipping or capacity is not labeled unsupported tint or cutoff.

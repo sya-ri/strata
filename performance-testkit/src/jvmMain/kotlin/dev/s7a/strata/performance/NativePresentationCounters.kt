@@ -28,6 +28,7 @@ public object NativePresentationCounters {
         )
     private val gson = GsonBuilder().serializeNulls().create()
     private val payloadNames = listOf("sourceUploadByteCount", "rasterUploadByteCount", "samplingUploadByteCount", "tintFallbackCount", "alphaCutoffFallbackCount", "otherIneligibleFallbackCount")
+    private val uploadCountNames = listOf("rasterUploadCount", "samplingUploadCount")
 
     /**
      * Reads verified fields from the measured screen hierarchy, never from a replacement presenter.
@@ -48,6 +49,11 @@ public object NativePresentationCounters {
                 val field = field(payload, name)
                 check(field.trySetAccessible()) { "Inaccessible native payload metric: $name" }
                 field.getLong(payload)
+            } +
+            uploadCountNames.mapNotNull { name ->
+                val field = optionalField(payload, name) ?: return@mapNotNull null
+                check(field.trySetAccessible()) { "Inaccessible native upload count: $name" }
+                name to field.getLong(payload)
             }
     }
 
@@ -76,6 +82,11 @@ public object NativePresentationCounters {
                     addProperty("reason", "The measured runtime does not expose upload payload counters.")
                     payloadNames.forEach { add(it, JsonNull.INSTANCE) }
                 }
+                uploadCountNames.forEach { name ->
+                    val value = delta[name]
+                    if (value == null) add(name, JsonNull.INSTANCE) else addProperty(name, value)
+                }
+                addProperty("upload_count_unit", "successful portable layer payload groups; reused layers excluded")
             },
         )
         report.add(
