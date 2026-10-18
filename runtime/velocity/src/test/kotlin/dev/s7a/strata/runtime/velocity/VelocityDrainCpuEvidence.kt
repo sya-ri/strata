@@ -9,6 +9,7 @@ import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.PerformancePlan
+import dev.s7a.strata.velocity.Strata
 import java.lang.management.ManagementFactory
 import java.nio.file.Path
 import java.util.UUID
@@ -33,7 +34,7 @@ internal object VelocityDrainCpuEvidence {
                 "api" to "dev.s7a.strata.projection.ProjectionValue",
                 "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
                 "remote" to "dev.s7a.strata.runtime.remote.RemoteTree",
-                "velocity-api" to "dev.s7a.strata.velocity.VelocityUi",
+                "velocity-api" to Strata::class.java.name,
                 "velocity" to "dev.s7a.strata.runtime.velocity.VelocityScreens",
             )
         val runtime = LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys)
