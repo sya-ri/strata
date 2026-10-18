@@ -9,7 +9,8 @@ import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.PerformancePlan
-import dev.s7a.strata.velocity.Strata
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.velocity.VelocityUiProvider
 import java.lang.management.ManagementFactory
 import java.nio.file.Path
 import java.util.UUID
@@ -25,6 +26,7 @@ internal object VelocityDrainCpuEvidence {
      * Supply the frozen resolved libraries via strata.performance.inputs and the documented JDK opens option.
      */
     @JvmStatic
+    @OptIn(InternalStrataRuntimeApi::class)
     fun main(args: Array<String>) {
         require(args.size == 2)
         val repetition = args[1].toInt()
@@ -34,7 +36,8 @@ internal object VelocityDrainCpuEvidence {
                 "api" to "dev.s7a.strata.projection.ProjectionValue",
                 "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
                 "remote" to "dev.s7a.strata.runtime.remote.RemoteTree",
-                "velocity-api" to Strata::class.java.name,
+                // Frozen collectors also inspect API artifacts from before the entry-point rename.
+                "velocity-api" to VelocityUiProvider::class.java.name,
                 "velocity" to "dev.s7a.strata.runtime.velocity.VelocityScreens",
             )
         val runtime = LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys)
