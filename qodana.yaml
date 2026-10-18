@@ -77,11 +77,7 @@ exclude:
   # Java has no Boolean.not() equivalent, so these exact Java boundaries use equality instead of the prohibited prefix-negation form.
   - name: PointlessBooleanExpression
     paths:
-      - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/shared/minecraft-fabric/lifecycle/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFailures.java
       - runtime/shared/minecraft-fabric/resources/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileCache.java
-      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/shared/minecraft-fabric/screen/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
   # These Java interoperability boundaries deliberately validate values that Kotlin's source types consider non-null.
   - name: RedundantRequireNotNullCall
     paths:
@@ -99,8 +95,6 @@ exclude:
   # Minecraft and its IO executor are client-owned singletons despite implementing AutoCloseable; adapters borrow them and must never close application resources.
   - name: AutoCloseableResource
     paths:
-      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport.java
   # Qodana treats the Strata minecraft module as a runtime class source and reports its Kotlin and annotation dependencies as classpath overrides.
   # Exact loaded-client tests exercise these inventory bridges with the owning Minecraft runtime and dependency set.
@@ -108,8 +102,6 @@ exclude:
   # HUD callbacks return Kotlin Unit from the standard library; common remote/font JARs do not package kotlin/Unit.class.
   - name: ClassOverriddenAtRuntime
     paths:
-      - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
       - runtime/shared/minecraft-fabric/hud/callback-gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
       - runtime/shared/minecraft-fabric/hud/layer-delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
