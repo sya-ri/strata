@@ -92,8 +92,7 @@ private fun resolveSkin(
         } catch (failure: InsecurePublicKeyException) {
             throw CompletionException(failure)
         }
-    val skin = textures[MinecraftProfileTexture.Type.SKIN]
-    if (skin == null) return resourceSkin(DefaultPlayerSkin.getDefaultSkin(UUIDUtil.getOrCreatePlayerUUID(profile)))
+    val skin = textures[MinecraftProfileTexture.Type.SKIN] ?: return resourceSkin(DefaultPlayerSkin.getDefaultSkin(UUIDUtil.getOrCreatePlayerUUID(profile)))
     val image = downloadSkin(minecraft, skin.url)
     return FabricMinecraftSkinReference { image }
 }

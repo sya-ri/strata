@@ -2,7 +2,6 @@
 
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.authlib.GameProfile
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId

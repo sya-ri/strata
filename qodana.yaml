@@ -10,6 +10,16 @@ profile:
     # These compatibility files are linked or selected by every version owner in which they exist, so one IDEA index cannot retain each owner-specific call graph.
     - inspection: UnusedSymbol
       ignore:
+        # Compiled callbacks and exact-version tests exercise these linked roots; one IDEA owner cannot retain all references.
+        - "runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.kt"
+        - "runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftLegacySkin.kt"
+        - "runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt"
+        - "runtime/shared/minecraft-fabric/resources/asset-skin/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.kt"
+        - "runtime/shared/minecraft-fabric/resources/resource-location-skin/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.kt"
+        - "runtime/shared/minecraft-fabric/resources/direct-skin-result/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinLookup.kt"
+        - "runtime/shared/minecraft-fabric/resources/optional-skin-result/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinLookup.kt"
+        - "runtime/shared/minecraft-fabric/resources/abgr-pixels/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftArgbPixels.kt"
+        - "runtime/shared/minecraft-fabric/resources/argb-pixels/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftArgbPixels.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
         - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
