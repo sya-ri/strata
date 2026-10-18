@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
 /**
- * Isolates the 26.2 GUI holder API from the shared unobfuscated adapter.
+ * Isolates native GUI holder access from the retained screen adapter.
  */
 final class FabricMinecraftScreenAccess {
     /** Initializes a HUD wrapper at the current logical viewport. */

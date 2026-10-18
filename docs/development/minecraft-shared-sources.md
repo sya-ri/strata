@@ -309,84 +309,84 @@ Tracks `FabricMinecraftWindowMixin` in each runtime's configured main sources.
 
 ## rendering
 
-| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/rendering/gui-graphics) | [`pose-gui-graphics`](../../runtime/shared/minecraft-fabric/rendering/pose-gui-graphics) | [`pose-sampled-image`](../../runtime/shared/minecraft-fabric/rendering/pose-sampled-image) | [`render-type`](../../runtime/shared/minecraft-fabric/rendering/render-type) | [`render-pipeline`](../../runtime/shared/minecraft-fabric/rendering/render-pipeline) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/rendering/gui-extractor) |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ | ✓ |  |  |  |
-| 1.20.1 | ✓ | ✓ | ✓ |  |  |  |
-| 1.20.2 | ✓ | ✓ | ✓ |  |  |  |
-| 1.20.3 | ✓ | ✓ | ✓ |  |  |  |
-| 1.20.4 | ✓ | ✓ | ✓ |  |  |  |
-| 1.20.5 | ✓ | ✓ | ✓ |  |  |  |
-| 1.20.6 | ✓ | ✓ | ✓ |  |  |  |
-| 1.21 | ✓ | ✓ | ✓ |  |  |  |
-| 1.21.1 | ✓ | ✓ | ✓ |  |  |  |
-| 1.21.2 | ✓ | ✓ | ✓ | ✓ |  |  |
-| 1.21.3 | ✓ | ✓ | ✓ | ✓ |  |  |
-| 1.21.4 | ✓ | ✓ | ✓ | ✓ |  |  |
-| 1.21.5 | ✓ | ✓ | ✓ | ✓ |  |  |
-| 1.21.6 | ✓ |  |  |  | ✓ |  |
-| 1.21.7 | ✓ |  |  |  | ✓ |  |
-| 1.21.8 | ✓ |  |  |  | ✓ |  |
-| 1.21.9 | ✓ |  |  |  | ✓ |  |
-| 1.21.10 | ✓ |  |  |  | ✓ |  |
-| 1.21.11 | ✓ |  |  |  | ✓ |  |
-| 26.1 |  |  |  |  |  | ✓ |
-| 26.2 |  |  |  |  |  | ✓ |
-| 26.3 |  |  |  |  |  | ✓ |
+| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/rendering/gui-graphics) | [`gui-graphics-blit`](../../runtime/shared/minecraft-fabric/rendering/gui-graphics-blit) | [`pose-gui-graphics`](../../runtime/shared/minecraft-fabric/rendering/pose-gui-graphics) | [`pose-sampled-image`](../../runtime/shared/minecraft-fabric/rendering/pose-sampled-image) | [`render-type`](../../runtime/shared/minecraft-fabric/rendering/render-type) | [`render-pipeline`](../../runtime/shared/minecraft-fabric/rendering/render-pipeline) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/rendering/gui-extractor) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.20.1 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.20.2 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.20.3 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.20.4 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.20.5 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.20.6 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.21 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.21.1 | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 1.21.2 | ✓ |  | ✓ | ✓ | ✓ |  |  |
+| 1.21.3 | ✓ |  | ✓ | ✓ | ✓ |  |  |
+| 1.21.4 | ✓ |  | ✓ | ✓ | ✓ |  |  |
+| 1.21.5 | ✓ |  | ✓ | ✓ | ✓ |  |  |
+| 1.21.6 | ✓ |  |  |  |  | ✓ |  |
+| 1.21.7 | ✓ |  |  |  |  | ✓ |  |
+| 1.21.8 | ✓ |  |  |  |  | ✓ |  |
+| 1.21.9 | ✓ |  |  |  |  | ✓ |  |
+| 1.21.10 | ✓ |  |  |  |  | ✓ |  |
+| 1.21.11 | ✓ |  |  |  |  | ✓ |  |
+| 26.1 |  |  |  |  |  |  | ✓ |
+| 26.2 |  |  |  |  |  |  | ✓ |
+| 26.3 |  |  |  |  |  |  | ✓ |
 
 ## resources
 
-| Minecraft | [`abgr-pixels`](../../runtime/shared/minecraft-fabric/resources/abgr-pixels) | [`resource-location-constructor`](../../runtime/shared/minecraft-fabric/resources/resource-location-constructor) | [`resource-location-exception`](../../runtime/shared/minecraft-fabric/resources/resource-location-exception) | [`gui-sprite-metadata`](../../runtime/shared/minecraft-fabric/resources/gui-sprite-metadata) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/resources/primitive-callbacks) | [`resource-location-skin-reference`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin-reference) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/resources/direct-skin-result) | [`resource-location-skin`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin) | [`resource-location-factory`](../../runtime/shared/minecraft-fabric/resources/resource-location-factory) | [`argb-pixels`](../../runtime/shared/minecraft-fabric/resources/argb-pixels) | [`optional-skin-result`](../../runtime/shared/minecraft-fabric/resources/optional-skin-result) | [`asset-skin`](../../runtime/shared/minecraft-fabric/resources/asset-skin) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/resources/event-callbacks) | [`identifier`](../../runtime/shared/minecraft-fabric/resources/identifier) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/resources/gui-extractor) |
+| Minecraft | [`abgr-pixels`](../../runtime/shared/minecraft-fabric/resources/abgr-pixels) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/resources/primitive-callbacks) | [`resource-location-constructor`](../../runtime/shared/minecraft-fabric/resources/resource-location-constructor) | [`resource-location-exception`](../../runtime/shared/minecraft-fabric/resources/resource-location-exception) | [`gui-sprite-metadata`](../../runtime/shared/minecraft-fabric/resources/gui-sprite-metadata) | [`resource-location-skin-reference`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin-reference) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/resources/direct-skin-result) | [`resource-location-skin`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin) | [`resource-location-factory`](../../runtime/shared/minecraft-fabric/resources/resource-location-factory) | [`argb-pixels`](../../runtime/shared/minecraft-fabric/resources/argb-pixels) | [`optional-skin-result`](../../runtime/shared/minecraft-fabric/resources/optional-skin-result) | [`asset-skin`](../../runtime/shared/minecraft-fabric/resources/asset-skin) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/resources/event-callbacks) | [`identifier`](../../runtime/shared/minecraft-fabric/resources/identifier) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/resources/gui-extractor) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.20.1 | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20 | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20.1 | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |
 | 1.20.2 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |
 | 1.20.3 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |
 | 1.20.4 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |
 | 1.20.5 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
 | 1.20.6 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
-| 1.21 | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.21.1 | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.21.2 |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |
-| 1.21.3 |  |  |  | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ |  |  |  |  |  |
-| 1.21.4 |  |  |  | ✓ | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
-| 1.21.5 |  |  |  | ✓ | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
-| 1.21.6 |  |  |  | ✓ | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
-| 1.21.7 |  |  |  | ✓ | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
-| 1.21.8 |  |  |  | ✓ | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
-| 1.21.9 |  |  |  | ✓ |  |  |  |  |  | ✓ |  | ✓ | ✓ |  |  |
-| 1.21.10 |  |  |  | ✓ |  |  |  |  |  | ✓ |  | ✓ | ✓ |  |  |
-| 1.21.11 |  |  |  | ✓ |  |  |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  |
-| 26.1 |  |  |  | ✓ |  |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |
-| 26.2 |  |  |  | ✓ |  |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |
-| 26.3 |  |  |  | ✓ |  |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |
+| 1.21 | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
+| 1.21.1 | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
+| 1.21.2 |  | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.21.3 |  | ✓ |  |  | ✓ | ✓ | ✓ | ✓ |  | ✓ |  |  |  |  |  |
+| 1.21.4 |  | ✓ |  |  | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.5 |  | ✓ |  |  | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.6 |  | ✓ |  |  | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.7 |  | ✓ |  |  | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.8 |  | ✓ |  |  | ✓ | ✓ |  | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.9 |  |  |  |  | ✓ |  |  |  |  | ✓ |  | ✓ | ✓ |  |  |
+| 1.21.10 |  |  |  |  | ✓ |  |  |  |  | ✓ |  | ✓ | ✓ |  |  |
+| 1.21.11 |  |  |  |  | ✓ |  |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  |
+| 26.1 |  |  |  |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |
+| 26.2 |  |  |  |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |
+| 26.3 |  |  |  |  | ✓ |  |  |  |  | ✓ |  | ✓ |  | ✓ | ✓ |
 
 ## screen
 
-| Minecraft | [`client-initialization`](../../runtime/shared/minecraft-fabric/screen/client-initialization) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`screen-field`](../../runtime/shared/minecraft-fabric/screen/screen-field) | [`tooltip/empty-carried-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/screen/primitive-callbacks) | [`tooltip/item-component-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics) | [`tooltip/deferred-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/screen/event-callbacks) | [`viewport-initialization`](../../runtime/shared/minecraft-fabric/screen/viewport-initialization) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) | [`tooltip/gui-extractor`](../../runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
-| 1.20.1 | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
-| 1.20.2 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.20.3 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.20.4 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.20.5 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.20.6 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.21 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.21.1 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |
-| 1.21.2 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |
-| 1.21.3 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |
-| 1.21.4 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |
-| 1.21.5 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |
-| 1.21.6 | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.7 | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.8 | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |  |  |  |  |
-| 1.21.9 | ✓ | ✓ | ✓ |  |  |  | ✓ | ✓ |  |  |  |
-| 1.21.10 | ✓ | ✓ | ✓ |  |  |  | ✓ | ✓ |  |  |  |
-| 1.21.11 |  | ✓ | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |
-| 26.1 |  |  | ✓ |  |  |  |  |  | ✓ | ✓ | ✓ |
-| 26.2 |  |  |  |  |  |  |  |  |  | ✓ | ✓ |
-| 26.3 |  |  |  |  |  |  |  |  |  | ✓ | ✓ |
+| Minecraft | [`client-initialization`](../../runtime/shared/minecraft-fabric/screen/client-initialization) | [`gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`screen-field`](../../runtime/shared/minecraft-fabric/screen/screen-field) | [`tooltip/empty-carried-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/screen/primitive-callbacks) | [`tooltip/item-component-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics) | [`tooltip/deferred-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/screen/event-callbacks) | [`viewport-initialization`](../../runtime/shared/minecraft-fabric/screen/viewport-initialization) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) | [`tooltip/gui-extractor`](../../runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor) | [`gui-holder`](../../runtime/shared/minecraft-fabric/screen/gui-holder) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.1 | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.20.2 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.20.3 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.20.4 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.20.5 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.20.6 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.21 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.21.1 | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.21.2 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |  |
+| 1.21.3 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |  |
+| 1.21.4 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |  |
+| 1.21.5 | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |  |
+| 1.21.6 | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |  |  |  |  |  |
+| 1.21.7 | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |  |  |  |  |  |
+| 1.21.8 | ✓ | ✓ | ✓ |  | ✓ |  | ✓ |  |  |  |  |  |
+| 1.21.9 | ✓ | ✓ | ✓ |  |  |  | ✓ | ✓ |  |  |  |  |
+| 1.21.10 | ✓ | ✓ | ✓ |  |  |  | ✓ | ✓ |  |  |  |  |
+| 1.21.11 |  | ✓ | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  |
+| 26.1 |  |  | ✓ |  |  |  |  |  | ✓ | ✓ | ✓ |  |
+| 26.2 |  |  |  |  |  |  |  |  |  | ✓ | ✓ | ✓ |
+| 26.3 |  |  |  |  |  |  |  |  |  | ✓ | ✓ | ✓ |
 
 ## server
 

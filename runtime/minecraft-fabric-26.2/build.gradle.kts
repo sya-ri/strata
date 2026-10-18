@@ -1,4 +1,3 @@
-import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
 
 plugins {
@@ -10,10 +9,6 @@ apply(from = rootProject.file("runtime/minecraft-fabric-publication.gradle.kts")
 
 tasks.withType<Test>().configureEach {
     jvmArgs("--enable-native-access=ALL-UNNAMED")
-}
-
-extensions.configure<SourceSetContainer> {
-    named("main") { java.srcDir("src/version/java") }
 }
 
 dependencies {
