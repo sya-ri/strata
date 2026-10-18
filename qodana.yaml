@@ -37,6 +37,7 @@ profile:
         - "runtime/shared/minecraft-fabric/resources/resource-location-factory/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt"
         - "runtime/shared/minecraft-fabric/resources/resource-location-exception/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt"
+        - "runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinImages.kt"
     # Every version-specific Java skin bridge uses equality to express the repository's no-prefix-negation rule.
     - inspection: PointlessBooleanExpression
       ignore:
