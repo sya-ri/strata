@@ -306,7 +306,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-stb-overlays",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
                     "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
                     "runtime/shared/minecraft-fabric/resources/abgr-pixels",
@@ -336,7 +335,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-stb-overlays",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
                     "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
                     "runtime/shared/minecraft-fabric/resources/abgr-pixels",
@@ -365,7 +363,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-stb-overlays",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
                     "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
                     "runtime/shared/minecraft-fabric/resources/abgr-pixels",
@@ -392,7 +389,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
                     "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
                     "runtime/shared/minecraft-fabric/resources/abgr-pixels",
@@ -421,7 +417,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
                     "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
                     "runtime/shared/minecraft-fabric/resources/abgr-pixels",
@@ -450,7 +445,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
                     "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
                     "runtime/shared/minecraft-fabric/resources/abgr-pixels",
@@ -479,7 +473,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
                     "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
                     "runtime/shared/minecraft-fabric/resources/abgr-pixels",
@@ -509,7 +502,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -539,7 +531,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -568,7 +559,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -597,7 +587,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/named-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -627,7 +616,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/named-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -655,7 +643,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/named-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -683,7 +670,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/named-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -710,7 +696,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/named-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
@@ -735,7 +720,6 @@ private val minecraftFabricTargets =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
                     "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
-                    "runtime/shared/minecraft-fabric/resources/named-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
@@ -759,7 +743,6 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
-                    "runtime/shared/minecraft-fabric/resources/named-dynamic-texture",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
@@ -784,6 +767,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
@@ -808,6 +792,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/font-free-type-fractional-unihex",
                     "runtime/shared/minecraft-fabric/screen/gui-holder",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
@@ -831,6 +816,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics",
                     "runtime/shared/minecraft-fabric/screen/gui-holder",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",

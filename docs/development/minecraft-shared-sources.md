@@ -336,30 +336,30 @@ Tracks `FabricMinecraftWindowMixin` in each runtime's configured main sources.
 
 ## resources
 
-| Minecraft | [`abgr-pixels`](../../runtime/shared/minecraft-fabric/resources/abgr-pixels) | [`atlas-images`](../../runtime/shared/minecraft-fabric/resources/atlas-images) | [`font-stb`](../../runtime/shared/minecraft-fabric/resources/font-stb) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/resources/primitive-callbacks) | [`resource-location-constructor`](../../runtime/shared/minecraft-fabric/resources/resource-location-constructor) | [`resource-location-exception`](../../runtime/shared/minecraft-fabric/resources/resource-location-exception) | [`fixed-nine-slice`](../../runtime/shared/minecraft-fabric/resources/fixed-nine-slice) | [`font-stb-overlays`](../../runtime/shared/minecraft-fabric/resources/font-stb-overlays) | [`gui-sprite-metadata`](../../runtime/shared/minecraft-fabric/resources/gui-sprite-metadata) | [`resource-location-skin-reference`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin-reference) | [`unnamed-dynamic-texture`](../../runtime/shared/minecraft-fabric/resources/unnamed-dynamic-texture) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/resources/direct-skin-result) | [`font-free-type-filters`](../../runtime/shared/minecraft-fabric/resources/font-free-type-filters) | [`resource-location-skin`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin) | [`resource-location-factory`](../../runtime/shared/minecraft-fabric/resources/resource-location-factory) | [`argb-pixels`](../../runtime/shared/minecraft-fabric/resources/argb-pixels) | [`configurable-nine-slice`](../../runtime/shared/minecraft-fabric/resources/configurable-nine-slice) | [`resource-location-synthetic`](../../runtime/shared/minecraft-fabric/resources/resource-location-synthetic) | [`font-free-type-interleaved-shadows`](../../runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows) | [`optional-skin-result`](../../runtime/shared/minecraft-fabric/resources/optional-skin-result) | [`named-dynamic-texture`](../../runtime/shared/minecraft-fabric/resources/named-dynamic-texture) | [`font-free-type-prepared-text`](../../runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text) | [`asset-skin`](../../runtime/shared/minecraft-fabric/resources/asset-skin) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/resources/event-callbacks) | [`font-free-type-baked-metrics`](../../runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics) | [`identifier`](../../runtime/shared/minecraft-fabric/resources/identifier) | [`font-free-type-saturating-metrics`](../../runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/resources/gui-extractor) | [`font-free-type-fractional-unihex`](../../runtime/shared/minecraft-fabric/resources/font-free-type-fractional-unihex) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.20 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.20.1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.20.2 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.20.3 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.20.4 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.20.5 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.20.6 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.21 | ✓ |  |  | ✓ |  | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.21.1 | ✓ |  |  | ✓ |  | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.21.2 |  |  |  | ✓ |  | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1.21.3 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |
-| 1.21.4 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |
-| 1.21.5 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  |  | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
-| 1.21.6 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
-| 1.21.7 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
-| 1.21.8 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  |  | ✓ |  | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |
-| 1.21.9 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.21.10 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ |  |  |  |  |
-| 1.21.11 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ | ✓ |  |  |  | ✓ |  | ✓ | ✓ | ✓ | ✓ |  |  |  |
-| 26.1 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ |  |  | ✓ | ✓ | ✓ |  |
-| 26.2 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ |
-| 26.3 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ |  |  |  |  |  |  | ✓ |  |  | ✓ | ✓ | ✓ |  |
+| Minecraft | [`abgr-pixels`](../../runtime/shared/minecraft-fabric/resources/abgr-pixels) | [`atlas-images`](../../runtime/shared/minecraft-fabric/resources/atlas-images) | [`font-stb`](../../runtime/shared/minecraft-fabric/resources/font-stb) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/resources/primitive-callbacks) | [`resource-location-constructor`](../../runtime/shared/minecraft-fabric/resources/resource-location-constructor) | [`resource-location-exception`](../../runtime/shared/minecraft-fabric/resources/resource-location-exception) | [`fixed-nine-slice`](../../runtime/shared/minecraft-fabric/resources/fixed-nine-slice) | [`font-stb-overlays`](../../runtime/shared/minecraft-fabric/resources/font-stb-overlays) | [`gui-sprite-metadata`](../../runtime/shared/minecraft-fabric/resources/gui-sprite-metadata) | [`resource-location-skin-reference`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin-reference) | [`direct-skin-result`](../../runtime/shared/minecraft-fabric/resources/direct-skin-result) | [`font-free-type-filters`](../../runtime/shared/minecraft-fabric/resources/font-free-type-filters) | [`resource-location-skin`](../../runtime/shared/minecraft-fabric/resources/resource-location-skin) | [`resource-location-factory`](../../runtime/shared/minecraft-fabric/resources/resource-location-factory) | [`argb-pixels`](../../runtime/shared/minecraft-fabric/resources/argb-pixels) | [`configurable-nine-slice`](../../runtime/shared/minecraft-fabric/resources/configurable-nine-slice) | [`resource-location-synthetic`](../../runtime/shared/minecraft-fabric/resources/resource-location-synthetic) | [`font-free-type-interleaved-shadows`](../../runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows) | [`optional-skin-result`](../../runtime/shared/minecraft-fabric/resources/optional-skin-result) | [`font-free-type-prepared-text`](../../runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text) | [`asset-skin`](../../runtime/shared/minecraft-fabric/resources/asset-skin) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/resources/event-callbacks) | [`font-free-type-baked-metrics`](../../runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics) | [`identifier`](../../runtime/shared/minecraft-fabric/resources/identifier) | [`font-free-type-saturating-metrics`](../../runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/resources/gui-extractor) | [`font-free-type-fractional-unihex`](../../runtime/shared/minecraft-fabric/resources/font-free-type-fractional-unihex) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20.1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20.2 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20.3 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20.4 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20.5 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.20.6 | ✓ |  |  | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.21 | ✓ |  |  | ✓ |  | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.21.1 | ✓ |  |  | ✓ |  | ✓ | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1.21.2 |  |  |  | ✓ |  | ✓ |  |  | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |  |
+| 1.21.3 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ | ✓ | ✓ | ✓ |  | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |  |  |
+| 1.21.4 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.21.5 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  |  |  |
+| 1.21.6 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.21.7 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.21.8 |  |  |  | ✓ |  |  |  |  | ✓ | ✓ |  |  | ✓ |  | ✓ | ✓ | ✓ |  | ✓ | ✓ |  |  |  |  |  |  |  |
+| 1.21.9 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  |  |
+| 1.21.10 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  | ✓ | ✓ | ✓ |  |  |  | ✓ | ✓ | ✓ |  |  |  |  |
+| 1.21.11 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  | ✓ | ✓ |  |  |  |  | ✓ | ✓ | ✓ | ✓ |  |  |  |
+| 26.1 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  | ✓ | ✓ |  |  |  |  | ✓ |  |  | ✓ | ✓ | ✓ |  |
+| 26.2 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  | ✓ | ✓ |  |  |  |  | ✓ |  |  | ✓ |  | ✓ | ✓ |
+| 26.3 |  |  |  |  |  |  |  |  | ✓ |  |  |  |  |  | ✓ | ✓ |  |  |  |  | ✓ |  |  | ✓ | ✓ | ✓ |  |
 
 ## screen
 

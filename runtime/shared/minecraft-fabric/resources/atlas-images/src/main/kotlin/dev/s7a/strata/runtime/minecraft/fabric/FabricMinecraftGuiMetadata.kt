@@ -1,13 +1,8 @@
+@file:JvmSynthetic
+
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.blaze3d.platform.NativeImage
-import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.server.packs.resources.Resource
-
-/**
- * Constructs Minecraft's unnamed dynamic texture for the caller-owned [image].
- */
-internal fun createFabricMinecraftDynamicTexture(image: NativeImage): DynamicTexture = DynamicTexture(image)
 
 /**
  * Indicates whether this exact client renders widgets from individual GUI sprites.
@@ -31,6 +26,7 @@ internal val minecraftTooltipFrameStretchesInner: Boolean = false
  * @return this function never returns.
  * @throws IllegalArgumentException on every call.
  */
+@JvmSynthetic
 @Suppress("UnusedParameter")
 internal fun readFabricMinecraftGuiScaling(
     resource: Resource,
