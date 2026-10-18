@@ -80,14 +80,16 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens {
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteServerTransport {
 	public static final field ID Lnet/minecraft/class_2960;
-	public static fun initialize ()V
-	public static fun read (Lnet/minecraft/class_2540;)[B
-	public static fun send (Lnet/minecraft/class_3244;[B)V
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricRemoteServerTransport;
+	public static final fun initialize ()V
+	public static final fun read (Lnet/minecraft/class_2540;)[B
+	public static final fun send (Lnet/minecraft/class_3244;[B)V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport {
-	public static fun initialize ()V
-	public static fun send (Lnet/minecraft/class_634;[B)V
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport;
+	public static final fun initialize ()V
+	public static final fun send (Lnet/minecraft/class_634;[B)V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput {

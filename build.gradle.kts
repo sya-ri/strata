@@ -212,15 +212,16 @@ private data class MinecraftFabricTarget(
         GuiExtractor("gui-extractor"),
     }
 
-    /** Native custom-payload families verified against their exact mapped client archives. */
+    /** Publication support exposed by the Paper distribution table. */
     enum class PaperDistribution(val description: String) {
         Available("✅"),
         Unavailable("❌"),
     }
 
+    /** Native packet families; compatible buffer APIs share one compiled transport implementation. */
     enum class RemoteNetworkFamily(val sourceRoot: String) {
         IdentifierBuffer("identifier-buffer"),
-        CustomPayload("custom-payload"),
+        CustomPayload("identifier-buffer"),
         StreamCodec("stream-codec"),
     }
 }
@@ -1081,7 +1082,7 @@ val sharedSourceMarkdown = providers.provider {
             "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin", "FabricMinecraftPortableTextureOwnership", "FabricMinecraftPortableTextureStorage"),
         ),
         "input" to linkedMapOf(
-            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),
+            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftInventoryNative", "FabricMinecraftKeyBindingBridge"),
             "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
             "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
             "Mouse routing" to listOf("FabricUiMouseMixin"),
