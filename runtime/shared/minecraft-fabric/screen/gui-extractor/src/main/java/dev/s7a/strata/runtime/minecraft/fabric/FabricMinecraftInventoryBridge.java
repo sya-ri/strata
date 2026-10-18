@@ -752,11 +752,14 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
             completed = true;
             return result;
         } finally {
-            if (completed && closed == false) {
-                finishInput(current);
+            try {
+                if (completed && closed == false) {
+                    finishInput(current);
+                }
+            } finally {
+                input = null;
+                offeredHover = null;
             }
-            input = null;
-            offeredHover = null;
         }
     }
 
