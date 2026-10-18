@@ -181,7 +181,6 @@ exclude:
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileWidgets.kt
       - runtime/shared/minecraft-fabric/rendering/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledBounds.kt
-      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin/FabricMinecraftResourceReloadMixin.kt
       - runtime/shared/minecraft-fabric/rendering/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeImageBridge.kt
       - runtime/shared/minecraft-fabric/resources/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
       - runtime/shared/minecraft-fabric/rendering/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTexture.kt

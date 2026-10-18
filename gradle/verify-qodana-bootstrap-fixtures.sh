@@ -51,6 +51,10 @@ done
 grep -F 'runtime-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'integration-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'jbr-25' "$fixture_root/.idea/misc.xml" >/dev/null
+grep -F '<component name="EntryPointsManager">' "$fixture_root/.idea/misc.xml" >/dev/null
+grep -F 'itemvalue="org.spongepowered.asm.mixin.Mixin"' "$fixture_root/.idea/misc.xml" >/dev/null
+grep -F 'itemvalue="com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod"' "$fixture_root/.idea/misc.xml" >/dev/null
+grep -F '<writeAnnotation name="org.spongepowered.asm.mixin.Shadow" />' "$fixture_root/.idea/misc.xml" >/dev/null
 
 if bash "$fixture_root/gradle/prepare-qodana-idea-model.sh" > "$fixture_root/refusal.log" 2>&1; then
   echo 'Qodana bootstrap replaced a local IDEA model without authorization.' >&2
@@ -67,8 +71,13 @@ fi
 grep -Fq 'did not recreate the declaration-derived JMH inventory' "$fixture_root/missing-inventory.log"
 
 rm -f -- "$fixture_root/.idea/modules.xml" "$fixture_root/strata.ipr"
+if bash "$fixture_root/gradle/prepare-qodana-idea-model.sh" > "$fixture_root/misc-refusal.log" 2>&1; then
+  echo 'Qodana bootstrap replaced local IDEA settings without authorization.' >&2
+  exit 1
+fi
+grep -Fq 'Refusing to replace existing local IDEA metadata' "$fixture_root/misc-refusal.log"
 status=0
-FAIL_COMPILATION=true bash "$fixture_root/gradle/prepare-qodana-idea-model.sh" || status=$?
+STRATA_QODANA_BOOTSTRAP=true FAIL_COMPILATION=true bash "$fixture_root/gradle/prepare-qodana-idea-model.sh" || status=$?
 [[ "$status" -eq 23 && ! -e "$fixture_root/.idea/modules.xml" && ! -e "$fixture_root/strata.ipr" ]]
 
 echo 'Verified one Qodana compilation/model invocation, daemon lifetime, local IDEA protection, and failure propagation.'
