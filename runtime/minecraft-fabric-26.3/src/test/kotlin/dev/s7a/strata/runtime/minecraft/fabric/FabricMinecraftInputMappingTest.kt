@@ -241,7 +241,7 @@ internal class FabricMinecraftInputMappingTest {
         var navigationCalls = 0
         lateinit var focus: FabricMinecraftTextInputFocus
         val lifecycle =
-            FabricScreenLifecycleTransaction.create(
+            FabricScreenLifecycleTransaction(
                 {},
                 {},
                 {

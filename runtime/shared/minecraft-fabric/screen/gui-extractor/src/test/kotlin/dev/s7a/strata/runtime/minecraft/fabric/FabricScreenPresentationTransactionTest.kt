@@ -17,7 +17,7 @@ internal class FabricScreenPresentationTransactionTest {
         var created = false
 
         assertThrows(ScreenOpenThreadException::class.java) {
-            FabricScreenPresentationTransaction.present(
+            presentFabricScreen(
                 { false },
                 {
                     created = true
@@ -36,7 +36,7 @@ internal class FabricScreenPresentationTransactionTest {
 
         val actual =
             assertThrows(IllegalArgumentException::class.java) {
-                FabricScreenPresentationTransaction.present<TestScreen>(
+                presentFabricScreen<TestScreen>(
                     { true },
                     { throw expected },
                     { error("unused") },
@@ -53,7 +53,7 @@ internal class FabricScreenPresentationTransactionTest {
 
         val actual =
             assertThrows(IllegalStateException::class.java) {
-                FabricScreenPresentationTransaction.present(
+                presentFabricScreen(
                     { true },
                     { screen },
                     { throw expected },
@@ -72,7 +72,7 @@ internal class FabricScreenPresentationTransactionTest {
 
         val actual =
             assertThrows(IllegalStateException::class.java) {
-                FabricScreenPresentationTransaction.present(
+                presentFabricScreen(
                     { true },
                     { screen },
                     { throw expected },
@@ -87,7 +87,7 @@ internal class FabricScreenPresentationTransactionTest {
     fun successfulInstallationLeavesScreenOpenForNativeLifecycle() {
         val screen = TestScreen()
 
-        FabricScreenPresentationTransaction.present(
+        presentFabricScreen(
             { true },
             { screen },
             { installed -> assertSame(screen, installed) },

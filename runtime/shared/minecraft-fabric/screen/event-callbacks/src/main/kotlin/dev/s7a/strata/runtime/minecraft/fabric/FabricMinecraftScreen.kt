@@ -68,7 +68,7 @@ public class FabricMinecraftScreen private constructor(
     private val canvasPresentation = FabricMinecraftCanvasPresentation()
     private val pausePolicy = host.pausesGame
     private val lifecycle =
-        FabricScreenLifecycleTransaction.create(
+        FabricScreenLifecycleTransaction(
             { attachHost() },
             { detachHost() },
             { closeHost() },

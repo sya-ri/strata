@@ -80,7 +80,7 @@ public class FabricMinecraftScreen private constructor(
     private val pausePolicy = host.pausesGame
     private val textInputFocus = FabricMinecraftTextInputFocus { focused -> minecraftClient.onTextInputFocusChange(this, focused) }
     private val lifecycle =
-        FabricScreenLifecycleTransaction.create(
+        FabricScreenLifecycleTransaction(
             { attachHost() },
             { detachHost() },
             { closeHost() },
