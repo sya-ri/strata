@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import net.minecraft.client.renderer.texture.AbstractTexture
+import java.util.function.IntSupplier
 
 /**
  * Gives the texture manager a render-thread view of independently owned Canvas storage.
@@ -8,9 +9,9 @@ import net.minecraft.client.renderer.texture.AbstractTexture
  * Resource loading, unregister and manager shutdown never allocate or destroy storage through this view.
  */
 internal class FabricBorrowedTexture(
-    private val textureId: () -> Int,
+    private val textureId: IntSupplier,
 ) : AbstractTexture() {
-    override fun getId(): Int = textureId()
+    override fun getId(): Int = textureId.asInt
 
     override fun releaseId() = Unit
 
