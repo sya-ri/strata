@@ -54,6 +54,8 @@ import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import java.util.zip.ZipFile
 
 plugins {
@@ -74,6 +76,15 @@ plugins {
 
 group = "dev.s7a.strata"
 version = "0.3.0"
+
+plugins.withType<YarnPlugin> {
+    extensions.configure<YarnRootExtension> {
+        // The test runner's transitive ranges predate these upstream security fixes.
+        resolution("diff", libs.versions.npm.diff.get())
+        resolution("serialize-javascript", libs.versions.npm.serialize.javascript.get())
+    }
+}
+
 private val sourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
 check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
     "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."
