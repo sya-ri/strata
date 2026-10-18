@@ -1460,11 +1460,19 @@ if (completeIdeaModelActive) {
         }.orEmpty()
     }
 
-    /** Resolves the actual selected compiler/runtime edges, excluding this owner's own output directories. */
+    /**
+     * Resolves actual compiler/runtime edges while omitting owner outputs and absent source-set outputs from NO_SOURCE tasks.
+     * Missing required libraries still fail their byte inventory instead of disappearing from analysis.
+     */
     fun Project.declarationDependencies(selected: List<SourceSet>): Map<String, List<Map<String, String>>> {
         val owner = this
         val sourceSets = extensions.getByType<SourceSetContainer>()
         val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
+        val unproducedOutputs = rootProject.allprojects.flatMap { dependency ->
+            val declared = dependency.extensions.findByType<SourceSetContainer>()?.flatMap { it.output.files }.orEmpty().map { it.canonicalFile }.toSet()
+            dependency.tasks.filter { it.state.noSource }.flatMap { it.outputs.files.files }.map { it.canonicalFile }
+                .filter { it in declared && it.exists().not() }
+        }.toSet()
         val artifacts = selected.flatMap { sourceSet ->
             listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
                 owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
@@ -1473,7 +1481,7 @@ if (completeIdeaModelActive) {
         val dependencies = selected.flatMap { sourceSet ->
             listOf(sourceSet.compileClasspathConfigurationName to sourceSet.compileClasspath, sourceSet.runtimeClasspathConfigurationName to sourceSet.runtimeClasspath)
         }.associate { (configurationName, classpath) ->
-            val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs
+            val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs - unproducedOutputs
             val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
             val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
             val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->

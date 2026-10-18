@@ -27,8 +27,8 @@ internal class QodanaJmhModelFunctionalTest {
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)
-        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"shared-kmp\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
-        val production = Files.readString(repository.resolve("build.gradle.kts"))
+        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"support-kotlin\", \"shared-kmp\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
+        val production = Files.readString(repository.resolve("build.gradle.kts")).replace("\r\n", "\n")
         val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
         val auxiliaryCallback = production.substringAfter("    // Export configured auxiliary JVM inputs through the existing TEST analysis view.\n").substringBefore("    tasks.withType<JavaCompile>()")
@@ -75,6 +75,8 @@ internal class QodanaJmhModelFunctionalTest {
         )
         write("support/build.gradle.kts", "")
         write("support/src/main/java/fixture/Support.java", "package fixture; public class Support { public static int value() { return 7; } }")
+        write("support-kotlin/build.gradle.kts", "")
+        write("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt", "package fixture\npublic fun kotlinValue(): Int = 5\n")
         write("shared-inputs/kotlin/fixture/SharedValue.kt", "package fixture\ninternal fun sharedValue(): Int = 11\n")
         write("shared-inputs/resources/shared.txt", "shared compilation resource\n")
         write(
@@ -171,6 +173,9 @@ internal class QodanaJmhModelFunctionalTest {
         val auxiliaryDependencies = auxiliary["dependencies"] as Map<*, *>
         auxiliaryDependencies.values.forEach { closure ->
             assertTrue((closure as List<*>).any { (it as Map<*, *>)["identity"] == "support" })
+            val libraries = closure.map { it as Map<*, *> }.filter { it["kind"] == "Library" }
+            assertTrue(libraries.any { (it["path"] as String).endsWith("/support-kotlin/build/classes/kotlin/main") })
+            assertTrue(libraries.none { (it["path"] as String).endsWith("/support-kotlin/build/classes/java/main") || (it["path"] as String).endsWith("/support-kotlin/build/resources/main") })
         }
         val auxiliaryIml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(auxiliary["iml"] as String).toFile())
         val auxiliaryFolders = auxiliaryIml.getElementsByTagName("sourceFolder")
@@ -196,6 +201,9 @@ internal class QodanaJmhModelFunctionalTest {
         val reused = runner().build()
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
         assertEquals(parsed, JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()))
+        val missingDependencyRunner = runner()
+        val missingDependency = missingDependencyRunner.withArguments(missingDependencyRunner.arguments + "-Pfixture.missingRequiredClasspath=true").buildAndFail()
+        assertTrue(missingDependency.output.contains("missing-required.jar"))
         write("auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt", "package fixture\npublic fun broken(): Int = missingValue\n")
         git("add", "--", "auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt")
         git("-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Reject broken auxiliary compilation")
@@ -215,13 +223,21 @@ internal class QodanaJmhModelFunctionalTest {
                 java.setSrcDirs(listOf("authored-java", "absent/java"))
                 resources.setSrcDirs(listOf("authored-resources"))
             }
-            dependencies { add(verification.implementationConfigurationName, project(":support")) }
+            evaluationDependsOn(":support-kotlin")
+            val kotlinDependency = project(":support-kotlin").extensions.getByType<SourceSetContainer>().getByName("main")
+            dependencies {
+                add(verification.implementationConfigurationName, project(":support"))
+                add(verification.implementationConfigurationName, files(kotlinDependency.output))
+                if (providers.gradleProperty("fixture.missingRequiredClasspath").isPresent) {
+                    add(verification.implementationConfigurationName, files("missing-required.jar"))
+                }
+            }
             kotlin.sourceSets.named("main") { kotlin.srcDir("shared-production") }
             kotlin.sourceSets.named("verification") { kotlin.setSrcDirs(listOf("authored-kotlin", "shared-production")) }
             """.trimIndent(),
         )
         write("auxiliary-owner/shared-production/fixture/ProductionValue.kt", "package fixture\npublic fun productionValue(): Int = 3\n")
-        write("auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt", "package fixture\npublic fun auxiliaryValue(): Int = Support.value() + productionValue()\n")
+        write("auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt", "package fixture\npublic fun auxiliaryValue(): Int = Support.value() + productionValue() + kotlinValue()\n")
         write("auxiliary-owner/authored-java/fixture/JavaAuxiliary.java", "package fixture; public class JavaAuxiliary { public int value() { return Support.value(); } }")
         write("auxiliary-owner/authored-resources/payload.txt", "auxiliary compiler resource\n")
     }
