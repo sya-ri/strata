@@ -45,7 +45,8 @@ public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
 }
 
 /**
- * Copies borrowed client-thread native pixels after checking their normalized skin dimensions.
+ * Copies a borrowed native image after checking its normalized skin dimensions.
+ * The caller serializes pixel access on the image owner; this call neither retains nor closes the image.
  */
 @JvmSynthetic
 internal fun createPlayerSkinSnapshot(image: NativeImage): DrawImage {
