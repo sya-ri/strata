@@ -10,34 +10,6 @@ import net.minecraft.server.packs.resources.Resource
 internal fun createFabricMinecraftDynamicTexture(image: NativeImage): DynamicTexture = DynamicTexture(image)
 
 /**
- * Copies Minecraft's native RGBA storage into detached straight-ARGB pixels.
- */
-internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray {
-    val width = image.width
-    val height = image.height
-    val pixels = IntArray(width * height)
-    for (y in 0 until height) {
-        for (x in 0 until width) {
-            pixels[y * width + x] = swapRedBlue(image.getPixelRGBA(x, y))
-        }
-    }
-    return pixels
-}
-
-/**
- * Stores one straight-ARGB pixel through Minecraft's ABGR native-image API.
- */
-@JvmSynthetic
-internal fun setFabricMinecraftArgbPixel(
-    image: NativeImage,
-    x: Int,
-    y: Int,
-    argb: Int,
-) {
-    image.setPixelRGBA(x, y, swapRedBlue(argb))
-}
-
-/**
  * Indicates whether this exact client renders widgets from individual GUI sprites.
  */
 @get:JvmSynthetic
@@ -64,8 +36,3 @@ internal fun readFabricMinecraftGuiScaling(
     resource: Resource,
     path: String,
 ): FabricMinecraftGuiScaling = throw IllegalArgumentException("Minecraft 1.20/1.20.1 resource $path has no GUI sprite metadata.")
-
-private fun swapRedBlue(color: Int): Int =
-    (color and 0xFF00FF00.toInt()) or
-        (color and 0x00FF0000 ushr 16) or
-        (color and 0x000000FF shl 16)

@@ -252,6 +252,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
                     "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
@@ -274,6 +275,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
                     "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
@@ -295,6 +297,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
@@ -320,6 +323,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
@@ -344,6 +348,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
@@ -366,6 +371,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin",
@@ -390,6 +396,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin",
@@ -414,6 +421,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin",
@@ -438,6 +446,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin",
@@ -463,6 +472,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -488,6 +498,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -512,6 +523,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -536,6 +548,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -561,6 +574,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -584,6 +598,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -607,6 +622,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -629,6 +645,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -649,6 +666,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -669,6 +687,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -691,6 +710,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
@@ -713,6 +733,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-26.2",
@@ -733,6 +754,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-26.3",

@@ -10,34 +10,6 @@ import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
 internal fun createFabricMinecraftDynamicTexture(image: NativeImage): DynamicTexture = DynamicTexture(image)
 
 /**
- * Copies Minecraft's native RGBA storage into detached straight-ARGB pixels.
- */
-internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray {
-    val width = image.width
-    val height = image.height
-    val pixels = IntArray(width * height)
-    for (y in 0 until height) {
-        for (x in 0 until width) {
-            pixels[y * width + x] = swapRedBlue(image.getPixelRGBA(x, y))
-        }
-    }
-    return pixels
-}
-
-/**
- * Stores one straight-ARGB pixel through Minecraft's ABGR native-image API.
- */
-@JvmSynthetic
-internal fun setFabricMinecraftArgbPixel(
-    image: NativeImage,
-    x: Int,
-    y: Int,
-    argb: Int,
-) {
-    image.setPixelRGBA(x, y, swapRedBlue(argb))
-}
-
-/**
  * Indicates that Minecraft 1.20.5 nine-slice metadata tiles its center.
  */
 @get:JvmSynthetic
@@ -50,8 +22,3 @@ internal val minecraftTooltipFrameStretchesInner: Boolean = false
 @JvmSynthetic
 @Suppress("FunctionOnlyReturningConstant", "UnusedParameter")
 internal fun minecraftNineSliceStretchesInner(scaling: GuiSpriteScaling.NineSlice): Boolean = false
-
-private fun swapRedBlue(color: Int): Int =
-    (color and 0xFF00FF00.toInt()) or
-        (color and 0x00FF0000 ushr 16) or
-        (color and 0x000000FF shl 16)

@@ -16,12 +16,6 @@ import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
 internal fun createFabricMinecraftDynamicTexture(pixels: NativeImage): DynamicTexture = DynamicTexture({ "Strata runtime frame layer" }, pixels)
 
 /**
- * Copies Minecraft's native image into detached straight-ARGB pixels.
- */
-@JvmSynthetic
-internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray = image.pixels
-
-/**
  * Stores one straight-ARGB pixel through Minecraft's native-image API.
  */
 @JvmSynthetic

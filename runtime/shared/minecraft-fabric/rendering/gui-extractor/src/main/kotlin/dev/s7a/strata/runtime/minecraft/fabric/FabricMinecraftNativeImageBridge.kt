@@ -1,13 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.blaze3d.platform.NativeImage
 import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
-
-/**
- * Copies Minecraft's native image into detached straight-ARGB pixels.
- */
-@JvmSynthetic
-internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray = image.pixels
 
 /**
  * Indicates that the supported tooltip frame metadata stretches its center.
