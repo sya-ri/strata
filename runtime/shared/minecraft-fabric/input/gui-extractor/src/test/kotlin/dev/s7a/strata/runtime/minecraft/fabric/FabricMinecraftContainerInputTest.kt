@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.input.MouseButtonInfo
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -24,6 +25,21 @@ internal class FabricMinecraftContainerInputTest {
         for (button in listOf(InputConstants.MOUSE_BUTTON_MIDDLE, InputConstants.MOUSE_BUTTON_4, Int.MAX_VALUE)) {
             assertEquals(button, containerButton(button))
         }
+    }
+
+    @Test
+    fun decodesQuickCraftModesBeforeEncodingTheNativeProtocol() {
+        for (creativePick in listOf(false, true)) {
+            assertSame(FabricMinecraftQuickCraftMode.DISTRIBUTE, FabricMinecraftQuickCraftMode.fromButton(0, creativePick))
+            assertSame(FabricMinecraftQuickCraftMode.ONE_PER_SLOT, FabricMinecraftQuickCraftMode.fromButton(1, creativePick))
+        }
+        for (button in listOf(2, 3, 4, Int.MAX_VALUE)) {
+            assertNull(FabricMinecraftQuickCraftMode.fromButton(button, false))
+            assertSame(FabricMinecraftQuickCraftMode.FILL, FabricMinecraftQuickCraftMode.fromButton(button, true))
+        }
+        assertEquals(0, FabricMinecraftQuickCraftMode.DISTRIBUTE.nativeCode())
+        assertEquals(1, FabricMinecraftQuickCraftMode.ONE_PER_SLOT.nativeCode())
+        assertEquals(2, FabricMinecraftQuickCraftMode.FILL.nativeCode())
     }
 
     @Test
@@ -53,6 +69,33 @@ internal class FabricMinecraftContainerInputTest {
         } finally {
             bridge.close()
         }
+    }
+
+    @Test
+    fun completionKeepsTheReentrancyGuardAndThenDropsBorrowedReferences() {
+        val event = Any()
+        val hover = Any()
+        val failure = IllegalStateException("native completion")
+        val transaction =
+            object : FabricMinecraftInputTransaction<Any, Any>() {
+                override fun finishInput(current: Any) {
+                    assertSame(event, current)
+                    assertSame(event, input)
+                    assertSame(hover, offeredHover)
+                    assertThrows(IllegalStateException::class.java) { dispatchInput(Any()) { false } }
+                    throw failure
+                }
+            }
+        val actual =
+            assertThrows(IllegalStateException::class.java) {
+                transaction.dispatchInput(event) {
+                    transaction.offeredHover = hover
+                    true
+                }
+            }
+        assertSame(failure, actual)
+        assertNull(transaction.input)
+        assertNull(transaction.offeredHover)
     }
 
     /**

@@ -20,7 +20,9 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.Container
 import net.minecraft.world.SimpleContainer
 import net.minecraft.world.SimpleMenuProvider
+import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.inventory.ChestMenu
+import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuConstructor
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
@@ -192,6 +194,7 @@ internal object InventorySlotSynchronizationGameTest {
         container: SimpleContainer,
     ) {
         val previousMode = AtomicReference<GameType>()
+        val expected = AtomicReference<NativeInventoryOutcome>()
         val result =
             runCatching {
                 onServer(context, server, playerId) { player ->
@@ -199,6 +202,7 @@ internal object InventorySlotSynchronizationGameTest {
                     player.setGameMode(GameType.CREATIVE)
                     player.containerMenu.carried = ItemStack(Items.DIRT, 1)
                     player.containerMenu.broadcastChanges()
+                    expected.set(nativeCreativeOutcome(player, container, drag = false))
                 }
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
@@ -208,13 +212,13 @@ internal object InventorySlotSynchronizationGameTest {
                 )
                 sendPickInput(context, drag = false)
                 waitForServer(context, server, playerId) { player ->
-                    val carried = player.containerMenu.carried
-                    carried.`is`(Items.COAL) && carried.count == carried.maxStackSize
+                    expected.get().matches(player.containerMenu)
                 }
                 onServer(context, server, playerId) { player ->
                     container.clearContent()
                     player.containerMenu.carried = ItemStack(Items.DIRT, 1)
                     player.containerMenu.broadcastChanges()
+                    expected.set(nativeCreativeOutcome(player, container, drag = true))
                 }
                 context.waitFor(
                     Predicate<Minecraft> { minecraft ->
@@ -224,10 +228,7 @@ internal object InventorySlotSynchronizationGameTest {
                 )
                 sendPickInput(context, drag = true)
                 waitForServer(context, server, playerId) { player ->
-                    listOf(fuelSlotIndex, chargeSlotIndex).all { index ->
-                        val stack = container.getItem(index)
-                        stack.`is`(Items.DIRT) && stack.count == stack.maxStackSize
-                    } && player.containerMenu.carried.`is`(Items.DIRT) && player.containerMenu.carried.count == 1
+                    expected.get().matches(player.containerMenu)
                 }
             }
         runCanvasTestCleanup(result.exceptionOrNull(), {
@@ -238,6 +239,32 @@ internal object InventorySlotSynchronizationGameTest {
             }
         })
         result.getOrThrow()
+    }
+
+    /**
+     * Computes the reference on the server thread through an independent native menu with copied storage and cursor state.
+     */
+    private fun nativeCreativeOutcome(
+        player: ServerPlayer,
+        container: SimpleContainer,
+        drag: Boolean,
+    ): NativeInventoryOutcome {
+        val storage = SimpleContainer(containerSize)
+        for (index in 0 until containerSize) storage.setItem(index, container.getItem(index).copy())
+        val menu = ChestMenu.threeRows(0, player.inventory, storage)
+        menu.carried = player.containerMenu.carried.copy()
+        if (drag) {
+            val mode = AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE
+            menu.clicked(AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_START, mode), ContainerInput.QUICK_CRAFT, player)
+            for (index in listOf(fuelSlotIndex, chargeSlotIndex)) {
+                menu.clicked(index, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_CONTINUE, mode), ContainerInput.QUICK_CRAFT, player)
+            }
+            menu.clicked(AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_END, mode), ContainerInput.QUICK_CRAFT, player)
+            check(listOf(fuelSlotIndex, chargeSlotIndex).all { index -> storage.getItem(index).count == storage.getItem(index).maxStackSize }) { "The native oracle must fill both creative drag slots." }
+        } else {
+            menu.clicked(fuelSlotIndex, InputConstants.MOUSE_BUTTON_MIDDLE, ContainerInput.CLONE, player)
+        }
+        return NativeInventoryOutcome(storage.getItem(fuelSlotIndex).copy(), storage.getItem(chargeSlotIndex).copy(), menu.carried.copy())
     }
 
     /** Sends one native pick click or a drag crossing two independently bound slots. */
@@ -528,6 +555,23 @@ internal object InventorySlotSynchronizationGameTest {
     ) {
         Custom("Custom storage", Items.PAPER, Slots.container(containerSlotIndex)),
         EnderChest("Ender Chest", Items.FEATHER, Slots.activeMenu(containerSlotIndex)),
+    }
+
+    /**
+     * Retains reference copies of the two bound slots and cursor for comparison only on the server thread.
+     */
+    private data class NativeInventoryOutcome(
+        val firstSlot: ItemStack,
+        val secondSlot: ItemStack,
+        val carried: ItemStack,
+    ) {
+        /**
+         * Compares the server-owned menu with the native reference result, including item components and counts.
+         */
+        fun matches(menu: AbstractContainerMenu): Boolean =
+            ItemStack.matches(firstSlot, menu.getSlot(fuelSlotIndex).item) &&
+                ItemStack.matches(secondSlot, menu.getSlot(chargeSlotIndex).item) &&
+                ItemStack.matches(carried, menu.carried)
     }
 
     private val playerSlotPointer = IntOffset(82, 181)
