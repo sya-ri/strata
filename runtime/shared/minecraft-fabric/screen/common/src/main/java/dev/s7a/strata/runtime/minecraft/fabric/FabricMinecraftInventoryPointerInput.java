@@ -16,10 +16,43 @@ import net.minecraft.world.item.ItemStack;
  * Gesture storage is bounded by the active menu's visited slots and their live bindings, and target or terminal release drops those references.
  * Native mouse events, key matching, creative capability and click-enum encoding remain in their owning adapter.
  *
- * @param <I> adapter-owned native dispatch metadata
+ * @param <M> immutable mouse event decoded by the owning native adapter
  * @param <H> retained slot binding owned by the adapter
  */
-abstract class FabricMinecraftInventoryPointerInput<I, H> extends FabricMinecraftInputTransaction<I, H> {
+abstract class FabricMinecraftInventoryPointerInput<M, H> extends FabricMinecraftInputTransaction<FabricMinecraftInventoryPointerInput.NativeInput<M, H>, H> {
+    /** Native pointer phase represented by the current transaction. */
+    enum InputKind {
+        MOVE,
+        PRESS,
+        DRAG,
+        RELEASE
+    }
+
+    /** Immutable native event metadata; only delivered-target identity changes during host dispatch. */
+    static final class NativeInput<M, H> {
+        final InputKind kind;
+        final M mouse;
+        final int button;
+        final boolean shift;
+        final boolean doubleClick;
+        H delivered;
+
+        /** Captures pure event decoding without accessing native key bindings or client state. */
+        NativeInput(InputKind kind, M mouse, int button, boolean shift, boolean doubleClick) {
+            this.kind = kind;
+            this.mouse = mouse;
+            this.button = button;
+            this.shift = shift;
+            this.doubleClick = doubleClick;
+        }
+    }
+
+    /** Last eligible hover target, borrowed only until its binding or platform is released. */
+    H hovered;
+
+    /** Terminal platform cutoff, also observed by the owning adapter's usability checks. */
+    boolean closed;
+
     private final Map<Slot, Set<H>> quickCraftSlots = new LinkedHashMap<>();
     private boolean quickCrafting;
     private boolean skipNextRelease;
@@ -44,6 +77,53 @@ abstract class FabricMinecraftInventoryPointerInput<I, H> extends FabricMinecraf
 
     /** Encodes and submits one native menu action through the owning client game mode. */
     abstract void clickRaw(int slot, int button, FabricMinecraftInventoryAction action);
+
+    /** Matches the event against the current native pick-item key binding. */
+    abstract boolean isPickMouse(M mouse);
+
+    /** Matches a native pick and verifies that the player has the owning version's creative capability. */
+    abstract boolean isCreativePick(M mouse);
+
+    @Override
+    final void finishInput(NativeInput<M, H> current) {
+        if (closed) return;
+        if (current.kind == InputKind.PRESS && current.delivered == null) {
+            missPointerPress();
+        }
+        if (current.kind == InputKind.MOVE || current.kind == InputKind.DRAG) {
+            hovered = offeredHover;
+        }
+        if (current.kind == InputKind.RELEASE && current.delivered == null) {
+            finishRelease(null, current.button, false, false);
+        }
+    }
+
+    /** Decodes a bound native press only while its matching host transaction is active. */
+    final InputResult handlePress(H binding) {
+        NativeInput<M, H> current = requireInput(InputKind.PRESS);
+        return pressInput(binding, current.button, current.doubleClick, current.shift, isCreativePick(current.mouse));
+    }
+
+    /** Adds one drag target only while its matching host transaction is active. */
+    final InputResult handleDrag(H binding) {
+        requireInput(InputKind.DRAG);
+        return dragInput(binding);
+    }
+
+    /** Completes a bound release only while its matching host transaction is active. */
+    final InputResult handleRelease(H binding) {
+        NativeInput<M, H> current = requireInput(InputKind.RELEASE);
+        return releaseInput(binding, current.button, current.shift, isPickMouse(current.mouse));
+    }
+
+    /** Borrows metadata for the exact active pointer phase and rejects unmatched native dispatch. */
+    final NativeInput<M, H> requireInput(InputKind expected) {
+        NativeInput<M, H> current = input;
+        if (current == null || current.kind != expected) {
+            throw new IllegalStateException("Minecraft Slot input requires the matching native transaction.");
+        }
+        return current;
+    }
 
     /** Starts native pointer handling after the adapter decodes the event's button and modifier state. */
     final InputResult pressInput(H binding, int button, boolean doubleClick, boolean shift, boolean creativePick) {
@@ -161,10 +241,13 @@ abstract class FabricMinecraftInventoryPointerInput<I, H> extends FabricMinecraf
             return contributors.isEmpty();
         });
         if (lastClickBinding == binding) missPointerPress();
+        if (hovered == binding) hovered = null;
     }
 
     /** Drops every gesture-owned reference when the adapter closes; native client access is unnecessary. */
     final void releasePointerState() {
+        closed = true;
+        hovered = null;
         missPointerPress();
         resetQuickCraft();
         skipNextRelease = false;

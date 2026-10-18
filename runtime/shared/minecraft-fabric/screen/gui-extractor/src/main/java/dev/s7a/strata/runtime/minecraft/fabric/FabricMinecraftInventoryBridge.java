@@ -45,7 +45,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>The bridge is package-private, owner-thread confined, and owned by one common host. It polls copied ItemStack snapshots before frames and delegates every mutation through {@code MultiPlayerGameMode.handleContainerInput}; it never writes Inventory storage directly.</p>
  */
-final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPointerInput<FabricMinecraftInventoryBridge.NativeInput, FabricMinecraftInventoryBridge.Binding> implements MinecraftUiPlatform, MinecraftPlatformCommandRenderer<GuiGraphicsExtractor> {
+final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPointerInput<MouseButtonEvent, FabricMinecraftInventoryBridge.Binding> implements MinecraftUiPlatform, MinecraftPlatformCommandRenderer<GuiGraphicsExtractor> {
     private final Thread ownerThread = Thread.currentThread();
     /** Whether any retained native Slot depends on the current container generation. */
     boolean hasBindings() {
@@ -63,30 +63,8 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
     private final Set<SkinBinding> skinBindings = new LinkedHashSet<>();
     private Minecraft minecraft;
     private final BiFunction<Minecraft, PlayerSkinSource, CompletableFuture<Optional<FabricMinecraftSkinReference>>> skinLookup;
-    private Binding hovered;
-    private boolean closed;
     private int refreshBatchDepth;
     private boolean refreshedInBatch;
-
-    private enum InputKind {
-        MOVE,
-        PRESS,
-        DRAG,
-        RELEASE
-    }
-
-    static final class NativeInput {
-        private final InputKind kind;
-        private final MouseButtonEvent mouse;
-        private final boolean doubleClick;
-        private Binding delivered;
-
-        private NativeInput(InputKind kind, MouseButtonEvent mouse, boolean doubleClick) {
-            this.kind = kind;
-            this.mouse = mouse;
-            this.doubleClick = doubleClick;
-        }
-    }
 
     /**
      * Immutable frame payload consumed only by this matching Fabric adapter.
@@ -136,7 +114,7 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
         @Override
         public @NotNull InputResult dispatchPointer(@NotNull PointerEvent event) {
             requireUsable();
-            NativeInput current = input;
+            NativeInput<MouseButtonEvent, Binding> current = input;
             if (event instanceof PointerEvent.Move || event instanceof PointerEvent.Drag) {
                 if (offeredHover == null) {
                     offeredHover = this;
@@ -168,9 +146,6 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
             releaseState();
             bindings.remove(this);
             releasePointerTarget(this);
-            if (hovered == this) {
-                hovered = null;
-            }
             if (offeredHover == this) {
                 offeredHover = null;
             }
@@ -399,10 +374,8 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
         if (closed) {
             return;
         }
-        closed = true;
         releasePointerState();
         input = null;
-        hovered = null;
         offeredHover = null;
         for (Binding binding : bindings) {
             binding.releaseFromPlatform();
@@ -452,7 +425,7 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
      * @return the host consumption result.
      */
     boolean withPointerMove(BooleanSupplier operation) {
-        return withInput(new NativeInput(InputKind.MOVE, null, false), operation);
+        return withInput(new NativeInput<>(InputKind.MOVE, null, 0, false, false), operation);
     }
 
     /**
@@ -464,7 +437,7 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
      * @return the host consumption result.
      */
     boolean withMousePress(MouseButtonEvent event, boolean doubleClick, BooleanSupplier operation) {
-        return withInput(new NativeInput(InputKind.PRESS, event, doubleClick), operation);
+        return withInput(new NativeInput<>(InputKind.PRESS, event, containerClickButton(event), event.hasShiftDown(), doubleClick), operation);
     }
 
     /**
@@ -475,7 +448,7 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
      * @return the host consumption result.
      */
     boolean withMouseDrag(MouseButtonEvent event, BooleanSupplier operation) {
-        return withInput(new NativeInput(InputKind.DRAG, event, false), operation);
+        return withInput(new NativeInput<>(InputKind.DRAG, event, containerClickButton(event), event.hasShiftDown(), false), operation);
     }
 
     /**
@@ -486,7 +459,7 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
      * @return the host consumption result.
      */
     boolean withMouseRelease(MouseButtonEvent event, BooleanSupplier operation) {
-        return withInput(new NativeInput(InputKind.RELEASE, event, false), operation);
+        return withInput(new NativeInput<>(InputKind.RELEASE, event, containerClickButton(event), event.hasShiftDown(), false), operation);
     }
 
     /**
@@ -589,40 +562,9 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
                 });
     }
 
-    private boolean withInput(NativeInput current, BooleanSupplier operation) {
+    private boolean withInput(NativeInput<MouseButtonEvent, Binding> current, BooleanSupplier operation) {
         requireUsable();
         return dispatchInput(current, operation);
-    }
-
-    @Override
-    void finishInput(NativeInput current) {
-        if (closed) return;
-        if (current.kind == InputKind.PRESS && current.delivered == null) {
-            missPointerPress();
-        }
-        if (current.kind == InputKind.MOVE || current.kind == InputKind.DRAG) {
-            hovered = offeredHover;
-        }
-        if (current.kind == InputKind.RELEASE && current.delivered == null) {
-            finishRelease(null, containerClickButton(current.mouse), false, false);
-        }
-    }
-
-    private InputResult handlePress(Binding binding) {
-        NativeInput current = requireInput(InputKind.PRESS);
-        MouseButtonEvent mouse = current.mouse;
-        boolean creativePick = isPickMouse(mouse) && requirePlayer().hasInfiniteMaterials();
-        return pressInput(binding, containerClickButton(mouse), current.doubleClick, mouse.hasShiftDown(), creativePick);
-    }
-
-    private InputResult handleDrag(Binding binding) {
-        requireInput(InputKind.DRAG);
-        return dragInput(binding);
-    }
-
-    private InputResult handleRelease(Binding binding) {
-        MouseButtonEvent mouse = requireInput(InputKind.RELEASE).mouse;
-        return releaseInput(binding, containerClickButton(mouse), mouse.hasShiftDown(), isPickMouse(mouse));
     }
 
     @Override
@@ -645,7 +587,13 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
         return false;
     }
 
-    private boolean isPickMouse(MouseButtonEvent event) {
+    @Override
+    boolean isCreativePick(MouseButtonEvent event) {
+        return isPickMouse(event) && requirePlayer().hasInfiniteMaterials();
+    }
+
+    @Override
+    boolean isPickMouse(MouseButtonEvent event) {
         return requireMinecraft().options.keyPickItem.matchesMouse(event);
     }
 
@@ -680,12 +628,6 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
             case PICKUP_ALL -> ContainerInput.PICKUP_ALL;
         };
         client.gameMode.handleContainerInput(activeMenu().containerId, slot, button, nativeAction, player);
-    }
-
-    private NativeInput requireInput(InputKind expected) {
-        NativeInput current = input;
-        checkState(current != null && current.kind == expected, "Minecraft Slot input requires the matching native transaction.");
-        return current;
     }
 
     @Override
