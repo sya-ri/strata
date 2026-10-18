@@ -770,7 +770,9 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
             skipNextRelease = true;
             return InputResult.Consumed;
         }
-        if (event.getButton() != PointerButton.Primary.INSTANCE && event.getButton() != PointerButton.Secondary.INSTANCE) {
+        if (event.getButton() != PointerButton.Primary.INSTANCE
+                && event.getButton() != PointerButton.Secondary.INSTANCE
+                && (isPickMouse(mouse) && requirePlayer().getAbilities().instabuild) == false) {
             return InputResult.Ignored;
         }
         ItemStack carried = activeMenu().getCarried();
@@ -819,7 +821,9 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
 
     private InputResult handleRelease(Binding binding, PointerEvent.Release event) {
         NativeInput current = requireInput(InputKind.RELEASE);
-        if (event.getButton() != PointerButton.Primary.INSTANCE && event.getButton() != PointerButton.Secondary.INSTANCE) {
+        if (event.getButton() != PointerButton.Primary.INSTANCE
+                && event.getButton() != PointerButton.Secondary.INSTANCE
+                && isPickMouse(current.mouse) == false) {
             return InputResult.Ignored;
         }
         finishRelease(binding, current.mouse);
@@ -851,7 +855,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         if (quickCrafting && quickCraftSlots.isEmpty() == false) {
             sendQuickCraft();
         } else if (binding != null && activeMenu().getCarried().isEmpty() == false) {
-            click(binding, rawButton, mouse.hasShiftDown() ? ClickType.QUICK_MOVE : ClickType.PICKUP);
+            click(binding, rawButton, isPickMouse(mouse) ? ClickType.CLONE : mouse.hasShiftDown() ? ClickType.QUICK_MOVE : ClickType.PICKUP);
         }
         resetQuickCraft();
     }

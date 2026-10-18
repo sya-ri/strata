@@ -25,6 +25,7 @@ import net.minecraft.world.inventory.MenuConstructor
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.level.GameType
 import org.apache.commons.lang3.function.FailableConsumer
 import org.apache.commons.lang3.function.FailableFunction
 import java.nio.file.Path
@@ -178,8 +179,90 @@ internal object InventorySlotSynchronizationGameTest {
         waitForServer(context, server, playerId) { player ->
             stackMatches(containerReference.get().getItem(chargeSlotIndex), Items.REDSTONE) && player.containerMenu.carried.isEmpty
         }
+        runCreativePickScenario(context, server, playerId, containerReference.get())
         closeFabricScreen(context)
         onServer(context, server, playerId) { player -> player.closeContainer() }
+    }
+
+    /** Verifies native pick-item release and creative drag filling against authoritative server stacks. */
+    private fun runCreativePickScenario(
+        context: ClientGameTestContext,
+        server: MinecraftServer,
+        playerId: UUID,
+        container: SimpleContainer,
+    ) {
+        val previousMode = AtomicReference<GameType>()
+        val result =
+            runCatching {
+                onServer(context, server, playerId) { player ->
+                    previousMode.set(player.gameMode.gameModeForPlayer)
+                    player.setGameMode(GameType.CREATIVE)
+                    player.containerMenu.carried = ItemStack(Items.DIRT, 1)
+                    player.containerMenu.broadcastChanges()
+                }
+                context.waitFor(
+                    Predicate<Minecraft> { minecraft ->
+                        val player = minecraft.player ?: return@Predicate false
+                        player.hasInfiniteMaterials() && player.containerMenu.carried.`is`(Items.DIRT)
+                    },
+                )
+                sendPickInput(context, drag = false)
+                waitForServer(context, server, playerId) { player ->
+                    val carried = player.containerMenu.carried
+                    carried.`is`(Items.COAL) && carried.count == carried.maxStackSize
+                }
+                onServer(context, server, playerId) { player ->
+                    container.clearContent()
+                    player.containerMenu.carried = ItemStack(Items.DIRT, 1)
+                    player.containerMenu.broadcastChanges()
+                }
+                context.waitFor(
+                    Predicate<Minecraft> { minecraft ->
+                        val menu = minecraft.player?.containerMenu ?: return@Predicate false
+                        menu.getSlot(fuelSlotIndex).item.isEmpty && menu.getSlot(chargeSlotIndex).item.isEmpty && menu.carried.`is`(Items.DIRT)
+                    },
+                )
+                sendPickInput(context, drag = true)
+                waitForServer(context, server, playerId) { player ->
+                    listOf(fuelSlotIndex, chargeSlotIndex).all { index ->
+                        val stack = container.getItem(index)
+                        stack.`is`(Items.DIRT) && stack.count == stack.maxStackSize
+                    } && player.containerMenu.carried.`is`(Items.DIRT) && player.containerMenu.carried.count == 1
+                }
+            }
+        runCanvasTestCleanup(result.exceptionOrNull(), {
+            onServer(context, server, playerId) { player ->
+                player.containerMenu.carried = ItemStack.EMPTY
+                previousMode.get()?.let { mode -> player.setGameMode(mode) }
+                player.containerMenu.broadcastChanges()
+            }
+        })
+        result.getOrThrow()
+    }
+
+    /** Sends one native pick click or a drag crossing two independently bound slots. */
+    private fun sendPickInput(
+        context: ClientGameTestContext,
+        drag: Boolean,
+    ) {
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen ?: error("The synchronized Slot screen is not active.")
+                val press = MouseButtonEvent(industrialFuelPointer.x.toDouble(), industrialFuelPointer.y.toDouble(), MouseButtonInfo(InputConstants.MOUSE_BUTTON_MIDDLE, noModifiers))
+                check(minecraft.options.keyPickItem.matchesMouse(press)) { "The native middle button must retain the fixture's pick-item binding." }
+                check(screen.mouseClicked(press, false)) { "The synchronized Slot must consume a creative pick press." }
+                val release =
+                    if (drag) {
+                        check(screen.mouseDragged(press, 0.0, 0.0)) { "The first creative drag slot must consume input." }
+                        val next = MouseButtonEvent(industrialChargePointer.x.toDouble(), industrialChargePointer.y.toDouble(), press.buttonInfo())
+                        check(screen.mouseDragged(next, (industrialChargePointer.x - industrialFuelPointer.x).toDouble(), 0.0)) { "The second creative drag slot must consume input." }
+                        next
+                    } else {
+                        press
+                    }
+                check(screen.mouseReleased(release)) { "The synchronized Slot must consume the pick release." }
+            },
+        )
     }
 
     private fun runPlayerInventoryScenario(
