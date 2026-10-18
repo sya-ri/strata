@@ -355,12 +355,8 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
         if (0 < refreshBatchDepth && refreshedInBatch) {
             return;
         }
-        for (Binding binding : bindings) {
-            binding.refresh();
-        }
-        for (SkinBinding binding : skinBindings) {
-            binding.refresh();
-        }
+        FabricMinecraftBindingRefreshKt.refreshMinecraftBindings(bindings, Binding::refresh);
+        FabricMinecraftBindingRefreshKt.refreshMinecraftBindings(skinBindings, SkinBinding::refresh);
         if (0 < refreshBatchDepth) {
             refreshedInBatch = true;
         }
