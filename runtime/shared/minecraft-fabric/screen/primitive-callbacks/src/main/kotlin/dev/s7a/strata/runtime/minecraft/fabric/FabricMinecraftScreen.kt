@@ -53,8 +53,7 @@ public class FabricMinecraftScreen private constructor(
     private val minecraftClient: Minecraft,
     private val controls: RuntimeUiController?,
 ) : Screen(mapMinecraftText(host.title)),
-    AutoCloseable,
-    FabricMinecraftInputReset {
+    AutoCloseable {
     private var closed = false
 
     private var attached = false
@@ -398,7 +397,7 @@ public class FabricMinecraftScreen private constructor(
      */
     @InternalStrataRuntimeApi
     @JvmSynthetic
-    override fun resetInputFromNative() {
+    public fun resetInputFromNative() {
         requireClientThread()
         if (closed || attached.not()) return
         characterInput.reset()

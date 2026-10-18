@@ -12,7 +12,6 @@ internal object FabricMinecraftFailures {
     /**
      * Suppresses a distinct secondary failure only when neither throwable already reaches the other.
      */
-    @JvmStatic
     fun addSuppressed(
         primary: Throwable,
         secondary: Throwable,
@@ -25,7 +24,6 @@ internal object FabricMinecraftFailures {
      * Always restores borrowed native state, preserving an original operation failure over a distinct cleanup failure.
      * Both callbacks run synchronously on the caller's owner thread and are never retained or retried.
      */
-    @JvmStatic
     fun runWithCleanup(
         action: Runnable,
         cleanup: Runnable,

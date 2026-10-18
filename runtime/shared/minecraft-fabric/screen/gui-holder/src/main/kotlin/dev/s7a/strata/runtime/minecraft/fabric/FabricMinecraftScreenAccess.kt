@@ -10,7 +10,6 @@ internal object FabricMinecraftScreenAccess {
     /**
      * Initializes a borrowed HUD wrapper at the current logical viewport.
      */
-    @JvmStatic
     fun initialize(
         client: Minecraft,
         screen: Screen,
@@ -21,25 +20,21 @@ internal object FabricMinecraftScreenAccess {
     /**
      * Reads the native F1 visibility flag.
      */
-    @JvmStatic
     fun hudHidden(client: Minecraft): Boolean = client.gui.hud.isHidden
 
     /**
      * Reports loading overlays that prevent forwarding input into gameplay.
      */
-    @JvmStatic
     fun hasOverlay(client: Minecraft): Boolean = client.gui.overlay() != null
 
     /**
      * Borrows the currently presented screen, or null when gameplay is visible.
      */
-    @JvmStatic
     fun currentScreen(client: Minecraft): Screen? = client.gui.screen()
 
     /**
      * Replaces the currently presented screen without taking ownership of its lifetime.
      */
-    @JvmStatic
     fun setScreen(
         client: Minecraft,
         screen: Screen?,
