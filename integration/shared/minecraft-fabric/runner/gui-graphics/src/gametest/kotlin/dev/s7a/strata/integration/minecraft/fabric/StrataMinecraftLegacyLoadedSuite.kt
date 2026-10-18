@@ -626,7 +626,10 @@ internal class StrataMinecraftLegacyLoadedSuite {
         require(runCatching { inventory.refresh() }.exceptionOrNull() is IllegalStateException) {
             "A terminally closed Fabric screen left its Minecraft platform usable."
         }
-        val inventoryFields = inventory::class.java.declaredFields.associateBy { field -> field.name }
+        val inventoryFields =
+            generateSequence(inventory::class.java as Class<*>?) { type -> type.superclass }
+                .flatMap { type -> type.declaredFields.asSequence() }
+                .associateBy { field -> field.name }
 
         fun inventoryRetained(name: String): Any? {
             val field = inventoryFields[name] ?: error("Fabric inventory terminal field is missing: $name")
@@ -640,8 +643,11 @@ internal class StrataMinecraftLegacyLoadedSuite {
         require((inventoryRetained("skinBindings") as? Set<*>)?.isEmpty() == true) {
             "A terminally closed Fabric screen retained player-skin bindings."
         }
-        require((inventoryRetained("quickCraftSlots") as? Set<*>)?.isEmpty() == true) {
+        require((inventoryRetained("quickCraftSlots") as? Map<*, *>)?.isEmpty() == true) {
             "A terminally closed Fabric screen retained quick-craft bindings."
+        }
+        listOf("input", "offeredHover", "hovered", "lastClickSlot", "lastClickBinding").forEach { name ->
+            require(inventoryRetained(name) == null) { "A terminally closed Fabric screen retained inventory input state: $name" }
         }
         require(inventoryRetained("minecraft") == null) { "A terminally closed Fabric screen retained the Minecraft client." }
     }
