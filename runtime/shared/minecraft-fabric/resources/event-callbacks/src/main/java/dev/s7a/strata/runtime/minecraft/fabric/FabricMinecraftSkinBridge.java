@@ -3,9 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.s7a.strata.component.PlayerSkinSource;
-import dev.s7a.strata.geometry.IntSize;
 import dev.s7a.strata.render.DrawImage;
-import dev.s7a.strata.render.DrawImages;
 import dev.s7a.strata.resource.ResourceId;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -19,8 +17,6 @@ import net.minecraft.world.item.component.ResolvableProfile;
  * Resolves and snapshots player skins through the asset-based API introduced in Minecraft 1.21.9.
  */
 final class FabricMinecraftSkinBridge {
-    private static final IntSize PLAYER_SKIN_SIZE = new IntSize(64, 64);
-
     private FabricMinecraftSkinBridge() {
     }
 
@@ -71,7 +67,7 @@ final class FabricMinecraftSkinBridge {
             ClientAsset.Texture body = skin.body();
             if (body instanceof ClientAsset.ResourceTexture resource) {
                 var identifier = resource.texturePath();
-                return requireNormalized(FabricMinecraftAssets.loadMinecraftUiImage(
+                return FabricMinecraftSkinImages.requireNormalized(FabricMinecraftAssets.loadMinecraftUiImage(
                         new ResourceId(identifier.getNamespace(), identifier.getPath())));
             }
             if (body instanceof ClientAsset.DownloadedTexture downloaded) {
@@ -83,22 +79,10 @@ final class FabricMinecraftSkinBridge {
                 if (image == null) {
                     throw new IllegalStateException("The downloaded player skin has already been released.");
                 }
-                return snapshotNative(image);
+                return FabricMinecraftSkinImages.snapshot(image);
             }
             throw new IllegalArgumentException("Unsupported Minecraft player skin texture kind: " + body.getClass().getName());
         }
     }
 
-    private static DrawImage snapshotNative(NativeImage image) {
-        return requireNormalized(DrawImages.createDrawImage(
-                new IntSize(image.getWidth(), image.getHeight()),
-                image.getPixels()));
-    }
-
-    private static DrawImage requireNormalized(DrawImage image) {
-        if (image.getSize().equals(PLAYER_SKIN_SIZE) == false) {
-            throw new IllegalArgumentException("Minecraft player skins must normalize to exactly 64 by 64 pixels.");
-        }
-        return image;
-    }
 }

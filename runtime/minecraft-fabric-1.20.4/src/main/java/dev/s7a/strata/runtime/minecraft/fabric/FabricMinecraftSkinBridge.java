@@ -6,9 +6,7 @@ import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.s7a.strata.component.PlayerSkinSource;
-import dev.s7a.strata.geometry.IntSize;
 import dev.s7a.strata.render.DrawImage;
-import dev.s7a.strata.render.DrawImages;
 import dev.s7a.strata.resource.ResourceId;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,8 +20,6 @@ import net.minecraft.client.resources.PlayerSkin;
  * Resolves and snapshots player skins through the profile-repository API used by Minecraft 1.20.4.
  */
 final class FabricMinecraftSkinBridge {
-    private static final IntSize PLAYER_SKIN_SIZE = new IntSize(64, 64);
-
     private FabricMinecraftSkinBridge() {
     }
 
@@ -107,23 +103,11 @@ final class FabricMinecraftSkinBridge {
                 if (image == null) {
                     throw new IllegalStateException("The downloaded player skin has already been released.");
                 }
-                return snapshotNative(image);
+                return FabricMinecraftSkinImages.snapshot(image);
             }
-            return requireNormalized(FabricMinecraftAssets.loadMinecraftUiImage(
+            return FabricMinecraftSkinImages.requireNormalized(FabricMinecraftAssets.loadMinecraftUiImage(
                     new ResourceId(identifier.getNamespace(), identifier.getPath())));
         }
     }
 
-    private static DrawImage snapshotNative(NativeImage image) {
-        return requireNormalized(DrawImages.createDrawImage(
-                new IntSize(image.getWidth(), image.getHeight()),
-                FabricMinecraftDynamicTextureFactoryKt.copyFabricMinecraftArgbPixels(image)));
-    }
-
-    private static DrawImage requireNormalized(DrawImage image) {
-        if (image.getSize().equals(PLAYER_SKIN_SIZE) == false) {
-            throw new IllegalArgumentException("Minecraft player skins must normalize to exactly 64 by 64 pixels.");
-        }
-        return image;
-    }
 }

@@ -8,9 +8,7 @@ import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.s7a.strata.component.PlayerSkinSource;
-import dev.s7a.strata.geometry.IntSize;
 import dev.s7a.strata.render.DrawImage;
-import dev.s7a.strata.render.DrawImages;
 import dev.s7a.strata.resource.ResourceId;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -31,8 +29,6 @@ import net.minecraft.resources.ResourceLocation;
  * Resolves and snapshots player skins through the authlib 4 profile-texture API used by Minecraft 1.20 and 1.20.1.
  */
 final class FabricMinecraftSkinBridge {
-    private static final IntSize PLAYER_SKIN_SIZE = new IntSize(64, 64);
-
     private FabricMinecraftSkinBridge() {
     }
 
@@ -131,7 +127,7 @@ final class FabricMinecraftSkinBridge {
             }
             NativeImage normalized = normalizeLegacySkin(decoded);
             try {
-                return snapshotNative(normalized);
+                return FabricMinecraftSkinImages.snapshot(normalized);
             } finally {
                 normalized.close();
             }
@@ -214,18 +210,6 @@ final class FabricMinecraftSkinBridge {
         }
     }
 
-    private static DrawImage snapshotNative(NativeImage image) {
-        return requireNormalized(DrawImages.createDrawImage(
-                new IntSize(image.getWidth(), image.getHeight()),
-                FabricMinecraftDynamicTextureFactoryKt.copyFabricMinecraftArgbPixels(image)));
-    }
-
-    private static DrawImage requireNormalized(DrawImage image) {
-        if (image.getSize().equals(PLAYER_SKIN_SIZE) == false) {
-            throw new IllegalArgumentException("Minecraft player skins must normalize to exactly 64 by 64 pixels.");
-        }
-        return image;
-    }
 
     private record DetachedSkin(DrawImage image) implements FabricMinecraftSkinReference {
         @Override
@@ -243,9 +227,9 @@ final class FabricMinecraftSkinBridge {
                 if (image == null) {
                     throw new IllegalStateException("The downloaded player skin has already been released.");
                 }
-                return snapshotNative(image);
+                return FabricMinecraftSkinImages.snapshot(image);
             }
-            return requireNormalized(FabricMinecraftAssets.loadMinecraftUiImage(
+            return FabricMinecraftSkinImages.requireNormalized(FabricMinecraftAssets.loadMinecraftUiImage(
                     new ResourceId(location.getNamespace(), location.getPath())));
         }
     }

@@ -25,10 +25,8 @@ profile:
         - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"
         - "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"
-        - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
         - "runtime/shared/minecraft-fabric/rendering/pose-sampled-image/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
-        - "runtime/shared/minecraft-fabric/rendering/render-type/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
         - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
         - "runtime/shared/minecraft-fabric/rendering/render-type/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
@@ -43,7 +41,6 @@ profile:
     - inspection: PointlessBooleanExpression
       ignore:
         - "runtime/minecraft-fabric-[0-9]*/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
-        - "runtime/shared/minecraft-fabric/resources/direct-skin-result/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
         - "runtime/shared/minecraft-fabric/resources/resource-location-skin/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
         - "runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
 failThreshold: 0
@@ -398,7 +395,7 @@ exclude:
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextMapping.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftWidgetImages.kt
       - runtime/shared/minecraft-fabric/input/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
-      - runtime/shared/minecraft-fabric/rendering/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
+      - runtime/shared/minecraft-fabric/resources/gui-sprite-metadata/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt
       - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileFactory.kt
