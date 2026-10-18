@@ -344,7 +344,6 @@ public fun UiScope.Slot(
  * @throws IllegalArgumentException when the profile cannot render [text].
  * @throws IllegalStateException when no runtime screen evaluation is active.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.Text(
     text: UiText,
     style: TextStyle = TextStyle.Normal,

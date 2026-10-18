@@ -18,7 +18,6 @@ import dev.s7a.strata.text.TextWrap
  * Use [TextStyle.ContainerLabel] for dark text on light frames; the appearance controls caret and composition colors.
  * @throws UnsupportedOperationException when the installed runtime lacks custom appearance support.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.TextField(
     state: TextFieldState,
     appearance: TextInputAppearance,
@@ -60,7 +59,6 @@ public fun UiScope.TextField(
  * Use [TextStyle.ContainerLabel] for dark text on light frames; the appearance controls caret and composition colors.
  * @throws UnsupportedOperationException when the installed runtime lacks custom appearance support.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.TextField(
     state: TextFieldState,
     appearance: TextInputAppearance,

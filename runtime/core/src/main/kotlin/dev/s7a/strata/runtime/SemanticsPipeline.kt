@@ -6,12 +6,10 @@ import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsScope
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Collects unresolved semantics from laid-out retained nodes.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class SemanticsPipeline(
     private val ownerGuard: OwnerGuard,
 ) {

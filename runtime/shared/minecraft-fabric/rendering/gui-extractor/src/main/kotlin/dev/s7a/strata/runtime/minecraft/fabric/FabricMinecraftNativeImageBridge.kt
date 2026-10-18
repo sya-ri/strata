@@ -7,7 +7,7 @@ import net.minecraft.client.resources.metadata.gui.GuiSpriteScaling
  * Copies Minecraft's native image into detached straight-ARGB pixels.
  */
 @JvmSynthetic
-internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray = image.getPixels()
+internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray = image.pixels
 
 /**
  * Indicates that the supported tooltip frame metadata stretches its center.

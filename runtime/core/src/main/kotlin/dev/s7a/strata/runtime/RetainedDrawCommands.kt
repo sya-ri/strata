@@ -1,14 +1,12 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Immutable concatenation of already detached command lists, sharing unchanged paint branches.
  * Parts contain only immutable command values and other concatenations, never retained entries or owners.
  * Indexed reads use prefix lengths; iteration keeps only a depth-bounded cursor without allocating per branch.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class RetainedDrawCommands(
     parts: List<List<DrawCommand>>,
 ) : AbstractList<DrawCommand>() {

@@ -39,7 +39,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * @param key optional stable sibling identity.
  * @param content deferred callback that emits exactly one row root.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun <T : Any, K : Any> UiScope.VirtualList(
     itemCount: Int,
     itemAt: (Int) -> T,

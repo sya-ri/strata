@@ -34,5 +34,5 @@ internal fun fabricMinecraftFontOptions(minecraft: Minecraft): MinecraftFontOpti
     MinecraftFontOptions(
         uniform = minecraft.options.forceUnicodeFont().get(),
         japaneseVariants = false,
-        rightToLeft = Language.getInstance().isDefaultRightToLeft(),
+        rightToLeft = Language.getInstance().isDefaultRightToLeft,
     )

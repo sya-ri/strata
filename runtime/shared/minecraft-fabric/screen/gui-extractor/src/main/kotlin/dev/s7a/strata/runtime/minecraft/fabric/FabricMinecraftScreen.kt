@@ -216,7 +216,7 @@ public class FabricMinecraftScreen private constructor(
                 frameTime,
                 minecraftClient.window.guiScale,
                 inventory,
-                FabricNativeCanvasDriver::draw,
+                ::drawFabricNativeCanvas,
             ) { commands, dispatch ->
                 extractFrame(graphics, commands, frame.size, dispatch)
             }
@@ -655,7 +655,7 @@ public class FabricMinecraftScreen private constructor(
         viewport: IntSize,
         platformCommands: MinecraftPlatformCommands<GuiGraphicsExtractor>,
     ) {
-        val scale = minecraftClient.getWindow().getGuiScale()
+        val scale = minecraftClient.window.guiScale
         require(0 < scale) { "Minecraft GUI scale must be positive." }
         val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport && scale == preparedScale
         val generation = portableFrames.releaseGeneration
@@ -801,7 +801,7 @@ public class FabricMinecraftScreen private constructor(
     }
 
     private fun requireClientThread() {
-        check(minecraftClient.isSameThread()) { "Fabric Minecraft screens are confined to the client thread." }
+        check(minecraftClient.isSameThread) { "Fabric Minecraft screens are confined to the client thread." }
     }
 
     /**
@@ -864,8 +864,8 @@ public fun createMinecraftScreen(
     eventSession: UiSession? = controls,
 ): FabricMinecraftScreen {
     val minecraft = Minecraft.getInstance()
-    check(minecraft.isSameThread()) { "Fabric Minecraft screens must be created on the client thread." }
-    val inventory = FabricMinecraftInventoryBridge.create(minecraft)
+    check(minecraft.isSameThread) { "Fabric Minecraft screens must be created on the client thread." }
+    val inventory = FabricMinecraftInventoryBridge.create(minecraft, ::lookupFabricMinecraftSkin)
     val host =
         try {
             createMinecraftUiHost(definition, profile, inventory, LwjglMinecraftFontBackendFactory, eventSession)
@@ -891,7 +891,7 @@ public fun createMinecraftScreen(
 
 private fun currentMinecraftScreen(): Screen? {
     val minecraft = Minecraft.getInstance()
-    check(minecraft.isSameThread()) { "Fabric Minecraft screens must be created on the client thread." }
+    check(minecraft.isSameThread) { "Fabric Minecraft screens must be created on the client thread." }
     return FabricMinecraftScreenAccess.currentScreen(minecraft)
 }
 

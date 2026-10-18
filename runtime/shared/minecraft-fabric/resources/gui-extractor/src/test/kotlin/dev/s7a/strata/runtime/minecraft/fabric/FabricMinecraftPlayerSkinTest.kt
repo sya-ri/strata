@@ -42,6 +42,14 @@ internal class FabricMinecraftPlayerSkinTest {
     }
 
     @Test
+    fun resourceSkinValidationPreservesTheDetachedImage() {
+        val normalized = createDrawImage(IntSize(64, 64), IntArray(64 * 64))
+        assertSame(normalized, requireNormalizedPlayerSkin(normalized))
+        val legacy = createDrawImage(IntSize(64, 32), IntArray(64 * 32))
+        assertThrows(IllegalArgumentException::class.java) { requireNormalizedPlayerSkin(legacy) }
+    }
+
+    @Test
     fun closeDropsQueuedCompletionAndRejectsLateAsyncPublication() {
         val lifecycle = FabricMinecraftInventoryBridge.SkinBindingLifecycle()
         assertTrue(lifecycle.publish(FabricMinecraftInventoryBridge.SkinFailed.INSTANCE))

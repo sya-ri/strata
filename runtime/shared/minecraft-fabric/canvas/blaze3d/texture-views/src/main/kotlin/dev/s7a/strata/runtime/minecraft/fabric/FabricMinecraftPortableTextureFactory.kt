@@ -35,7 +35,6 @@ internal fun initializeFabricMinecraftSampledTexture(
  * Owns exact-adapter allocations and preserves partial initialization until generation-fenced destruction.
  * Texture-manager close is inert; only the owning generation calls [destroy].
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTextureStorage() {
     /**
      * Allocates each native object into its owned field before the next operation can fail.

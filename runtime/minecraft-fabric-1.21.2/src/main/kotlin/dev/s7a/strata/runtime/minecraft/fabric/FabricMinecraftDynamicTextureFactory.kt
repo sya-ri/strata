@@ -12,7 +12,7 @@ internal fun createFabricMinecraftDynamicTexture(image: NativeImage): DynamicTex
 /**
  * Copies Minecraft's native image into detached straight-ARGB pixels.
  */
-internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray = image.getPixels()
+internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray = image.pixels
 
 /**
  * Stores one straight-ARGB pixel through Minecraft's native-image API.

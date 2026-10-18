@@ -17,8 +17,11 @@ import dev.s7a.strata.runtime.remote.RemoteFailure;
 import dev.s7a.strata.runtime.remote.RemoteProtocolException;
 import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
@@ -57,6 +60,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     private final Set<SkinBinding> skinBindings = new LinkedHashSet<>();
     private final Set<Binding> quickCraftSlots = new LinkedHashSet<>();
     private Minecraft minecraft;
+    private final BiFunction<Minecraft, PlayerSkinSource, CompletableFuture<Optional<FabricMinecraftSkinReference>>> skinLookup;
     private NativeInput input;
     private Binding hovered;
     private Binding offeredHover;
@@ -375,7 +379,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
 
         private SkinBinding(PlayerSkinSource source) {
             SkinBindingLifecycle completionTarget = lifecycle;
-            FabricMinecraftSkinBridge.lookup(requireMinecraft(), source).whenComplete((resolved, failure) -> {
+            skinLookup.apply(requireMinecraft(), source).whenComplete((resolved, failure) -> {
                 if (failure == null && resolved.isPresent()) {
                     completionTarget.publish(new SkinReady(resolved.get()));
                 } else {
@@ -455,19 +459,21 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         }
     }
 
-    private FabricMinecraftInventoryBridge(Minecraft minecraft) {
+    private FabricMinecraftInventoryBridge(Minecraft minecraft, BiFunction<Minecraft, PlayerSkinSource, CompletableFuture<Optional<FabricMinecraftSkinReference>>> skinLookup) {
         this.minecraft = minecraft;
+        this.skinLookup = skinLookup;
     }
 
     /**
      * Creates one bridge on the current Minecraft client thread.
      *
      * @param minecraft active client instance retained until close.
+     * @param skinLookup compiler-selected resolver called on the client owner; completions retain descriptors or detached pixels only.
      * @return a new platform bridge.
      */
-    static FabricMinecraftInventoryBridge create(Minecraft minecraft) {
+    static FabricMinecraftInventoryBridge create(Minecraft minecraft, BiFunction<Minecraft, PlayerSkinSource, CompletableFuture<Optional<FabricMinecraftSkinReference>>> skinLookup) {
         checkState(minecraft.isSameThread(), "Minecraft inventory Slots require the client thread.");
-        return new FabricMinecraftInventoryBridge(minecraft);
+        return new FabricMinecraftInventoryBridge(minecraft, skinLookup);
     }
 
     @Override

@@ -198,9 +198,9 @@ private data class MinecraftFabricTarget(
         Blaze3dDirectTextures("blaze3d/direct-textures", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         Blaze3dTextureViews("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
         Blaze3dSamplers("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dGuiExtractor("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
-        Blaze3dBindGroups("blaze3d/bind-groups", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
-        RenderPearl("renderpearl", "portable-storage", "sampled-storage", "renderpearl", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        Blaze3dGuiExtractor("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
+        Blaze3dBindGroups("blaze3d/bind-groups", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        RenderPearl("renderpearl", "portable-storage", "sampled-storage", "renderpearl", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
     }
 
     /** Verified test-only native GUI constructor and traversal contracts, independent of the GPU driver family. */
@@ -237,7 +237,7 @@ private val canvasMixinDependency = libs.fabric.mixin
 private val canvasMixinExtrasDependency = libs.mixin.extras
 val guiGraphicsRuntimeSourceLinks =
     listOf(
-        "runtime/shared/minecraft-fabric/input/gui-graphics", "runtime/shared/minecraft-fabric/rendering/gui-graphics", "runtime/shared/minecraft-fabric/resources/gui-graphics", "runtime/shared/minecraft-fabric/screen/gui-graphics",
+        "runtime/shared/minecraft-fabric/input/gui-graphics", "runtime/shared/minecraft-fabric/rendering/gui-graphics", "runtime/shared/minecraft-fabric/screen/gui-graphics",
         "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
     )
 private val minecraftFabricTargets =
@@ -629,6 +629,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
@@ -648,6 +649,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
@@ -667,6 +669,7 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/viewport-initialization",
@@ -688,6 +691,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/screen/screen-field",
                     "runtime/shared/minecraft-fabric/screen/viewport-initialization",
@@ -709,6 +713,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-26.2",
                     "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
@@ -728,6 +733,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-26.3",
                     "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
@@ -983,7 +989,7 @@ val sharedSourceMarkdown = providers.provider {
                 "FabricNativeCanvasTargetFactory",
                 "FabricMinecraftCompositionTextureAllocation",
             ),
-            "GUI drawing" to listOf("FabricNativeCanvasDrawing"),
+            "GUI drawing" to listOf("FabricNativeCanvasDrawing", "FabricMinecraftExactSampledImageDrawing"),
             "GUI consumption and discard" to listOf("FabricMinecraftCanvasGuiConsumption", "FabricMinecraftCanvasRenderStateAccess"),
             "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin", "FabricMinecraftPortableTextureOwnership", "FabricMinecraftPortableTextureStorage"),
         ),

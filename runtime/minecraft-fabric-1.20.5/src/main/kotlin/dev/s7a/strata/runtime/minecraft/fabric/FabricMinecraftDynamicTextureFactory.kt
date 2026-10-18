@@ -13,8 +13,8 @@ internal fun createFabricMinecraftDynamicTexture(image: NativeImage): DynamicTex
  * Copies Minecraft's native RGBA storage into detached straight-ARGB pixels.
  */
 internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray {
-    val width = image.getWidth()
-    val height = image.getHeight()
+    val width = image.width
+    val height = image.height
     val pixels = IntArray(width * height)
     for (y in 0 until height) {
         for (x in 0 until width) {
