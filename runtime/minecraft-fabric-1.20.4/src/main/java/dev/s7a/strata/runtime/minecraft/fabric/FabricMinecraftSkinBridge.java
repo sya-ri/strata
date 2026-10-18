@@ -4,17 +4,13 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.ProfileLookupCallback;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-import com.mojang.blaze3d.platform.NativeImage;
 import dev.s7a.strata.component.PlayerSkinSource;
 import dev.s7a.strata.render.DrawImage;
-import dev.s7a.strata.resource.ResourceId;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.resources.PlayerSkin;
 
 /**
  * Resolves and snapshots player skins through the profile-repository API used by Minecraft 1.20.4.
@@ -46,7 +42,7 @@ final class FabricMinecraftSkinBridge {
         }
         return profile
                 .thenCompose(minecraft.getSkinManager()::getOrLoad)
-                .thenApply(skin -> Optional.of(new ResolvedSkin(skin)));
+                .thenApply(skin -> Optional.of(new FabricMinecraftResolvedSkin(skin)));
     }
 
     /**
@@ -61,7 +57,7 @@ final class FabricMinecraftSkinBridge {
         if (player == null) {
             throw new IllegalStateException("A current Minecraft player is required to load its skin.");
         }
-        return new ResolvedSkin(player.getSkin()).snapshot(minecraft);
+        return new FabricMinecraftResolvedSkin(player.getSkin()).snapshot(minecraft);
     }
 
     private static CompletableFuture<GameProfile> resolveName(Minecraft minecraft, String name) {
@@ -91,23 +87,6 @@ final class FabricMinecraftSkinBridge {
             }
             return result.profile();
         }, Util.ioPool());
-    }
-
-    private record ResolvedSkin(PlayerSkin skin) implements FabricMinecraftSkinReference {
-        @Override
-        public DrawImage snapshot(Minecraft minecraft) {
-            var identifier = skin.texture();
-            var texture = minecraft.getTextureManager().getTexture(identifier);
-            if (texture instanceof DynamicTexture dynamic) {
-                NativeImage image = dynamic.getPixels();
-                if (image == null) {
-                    throw new IllegalStateException("The downloaded player skin has already been released.");
-                }
-                return FabricMinecraftSkinImages.snapshot(image);
-            }
-            return FabricMinecraftSkinImages.requireNormalized(FabricMinecraftAssets.loadMinecraftUiImage(
-                    new ResourceId(identifier.getNamespace(), identifier.getPath())));
-        }
     }
 
 }
