@@ -20,7 +20,6 @@ profile:
         - "runtime/shared/minecraft-fabric/resources/optional-skin-result/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinLookup.kt"
         - "runtime/shared/minecraft-fabric/resources/abgr-pixels/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftArgbPixels.kt"
         - "runtime/shared/minecraft-fabric/resources/argb-pixels/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftArgbPixels.kt"
-        - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"
         - "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftGuiMetadata.kt"
         - "runtime/shared/minecraft-fabric/rendering/pose-sampled-image/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
         - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt"
@@ -28,10 +27,8 @@ profile:
         - "runtime/shared/minecraft-fabric/rendering/render-type/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
         - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftTextureBlitter.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasPipeline.kt"
-        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt"
         - "runtime/shared/minecraft-fabric/resources/resource-location-constructor/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt"
         - "runtime/shared/minecraft-fabric/resources/resource-location-factory/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt"
-        - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt"
         - "runtime/shared/minecraft-fabric/resources/resource-location-exception/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt"
 failThreshold: 0
 exclude:
