@@ -784,7 +784,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
-                    "runtime/shared/minecraft-fabric/resources/font-free-type-26.1",
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
@@ -808,7 +808,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
-                    "runtime/shared/minecraft-fabric/resources/font-free-type-26.2",
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-fractional-unihex",
                     "runtime/shared/minecraft-fabric/screen/gui-holder",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
@@ -831,7 +831,7 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
-                    "runtime/shared/minecraft-fabric/resources/font-free-type-26.3",
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics",
                     "runtime/shared/minecraft-fabric/screen/gui-holder",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
