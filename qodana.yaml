@@ -102,10 +102,6 @@ exclude:
   - name: ClassOverriddenAtRuntime
     paths:
       - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
-      - runtime/shared/minecraft-fabric/hud/callback-gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
-      - runtime/shared/minecraft-fabric/hud/layer-delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
-      - runtime/shared/minecraft-fabric/hud/registry-delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
-      - runtime/shared/minecraft-fabric/hud/registry-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
   # Public SPI declarations, including PaintScope drawing operations, are consumed by external clients even when this repository has no call site.
   # Public component configuration and modifier entry points are likewise consumed by downstream Mods rather than every repository fixture.
   # Component evaluation and screen-transfer bridges are cross-module runtime boundaries that the local Kotlin call graph does not resolve reliably.
