@@ -26,11 +26,11 @@ public interface FabricUiKeyMappingAccess {
      * Updates native queued presses without enabling another mapping bound to the same key.
      */
     @Accessor("clickCount")
-    public fun strataClicks(clicks: Int): Unit
+    public fun strataClicks(clicks: Int)
 
     /**
      * Clears held input directly, including toggle mappings.
      */
     @Accessor("isDown")
-    public fun strataDown(down: Boolean): Unit
+    public fun strataDown(down: Boolean)
 }

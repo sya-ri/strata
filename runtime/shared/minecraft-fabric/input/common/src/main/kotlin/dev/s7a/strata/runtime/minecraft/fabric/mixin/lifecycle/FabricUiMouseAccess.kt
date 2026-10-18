@@ -17,5 +17,5 @@ public interface FabricUiMouseAccess {
         window: Long,
         horizontal: Double,
         vertical: Double,
-    ): Unit
+    )
 }

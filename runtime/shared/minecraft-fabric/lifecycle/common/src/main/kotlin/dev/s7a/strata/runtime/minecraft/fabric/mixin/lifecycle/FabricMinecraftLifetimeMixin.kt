@@ -38,7 +38,7 @@ private abstract class FabricMinecraftLifetimeMixin {
     }
 
     @Inject(method = ["reloadResourcePacks()Ljava/util/concurrent/CompletableFuture;"], at = [At("HEAD")])
-    private fun strataInvalidateCanvasResources(callback: CallbackInfoReturnable<CompletableFuture<Void>>) {
+    private fun strataInvalidateCanvasResources(callback: CallbackInfoReturnable<CompletableFuture<Void?>>) {
         NativeCanvasDevices.reload()
     }
 

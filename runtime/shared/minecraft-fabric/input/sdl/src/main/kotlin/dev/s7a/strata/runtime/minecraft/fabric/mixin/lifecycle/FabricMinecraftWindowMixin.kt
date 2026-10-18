@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
  */
 @Mixin(Window::class)
 private abstract class FabricMinecraftWindowMixin {
+    @Suppress("KotlinConstantConditions", "RedundantNullableReturnType") // Preserve the original initialization checks despite native non-null annotations.
     @Inject(method = ["onFocus"], at = [At("TAIL")])
     private fun strataResetInput(
         focused: Boolean,

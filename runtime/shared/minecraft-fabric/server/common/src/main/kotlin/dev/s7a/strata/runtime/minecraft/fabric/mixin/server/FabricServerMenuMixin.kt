@@ -1,9 +1,6 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime.minecraft.fabric.mixin.server
 
 import dev.s7a.strata.runtime.minecraft.fabric.FabricServerUiServices
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.server.level.ServerPlayer
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At

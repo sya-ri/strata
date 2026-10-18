@@ -14,7 +14,7 @@ public interface FabricUiMinecraftAccess {
      * Runs the native hotbar, attack, use, drop, swap, and pick paths once per client tick.
      */
     @Invoker("handleKeybinds")
-    public fun strataHandleKeys(): Unit
+    public fun strataHandleKeys()
 
     /**
      * Reads the native attack delay maintained across forwarded ticks.
@@ -26,5 +26,5 @@ public interface FabricUiMinecraftAccess {
      * Removes only the screen-imposed attack delay before native dispatch.
      */
     @Accessor("missTime")
-    public fun strataMissTime(ticks: Int): Unit
+    public fun strataMissTime(ticks: Int)
 }
