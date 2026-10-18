@@ -82,8 +82,6 @@ exclude:
       - runtime/shared/minecraft-fabric/resources/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileCache.java
       - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/shared/minecraft-fabric/screen/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricScreenLifecycleTransaction.java
-      - runtime/shared/minecraft-fabric/input/gui-holder/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
-      - runtime/shared/minecraft-fabric/input/screen-field/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiMouseMixin.java
   # These Java interoperability boundaries deliberately validate values that Kotlin's source types consider non-null.
   - name: RedundantRequireNotNullCall
     paths:
@@ -117,27 +115,6 @@ exclude:
       - runtime/shared/minecraft-fabric/hud/layer-delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
       - runtime/shared/minecraft-fabric/hud/registry-delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
       - runtime/shared/minecraft-fabric/hud/registry-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
-  # Mixin target self-casts are valid only after bytecode transformation, which Qodana deliberately does not execute.
-  - name: DataFlowIssue
-    paths:
-      - runtime/shared/minecraft-fabric/lifecycle/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftLifetimeMixin.java
-      - runtime/shared/minecraft-fabric/server/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/server/FabricServerMenuMixin.java
-  # Native focus callbacks retain defensive initialization guards across all linked Minecraft owners despite their annotated non-null facade.
-  - name: ConstantValue
-    paths:
-      - runtime/shared/minecraft-fabric/input/glfw/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
-      - runtime/shared/minecraft-fabric/input/sdl/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftWindowMixin.java
-  # Mixin shadow fields are target-owned runtime fields and cannot be converted into locals in the untransformed mixin source.
-  - name: FieldCanBeLocal
-    paths:
-      - runtime/shared/minecraft-fabric/canvas/consumption/buffer-source/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
-      - runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
-      - runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasVertexBufferMixin.java
-  # The transformed GUI target populates and consumes its shadow draw collection outside Qodana's source-level call graph.
-  - name: MismatchedCollectionQueryUpdate
-    paths:
-      - runtime/shared/minecraft-fabric/canvas/consumption/buffer-source/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
-      - runtime/shared/minecraft-fabric/canvas/consumption/vertex-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/canvas/FabricMinecraftCanvasGuiMixin.java
   # Public SPI declarations, including PaintScope drawing operations, are consumed by external clients even when this repository has no call site.
   # Public component configuration and modifier entry points are likewise consumed by downstream Mods rather than every repository fixture.
   # Component evaluation and screen-transfer bridges are cross-module runtime boundaries that the local Kotlin call graph does not resolve reliably.

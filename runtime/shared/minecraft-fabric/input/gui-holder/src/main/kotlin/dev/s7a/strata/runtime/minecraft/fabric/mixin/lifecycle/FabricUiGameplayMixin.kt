@@ -1,0 +1,28 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
+package dev.s7a.strata.runtime.minecraft.fabric.mixin.lifecycle
+
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue
+import dev.s7a.strata.runtime.minecraft.fabric.FabricUiInput
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.screens.Screen
+import org.spongepowered.asm.mixin.Mixin
+import org.spongepowered.asm.mixin.injection.At
+import org.spongepowered.asm.mixin.injection.Constant
+import org.spongepowered.asm.mixin.injection.ModifyConstant
+
+/**
+ * Keeps native gameplay dispatch separate from native screen ticking and rendering.
+ */
+@Mixin(Minecraft::class)
+private abstract class FabricUiGameplayMixin {
+    @ModifyConstant(method = ["tick"], constant = [Constant(intValue = 10000)])
+    private fun strataScreenAttackDelay(original: Int): Int = FabricUiInput.attackDelay(original)
+
+    @ModifyExpressionValue(method = ["handleKeybinds"], at = [At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Gui;screen()Lnet/minecraft/client/gui/screens/Screen;")])
+    private fun strataGameplayScreen(original: Screen?): Screen? = if (FabricUiInput.dispatching) null else original
+
+    @ModifyExpressionValue(method = ["handleKeybinds"], at = [At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;isMouseGrabbed()Z")])
+    private fun strataGameplayPointer(original: Boolean): Boolean = original || FabricUiInput.dispatching
+}
