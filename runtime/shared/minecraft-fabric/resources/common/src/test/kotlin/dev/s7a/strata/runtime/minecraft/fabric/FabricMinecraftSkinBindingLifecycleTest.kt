@@ -20,8 +20,8 @@ internal class FabricMinecraftSkinBindingLifecycleTest {
     @Test
     fun closeDropsQueuedCompletionAndRejectsLateAsyncPublication() {
         val lifecycle = FabricMinecraftSkinBindingLifecycle()
-        assertTrue(lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed.INSTANCE))
-        assertFalse(lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed.INSTANCE))
+        assertTrue(lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed))
+        assertFalse(lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed))
         assertTrue(lifecycle.close())
         assertNull(lifecycle.drainCompletion())
         assertSame(MinecraftPlayerSkinBinding.Snapshot.Pending, lifecycle.retainedSnapshot())
@@ -30,7 +30,7 @@ internal class FabricMinecraftSkinBindingLifecycleTest {
         val latePublication =
             CompletableFuture.supplyAsync {
                 releaseCompletion.join()
-                lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed.INSTANCE)
+                lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed)
             }
         releaseCompletion.complete(Unit)
         assertFalse(latePublication.get(5, TimeUnit.SECONDS))
@@ -40,8 +40,8 @@ internal class FabricMinecraftSkinBindingLifecycleTest {
     @Test
     fun closeReleasesCommittedReadySnapshotReference() {
         val lifecycle = FabricMinecraftSkinBindingLifecycle()
-        assertTrue(lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed.INSTANCE))
-        assertSame(FabricMinecraftSkinBindingLifecycle.SkinFailed.INSTANCE, lifecycle.drainCompletion())
+        assertTrue(lifecycle.publish(FabricMinecraftSkinBindingLifecycle.SkinFailed))
+        assertSame(FabricMinecraftSkinBindingLifecycle.SkinFailed, lifecycle.drainCompletion())
         val skin = createDrawImage(IntSize(64, 64), IntArray(64 * 64))
         val ready = MinecraftPlayerSkinBinding.Snapshot.Ready(skin)
         assertTrue(lifecycle.commitSnapshot(ready))
