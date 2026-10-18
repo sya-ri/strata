@@ -145,6 +145,7 @@ extensions.configure<SourceSetContainer> {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/canvas-scope/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))

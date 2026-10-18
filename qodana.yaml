@@ -39,7 +39,7 @@ profile:
       ignore:
         - "runtime/minecraft-fabric-[0-9]*/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
         - "runtime/shared/minecraft-fabric/resources/direct-skin-result/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
-        - "runtime/shared/minecraft-fabric/resources/primitive-callbacks/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
+        - "runtime/shared/minecraft-fabric/resources/resource-location-skin/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
         - "runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
 failThreshold: 0
 exclude:
@@ -97,9 +97,7 @@ exclude:
       - integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
       - integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
       - integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
-      - integration/minecraft-fabric-1.21/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
-      - integration/minecraft-fabric-1.21.1/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
-      - integration/minecraft-fabric-1.21.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
+      - integration/shared/minecraft-fabric/resources/resource-location-factory/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.3/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
@@ -132,12 +130,8 @@ exclude:
       - runtime/shared/minecraft-fabric/resources/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCurrentPlayerSkin.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssetLoader.kt
       - runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
-      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
-      - runtime/minecraft-fabric-1.21.2/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
+      - runtime/shared/minecraft-fabric/resources/resource-location-factory/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
+      - runtime/shared/minecraft-fabric/resources/resource-location-exception/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocation.kt
       - runtime/minecraft-fabric-1.21.3/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftResourceLocationException.kt
       - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontContract.kt
@@ -358,9 +352,7 @@ exclude:
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTextExample.kt
       - integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientGameTest.kt
       - integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyClientTest.kt
-      - integration/minecraft-fabric-1.21/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
-      - integration/minecraft-fabric-1.21.1/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
-      - integration/minecraft-fabric-1.21.2/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
+      - integration/shared/minecraft-fabric/resources/resource-location-factory/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.4/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.5/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt
       - integration/minecraft-fabric-1.21.6/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftTestResourceLocation.kt

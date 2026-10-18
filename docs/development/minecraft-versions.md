@@ -116,6 +116,7 @@ Each consumer references complete language roots; do not select compatible files
 Keep package names, resource identities, and native class names independent of physical source ownership.
 Source sets, static analysis, source links, resource packaging, and verification fixtures must follow every source move together.
 Exact target membership remains explicit in the build; no runtime version-string dispatch or directory-name inference selects behavior.
+The typed target matrix owns runtime main source roots for compilation, Detekt, and Dokka source links.
 
 ## Integration runner boundaries
 
