@@ -116,7 +116,8 @@ Each consumer references complete language roots; do not select compatible files
 Keep package names, resource identities, and native class names independent of physical source ownership.
 Source sets, static analysis, source links, resource packaging, and verification fixtures must follow every source move together.
 Exact target membership remains explicit in the build; no runtime version-string dispatch or directory-name inference selects behavior.
-The typed target matrix owns runtime main source roots for compilation, Detekt, and Dokka source links.
+The typed target matrix owns runtime main source roots for compilation and Dokka source links, and selects their existing test roots.
+Detekt checks every selected Kotlin main and test root instead of a list of individual shared test files.
 
 ## Integration runner boundaries
 

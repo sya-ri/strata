@@ -7,6 +7,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadlessRegion
@@ -34,14 +35,7 @@ internal class FabricMinecraftSamplingMapTest {
                 assertFalse(isDirectFabricSampledImage(command.copy(alphaCutoff = 0.1f), scale, exactSampling = true))
                 assertTrue(isDirectFabricSampledImage(command.copy(alphaCutoff = 1f), scale, exactSampling = true))
                 val map = FabricMinecraftSamplingMap(command, bounds, scale)
-                val pixels = IntArray(map.physicalSize.width * map.physicalSize.height)
-                for (y in 0 until map.physicalSize.height) {
-                    for (x in 0 until map.physicalSize.width) {
-                        val sx = decode(map.indices.argbAt(x, 0)) - 1
-                        val sy = decode(map.indices.argbAt(y, 1)) - 1
-                        if (0 <= sx && 0 <= sy) pixels[y * map.physicalSize.width + x] = image.argbAt(sx, sy)
-                    }
-                }
+                val pixels = decodePixels(map, image)
                 assertArrayEquals(rasterizeHeadlessRegion(listOf(command), bounds, scale).copyArgb(), pixels, "GUI$scale $orientation")
                 if (orientation != SampledImageOrientation.Normal) assertFalse(isDirectFabricSampledImage(command, scale, fractionalSource = true))
             }
@@ -143,14 +137,7 @@ internal class FabricMinecraftSamplingMapTest {
                     val command = DrawCommand.SampledImage(image, source, destination, alphaCutoff = 0f)
                     val map = FabricMinecraftSamplingMap(command, bounds, scale)
                     val expected = rasterizeHeadlessRegion(listOf(command), bounds, scale)
-                    val pixels = IntArray(map.physicalSize.width * map.physicalSize.height)
-                    for (y in 0 until map.physicalSize.height) {
-                        for (x in 0 until map.physicalSize.width) {
-                            val sx = decode(map.indices.argbAt(x, 0)) - 1
-                            val sy = decode(map.indices.argbAt(y, 1)) - 1
-                            if (0 <= sx && 0 <= sy) pixels[y * map.physicalSize.width + x] = image.argbAt(sx, sy)
-                        }
-                    }
+                    val pixels = decodePixels(map, image)
                     assertEquals(map.physicalSize.width, decode(map.indices.argbAt(0, 2)) - 1)
                     assertEquals(map.physicalSize.height, decode(map.indices.argbAt(1, 2)) - 1)
                     assertArrayEquals(expected.copyArgb(), pixels, "GUI$scale source=$source destination=$destination")
@@ -168,6 +155,21 @@ internal class FabricMinecraftSamplingMapTest {
         val input = FabricMinecraftPortableImage(listOf(command), bounds.size, 4, sampling = map)
         assertEquals(IntSize(32, 35), input.reservationSize)
         assertThrows(IllegalArgumentException::class.java) { FabricMinecraftSamplingMap(command, IntRect(0, 0, 4097, 1), 1) }
+    }
+
+    private fun decodePixels(
+        map: FabricMinecraftSamplingMap,
+        image: DrawImage,
+    ): IntArray {
+        val pixels = IntArray(map.physicalSize.width * map.physicalSize.height)
+        for (y in 0 until map.physicalSize.height) {
+            for (x in 0 until map.physicalSize.width) {
+                val sx = decode(map.indices.argbAt(x, 0)) - 1
+                val sy = decode(map.indices.argbAt(y, 1)) - 1
+                if (0 <= sx && 0 <= sy) pixels[y * map.physicalSize.width + x] = image.argbAt(sx, sy)
+            }
+        }
+        return pixels
     }
 
     private fun decode(color: Int): Int = ((color ushr 16) and 255) or (((color ushr 8) and 255) shl 8) or ((color and 255) shl 16) or (color and 0xFF000000.toInt())

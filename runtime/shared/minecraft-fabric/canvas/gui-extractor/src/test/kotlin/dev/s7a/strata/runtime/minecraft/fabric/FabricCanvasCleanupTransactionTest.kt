@@ -58,19 +58,10 @@ internal class FabricCanvasCleanupTransactionTest {
         val actual =
             assertThrows(UnsupportedOperationException::class.java) {
                 FabricCanvasShutdownTransaction.run(
-                    {
-                        trace += Step.StopScreen
-                        throw screenFailure
-                    },
+                    { failAfterRecording(trace, Step.StopScreen, screenFailure) },
                     { trace += Step.DiscardGui },
-                    {
-                        trace += Step.ReleaseDevice
-                        throw releaseFailure
-                    },
-                    {
-                        trace += Step.CloseVanilla
-                        throw vanillaFailure
-                    },
+                    { failAfterRecording(trace, Step.ReleaseDevice, releaseFailure) },
+                    { failAfterRecording(trace, Step.CloseVanilla, vanillaFailure) },
                 )
             }
 
@@ -89,10 +80,7 @@ internal class FabricCanvasCleanupTransactionTest {
         val actual =
             assertThrows(IllegalStateException::class.java) {
                 FabricCanvasShutdownTransaction.run(
-                    {
-                        trace += Step.StopScreen
-                        throw screenFailure
-                    },
+                    { failAfterRecording(trace, Step.StopScreen, screenFailure) },
                     {
                         trace += Step.DiscardGui
                         throw discardFailure
@@ -234,5 +222,14 @@ internal class FabricCanvasCleanupTransactionTest {
         DiscardGui,
         ReleaseDevice,
         CloseVanilla,
+    }
+
+    private fun failAfterRecording(
+        trace: MutableList<Step>,
+        step: Step,
+        failure: Throwable,
+    ): Nothing {
+        trace += step
+        throw failure
     }
 }

@@ -18,7 +18,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Verifies pure direct-image eligibility, barriers, clips, and tight fallback localization. */
+/**
+ * Verifies pure direct-image eligibility, barriers, clips, and tight fallback localization.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftFrameLayerTest {
     @Test
@@ -230,15 +232,7 @@ internal class FabricMinecraftFrameLayerTest {
                     if (sampled == null) continue
                     assertSame(command, sampled.command)
                     val nativeClip = checkNotNull(sampled.clip)
-                    for (physicalY in 0 until viewport.height * scale) {
-                        for (physicalX in 0 until viewport.width * scale) {
-                            val centerX = (physicalX + 0.5) / scale
-                            val centerY = (physicalY + 0.5) / scale
-                            val original = clip.left <= centerX && centerX < clip.right && clip.top <= centerY && centerY < clip.bottom
-                            val native = nativeClip.left <= centerX && centerX < nativeClip.right && nativeClip.top <= centerY && centerY < nativeClip.bottom
-                            assertEquals(original, native, "Clip $clip at scale $scale changed physical pixel ($physicalX, $physicalY)")
-                        }
-                    }
+                    assertClipCoverage(clip, nativeClip, viewport, scale)
                 }
             }
         }
@@ -337,4 +331,21 @@ internal class FabricMinecraftFrameLayerTest {
     }
 
     private data object TestPlatform : PlatformDrawCommand
+
+    private fun assertClipCoverage(
+        clip: FloatRect,
+        nativeClip: IntRect,
+        viewport: IntSize,
+        scale: Int,
+    ) {
+        for (physicalY in 0 until viewport.height * scale) {
+            for (physicalX in 0 until viewport.width * scale) {
+                val centerX = (physicalX + 0.5) / scale
+                val centerY = (physicalY + 0.5) / scale
+                val original = clip.left <= centerX && centerX < clip.right && clip.top <= centerY && centerY < clip.bottom
+                val native = nativeClip.left <= centerX && centerX < nativeClip.right && nativeClip.top <= centerY && centerY < nativeClip.bottom
+                assertEquals(original, native, "Clip $clip at scale $scale changed physical pixel ($physicalX, $physicalY)")
+            }
+        }
+    }
 }

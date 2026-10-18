@@ -229,14 +229,7 @@ internal class FabricMinecraftPortableTilesTest {
 
                 else -> {
                     val clip = coverage.last()
-                    val visible =
-                        when (command) {
-                            is DrawCommand.FillRectangle -> referenceIntersection(command.bounds, clip)
-                            is DrawCommand.BlitImage -> referenceIntersection(command.destination, clip)
-                            is DrawCommand.BlitImagePixels -> referenceIntersection(command.destination, clip)
-                            is DrawCommand.SampledImage -> referenceEnclosure(command.destination, clip)
-                            else -> error("Unexpected nonportable command.")
-                        }
+                    val visible = referenceCommandBounds(command, clip)
                     if (0 < visible.width && 0 < visible.height) {
                         while (emittedDepth < clips.size) selected.add(clips[emittedDepth++])
                         selected.add(command)
@@ -246,6 +239,18 @@ internal class FabricMinecraftPortableTilesTest {
         }
         return selected
     }
+
+    private fun referenceCommandBounds(
+        command: DrawCommand,
+        clip: IntRect,
+    ): IntRect =
+        when (command) {
+            is DrawCommand.FillRectangle -> referenceIntersection(command.bounds, clip)
+            is DrawCommand.BlitImage -> referenceIntersection(command.destination, clip)
+            is DrawCommand.BlitImagePixels -> referenceIntersection(command.destination, clip)
+            is DrawCommand.SampledImage -> referenceEnclosure(command.destination, clip)
+            else -> error("Unexpected nonportable command.")
+        }
 
     private fun referenceIntersection(
         first: IntRect,

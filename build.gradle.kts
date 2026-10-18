@@ -1790,20 +1790,28 @@ subprojects {
         dependencies.add("compileOnly", canvasMixinDependency)
         dependencies.add("compileOnly", canvasMixinExtrasDependency)
         val runtimeRoots = target.allSourceLinkPaths.map { sourcePath -> rootProject.file("$sourcePath/src/main") }.filter { sourceRoot -> sourceRoot != layout.projectDirectory.dir("src/main").asFile }
+        val testRoots = target.allSourceLinkPaths.map { sourcePath -> rootProject.file("$sourcePath/src/test") }
+            .filter { sourceRoot -> sourceRoot.isDirectory && sourceRoot != layout.projectDirectory.dir("src/test").asFile }
         val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + target.serverSourcePaths + target.hudSourcePath).map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
                 java.srcDirs(runtimeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("resources") })
             }
+            named("test") {
+                java.srcDirs(testRoots.map { sourceRoot -> sourceRoot.resolve("java") })
+            }
         }
         extensions.configure<KotlinJvmProjectExtension> {
             sourceSets.named("main") {
                 kotlin.srcDirs(runtimeRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
             }
+            sourceSets.named("test") {
+                kotlin.srcDirs(testRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+            }
         }
         extensions.configure<DetektExtension> {
-            source.from(runtimeRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+            source.from((runtimeRoots + testRoots).map { sourceRoot -> sourceRoot.resolve("kotlin") })
         }
     }
     minecraftFabricTargets.firstOrNull { target -> path == target.integrationProjectPath }?.let { target ->
