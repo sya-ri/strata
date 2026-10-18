@@ -3,6 +3,8 @@ import me.champeau.jmh.JmhBytecodeGeneratorTask
 import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.api.artifacts.VersionCatalogsExtension
 
@@ -232,4 +234,20 @@ tasks.register<JavaExec>("processNativeComponentEvidence") {
     javaLauncher.set(componentLauncher)
     mainClass.set("dev.s7a.strata.quality.benchmark.NativeComponentPerformanceEvidence")
     providers.gradleProperty("strata.performance.request").orNull?.let { args(rootProject.file(it).absolutePath) }
+}
+
+// JMH verifies internal collectors and line lookup without widening production Kotlin visibility.
+gradle.projectsEvaluated {
+    val jmhCompilation = tasks.named<KotlinJvmCompile>("compileJmhKotlin")
+    jmhCompilation.configure {
+        friendPaths.from(
+            project(":runtime:core").tasks.named<KotlinJvmCompile>("compileKotlinJvm").flatMap { it.destinationDirectory },
+            project(":runtime:core").tasks.named<Jar>("jvmJar").flatMap { it.archiveFile },
+            project(":runtime:minecraft").tasks.named<KotlinJvmCompile>("compileKotlin").flatMap { it.destinationDirectory },
+        )
+    }
+    tasks.withType<Detekt>().configureEach {
+        friendPaths.from(jmhCompilation.map { it.friendPaths })
+    }
+
 }

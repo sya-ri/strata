@@ -95,9 +95,10 @@ public object FontRasterWorkEvidence {
                 } finally {
                     owner.close()
                 }
-            val pixels = checkNotNull(glyph.image).copyArgb()
-            glyph.image?.copyArgb()?.fill(0)
-            check(checkNotNull(glyph.image).copyArgb().contentEquals(pixels))
+            val image = checkNotNull(glyph.image)
+            val pixels = image.copyArgb()
+            image.copyArgb().fill(0)
+            check(image.copyArgb().contentEquals(pixels))
             records.add(glyphRecord("bitmapCell:cell=$cell", glyph, if (cell <= 256) cell * cell * 4L else 0L))
         }
     }

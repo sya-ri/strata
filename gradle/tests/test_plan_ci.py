@@ -317,7 +317,7 @@ class PlanCiTest(unittest.TestCase):
         self.assertTrue(result["qodana"])
 
     def test_compiled_preflight_qualification_selects_its_actual_boundary(self):
-        for path in ("gradle/performance/paired-jvm.py", "gradle/performance/fixtures/QualifiedFixtureController.java", "gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml"):
+        for path in ("gradle/performance/paired-jvm.py", "gradle/performance/fixtures/QualifiedFixtureController.kt", "gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml"):
             with self.subTest(path=path):
                 self.assertTrue(planner.plan([path])["preflight"])
         self.assertFalse(planner.plan(["runtime/core/src/commonMain/Runtime.kt"])["preflight"])
@@ -338,7 +338,7 @@ class PlanCiTest(unittest.TestCase):
             mixed = planner.plan(paths)
             self.assertTrue(mixed["workflow"] and mixed["preflight"] and mixed["common"] and mixed["all_minecraft"] and mixed["qodana"])
         for path in ("gradle/performance/invoke-windows.ps1", "gradle/performance/bounded-jvm.init.gradle.kts",
-                     "gradle/performance/fixtures/QualifiedFixtureController.java", "gradle/performance/new-build-input.bin",
+                     "gradle/performance/fixtures/QualifiedFixtureController.kt", "gradle/performance/new-build-input.bin",
                      "gradle/performance-other/controller.py"):
             with self.subTest(path=path):
                 result = planner.plan([path])
