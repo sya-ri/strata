@@ -174,7 +174,6 @@ exclude:
       - integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyMultilineTextScreen.kt
       - integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyUnicodeTextScreen.kt
       - integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt
-      - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontMapping.kt
       - runtime/minecraft-fabric-1.20.1/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt
       - runtime/shared/minecraft-fabric/input/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFocusedInputMapping.kt
       - runtime/shared/minecraft-fabric/rendering/gui-graphics/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFramePresenter.kt
