@@ -2154,6 +2154,15 @@ subprojects {
                 }
             }
             extensions.configure<DetektExtension> {
+                source.from(
+                    providers.provider {
+                        val selectedGameTestRoots = this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.findByName("gametest")?.kotlin?.srcDirs.orEmpty()
+                        listOf(
+                            "integration/shared/minecraft-fabric/runner/standalone-world-presets/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/canvas/terminal/gui-holder/src/gametest/kotlin",
+                        ).map(rootProject::file).filter(selectedGameTestRoots::contains)
+                    },
+                )
                 source.from(profileCacheTests)
                 source.from(nativeComponentCases)
                 if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) source.from(nativeShowcase)
