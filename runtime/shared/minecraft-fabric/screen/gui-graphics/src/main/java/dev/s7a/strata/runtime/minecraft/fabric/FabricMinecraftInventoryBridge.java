@@ -355,12 +355,8 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
         if (0 < refreshBatchDepth && refreshedInBatch) {
             return;
         }
-        for (Binding binding : bindings) {
-            binding.refresh();
-        }
-        for (SkinBinding binding : skinBindings) {
-            binding.refresh();
-        }
+        FabricMinecraftBindingRefreshKt.refreshMinecraftBindings(bindings, Binding::refresh);
+        FabricMinecraftBindingRefreshKt.refreshMinecraftBindings(skinBindings, SkinBinding::refresh);
         if (0 < refreshBatchDepth) {
             refreshedInBatch = true;
         }
@@ -570,7 +566,7 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
     }
 
     @Override
-    boolean checkHotbarMouse(Binding binding) {
+    public boolean checkHotbarMouse(Binding binding) {
         FabricMinecraftNativeMouseInput event = requireInput(InputKind.PRESS).mouse;
         Minecraft client = requireMinecraft();
         if (activeMenu().getCarried().isEmpty() == false) {
@@ -590,12 +586,12 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
     }
 
     @Override
-    boolean isCreativePick(FabricMinecraftNativeMouseInput event) {
+    public boolean isCreativePick(FabricMinecraftNativeMouseInput event) {
         return isPickMouse(event) && requirePlayer().getAbilities().instabuild;
     }
 
     @Override
-    boolean isPickMouse(FabricMinecraftNativeMouseInput event) {
+    public boolean isPickMouse(FabricMinecraftNativeMouseInput event) {
         return FabricMinecraftKeyBindingBridge.matchesMouse(
                 requireMinecraft().options.keyPickItem,
                 event.button(),
@@ -603,12 +599,12 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
     }
 
     @Override
-    Slot resolveSlot(Binding binding) {
+    public Slot resolveSlot(Binding binding) {
         return binding.resolveSlot();
     }
 
     @Override
-    void clickRaw(int slot, int button, FabricMinecraftInventoryAction action) {
+    public void clickRaw(int slot, int button, FabricMinecraftInventoryAction action) {
         Minecraft client = requireMinecraft();
         LocalPlayer player = requirePlayer();
         checkState(client.gameMode != null, "Minecraft inventory input requires an active game mode.");
@@ -625,13 +621,13 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
     }
 
     @Override
-    LocalPlayer requirePlayer() {
+    public LocalPlayer requirePlayer() {
         Minecraft client = requireMinecraft();
         return Objects.requireNonNull(client.player, "Minecraft inventory Slots require an active player.");
     }
 
     @Override
-    AbstractContainerMenu activeMenu() {
+    public AbstractContainerMenu activeMenu() {
         AbstractContainerMenu menu = requirePlayer().containerMenu;
         if (boundContainer != null && boundContainer != menu) {
             throw new RemoteProtocolException(RemoteFailure.ContainerChanged, "UI Slot container generation changed.", null);

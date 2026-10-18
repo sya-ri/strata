@@ -2,7 +2,6 @@
 
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice
 import com.mojang.blaze3d.pipeline.RenderTarget
 import com.mojang.blaze3d.systems.CommandEncoder
 import com.mojang.blaze3d.textures.GpuTexture
@@ -15,60 +14,22 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.render.GuiRenderer
 import net.minecraft.client.gui.screens.Screen
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.lang.reflect.Modifier
-import java.nio.file.Files
-import java.nio.file.Path
 import kotlin.jvm.java
 
 /**
- * Verifies the intended Java entrypoints, Canvas contracts, and narrowly required opt-in native bridges.
+ * Verifies intentional Java entrypoints, borrowed Canvas descriptors, and native construction restrictions.
  *
  * Tests inspect class metadata without constructing a client or native resource.
- * Kotlin-only implementation methods remain synthetic, and generated accessors are forbidden even on hidden classes.
+ * Compiler ABI validation owns the module-wide public contract; JVM flags on Kotlin internal implementation classes do not define consumer API.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftJvmSurfaceTest {
-    @Test
-    fun moduleClassesExposeOnlyTheIntendedNonSyntheticJavaSurface() {
-        val classes = loadModuleClasses()
-        val publicClasses =
-            classes
-                .filter { type -> Modifier.isPublic(type.modifiers) && type.isSynthetic.not() }
-                .associateBy(Class<*>::getName)
-        assertEquals(expectedPublicMethods.keys, publicClasses.keys)
-        expectedPublicMethods.forEach { (className, methodNames) ->
-            val actual =
-                publicClasses
-                    .getValue(className)
-                    .declaredMethods
-                    .filter { method -> Modifier.isPublic(method.modifiers) && method.isSynthetic.not() }
-                    .mapTo(sortedSetOf()) { method -> method.name }
-            assertEquals(methodNames, actual, className)
-        }
-        classes.forEach { type ->
-            type.declaredMethods.forEach { method -> assertFalse(method.name.startsWith("access$"), "${type.name}#${method.name}") }
-        }
-        listOf(
-            lifecycleClass,
-            lifecycleActionClass,
-            failuresClass,
-            presentationTransactionClass,
-            textInputFocusClass,
-            inputResetClass,
-            frameMixinClass,
-        ).forEach { className ->
-            val type = classes.single { candidate -> candidate.name == className }
-            assertFalse(Modifier.isPublic(type.modifiers), className)
-            assertFalse(Modifier.isProtected(type.modifiers), className)
-        }
-    }
-
     @Test
     fun canvasFactoriesAndBorrowedContextExposeExactDescriptors() {
         val sources = Class.forName(canvasFacade)
@@ -157,263 +118,11 @@ internal class FabricMinecraftJvmSurfaceTest {
         assertEquals(setOf("Companion"), screen.declaredFields.filter { field -> Modifier.isPublic(field.modifiers) }.mapTo(HashSet()) { field -> field.name })
     }
 
-    private fun loadModuleClasses(): List<Class<*>> {
-        val outputRoots =
-            listOf(screenFacade, lifecycleClass)
-                .map { className ->
-                    val location =
-                        Class
-                            .forName(className)
-                            .protectionDomain
-                            .codeSource
-                            .location
-                            .toURI()
-                    Path.of(location)
-                }.distinct()
-        return outputRoots
-            .flatMap(::loadPackageClasses)
-            .distinctBy(Class<*>::getName)
-    }
-
-    private fun loadPackageClasses(outputRoot: Path): List<Class<*>> {
-        val packageRoot = outputRoot.resolve(packageName.replace('.', '/'))
-        return Files.walk(packageRoot).use { paths ->
-            paths
-                .filter(Files::isRegularFile)
-                .filter { path -> path.fileName.toString().endsWith(".class") }
-                .map { path ->
-                    val binaryName =
-                        outputRoot
-                            .relativize(path)
-                            .toString()
-                            .replace('\\', '.')
-                            .replace('/', '.')
-                            .removeSuffix(".class")
-                    Class.forName(binaryName, false, FabricMinecraftScreen::class.java.classLoader)
-                }.toList()
-        }
-    }
-
-    private enum class GuiConsumerFamily(
-        val parameterTypes: List<Class<*>>,
-    ) {
-        /**
-         * The GUI consumer borrows an explicit projection buffer during submission.
-         */
-        ProjectedBuffer(listOf(GpuBufferSlice::class.java)),
-
-        /**
-         * The GUI consumer submits its already prepared native state without parameters.
-         */
-        DirectSubmission(emptyList()),
-    }
-
-    private enum class GuiMethod(
-        private val externalName: String,
-    ) {
-        Render("render"),
-        ;
-
-        companion object {
-            fun decode(externalName: String): GuiMethod? = entries.firstOrNull { method -> method.externalName == externalName }
-        }
-    }
-
     private companion object {
         private val packageName = FabricMinecraftScreen::class.java.packageName
         private val assetFacade = "$packageName.FabricMinecraftAssets"
         private val profileFacade = "$packageName.FabricMinecraftProfiles"
         private val screenFacade = "$packageName.FabricMinecraftScreens"
         private val canvasFacade = "$packageName.MinecraftCanvasSources"
-        private val lifecycleClass = "$packageName.FabricScreenLifecycleTransaction"
-        private val lifecycleActionClass = "$lifecycleClass\$Action"
-        private val failuresClass = "$packageName.FabricMinecraftFailures"
-        private val presentationTransactionClass = "$packageName.FabricScreenPresentationTransaction"
-        private val textInputFocusClass = "$packageName.FabricMinecraftTextInputFocus"
-        private val inputResetClass = "$packageName.FabricMinecraftInputReset"
-        private val frameMixinClass = "$packageName.mixin.frame.FabricMinecraftCanvasRenderFrameMixin"
-        private val canvasPublicMethods =
-            mapOf(
-                canvasFacade to setOf("canvasSource"),
-                "$packageName.MinecraftCanvasTextureProvider" to setOf("acquire"),
-                "$packageName.MinecraftCanvasTextureLease" to setOf("getTexture", "getSize", "getOrigin", "getSnapshot", "close"),
-                "$packageName.MinecraftCanvasTextureOrigin" to setOf("values", "valueOf", "getEntries"),
-                "$packageName.MinecraftCanvasRenderer" to setOf("render", "close"),
-                "$packageName.MinecraftCanvasContext" to setOf("getTarget", "getEncoder", "getLogicalSize", "getPhysicalSize", "getFrameTime"),
-                "$packageName.MinecraftCanvasContext\$Companion" to emptySet(),
-            )
-        private val canvasImplementationMethods =
-            listOf(
-                "$packageName.FabricMinecraftCanvasPresentation",
-                "$packageName.FabricMinecraftPortableFrames",
-                "$packageName.FabricMinecraftPortableImage",
-                "$packageName.FabricMinecraftImageUploadKt",
-                "$packageName.FabricMinecraftSourceSamplingKt",
-                "$packageName.FabricMinecraftSamplingMap",
-                "$packageName.FabricMinecraftCompositionMap",
-                "$packageName.FabricMinecraftCompositionMap\$Companion",
-                "$packageName.FabricMinecraftCompositionShaders",
-                "$packageName.FabricMinecraftCompositionInitializationKt",
-                "$packageName.FabricMinecraftCompositionTargets",
-                "$packageName.FabricMinecraftCompositionTargets\$Companion",
-                "$packageName.FabricMinecraftUploadPixels",
-                "$packageName.FabricMinecraftUploadPixelsKt",
-                "$packageName.FabricMinecraftCompositionTextureFactoryKt",
-                "$packageName.FabricMinecraftSamplingBudget",
-                "$packageName.FabricMinecraftSamplingBudget\$Companion",
-                "$packageName.FabricMinecraftSamplingComposition",
-                "$packageName.FabricMinecraftNativeStorage",
-                "$packageName.FabricMinecraftSamplingShaders",
-                "$packageName.FabricMinecraftPortableReuseKt",
-                "$packageName.FabricMinecraftPortableTilesKt",
-                "$packageName.FabricMinecraftFrameInputs",
-                "$packageName.FabricMinecraftPortableTexture",
-                "$packageName.FabricMinecraftPortableTexture\$Companion",
-                "$packageName.FabricMinecraftPortableTextureFactoryKt",
-                "$packageName.FabricMinecraftPortableTextureOwnershipKt",
-                "$packageName.FabricMinecraftPortableNativeStorage",
-                "$packageName.FabricMinecraftPortableNativeTexture",
-                "$packageName.FabricMinecraftPortableTextureStorage",
-                "$packageName.FabricMinecraftSampledTextureLimitsKt",
-                "$packageName.FabricMinecraftNativeTextureLimitsKt",
-                "$packageName.FabricMinecraftFrameLayer",
-                "$packageName.FabricMinecraftFrameLayer\$Portable",
-                "$packageName.FabricMinecraftFrameLayer\$Sampled",
-                "$packageName.FabricMinecraftFrameLayer\$Platform",
-                "$packageName.FabricMinecraftFrameLayerKt",
-                "$packageName.FabricMinecraftSampledImageCache",
-                "$packageName.FabricMinecraftSampledImageDevice",
-                "$packageName.FabricMinecraftSampledImageDevice\$Owner",
-                "$packageName.FabricMinecraftSampledImageDevice\$Borrow",
-                "$packageName.FabricMinecraftSampledImageDevice\$Owned",
-                "$packageName.FabricMinecraftSampledImageDevice\$Entry",
-                "$packageName.FabricMinecraftSampledImageDevice\$Completion",
-                "$packageName.FabricMinecraftSampledImageDevices",
-                "$packageName.FabricMinecraftSampledImageDrawingKt",
-                "$packageName.FabricNativeCanvasTarget",
-                "$packageName.FabricNativeCanvasTarget\$Companion",
-                "$packageName.FabricNativeCanvasPartialTarget",
-                "$packageName.FabricNativeCanvasPartialTarget\$Companion",
-                "$packageName.FabricNativeCanvasGpuFence",
-                "$packageName.FabricNativeCanvasDriver",
-                "$packageName.FabricNativeCanvasTextureProducer",
-                "$packageName.FabricNativeCanvasRendererProducer",
-                "$packageName.FabricNativeCanvasDestruction",
-                "$packageName.FabricNativeCanvasShaders",
-                "$packageName.FabricNativeCanvasSnapshotsKt",
-                "$packageName.FabricNativeCanvasDrawingKt",
-                "$packageName.FabricNativeCanvasTextureFactoryKt",
-                "$packageName.FabricNativeCanvasDestructionFactoryKt",
-                "$packageName.FabricNativeCanvasTargetDestructionKt",
-            ).associateWith { emptySet<String>() } +
-                mapOf("$packageName.FabricMinecraftSampledImageDevice\$Release" to setOf("values", "valueOf", "getEntries"))
-
-        // Mixin code executes inside Minecraft packages, so these opt-in bridges must remain Java-accessible.
-        private val canvasBridgeMethods =
-            mapOf(
-                "$packageName.FabricCanvasShutdownTransaction" to setOf("run"),
-                "$packageName.FabricCanvasGuiCleanup" to setOf("run", "closeMeshes"),
-                "$packageName.FabricCanvasGuiCleanup\$Cleanup" to setOf("run"),
-                "$packageName.FabricMinecraftCanvasGuiDiscard" to setOf("strataDiscardCanvasGui"),
-                "$packageName.FabricMinecraftCanvasGuiConsumption" to setOf("discardCanvasGui"),
-                "$packageName.FabricMinecraftCanvasHooks" to
-                    setOf("beginShutdown", "requireRunning", "afterGui", "afterFrame", "closeActiveScreen", "resetActiveInput"),
-                "$packageName.mixin.canvas.FabricMinecraftCanvasGameRendererAccess" to setOf("strataCanvasGuiRenderer"),
-                "$packageName.mixin.canvas.FabricMinecraftCanvasRenderStateAccess" to setOf("strataCanvasRenderState"),
-            )
-
-        // Select the native family from its upstream descriptor, never from Strata's observed public output or a version string.
-        private fun canvasFamilyMethods(): Map<String, Set<String>> {
-            val renderDescriptors =
-                GuiRenderer::class.java.declaredMethods
-                    .filter { method -> GuiMethod.decode(method.name) == GuiMethod.Render }
-                    .map { method -> method.parameterTypes.toList() }
-            val family = GuiConsumerFamily.entries.single { candidate -> candidate.parameterTypes in renderDescriptors }
-            return when (family) {
-                GuiConsumerFamily.ProjectedBuffer -> {
-                    mapOf(
-                        "$packageName.FabricNativeCanvasPipelineKt" to emptySet(),
-                        "$packageName.FabricMinecraftCompositionTextureAllocationKt" to emptySet(),
-                    )
-                }
-
-                GuiConsumerFamily.DirectSubmission -> {
-                    mapOf(
-                        "$packageName.FabricMinecraftPortablePipelineKt" to emptySet(),
-                        "$packageName.FabricVulkanDestroyedResource" to setOf("strataCanvasResourceDestroyed"),
-                        "$packageName.mixin.vulkan.FabricVulkanCanvasDeviceAccessor" to setOf("strataCanvasBackend"),
-                        "$packageName.mixin.vulkan.FabricVulkanCanvasEncoderAccessor" to setOf("strataCanvasDestructionQueue"),
-                    )
-                }
-            }
-        }
-
-        private val expectedPublicMethods =
-            mapOf(
-                "$packageName.mixin.lifecycle.FabricMinecraftNativeImageAccess" to setOf("strataPixels"),
-                "$packageName.FabricUiInput" to setOf("attackDelay", "beginScroll", "blocksLook", "endScroll", "getCapturing", "getDispatching", "getScrolling", "reset", "tick"),
-                "$packageName.FabricUiSessions" to setOf("acceptsPointer", "closeAll", "nativeScreen", "open", "prepareRender", "renderHuds", "resetInput", "tick", "visibleHuds"),
-                "$packageName.mixin.lifecycle.FabricUiKeyMappingAccess" to setOf("strataClicks", "strataDown", "strataKey"),
-                "$packageName.mixin.lifecycle.FabricUiMinecraftAccess" to setOf("strataHandleKeys", "strataMissTime"),
-                "$packageName.mixin.lifecycle.FabricUiMouseAccess" to setOf("strataScroll"),
-                "$packageName.FabricRemoteScreens" to setOf("getRegistry", "enqueue", "shutdown", "joined", "disconnected", "tick", "fail"),
-                "$packageName.FabricRemotePayloadTypes" to setOf("create"),
-                "$packageName.FabricRemotePayload" to setOf("bytes", "type"),
-                "$packageName.FabricRemoteTransport" to setOf("initialize", "send"),
-                "$packageName.FabricRemoteServerTransport" to setOf("initialize", "send"),
-                "$packageName.FabricHud" to setOf("initialize"),
-                "$packageName.StrataFabric" to setOf("onInitialize"),
-                "$packageName.Strata" to setOf("open", "capabilities", "execute", "register", "release", "listen"),
-                "$packageName.FabricServerUiServices" to setOf("enqueue", "containerChanged"),
-                "$packageName.FabricServerUiService" to emptySet(),
-                "$packageName.StrataUiEvent" to setOf("getPlayer"),
-                "$packageName.StrataUiEvent\$Ready" to setOf("copy", "getPlayer", "getCapabilities", "equals", "hashCode", "toString", "component1", "component2"),
-                "$packageName.StrataUiEvent\$Disconnected" to setOf("copy", "getPlayer", "getReason", "equals", "hashCode", "toString", "component1", "component2"),
-                "$packageName.StrataUiEvent\$Opened" to setOf("copy", "getPlayer", "getOwner", "getIdentity", "getSession", "getPresentation", "getCategory", "equals", "hashCode", "toString", "component1", "component2", "component3", "component4", "component5", "component6"),
-                "$packageName.StrataUiEvent\$PresentationChanged" to setOf("copy", "getPlayer", "getOwner", "getIdentity", "getSession", "getPrevious", "getPresentation", "getCategory", "equals", "hashCode", "toString", "component1", "component2", "component3", "component4", "component5", "component6", "component7"),
-                "$packageName.StrataUiEvent\$Closed" to setOf("copy", "getPlayer", "getOwner", "getIdentity", "getSession", "getPresentation", "getCategory", "getReason", "equals", "hashCode", "toString", "component1", "component2", "component3", "component4", "component5", "component6", "component7"),
-                "$packageName.FabricMinecraftFontCapabilitiesKt" to emptySet(),
-                "$packageName.FabricMinecraftFontContractKt" to emptySet(),
-                "$packageName.FabricMinecraftFontMappingKt" to emptySet(),
-                "$packageName.FabricMinecraftFontResourcesKt" to emptySet(),
-                "$packageName.FabricMinecraftFocusedInputMappingKt" to emptySet(),
-                "$packageName.FabricMinecraftGuiMetadataKt" to emptySet(),
-                "$packageName.FabricMinecraftGuiScaling" to emptySet(),
-                "$packageName.FabricMinecraftInputMappingKt" to emptySet(),
-                "$packageName.FabricMinecraftKeyMappingKt" to emptySet(),
-                "$packageName.FabricMinecraftPointerMappingKt" to emptySet(),
-                "$packageName.FabricMinecraftProfileWidgetsKt" to emptySet(),
-                "$packageName.FabricMinecraftProfileDecorationsKt" to emptySet(),
-                "$packageName.FabricMinecraftProfileLifecycleKt" to emptySet(),
-                "$packageName.FabricMinecraftSampledBoundsKt" to emptySet(),
-                "$packageName.mixin.FabricMinecraftResourceReloadMixin" to emptySet(),
-                "$packageName.FabricMinecraftWidgetImages" to emptySet(),
-                assetFacade to setOf("loadMinecraftUiImage", "loadCurrentMinecraftPlayerSkin"),
-                profileFacade to setOf("extractMinecraftUiProfile"),
-                "$packageName.FabricMinecraftScreen" to
-                    setOf(
-                        "added",
-                        "removed",
-                        "extractBackground",
-                        "extractRenderState",
-                        "isPauseScreen",
-                        "mouseMoved",
-                        "mouseClicked",
-                        "mouseReleased",
-                        "mouseDragged",
-                        "mouseScrolled",
-                        "keyPressed",
-                        "keyReleased",
-                        "charTyped",
-                        "preeditUpdated",
-                        "onClose",
-                        "close",
-                        "captureCanvasFrame",
-                    ),
-                "$packageName.FabricMinecraftScreen\$Companion" to emptySet(),
-                screenFacade to setOf("createMinecraftScreen"),
-                "$packageName.StrataFabricClient" to setOf("onInitializeClient"),
-                "$packageName.FabricMinecraftTextMappingKt" to emptySet(),
-            ) + canvasPublicMethods + canvasImplementationMethods + canvasBridgeMethods + canvasFamilyMethods()
     }
 }
