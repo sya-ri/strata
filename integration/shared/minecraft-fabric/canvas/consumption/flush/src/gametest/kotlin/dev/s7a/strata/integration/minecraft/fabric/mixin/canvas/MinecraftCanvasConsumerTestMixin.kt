@@ -21,6 +21,6 @@ private abstract class MinecraftCanvasConsumerTestMixin {
     private fun strataTestCanvasConsumption(original: Operation<Void?>) {
         val after = MinecraftCanvasConsumerTestHooks.beforeConsumer()
         original.call()
-        after?.run()
+        after?.invoke()
     }
 }

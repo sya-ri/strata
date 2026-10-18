@@ -112,13 +112,13 @@ internal class MinecraftNativePerformanceOptions : AutoCloseable {
 
     private fun boundaryJson(pacing: MinecraftNativePerformancePacing): JsonObject =
         JsonObject().apply {
-            addProperty("inactivity", pacing.inactivity().name)
-            addProperty("reason", pacing.reason().name)
-            addProperty("reason_available", pacing.reason() != MinecraftNativePerformancePacing.Reason.UNAVAILABLE)
-            addProperty("selected_limit", pacing.selectedLimit())
-            addProperty("applied_limit", pacing.appliedLimit())
-            addProperty("applied_limit_source", pacing.appliedLimitSource().name)
-            addProperty("iconified", pacing.iconified())
+            addProperty("inactivity", pacing.inactivity.name)
+            addProperty("reason", pacing.reason.name)
+            addProperty("reason_available", pacing.reason != MinecraftNativePerformancePacing.Reason.UNAVAILABLE)
+            addProperty("selected_limit", pacing.selectedLimit)
+            addProperty("applied_limit", pacing.appliedLimit)
+            addProperty("applied_limit_source", pacing.appliedLimitSource.name)
+            addProperty("iconified", pacing.iconified)
         }
 
     /**

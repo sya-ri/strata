@@ -165,6 +165,7 @@ private data class MinecraftFabricTarget(
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
+            "integration/shared/minecraft-fabric/canvas/pacing/common",
             tooltipReferenceSourcePath,
             "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
@@ -2149,6 +2150,12 @@ subprojects {
                         listOf(
                             "integration/shared/minecraft-fabric/runner/standalone-world-presets/src/gametest/kotlin",
                             "integration/shared/minecraft-fabric/canvas/terminal/gui-holder/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/gui-holder/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/component-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/registry-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/lookup-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin",
                         ).map(rootProject::file).filter(selectedGameTestRoots::contains)
                     },
                 )

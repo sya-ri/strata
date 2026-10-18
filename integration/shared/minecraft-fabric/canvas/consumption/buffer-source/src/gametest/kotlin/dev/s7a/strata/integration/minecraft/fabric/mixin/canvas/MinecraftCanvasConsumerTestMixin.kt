@@ -26,7 +26,7 @@ private abstract class MinecraftCanvasConsumerTestMixin {
     ) {
         val after = MinecraftCanvasConsumerTestHooks.beforeConsumer()
         original.call(projection)
-        after?.run()
+        after?.invoke()
         MinecraftCanvasCaptureTestHooks.afterConsumer()
     }
 }

@@ -32,14 +32,9 @@ fabricApi {
     }
 }
 
-extensions.configure<SourceSetContainer> {
-    named("gametest") {
-        java.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/registry-enchantments/src/gametest/java"))
-    }
-}
-
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/registry-enchantments/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location-factory/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/stream-codec/src/gametest/kotlin"))
