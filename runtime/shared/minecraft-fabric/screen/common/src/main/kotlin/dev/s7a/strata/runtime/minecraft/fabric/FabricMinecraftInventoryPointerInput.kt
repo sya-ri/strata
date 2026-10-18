@@ -27,29 +27,26 @@ internal abstract class FabricMinecraftInventoryPointerInput<M : Any, H : Any> :
      * Mouse metadata is absent only for pointer movement without a native button event.
      */
     class NativeInput<M : Any, H : Any>(
-        @JvmField val kind: InputKind,
-        @JvmField val mouse: M?,
-        @JvmField val button: Int,
-        @JvmField val shift: Boolean,
-        @JvmField val doubleClick: Boolean,
+        val kind: InputKind,
+        val mouse: M?,
+        val button: Int,
+        val shift: Boolean,
+        val doubleClick: Boolean,
     ) {
         /**
          * Target already delivered during this transaction, or null before native dispatch reaches a binding.
          */
-        @JvmField
         var delivered: H? = null
     }
 
     /**
      * Last eligible hover target, borrowed until its binding or platform is released.
      */
-    @JvmField
     var hovered: H? = null
 
     /**
      * Terminal platform cutoff observed by the owning adapter's usability checks.
      */
-    @JvmField
     var closed: Boolean = false
 
     private val quickCraftSlots: MutableMap<Slot, MutableSet<H>> = linkedMapOf()
@@ -105,7 +102,7 @@ internal abstract class FabricMinecraftInventoryPointerInput<M : Any, H : Any> :
         if (closed) return
         if (current.kind == InputKind.PRESS && current.delivered == null) missPointerPress()
         if (current.kind == InputKind.MOVE || current.kind == InputKind.DRAG) hovered = offeredHover
-        if (current.kind == InputKind.RELEASE && current.delivered == null) finishRelease(null, current.button, false, false)
+        if (current.kind == InputKind.RELEASE && current.delivered == null) finishRelease(null, current.button, shift = false, pick = false)
     }
 
     /**

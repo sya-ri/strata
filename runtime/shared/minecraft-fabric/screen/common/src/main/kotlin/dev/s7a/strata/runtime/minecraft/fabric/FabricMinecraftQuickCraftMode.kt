@@ -34,7 +34,6 @@ internal enum class FabricMinecraftQuickCraftMode(
         /**
          * Decodes primary and secondary protocol buttons before the adapter-validated creative pick binding, returning null for unsupported input.
          */
-        @JvmStatic
         fun fromButton(
             button: Int,
             creativePick: Boolean,

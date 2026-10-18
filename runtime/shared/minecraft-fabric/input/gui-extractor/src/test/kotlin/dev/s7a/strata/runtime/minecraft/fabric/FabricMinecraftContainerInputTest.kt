@@ -105,7 +105,7 @@ internal class FabricMinecraftContainerInputTest {
      */
     private fun bridgeWithFailingCompletion(failure: Throwable): FabricMinecraftInventoryBridge {
         val type = FabricMinecraftInventoryBridge::class.java
-        val constructor = type.declaredConstructors.single().apply { isAccessible = true }
+        val constructor = type.declaredConstructors.single { it.isSynthetic.not() }.apply { isAccessible = true }
         val bridge = constructor.newInstance(*arrayOfNulls<Any>(constructor.parameterCount)) as FabricMinecraftInventoryBridge
         fixtureField(type, "quickCrafting").setBoolean(bridge, true)
         val slots =
@@ -130,5 +130,5 @@ internal class FabricMinecraftContainerInputTest {
 
     private fun mouse(button: Int = InputConstants.MOUSE_BUTTON_LEFT): MouseButtonEvent = MouseButtonEvent(10.0, 20.0, MouseButtonInfo(button, 0))
 
-    private fun containerButton(button: Int): Int = FabricMinecraftInventoryBridge.containerClickButton(mouse(button))
+    private fun containerButton(button: Int): Int = FabricMinecraftInventoryNative.containerButton(mouse(button))
 }

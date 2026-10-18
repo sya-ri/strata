@@ -14,13 +14,11 @@ internal abstract class FabricMinecraftInputTransaction<I : Any, H : Any> {
     /**
      * Native metadata borrowed until host dispatch and completion both finish.
      */
-    @JvmField
     var input: I? = null
 
     /**
      * First eligible hover binding offered by the current host dispatch.
      */
-    @JvmField
     var offeredHover: H? = null
 
     /**
