@@ -26,7 +26,7 @@ internal fun mapMinecraftText(text: UiText): Component =
 
 private fun mapFontMinecraftText(text: UiText.WithFont): Component {
     val component = mapMinecraftText(text.text).copy()
-    return component.setStyle(component.getStyle().applyTo(mapMinecraftFont(text.font)))
+    return component.setStyle(component.style.applyTo(mapMinecraftFont(text.font)))
 }
 
 private fun mapTranslatedMinecraftText(text: UiText.Translated): Component {

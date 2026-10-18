@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * One entry's current transformed paint, keyed by immutable local-list identities, transform and measured size.
@@ -14,7 +13,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * @property afterChildren the matching clip end followed by local overlays.
  * @property rootOverlays root-coordinate overlays appended in the ordinary post-child order.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class RetainedPaintCommands(
     entry: RetainedEntry,
     val beforeChildren: List<DrawCommand>,

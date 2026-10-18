@@ -382,7 +382,6 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftInputMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftKeyMappingKt" to emptySet(),
                 "$packageName.FabricMinecraftPointerMappingKt" to emptySet(),
-                "$packageName.FabricMinecraftNativeImageBridgeKt" to emptySet(),
                 "$packageName.FabricMinecraftProfileWidgetsKt" to emptySet(),
                 "$packageName.FabricMinecraftProfileDecorationsKt" to emptySet(),
                 "$packageName.FabricMinecraftProfileLifecycleKt" to emptySet(),

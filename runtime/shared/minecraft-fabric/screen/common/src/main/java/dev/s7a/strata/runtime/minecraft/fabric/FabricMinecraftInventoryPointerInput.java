@@ -99,7 +99,7 @@ abstract class FabricMinecraftInventoryPointerInput<I, H> extends FabricMinecraf
         return InputResult.Consumed;
     }
 
-    /** Completes a supported release, preserving native pick-item behavior with an occupied cursor. */
+    /** Handles native slot releases, including cancellation by a different button during an active gesture. */
     final InputResult releaseInput(H binding, int button, boolean shift, boolean pick) {
         if (FabricMinecraftQuickCraftMode.fromButton(button, false) == null
                 && pick == false && quickCrafting == false && skipNextRelease == false) return InputResult.Ignored;

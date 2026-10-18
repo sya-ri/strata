@@ -161,7 +161,7 @@ public class FabricMinecraftScreen private constructor(
                 frameTime,
                 minecraftClient.window.guiScale,
                 inventory,
-                FabricNativeCanvasDriver::draw,
+                ::drawFabricNativeCanvas,
             ) { commands, dispatch ->
                 presentation.present(graphics, commands, frame.size, dispatch::render)
             }
@@ -590,7 +590,7 @@ public fun createMinecraftScreen(
 ): FabricMinecraftScreen {
     val minecraft = Minecraft.getInstance()
     check(minecraft.isSameThread) { "Fabric Minecraft screens must be created on the client thread." }
-    val inventory = FabricMinecraftInventoryBridge.create(minecraft)
+    val inventory = FabricMinecraftInventoryBridge.create(minecraft, ::lookupFabricMinecraftSkin)
     val host =
         try {
             createMinecraftUiHost(definition, profile, inventory, LwjglMinecraftFontBackendFactory, eventSession)

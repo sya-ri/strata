@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.docs
 
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException
 import java.nio.charset.CodingErrorAction
@@ -48,9 +49,13 @@ internal object ShowcaseReadme {
     ): ByteArray {
         val anchor = anchors(source)
         validateRegion(region)
-        val prefix = source.copyOfRange(0, anchor.first + README_BEGIN_BYTES.size)
-        val suffix = source.copyOfRange(anchor.second, source.size)
-        return prefix + byteArrayOf(LF) + region + suffix
+        return ByteArrayOutputStream()
+            .apply {
+                write(source, 0, anchor.first + README_BEGIN_BYTES.size)
+                write(LF.toInt())
+                write(region)
+                write(source, anchor.second, source.size - anchor.second)
+            }.toByteArray()
     }
 
     private fun anchors(source: ByteArray): Pair<Int, Int> {

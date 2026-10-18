@@ -2,12 +2,10 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Expands downstream local phases and propagates measurement work to ancestors.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class DirtyTracker {
     private var currentRevision: Long = 0L
 

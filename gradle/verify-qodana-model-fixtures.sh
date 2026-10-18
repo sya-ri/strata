@@ -123,7 +123,7 @@ for version in "${fixture_versions[@]}"; do
   printf '' > "$integration_directory/build.gradle.kts"
 
   runtime_roots=(
-    'Source;src/font/kotlin'
+    'Source;../shared/minecraft-fabric/resources/font-fixture/src/main/kotlin'
     'Resource;src/main/resources'
     'Source;../shared/minecraft-fabric/canvas/common/src/main/kotlin'
     'Source;../shared/minecraft-fabric/canvas/fixture-probe/src/main/kotlin'
@@ -240,7 +240,6 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
   };
   def runtimeRoots($version):
     [
-      ownedRoot("runtime"; $version; "Source"; "src/font/kotlin"),
       ownedRoot("runtime"; $version; "Resource"; "src/main/resources")
     ]
     + if $version == "1.2" then [ownedRoot("runtime"; $version; "Source"; "src/main/kotlin")] else [] end
@@ -253,6 +252,7 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
     + if $version == "9" then [ownedRoot("integration"; $version; "TestSource"; "src/gametest26/java")] else [] end;
   def runtimeLinkedRoots($version):
     [
+      {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/resources/font-fixture/src/main/kotlin"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/canvas/fixture-probe/src/main/kotlin"},
       {type: "Source", path: "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin"},
@@ -1206,16 +1206,16 @@ grep -Fq 'sourceFolder must be in the exact direct module/NewModuleRootManager/c
 }
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
-sed -i '/src\/font\/kotlin/d' "$fixture_runtime_iml"
+sed -i '/resources\/font-fixture\/src\/main\/kotlin/d' "$fixture_runtime_iml"
 portable_jq '
   (
     .modules[]
     | select(.name == "strata.runtime.minecraft-fabric-1_2")
     | .contentEntries[0].sourceFolders
-  ) |= map(select(.path != "file://$PROJECT_DIR$/runtime/minecraft-fabric-1.2/src/font/kotlin"))
+  ) |= map(select(.path != "file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/resources/font-fixture/src/main/kotlin"))
 ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
 assert_project_rejected 'paired IDEA and Qodana removal of a required runtime font Source' "$fixture_root/invalid.json"
-grep -Fq 'must contain exactly one owned font Source: version=1.2 count=0' "$fixture_root/invalid.log" || {
+grep -Fq 'must contain exactly one selected font Source: version=1.2 count=0' "$fixture_root/invalid.log" || {
   echo 'The paired removal of a required runtime font Source was rejected for the wrong reason.' >&2
   exit 1
 }
@@ -1482,7 +1482,7 @@ xml = xml.replace(
     '?>\n<!DOCTYPE module [<!ENTITY strataSource "src">]>',
     1,
 )
-xml = xml.replace("src/font/kotlin", "&strataSource;/font/kotlin", 1)
+xml = xml.replace("src/main/kotlin", "&strataSource;/main/kotlin", 1)
 iml.write_bytes(xml.encode(encoding))
 PY
   assert_project_rejected "a BOM-less $utf_16_encoding IDEA module with a DOCTYPE and entity reference"

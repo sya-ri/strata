@@ -15,7 +15,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * The bounded resource list belongs only to this target and no global retention map is created.
  * Unknown native resource implementations fail during probing so their permits cannot be released without proof.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
 internal fun trackCanvasDestruction(target: RenderTarget): FabricNativeCanvasDestruction {
     val resources = listOfNotNull(target.colorTexture, target.depthTexture, target.colorTextureView, target.depthTextureView)
@@ -31,7 +30,6 @@ internal fun trackCanvasDestruction(target: RenderTarget): FabricNativeCanvasDes
  * The later host destruction queue remains safe because successful native destruction is acknowledged and its repeated dispatch is inert.
  * Unknown native implementations fail during probing so an unproven release cannot return the generation's permit.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
 internal fun trackPortableDestruction(resources: List<AutoCloseable>): FabricNativeCanvasDestruction = FabricNativeCanvasResourceDestruction(resources.toList())
 

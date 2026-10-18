@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Verifies bounded fractional-source admission independently of native textures. */
+/**
+ * Verifies bounded fractional-source admission independently of native textures.
+ */
 internal class FabricMinecraftSourceSamplingTest {
     private val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x804466AA.toInt(), -1))
     private val crop = DrawCommand.SampledImage(image, FloatRect(0.25f, 0.25f, 1.75f, 1.75f), FloatRect(0f, 0f, 5f, 5f), alphaCutoff = 0f)

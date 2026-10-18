@@ -19,7 +19,7 @@ import net.minecraft.client.gui.GuiGraphics
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
-internal fun FabricNativeCanvasDriver.draw(
+internal fun drawFabricNativeCanvas(
     graphics: GuiGraphics,
     target: NativeCanvasTarget,
     bounds: IntRect,

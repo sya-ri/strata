@@ -33,7 +33,7 @@ import java.io.IOException
 @OptIn(InternalStrataRuntimeApi::class)
 public fun extractMinecraftUiProfile(): MinecraftUiProfile {
     val minecraft = Minecraft.getInstance()
-    check(minecraft.isSameThread()) { "Minecraft UI profiles must be extracted on the client thread." }
+    check(minecraft.isSameThread) { "Minecraft UI profiles must be extracted on the client thread." }
     return extractMinecraftUiProfile(minecraft.resourceManager, fabricMinecraftFontCompatibility(), fabricMinecraftFontOptions(minecraft))
 }
 
@@ -163,7 +163,7 @@ internal fun readImage(
     val pixels =
         resource.open().use { stream ->
             NativeImage.read(stream).use { image ->
-                require(IntSize(image.getWidth(), image.getHeight()) == expectedSize) {
+                require(IntSize(image.width, image.height) == expectedSize) {
                     "Minecraft resource $path has an unexpected size."
                 }
                 copyFabricMinecraftArgbPixels(image)
