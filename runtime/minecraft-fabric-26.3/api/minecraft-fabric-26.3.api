@@ -12,7 +12,8 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricCanvasShutdownT
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricHud {
-	public static fun initialize ()V
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricHud;
+	public static final fun initialize ()V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftAssets {
