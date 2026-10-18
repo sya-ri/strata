@@ -103,12 +103,11 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
             requireUsable();
             checkState(observer == null, "Minecraft inventory Slot already has a retained observer.");
             observer = callback;
-            return () -> {
-                requireOwnerThread();
+            return FabricMinecraftOwnerSubscriptionKt.minecraftOwnerSubscription(ownerThread, () -> {
                 if (observer == callback) {
                     observer = null;
                 }
-            };
+            });
         }
 
         @Override
@@ -229,12 +228,11 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPoint
             requireUsable();
             checkState(observer == null, "Minecraft player skin already has a retained observer.");
             observer = callback;
-            return () -> {
-                requireOwnerThread();
+            return FabricMinecraftOwnerSubscriptionKt.minecraftOwnerSubscription(ownerThread, () -> {
                 if (observer == callback) {
                     observer = null;
                 }
-            };
+            });
         }
 
         @Override
