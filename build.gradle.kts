@@ -121,7 +121,7 @@ private data class MinecraftFabricTarget(
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
     val canvasTestExtraction: CanvasTestExtraction =
         when (canvasFamily) {
-            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> CanvasTestExtraction.Flush
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> CanvasTestExtraction.Flush
             CanvasFamily.Blaze3dTextureViews -> CanvasTestExtraction.Buffered
             CanvasFamily.Blaze3dSamplers -> CanvasTestExtraction.BufferedPointer
             CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> CanvasTestExtraction.GuiExtractor
@@ -158,7 +158,7 @@ private data class MinecraftFabricTarget(
     /** Independent vanilla carried-item context selected by the verified native framebuffer API. */
     val tooltipReferenceSourcePath: String =
         when (canvasFamily) {
-            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics"
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics"
             CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/stratum-gui-graphics"
             CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor"
         }
@@ -171,7 +171,7 @@ private data class MinecraftFabricTarget(
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
             "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
             when (canvasFamily) {
-                CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
+                CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
                 CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers, CanvasFamily.Blaze3dGuiExtractor -> "integration/shared/minecraft-fabric/canvas/consumption/buffer-source"
                 CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/consumption/vertex-buffer"
             },
@@ -193,8 +193,9 @@ private data class MinecraftFabricTarget(
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
     enum class CanvasFamily(val testSource: String, vararg val sourceRoots: String) {
-        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        OpenGlBuffers("opengl/common", "opengl/common", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlNonReloadableTextures("opengl/common", "opengl/common", "opengl/non-reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         Blaze3dDirectTextures("blaze3d/direct-textures", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         Blaze3dTextureViews("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
         Blaze3dSamplers("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
@@ -553,7 +554,7 @@ private val minecraftFabricTargets =
             nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             hudApi = MinecraftFabricTarget.HudApi.Layer,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlNonReloadableTextures,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
@@ -1074,6 +1075,7 @@ val sharedSourceMarkdown = providers.provider {
                 "FabricNativeCanvasDriver",
                 "MinecraftCanvasContext",
                 "FabricNativeCanvasTextureFactory",
+                "FabricBorrowedTexture",
                 "FabricNativeCanvasTargetFactory",
                 "FabricMinecraftCompositionTextureAllocation",
             ),

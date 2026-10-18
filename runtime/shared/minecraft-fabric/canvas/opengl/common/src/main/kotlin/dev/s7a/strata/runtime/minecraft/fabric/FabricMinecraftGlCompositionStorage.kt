@@ -31,7 +31,7 @@ internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
      * Non-owning texture-manager view; reload and unregister cannot delete this generation's storage.
      */
     @get:JvmSynthetic
-    internal val texture: AbstractTexture = FabricPortableBorrowedTexture(::textureId)
+    internal val texture: AbstractTexture = FabricBorrowedTexture(::textureId)
 
     /**
      * Initializes and records the whole ordered tile while preserving all four texture units and drawing state.
