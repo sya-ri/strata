@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.lang.reflect.Field
 
 /**
  * Checks container button mapping and input transaction cleanup without loading a client.
@@ -106,14 +107,26 @@ internal class FabricMinecraftContainerInputTest {
         val type = FabricMinecraftInventoryBridge::class.java
         val constructor = type.declaredConstructors.single().apply { isAccessible = true }
         val bridge = constructor.newInstance(*arrayOfNulls<Any>(constructor.parameterCount)) as FabricMinecraftInventoryBridge
-        type.getDeclaredField("quickCrafting").apply { isAccessible = true }.setBoolean(bridge, true)
+        fixtureField(type, "quickCrafting").setBoolean(bridge, true)
         val slots =
-            object : HashSet<Any>() {
+            object : HashMap<Any, Any>() {
                 override fun isEmpty(): Boolean = throw failure
             }
-        type.getDeclaredField("quickCraftSlots").apply { isAccessible = true }.set(bridge, slots)
+        fixtureField(type, "quickCraftSlots").set(bridge, slots)
         return bridge
     }
+
+    /**
+     * Finds fixture-owned fault injection points after input ownership moves into the common controller.
+     */
+    private fun fixtureField(
+        type: Class<*>,
+        name: String,
+    ): Field =
+        generateSequence(type) { current -> current.superclass }
+            .flatMap { current -> current.declaredFields.asSequence() }
+            .first { candidate -> candidate.name == name }
+            .apply { isAccessible = true }
 
     private fun mouse(button: Int = InputConstants.MOUSE_BUTTON_LEFT): MouseButtonEvent = MouseButtonEvent(10.0, 20.0, MouseButtonInfo(button, 0))
 

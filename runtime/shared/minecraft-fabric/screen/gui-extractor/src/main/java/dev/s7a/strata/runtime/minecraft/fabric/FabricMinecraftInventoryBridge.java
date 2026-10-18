@@ -7,7 +7,6 @@ import dev.s7a.strata.component.PlayerSkinSource;
 import dev.s7a.strata.component.SlotBinding;
 import dev.s7a.strata.geometry.IntSize;
 import dev.s7a.strata.input.InputResult;
-import dev.s7a.strata.input.PointerButton;
 import dev.s7a.strata.input.PointerEvent;
 import dev.s7a.strata.render.DrawImage;
 import dev.s7a.strata.render.DrawImages;
@@ -51,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>The bridge is package-private, owner-thread confined, and owned by one common host. It polls copied ItemStack snapshots before frames and delegates every mutation through {@code MultiPlayerGameMode.handleContainerInput}; it never writes Inventory storage directly.</p>
  */
-final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransaction<FabricMinecraftInventoryBridge.NativeInput, FabricMinecraftInventoryBridge.Binding> implements MinecraftUiPlatform, MinecraftPlatformCommandRenderer<GuiGraphicsExtractor> {
+final class FabricMinecraftInventoryBridge extends FabricMinecraftInventoryPointerInput<FabricMinecraftInventoryBridge.NativeInput, FabricMinecraftInventoryBridge.Binding> implements MinecraftUiPlatform, MinecraftPlatformCommandRenderer<GuiGraphicsExtractor> {
     private final Thread ownerThread = Thread.currentThread();
     /** Whether any retained native Slot depends on the current container generation. */
     boolean hasBindings() {
@@ -67,16 +66,9 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
 
     private final Set<Binding> bindings = new LinkedHashSet<>();
     private final Set<SkinBinding> skinBindings = new LinkedHashSet<>();
-    private final Set<Binding> quickCraftSlots = new LinkedHashSet<>();
     private Minecraft minecraft;
     private Binding hovered;
     private boolean closed;
-    private boolean quickCrafting;
-    private boolean skipNextRelease;
-    private int quickCraftButton;
-    private FabricMinecraftQuickCraftMode quickCraftMode = FabricMinecraftQuickCraftMode.DISTRIBUTE;
-    private boolean pendingDoubleClick;
-    private ItemStack lastQuickMoved = ItemStack.EMPTY;
     private int refreshBatchDepth;
     private boolean refreshedInBatch;
 
@@ -158,14 +150,14 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
                 return InputResult.Ignored;
             }
             current.delivered = this;
-            if (event instanceof PointerEvent.Press press) {
-                return handlePress(this, press);
+            if (event instanceof PointerEvent.Press) {
+                return handlePress(this);
             }
             if (event instanceof PointerEvent.Drag) {
                 return handleDrag(this);
             }
-            if (event instanceof PointerEvent.Release release) {
-                return handleRelease(this, release);
+            if (event instanceof PointerEvent.Release) {
+                return handleRelease(this);
             }
             return InputResult.Ignored;
         }
@@ -179,7 +171,7 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
             released = true;
             releaseState();
             bindings.remove(this);
-            quickCraftSlots.remove(this);
+            releasePointerTarget(this);
             if (hovered == this) {
                 hovered = null;
             }
@@ -549,11 +541,10 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
             return;
         }
         closed = true;
+        releasePointerState();
         input = null;
         hovered = null;
         offeredHover = null;
-        quickCraftSlots.clear();
-        lastQuickMoved = ItemStack.EMPTY;
         for (Binding binding : bindings) {
             binding.releaseFromPlatform();
         }
@@ -655,23 +646,23 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
         LocalPlayer player = requirePlayer();
         if (activeMenu().getCarried().isEmpty()) {
             if (client.options.keySwapOffhand.matches(event)) {
-                click(target, 40, ContainerInput.SWAP);
+                click(target, 40, FabricMinecraftInventoryAction.SWAP);
                 return true;
             }
             for (int index = 0; index < client.options.keyHotbarSlots.length; index++) {
                 if (client.options.keyHotbarSlots[index].matches(event)) {
-                    click(target, index, ContainerInput.SWAP);
+                    click(target, index, FabricMinecraftInventoryAction.SWAP);
                     return true;
                 }
             }
         }
         Slot slot = target.resolveSlot();
         if (slot.hasItem() && client.options.keyPickItem.matches(event) && player.hasInfiniteMaterials()) {
-            click(target, 0, ContainerInput.CLONE);
+            click(target, 0, FabricMinecraftInventoryAction.CLONE);
             return true;
         }
         if (slot.hasItem() && client.options.keyDrop.matches(event)) {
-            click(target, event.hasControlDown() ? 1 : 0, ContainerInput.THROW);
+            click(target, event.hasControlDown() ? 1 : 0, FabricMinecraftInventoryAction.THROW);
             return true;
         }
         return false;
@@ -747,154 +738,50 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
     @Override
     void finishInput(NativeInput current) {
         if (closed) return;
+        if (current.kind == InputKind.PRESS && current.delivered == null) {
+            missPointerPress();
+        }
         if (current.kind == InputKind.MOVE || current.kind == InputKind.DRAG) {
             hovered = offeredHover;
         }
         if (current.kind == InputKind.RELEASE && current.delivered == null) {
-            finishRelease(null, current.mouse);
+            finishRelease(null, containerClickButton(current.mouse), false, false);
         }
     }
 
-    private InputResult handlePress(Binding binding, PointerEvent.Press event) {
+    private InputResult handlePress(Binding binding) {
         NativeInput current = requireInput(InputKind.PRESS);
         MouseButtonEvent mouse = current.mouse;
-        int rawButton = containerClickButton(mouse);
-        pendingDoubleClick = current.doubleClick && rawButton == 0;
-        if (checkHotbarMouse(binding, mouse)) {
-            skipNextRelease = true;
-            return InputResult.Consumed;
-        }
         boolean creativePick = isPickMouse(mouse) && requirePlayer().hasInfiniteMaterials();
-        if (event.getButton() != PointerButton.Primary.INSTANCE
-                && event.getButton() != PointerButton.Secondary.INSTANCE
-                && creativePick == false) {
-            return InputResult.Ignored;
-        }
-        ItemStack carried = activeMenu().getCarried();
-        if (carried.isEmpty()) {
-            ContainerInput action = mouse.hasShiftDown() ? ContainerInput.QUICK_MOVE : ContainerInput.PICKUP;
-            if (action == ContainerInput.QUICK_MOVE) {
-                ItemStack item = binding.resolveSlot().getItem();
-                lastQuickMoved = item.isEmpty() ? ItemStack.EMPTY : item.copy();
-            }
-            click(binding, rawButton, action);
-            skipNextRelease = true;
-            return InputResult.Consumed;
-        }
-        quickCraftButton = rawButton;
-        quickCraftSlots.clear();
-        FabricMinecraftQuickCraftMode mode = FabricMinecraftQuickCraftMode.fromButton(rawButton, creativePick);
-        if (mode == null) {
-            quickCrafting = false;
-            return InputResult.Ignored;
-        }
-        quickCraftMode = mode;
-        quickCrafting = true;
-        return InputResult.Consumed;
+        return pressInput(binding, containerClickButton(mouse), current.doubleClick, mouse.hasShiftDown(), creativePick);
     }
 
     private InputResult handleDrag(Binding binding) {
         requireInput(InputKind.DRAG);
-        if (quickCrafting == false) {
-            return InputResult.Ignored;
-        }
-        Slot slot = binding.resolveSlot();
-        ItemStack carried = activeMenu().getCarried();
-        if (carried.isEmpty() == false
-                && (quickCraftSlots.size() < carried.getCount() || quickCraftMode == FabricMinecraftQuickCraftMode.FILL)
-                && AbstractContainerMenu.canItemQuickReplace(slot, carried, true)
-                && slot.mayPlace(carried)
-                && activeMenu().canDragTo(slot)) {
-            quickCraftSlots.add(binding);
-        }
-        return InputResult.Consumed;
+        return dragInput(binding);
     }
 
-    private InputResult handleRelease(Binding binding, PointerEvent.Release event) {
-        NativeInput current = requireInput(InputKind.RELEASE);
-        if (event.getButton() != PointerButton.Primary.INSTANCE
-                && event.getButton() != PointerButton.Secondary.INSTANCE
-                && isPickMouse(current.mouse) == false) {
-            return InputResult.Ignored;
-        }
-        finishRelease(binding, current.mouse);
-        return InputResult.Consumed;
+    private InputResult handleRelease(Binding binding) {
+        MouseButtonEvent mouse = requireInput(InputKind.RELEASE).mouse;
+        return releaseInput(binding, containerClickButton(mouse), mouse.hasShiftDown(), isPickMouse(mouse));
     }
 
-    private void finishRelease(Binding binding, MouseButtonEvent mouse) {
-        int rawButton = containerClickButton(mouse);
-        if (pendingDoubleClick && binding != null && rawButton == 0) {
-            if (mouse.hasShiftDown() && lastQuickMoved.isEmpty() == false) {
-                quickMoveMatching(binding, rawButton);
-            } else {
-                click(binding, rawButton, ContainerInput.PICKUP_ALL);
-            }
-            pendingDoubleClick = false;
-            resetQuickCraft();
-            return;
-        }
-        if (quickCrafting && quickCraftButton != rawButton) {
-            resetQuickCraft();
-            skipNextRelease = true;
-            return;
-        }
-        if (skipNextRelease) {
-            skipNextRelease = false;
-            resetQuickCraft();
-            return;
-        }
-        if (quickCrafting && quickCraftSlots.isEmpty() == false) {
-            sendQuickCraft();
-        } else if (binding != null && activeMenu().getCarried().isEmpty() == false) {
-            if (isPickMouse(mouse)) {
-                click(binding, rawButton, ContainerInput.CLONE);
-            } else {
-                click(binding, rawButton, mouse.hasShiftDown() ? ContainerInput.QUICK_MOVE : ContainerInput.PICKUP);
-            }
-        }
-        resetQuickCraft();
-    }
-
-    private void sendQuickCraft() {
-        clickRaw(-999, AbstractContainerMenu.getQuickcraftMask(0, quickCraftMode.nativeCode()), ContainerInput.QUICK_CRAFT);
-        for (Binding binding : quickCraftSlots) {
-            click(binding, AbstractContainerMenu.getQuickcraftMask(1, quickCraftMode.nativeCode()), ContainerInput.QUICK_CRAFT);
-        }
-        clickRaw(-999, AbstractContainerMenu.getQuickcraftMask(2, quickCraftMode.nativeCode()), ContainerInput.QUICK_CRAFT);
-    }
-
-    private void quickMoveMatching(Binding binding, int button) {
-        Slot reference = binding.resolveSlot();
-        LocalPlayer player = requirePlayer();
-        for (Slot slot : activeMenu().slots) {
-            if (slot.mayPickup(player)
-                    && slot.hasItem()
-                    && slot.container == reference.container
-                    && AbstractContainerMenu.canItemQuickReplace(slot, lastQuickMoved, true)) {
-                clickRaw(slot.index, button, ContainerInput.QUICK_MOVE);
-            }
-        }
-    }
-
-    private boolean checkHotbarMouse(Binding binding, MouseButtonEvent event) {
+    @Override
+    boolean checkHotbarMouse(Binding binding) {
+        MouseButtonEvent event = requireInput(InputKind.PRESS).mouse;
         Minecraft client = requireMinecraft();
-        LocalPlayer player = requirePlayer();
         if (activeMenu().getCarried().isEmpty() == false) {
             return false;
         }
         if (client.options.keySwapOffhand.matchesMouse(event)) {
-            click(binding, 40, ContainerInput.SWAP);
+            click(binding, 40, FabricMinecraftInventoryAction.SWAP);
             return true;
         }
         for (int index = 0; index < client.options.keyHotbarSlots.length; index++) {
             if (client.options.keyHotbarSlots[index].matchesMouse(event)) {
-                click(binding, index, ContainerInput.SWAP);
+                click(binding, index, FabricMinecraftInventoryAction.SWAP);
                 return true;
             }
-        }
-        if (isPickMouse(event) && player.hasInfiniteMaterials()) {
-            click(binding, containerClickButton(event), ContainerInput.CLONE);
-            return true;
         }
         return false;
     }
@@ -914,20 +801,26 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
         };
     }
 
-    private void click(Binding binding, int button, ContainerInput action) {
-        clickRaw(binding.resolveSlot().index, button, action);
+    @Override
+    Slot resolveSlot(Binding binding) {
+        return binding.resolveSlot();
     }
 
-    private void clickRaw(int slot, int button, ContainerInput action) {
+    @Override
+    void clickRaw(int slot, int button, FabricMinecraftInventoryAction action) {
         Minecraft client = requireMinecraft();
         LocalPlayer player = requirePlayer();
         checkState(client.gameMode != null, "Minecraft inventory input requires an active game mode.");
-        client.gameMode.handleContainerInput(activeMenu().containerId, slot, button, action, player);
-    }
-
-    private void resetQuickCraft() {
-        quickCrafting = false;
-        quickCraftSlots.clear();
+        ContainerInput nativeAction = switch (action) {
+            case PICKUP -> ContainerInput.PICKUP;
+            case QUICK_MOVE -> ContainerInput.QUICK_MOVE;
+            case SWAP -> ContainerInput.SWAP;
+            case CLONE -> ContainerInput.CLONE;
+            case THROW -> ContainerInput.THROW;
+            case QUICK_CRAFT -> ContainerInput.QUICK_CRAFT;
+            case PICKUP_ALL -> ContainerInput.PICKUP_ALL;
+        };
+        client.gameMode.handleContainerInput(activeMenu().containerId, slot, button, nativeAction, player);
     }
 
     private NativeInput requireInput(InputKind expected) {
@@ -936,12 +829,14 @@ final class FabricMinecraftInventoryBridge extends FabricMinecraftInputTransacti
         return current;
     }
 
-    private LocalPlayer requirePlayer() {
+    @Override
+    LocalPlayer requirePlayer() {
         Minecraft client = requireMinecraft();
         return Objects.requireNonNull(client.player, "Minecraft inventory Slots require an active player.");
     }
 
-    private AbstractContainerMenu activeMenu() {
+    @Override
+    AbstractContainerMenu activeMenu() {
         AbstractContainerMenu menu = requirePlayer().containerMenu;
         if (boundContainer != null && boundContainer != menu) {
             throw new RemoteProtocolException(RemoteFailure.ContainerChanged, "UI Slot container generation changed.", null);
