@@ -365,7 +365,9 @@ public class FabricMinecraftScreen private constructor(
      */
     override fun charTyped(event: MinecraftCharacterEvent): Boolean {
         requireClientThread()
-        val mapped = mapMinecraftCharacter(event.codepoint()) ?: return false
+        val codePoint = event.codepoint()
+        if (Character.isValidCodePoint(codePoint).not() || codePoint in 0xD800..0xDFFF) return false
+        val mapped = TextInputEvent.Character(codePoint)
         return dispatchFocused(TextInput(mapped)) { super.charTyped(event) }
     }
 
