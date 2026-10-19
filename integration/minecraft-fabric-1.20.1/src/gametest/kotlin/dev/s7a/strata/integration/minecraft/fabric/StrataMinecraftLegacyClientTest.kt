@@ -11,7 +11,9 @@ import kotlin.system.exitProcess
  * The entrypoint owns one daemon test thread, stops Minecraft after success, and converts assertion or runner failures into a client crash so Gradle observes a failing process.
  */
 public class StrataMinecraftLegacyClientTest : ClientModInitializer {
-    /** Starts the standalone loaded-client test after Fabric initializes the client. */
+    /**
+     * Starts the standalone loaded-client test after Fabric initializes the client.
+     */
     override fun onInitializeClient() {
         val context = StandaloneMinecraftLoadedTestContext()
         Thread(
