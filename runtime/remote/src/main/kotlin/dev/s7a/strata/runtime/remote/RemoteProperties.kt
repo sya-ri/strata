@@ -10,6 +10,8 @@ import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.TabSelectionIndicator
 import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextInputAppearance
+import dev.s7a.strata.component.TextShadow
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -56,6 +58,41 @@ internal object RemoteProperties {
      * Encodes a closed enum at the standard wire-schema boundary.
      */
     fun encode(value: Enum<*>): ProjectionValue = encode(value.ordinal)
+
+    /**
+     * Encodes independent foreground, optional disabled foreground, and shadow policy.
+     */
+    fun encode(value: TextStyle): ProjectionValue =
+        record(
+            encode(value.color.value),
+            optional(value.disabledColor) { encode(it.value) },
+            when (val shadow = value.shadow) {
+                null -> ProjectionValue.Absent
+                TextShadow.Automatic -> record(encode(ShadowKind.Automatic))
+                is TextShadow.Color -> record(encode(ShadowKind.Color), encode(shadow.color.value))
+            },
+        )
+
+    /**
+     * Validates the complete style before client resources or retained state can change.
+     */
+    fun textStyle(value: ProjectionValue): TextStyle =
+        read(value) {
+            val color = ArgbColor(int())
+            val disabledColor = optional<ArgbColor>(value()) { field -> read(record(field)) { ArgbColor(int()) } }
+            val shadow =
+                optional<TextShadow>(value()) { field ->
+                    read(field) {
+                        when (enumeration<ShadowKind>(this)) {
+                            ShadowKind.Automatic -> TextShadow.Automatic
+                            ShadowKind.Color -> TextShadow.Color(ArgbColor(int()))
+                        }
+                    }
+                }
+            TextStyle(color, shadow, disabledColor)
+        }
+
+    private enum class ShadowKind { Automatic, Color }
 
     /**
      * Encodes the sealed nine-slice mapping policy.

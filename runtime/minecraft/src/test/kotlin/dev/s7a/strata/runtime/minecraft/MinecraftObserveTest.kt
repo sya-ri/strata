@@ -107,8 +107,8 @@ internal class MinecraftObserveTest {
         MinecraftTextAreaFixture().use { fixture ->
             val definition =
                 ScreenDefinition("editor") {
-                    Observe(source) { normal ->
-                        element(fixture.description(state, size, style = if (normal) TextStyle.Normal else TextStyle.TextField))
+                    Observe(source) { shadowless ->
+                        element(fixture.description(state, size, style = if (shadowless) TextStyle.Inactive.copy(shadow = null) else TextStyle.TextField))
                     }
                 }
             createMinecraftUiHost(definition, MinecraftProfileFixture.create()).use { host ->

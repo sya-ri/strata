@@ -43,7 +43,7 @@ internal object MinecraftFontParityFixture {
     /**
      * Logical viewport large enough for Minecraft to retain actual GUI scales one, two, and three.
      */
-    val viewport: IntSize = IntSize(320, 240)
+    val viewport: IntSize = IntSize(320, 256)
 
     /**
      * Opaque background exposes color and coverage blending independently of framebuffer transparency.
@@ -69,7 +69,11 @@ internal object MinecraftFontParityFixture {
                 listOf(TextStyle.Normal, TextStyle.Inactive, TextStyle.ContainerLabel).map { style -> font to style }
             }.mapIndexed { index, (font, style) ->
                 Row(font.id, " A日한🙂A لا אב EΩ", style, 8 + index * 12)
-            } + Row(ResourceId("strata_font_test", "unknown"), "A日한🙂", TextStyle.Normal, 224)
+            } +
+            listOf(
+                Row(ResourceId("strata_font_test", "unknown"), "A日한🙂", TextStyle.Normal, 224),
+                Row(FontCase.Unihex.id, "A日한🙂", TextStyle.Inactive.copy(shadow = null), 236),
+            )
 
     /**
      * Reads one packaged fixture file, failing immediately when build resource wiring is incomplete.
@@ -240,19 +244,12 @@ internal object MinecraftFontParityFixture {
         /**
          * Exact public TextStyle foreground sent independently to the native draw call.
          */
-        val color: Int
-            get() =
-                when (style) {
-                    TextStyle.Normal -> -1
-                    TextStyle.Inactive -> 0xFFA0A0A0.toInt()
-                    TextStyle.ContainerLabel -> 0xFF404040.toInt()
-                    TextStyle.TextField -> error("TextField palette is not part of this static Text scene.")
-                }
+        val color: Int get() = style.color.value
 
         /**
          * Native shadow flag corresponding to the selected public TextStyle.
          */
-        val shadow: Boolean get() = style != TextStyle.ContainerLabel
+        val shadow: Boolean get() = style.shadow != null
     }
 
     /**

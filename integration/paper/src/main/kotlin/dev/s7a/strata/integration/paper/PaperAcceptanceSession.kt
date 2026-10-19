@@ -9,6 +9,7 @@ import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.examples.paper.DemoRemoteExtensions
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
@@ -180,7 +181,7 @@ internal class PaperAcceptanceSession(
                 TextField(field, IntSize(160, 20))
                 Button("Apply", 160, modifier = Modifier.onActivate { applied++ })
                 element(DemoRemoteExtensions.marker(ArgbColor(0xFFFF0000.toInt()), DemoRemoteExtensions.activation { activated++ }))
-                Text("Updates: ${updates.value}")
+                Text("Updates: ${updates.value}", style = TextStyle.Inactive.copy(shadow = null))
             }
         }
 

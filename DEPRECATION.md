@@ -1,7 +1,7 @@
 # Deprecation List
 
-This document lists deprecated public Strata APIs, their replacements, and their removal schedules.
-All entries below are scheduled for removal in 1.0.0.
+This document lists deprecated or replaced public Strata APIs, their replacements, and their removal schedules.
+Deprecated APIs are scheduled for removal in 1.0.0; already replaced contracts identify their incompatible release.
 Deprecation warnings are enabled before removal; builds that treat warnings as errors must migrate or explicitly suppress compatibility uses.
 
 ## Modifiers
@@ -34,6 +34,15 @@ Recompile consumers against the new API and keep all Strata artifacts on the sam
 See the [modifier guide](docs/guides/modifiers.md) and [Modifier SPI](docs/reference/modifier-spi.md).
 
 ## Components
+
+### TextStyle enum
+
+`TextStyle` changes from an enum to an immutable data class with independent foreground and shadow properties in 0.3.0.
+The four preset expressions remain available as companion values; for example, `TextStyle.Inactive.copy(shadow = null)` preserves the muted foreground and removes its shadow.
+Enum-specific operations such as `entries`, `values`, `valueOf`, `name`, and `ordinal`, and exhaustive enum `when` expressions must be migrated to application-owned choices or direct style properties.
+Recompile consumers and keep all Strata artifacts on the same version; enum bytecode is not binary compatible with the value type.
+Text, TextField, and TextArea remote schemas have also advanced, and endpoints reject the older schemas during capability validation.
+See the [text guide](docs/guides/text.md#foreground-and-shadow) for the replacement contract and compiled example.
 
 ### PlayerHead with an integer size
 

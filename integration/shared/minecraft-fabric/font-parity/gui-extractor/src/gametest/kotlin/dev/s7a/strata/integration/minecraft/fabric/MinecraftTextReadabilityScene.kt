@@ -21,25 +21,25 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Supplies immutable text and logical positions to independent native and portable readability renderers.
- * The scene uses the active default font with opaque container-label text, so no shadow or alpha-blend tolerance is needed.
+ * The scene uses the active default font with a custom muted shadowless style, so no shadow or alpha-blend tolerance is needed.
  * No measured native glyph or screenshot is used to construct the portable scene.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftTextReadabilityScene {
     const val BACKGROUND: Int = -1
-    const val FOREGROUND: Int = -12_566_464
+    val foreground: ArgbColor = ArgbColor(0xffa0a0a0.toInt())
     const val LEFT: Int = 16
     val viewport: IntSize = IntSize(320, 240)
     val rows: List<Row> = listOf(Row("日本語の表示を確認します。", 16), Row("한글 / 🙂", 34))
 
     /**
-     * Creates a one-shot public Text scene using the profile's default resource font and unshadowed container-label style.
+     * Creates a one-shot public Text scene using the default resource font and custom shadowless guidance style.
      */
     fun definition(): ScreenDefinition =
         ScreenDefinition("Default font readability") {
             Stack(modifier = Modifier.fillMaxSize().background(ArgbColor(BACKGROUND))) {
                 rows.forEach { row ->
-                    Text(row.text, style = TextStyle.ContainerLabel, modifier = Modifier.padding(left = LEFT, top = row.top))
+                    Text(row.text, style = TextStyle.Inactive.copy(shadow = null), modifier = Modifier.padding(left = LEFT, top = row.top))
                 }
             }
         }

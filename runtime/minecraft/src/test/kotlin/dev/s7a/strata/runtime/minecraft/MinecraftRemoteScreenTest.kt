@@ -32,6 +32,8 @@ import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextShadow
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.component.TiledImage
 import dev.s7a.strata.component.TiledImageCachePolicy
 import dev.s7a.strata.component.TiledImageLevel
@@ -64,6 +66,7 @@ import dev.s7a.strata.modifier.onSliderChange
 import dev.s7a.strata.modifier.panZoom
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.remote.RemoteBuiltins
@@ -221,11 +224,15 @@ internal class MinecraftRemoteScreenTest {
         val slider = SliderState(0.4)
         val field = TextFieldState("A")
         val area = TextAreaState("A\nB")
+        val shadowless = TextStyle.Inactive.copy(shadow = null)
+        val colored = TextStyle(ArgbColor(0x804080c0.toInt()), TextShadow.Color(ArgbColor(0xa0206040.toInt())), ArgbColor(0xc0804020.toInt()))
         val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, -65536, -16711936, -16776961))
         val canvas = canvasSource(image)
         val scenarios: List<UiScope.() -> Unit> =
             listOf(
                 { Text("Hello") },
+                { Text("Guidance", style = shadowless) },
+                { Text("Custom", style = colored) },
                 { Button("Press") },
                 { Tab("Selected", true) },
                 { ProgressBar(0.4) },
@@ -237,7 +244,11 @@ internal class MinecraftRemoteScreenTest {
                 { CycleButton(cycle) },
                 { Slider("Amount", slider) },
                 { TextField(field, IntSize(100, 20)) },
+                { TextField(field, IntSize(100, 20), textStyle = shadowless) },
+                { TextField(field, IntSize(100, 20), enabled = false, textStyle = colored) },
                 { TextArea(area, TextAreaViewport.Lines(100, 4)) },
+                { TextArea(area, TextAreaViewport.Lines(100, 4), textStyle = shadowless) },
+                { TextArea(area, TextAreaViewport.Lines(100, 4), enabled = false, textStyle = colored) },
             )
         scenarios.forEachIndexed { index, content ->
             Pairing(content).use { pair ->
