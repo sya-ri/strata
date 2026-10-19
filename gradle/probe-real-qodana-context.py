@@ -36,7 +36,7 @@ def copy_shared(owners, revision):
     for name, owner in owners.items():
         document = ET.parse(root / owner["iml"])
         manager = document.getroot().find("./component[@name='NewModuleRootManager']")
-        directory = root / owner["directory"]
+        directory = root / owner["directory"] if owner["directory"] else root
         for content in list(manager.findall("content")):
             for folder in list(content.findall("sourceFolder")):
                 original = parser.url_path(root, directory, folder.attrib["url"])
