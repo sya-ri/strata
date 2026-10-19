@@ -11,12 +11,12 @@ permissions:
   checks: write
 jobs:
   probe:
-    if: inputs.context == ''
+    if: inputs.context == '' || inputs.context == 'fixture-copy'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        mode: [combined, single-old, single-new, gradle-combined, gradle-separate]
+        mode: ${{ fromJSON(inputs.context == 'fixture-copy' && '["combined-copy"]' || '["combined", "single-old", "single-new", "gradle-combined", "gradle-separate"]') }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-strata-java
@@ -57,7 +57,7 @@ jobs:
             qodana-shared-analysis-fixture
           include-hidden-files: true
   actual-context:
-    if: inputs.context != ''
+    if: inputs.context != '' && inputs.context != 'fixture-copy'
     runs-on: ubuntu-latest
     env:
       STRATA_PROBE_CONTEXT: ${{ inputs.context }}

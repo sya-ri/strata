@@ -81,7 +81,14 @@ def export(mode):
     for name in ("old", "new"):
         module = ET.Element("module", type="JAVA_MODULE", version="4")
         manager = ET.SubElement(module, "component", name="NewModuleRootManager", LANGUAGE_LEVEL="JDK_" + catalog["java-baseline"])
-        for path in (fixture / name / "src/main/kotlin", fixture / "shared"):
+        shared = fixture / "shared"
+        if mode == "combined-copy":
+            shared = fixture / name / "build/qodana-shared"
+            shutil.copytree(fixture / "shared", shared, dirs_exist_ok=True)
+            assert {path.relative_to(shared): path.read_bytes() for path in shared.rglob("*") if path.is_file()} == {
+                path.relative_to(fixture / "shared"): path.read_bytes() for path in (fixture / "shared").rglob("*") if path.is_file()
+            }
+        for path in (fixture / name / "src/main/kotlin", shared):
             url = "file://" + path.as_posix()
             ET.SubElement(ET.SubElement(manager, "content", url=url), "sourceFolder", url=url, isTestSource="false")
         ET.SubElement(manager, "orderEntry", type="inheritedJdk")
@@ -148,7 +155,7 @@ def inspect(mode, results):
         assert not findings, findings
     else:
         assert len(canaries) == 1, findings
-        if mode == "single-old":
+        if mode in {"single-old", "combined-copy"}:
             assert findings == canaries, findings
     print(json.dumps(dict(mode=mode, kotlin_work=work, findings=findings), indent=2))
 
