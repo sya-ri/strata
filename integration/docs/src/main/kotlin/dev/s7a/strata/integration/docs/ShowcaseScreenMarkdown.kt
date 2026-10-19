@@ -115,6 +115,6 @@ ${evidence(spec.screen)}
             DocumentedScreen.SocialInteractions -> "The player row remains example-owned because its mute/report relationship is Social-screen domain state. `PlayerHead`, scrolling, text input, text, buttons, and pointer actions remain reusable standard primitives."
             DocumentedScreen.SynchronizedInventory -> "`Slot` and `SlotBinding` are reusable primitives. The chest-shaped grouping and server menu decide which player, container, ender-chest, furnace, or custom inventory indices each slot binds."
             DocumentedScreen.IndustrialController -> "The runtime supplies general image, background, text, button, slot, and input primitives. Energy capacity, charge state, machine recipes, and networking remain application-owned state and server protocol."
-            DocumentedScreen.PowerMilestones -> "`ExampleProgressGraph` deliberately stays in downstream example code because milestone names and graph meaning are specific to this Mod. Images, backgrounds, text, buttons, layout, and pointer actions remain reusable primitives."
+            DocumentedScreen.PowerMilestones -> "`progressGraph` stays private to this example because its milestone names and graph meaning belong to this screen. Images, backgrounds, text, buttons, layout, and pointer actions remain reusable primitives."
         }
 }

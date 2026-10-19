@@ -580,7 +580,7 @@ import dev.s7a.strata.state.StateSubscription
  */
 internal fun createObserveShowcaseScreenDefinition(): ScreenDefinition {
     val status =
-        StateSource<String> {
+        StateSource {
             StateSubscription(StateSnapshot(StateRevision(0), "Connected")) {}
         }
     return ScreenDefinition("Observe showcase") {

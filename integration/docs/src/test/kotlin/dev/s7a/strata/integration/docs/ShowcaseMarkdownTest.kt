@@ -151,7 +151,8 @@ internal class ShowcaseMarkdownTest {
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("does not start a server"))
         assertTrue(sections.getValue(DocumentedScreen.SynchronizedInventory).contains("ender-chest, furnace, or custom inventory"))
         assertTrue(sections.getValue(DocumentedScreen.IndustrialController).contains("resource-pack-aware Mod controller"))
-        assertTrue(sections.getValue(DocumentedScreen.PowerMilestones).contains("ExampleProgressGraph` deliberately stays in downstream example code"))
+        assertTrue(sections.getValue(DocumentedScreen.PowerMilestones).contains("`progressGraph` stays private to this example"))
+        assertTrue(sections.getValue(DocumentedScreen.PowerMilestones).contains("remain reusable primitives"))
         sections.forEach { (screen, value) ->
             assertTrue(value.contains("![${screen.title} screen showcase](../components/screen-${screen.slug}.png)"))
             assertTrue(value.contains("<details><summary>Compiled screen</summary>"))

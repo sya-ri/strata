@@ -514,7 +514,7 @@ An advancement-inspired Mod progression screen composes active vanilla advanceme
 
 ![Power milestones screen showcase](../components/screen-progress.png)
 
-`ExampleProgressGraph` deliberately stays in downstream example code because milestone names and graph meaning are specific to this Mod. Images, backgrounds, text, buttons, layout, and pointer actions remain reusable primitives.
+`progressGraph` stays private to this example because its milestone names and graph meaning belong to this screen. Images, backgrounds, text, buttons, layout, and pointer actions remain reusable primitives.
 
 <details><summary>Compiled screen</summary>
 
@@ -530,7 +530,6 @@ import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.component.UiScope
-import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
@@ -550,7 +549,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 /**
  * Builds one advancement-inspired Mod screen from resource-pack sources and an application-owned component.
  *
- * The standard runtime remains limited to reusable primitives; [ExampleProgressGraph] may encode this Mod's progression domain because it remains downstream application code.
+ * The screen-specific graph stays in [progressGraph], composing public primitives without adding a standard runtime component.
  *
  * @param window active advancement-window source.
  * @param background active advancement-background tile source.
@@ -581,7 +580,7 @@ internal fun createProgressScreenDefinition(
                     horizontalAlignment = HorizontalAlignment.Center,
                 ) {
                     Text("Power milestones", style = TextStyle.ContainerLabel)
-                    ExampleProgressGraph(background, obtained, unobtained)
+                    progressGraph(background, obtained, unobtained)
                 }
             }
             Button(
@@ -597,29 +596,15 @@ internal fun createProgressScreenDefinition(
     }
 
 /**
- * Emits one application-owned progression graph by composing only public Strata primitives.
- *
- * This downstream component is deliberately not part of the standard runtime because its node meanings and progression domain belong to the application.
- * It retains no callback or scope after synchronous emission.
- *
- * @receiver active owner-thread UI scope.
- * @param background immutable or resource-backed background tile.
- * @param obtained immutable or resource-backed obtained frame.
- * @param unobtained immutable or resource-backed unobtained frame.
- * @param modifier active behavior surrounding the fixed graph.
- * @param key optional stable sibling identity.
- * @throws IllegalStateException when used from another thread or outside its callback lifetime.
+ * Emits this screen's fixed progression graph from public primitives.
  */
-internal fun UiScope.ExampleProgressGraph(
+private fun UiScope.progressGraph(
     background: ImageSource,
     obtained: ImageSource,
     unobtained: ImageSource,
-    modifier: Modifier = Modifier,
-    key: ElementKey<*>? = null,
 ) {
     Row(
-        modifier = modifier.size(234, 113).imageBackground(background, ImageScale.Tile),
-        key = key,
+        modifier = Modifier.size(234, 113).imageBackground(background, ImageScale.Tile),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = VerticalAlignment.Center,
     ) {
