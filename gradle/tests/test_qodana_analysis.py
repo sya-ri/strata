@@ -45,15 +45,17 @@ class QodanaAnalysisTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "IDE did not resolve Kotlin source owners"):
             self.verify()
 
-    def test_collapsed_source_contexts_are_rejected_even_with_shared_source_flags(self):
+    def test_legacy_shared_sources_require_both_context_options_in_the_actual_analysis_jvm(self):
         shared = copy.deepcopy(self.model["modules"][0])
         shared["name"] = "second-context"
         self.model["modules"].append(shared)
         options = ["-Dintellij.platform.shared.source.support=true", "-Dbatch.inspections.inspect.all.code.insight.contexts=true"]
-        for supplied in ([], options, options[:1], options[1:], [option.replace("=true", "=false") for option in options]):
+        self.log.write_text("JVM options: [" + ", ".join(options) + "]\n", encoding="utf-8")
+        self.verify()
+        for supplied in ([], options[:1], options[1:], [option.replace("=true", "=false") for option in options]):
             with self.subTest(options=supplied):
                 self.log.write_text("JVM options: [" + ", ".join(supplied) + "]\n", encoding="utf-8")
-                with self.assertRaisesRegex(ValueError, "must have one actual compiler context"):
+                with self.assertRaisesRegex(ValueError, "require the analysis JVM option"):
                     self.verify()
 
     def test_omitted_kotlin_sources_are_rejected(self):

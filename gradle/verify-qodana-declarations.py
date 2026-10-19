@@ -461,6 +461,29 @@ def verify_model(root, model_path, container_root, java_path):
         fail("missing project SDK")
     sdk = sdk_model[0].attrib["project-jdk-name"]
     project_java = int(sdk_model[0].attrib["languageLevel"][4:])
+    dependency_indices = {}
+    library_hashes = {}
+
+    def dependency_index(name, manager, imported, directory):
+        """Resolve each physical edge once, retaining separate entries for duplicate and scope checks."""
+        if name not in dependency_indices:
+            generated_index = collections.defaultdict(list)
+            imported_index = collections.defaultdict(list)
+            for entry in manager.findall("orderEntry"):
+                if entry.attrib.get("type") == "module":
+                    generated_index["Module", entry.attrib.get("module-name")].append(entry)
+                elif entry.attrib.get("type") == "module-library":
+                    paths = {url_path(root, directory, item.attrib["url"], container_root, False) for item in entry.findall("./library/CLASSES/root")}
+                    for path in paths:
+                        generated_index["Library", path].append(entry)
+            for entry in imported["orderEntries"]:
+                if entry.get("type") == "Module":
+                    imported_index["Module", entry.get("name")].append(entry)
+                elif entry.get("type") == "Library":
+                    imported_index["Library", url_path(root, directory, entry.get("name"), source=False)].append(entry)
+            dependency_indices[name] = generated_index, imported_index
+        return dependency_indices[name]
+
     def verify_dependencies(owner, manager, imported, directory):
         """Check each real compiler/runtime closure without assuming auxiliary dependencies match main."""
         name = owner["module"]
@@ -468,6 +491,7 @@ def verify_model(root, model_path, container_root, java_path):
         classpaths = owner["classpaths"]
         if set(classpaths) != {"compile", "runtime"} or set(dependencies) != set(classpaths.values()) or ("sourceSet" not in owner and any(not closure for closure in dependencies.values())):
             fail(f"missing compile/runtime dependency closure: {name}")
+        generated_index, imported_index = dependency_index(name, manager, imported, directory)
         for configuration, closure in dependencies.items():
             for dependency in closure:
                 if dependency["kind"] == "Module":
@@ -475,14 +499,19 @@ def verify_model(root, model_path, container_root, java_path):
                     required_project = declarations_by_project.get(dependency["project"])
                     if not required_project or required_project["module"] != identity or len(modules[identity]) != 1:
                         fail(f"unresolved required project dependency: {name}: {identity}")
-                    generated_dependencies = [entry for entry in manager.findall("orderEntry[@type='module']") if entry.attrib.get("module-name") == identity]
-                    imported_dependencies = [entry for entry in imported["orderEntries"] if entry.get("type") == "Module" and entry.get("name") == identity]
+                    generated_dependencies = generated_index["Module", identity]
+                    imported_dependencies = imported_index["Module", identity]
                 elif dependency["kind"] == "Library":
                     library = pathlib.Path(dependency["path"])
-                    if not library.exists() or sha256(library) != dependency["sha256"]:
+                    if not library.exists():
                         fail(f"unresolved or changed required library: {name}: {dependency['identity']}")
-                    generated_dependencies = [entry for entry in manager.findall("orderEntry[@type='module-library']") if any(url_path(root, directory, item.attrib["url"], container_root, False) == library for item in entry.findall("./library/CLASSES/root"))]
-                    imported_dependencies = [entry for entry in imported["orderEntries"] if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == library]
+                    # Fresh hashes belong only to this immutable verification snapshot, never to a later acceptance run.
+                    if library not in library_hashes:
+                        library_hashes[library] = sha256(library)
+                    if library_hashes[library] != dependency["sha256"]:
+                        fail(f"unresolved or changed required library: {name}: {dependency['identity']}")
+                    generated_dependencies = generated_index["Library", library]
+                    imported_dependencies = imported_index["Library", library]
                 else:
                     fail(f"unsupported dependency kind: {dependency['kind']}")
                 scopes = {"COMPILE", "TEST", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "TEST", "RUNTIME"}
@@ -638,8 +667,9 @@ def verify_model(root, model_path, container_root, java_path):
                 files = {file.relative_to(root).as_posix(): sha256(file) for file in path.rglob("*") if file.is_file()} if path.is_dir() else {}
                 if output["exists"] != path.is_dir() or output["files"] != files:
                     fail(f"auxiliary compiler outputs are missing or changed: {name}: {path}")
-                generated_libraries = [entry for entry in manager.findall("orderEntry[@type='module-library']") if any(url_path(root, directory, item.attrib["url"], container_root, False) == path for item in entry.findall("./library/CLASSES/root"))]
-                imported_libraries = [entry for entry in imported["orderEntries"] if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == path]
+                generated_index, imported_index = dependency_index(name, manager, imported, directory)
+                generated_libraries = generated_index["Library", path]
+                imported_libraries = imported_index["Library", path]
                 if len(generated_libraries) != len(imported_libraries) or len(generated_libraries) > 1:
                     fail(f"auxiliary owned output is duplicated or differently attributed: {name}: {path}")
             verify_dependencies(compilation, manager, imported, directory)
@@ -710,7 +740,10 @@ def verify_analysis(root, model, report_directory):
                 if folder["type"] in {"Source", "TestSource"}:
                     contexts[url_path(root, root, folder["path"])].add(module["name"])
     if any(len(modules) != 1 for modules in contexts.values()):
-        fail("Kotlin source roots must have one actual compiler context")
+        options = re.findall(r"JVM options: \[([^\n]+)\]", log)
+        for key in ("intellij.platform.shared.source.support", "batch.inspections.inspect.all.code.insight.contexts"):
+            if len(options) != 1 or not re.search(r"(?:^|, )-D" + re.escape(key) + r"=true(?:,|$)", options[0]):
+                fail(f"shared Kotlin roots require the analysis JVM option {key}=true")
     unresolved = set(re.findall(r"No source roots detected for module '([^']+)'", log))
     if unresolved.intersection(owners):
         fail(f"IDE did not resolve Kotlin source owners: {sorted(unresolved.intersection(owners))}")

@@ -759,6 +759,13 @@ PY
     elif path_is_child_of "$resolved_path" "$project_root"; then
       repository_relative_path=$(relative_path_from_parent "$resolved_path" "$project_root")
       repository_relative_path=$(canonical_repository_relative_path "$repository_relative_path")
+      if $canonical_compiler_ownership && [[ "$repository_relative_path" =~ ^qodana-analysis-sources/[0-9a-f]{12}/[0-9a-f]{16}$ ]]; then
+        # The declaration verifier checks each generated view's exact module, origin, kind, membership and bytes.
+        [[ -d "$resolved_path" ]] || { echo "Missing generated compiler source view: $source_url" >&2; exit 1; }
+        printf '%s\t%s\t%s\tfile://$PROJECT_DIR$/%s\n' \
+          "$owner" "$version" "$source_type" "$repository_relative_path" >> "$expected_target_source_roots"
+        continue
+      fi
       classify_target_source_path "$repository_relative_path"
       if [[ -z "$target_source_allowed_owners" ]]; then
         echo "The generated IDEA module links an unapproved repository source root: $iml: $source_url" >&2

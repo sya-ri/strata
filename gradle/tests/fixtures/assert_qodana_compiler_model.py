@@ -1,5 +1,6 @@
 """Check real compiled IDEA modules using a synthetic imported-model fixture, without claiming analysis results."""
 
+import collections
 import copy
 import importlib.util
 import json
@@ -63,7 +64,23 @@ sdk_entries = [dict(name=entry.find("name").attrib["value"], sdkType=entry.find(
                     roots=[item.attrib["url"] for item in entry.findall("./roots/classPath/root/root")]) for entry in sdk_table.findall("./component/jdk")]
 (fixture / "projectStructure").mkdir(exist_ok=True)
 (fixture / "projectStructure/SDKs.json").write_text(json.dumps(dict(sdks=sdk_entries)), encoding="utf-8")
-checker.verify_model(root, model_path, "", java_path)
+library_resolutions = collections.Counter()
+resolve_url = checker.url_path
+
+
+def counted_url_path(root, module_dir, value, container_root="", source=True):
+    """Keep filesystem resolution proportional to imported library edges, not their closure reuse."""
+    if not source and (value.endswith(".jar") or value.endswith(".jar!/")):
+        library_resolutions[module_dir, value] += 1
+    return resolve_url(root, module_dir, value, container_root, source)
+
+
+checker.url_path = counted_url_path
+try:
+    checker.verify_model(root, model_path, "", java_path)
+finally:
+    checker.url_path = resolve_url
+assert library_resolutions and max(library_resolutions.values()) <= 2, library_resolutions.most_common(5)
 sdk_model = dict(sdks=sdk_entries)
 sdk_owner = next(owner["module"] for owner in inventory["projects"] if owner.get("iml") and owner["compilerToolchain"])
 for mutation in ("inherited-project-sdk", "missing-module-sdk", "wrong-sdk-version", "missing-java-base"):
