@@ -43,7 +43,7 @@ def copy_shared(owners, revision):
                 relative = original.relative_to(root).as_posix()
                 if parser.iml_kind(folder) not in {"Source", "TestSource"} or len(contexts[relative]) < 2:
                     continue
-                destination = evidence / "probe-shared-sources" / revision / name / hashlib.sha256(relative.encode()).hexdigest()[:16]
+                destination = root / "qodana-analysis-sources" / revision / name / hashlib.sha256(relative.encode()).hexdigest()[:16]
                 if not destination.exists():
                     shutil.copytree(original, destination)
                 current = {path.relative_to(original).as_posix(): parser.sha256(path) for path in original.rglob("*") if path.is_file()}

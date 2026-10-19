@@ -85,7 +85,7 @@ def export(mode):
         manager = ET.SubElement(module, "component", name="NewModuleRootManager", LANGUAGE_LEVEL="JDK_" + catalog["java-baseline"])
         shared = fixture / "shared"
         if mode == "combined-copy":
-            shared = fixture / name / "build/qodana-shared"
+            shared = fixture / name / "qodana-shared"
             shutil.copytree(fixture / "shared", shared, dirs_exist_ok=True)
             assert {path.relative_to(shared): path.read_bytes() for path in shared.rglob("*") if path.is_file()} == {
                 path.relative_to(fixture / "shared"): path.read_bytes() for path in (fixture / "shared").rglob("*") if path.is_file()
