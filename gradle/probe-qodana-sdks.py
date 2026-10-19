@@ -25,7 +25,7 @@ def write(relative, content):
 def prepare():
     """Compile and execute Java 17-only and Java 25-only APIs on their real Gradle launchers."""
     write("settings.gradle.kts", 'rootProject.name = "qodana-sdk-control"\ninclude("old", "new")\n')
-    write(".gitignore", 'build/\n')
+    write(".gitignore", 'build/\nqodana-source-views/\n')
     write("build.gradle.kts", '''
 import groovy.json.JsonOutput
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -109,9 +109,20 @@ public fun main() {{ check(entry() == {expected}) }}
 ''')
 
 
+def source_directory(mode, name):
+    """Keep the same selected source bytes while varying their generated location only."""
+    if mode == "actual-shared":
+        return "shared"
+    if mode in {"actual-build", "actual-build-included"}:
+        return "build/qodana/source-views/" + name
+    if mode == "actual-ignored":
+        return "qodana-source-views/" + name
+    return name + "/analysis-shared"
+
+
 def export(mode):
     """Keep compiled bytes and classpaths fixed while changing only the IDEA SDK binding."""
-    assert mode in {"inherited", "actual", "actual-shared", "actual-build"}
+    assert mode in {"inherited", "actual", "actual-shared", "actual-build", "actual-build-included", "actual-ignored"}
     application = ET.Element("application")
     table = ET.SubElement(application, "component", name="ProjectJdkTable")
     project = ET.Element("project", version="4")
@@ -143,9 +154,8 @@ def export(mode):
         ET.SubElement(sdk, "additional")
         module = ET.Element("module", type="JAVA_MODULE", version="4")
         manager = ET.SubElement(module, "component", name="NewModuleRootManager", LANGUAGE_LEVEL=f"JDK_{metadata['java']}")
-        shared = fixture / "shared"
+        shared = fixture / source_directory(mode, name)
         if mode != "actual-shared":
-            shared = fixture / "build/qodana/source-views" / name if mode == "actual-build" else fixture / name / "analysis-shared"
             shutil.copytree(fixture / "shared", shared, dirs_exist_ok=True)
             assert {path.relative_to(shared): path.read_bytes() for path in shared.rglob("*") if path.is_file()} == {
                 path.relative_to(fixture / "shared"): path.read_bytes() for path in (fixture / "shared").rglob("*") if path.is_file()
@@ -174,7 +184,8 @@ def export(mode):
     root_module = ET.Element("module", type="JAVA_MODULE", version="4")
     root_manager = ET.SubElement(root_module, "component", name="NewModuleRootManager")
     root_content = ET.SubElement(root_manager, "content", url="file://" + fixture.as_posix() + "/")
-    ET.SubElement(root_content, "excludeFolder", url="file://" + (fixture / "build").as_posix())
+    if mode != "actual-build-included":
+        ET.SubElement(root_content, "excludeFolder", url="file://" + (fixture / "build").as_posix())
     ET.SubElement(root_manager, "orderEntry", type="jdk", jdkName=expected["new"]["sdk"], jdkType="JavaSDK")
     write("fixture-root.iml", ET.tostring(root_module, encoding="unicode"))
     ET.SubElement(modules, "module", fileurl="file://" + (fixture / "fixture-root.iml").as_posix(), filepath=(fixture / "fixture-root.iml").as_posix())
@@ -201,11 +212,12 @@ def inspect(mode, results):
     root_module, = [module for module in modules if module["name"] == "fixture-root"]
     content, = root_module["contentEntries"]
     assert content["path"] in {"file://$PROJECT_DIR$", "file://$PROJECT_DIR$/"} and not content["sourceFolders"], content
-    assert not content.get("excludePatterns") and [item["path"] for item in content["excludeFolders"]] == ["file://$PROJECT_DIR$/build"], content
+    exclusions = [] if mode == "actual-build-included" else ["file://$PROJECT_DIR$/build"]
+    assert not content.get("excludePatterns") and [item["path"] for item in content["excludeFolders"]] == exclusions, content
     source_modules = [module for module in modules if module["name"] != "fixture-root"]
     for module in source_modules:
         name = module["name"].removeprefix("sdk-")
-        shared = "shared" if mode == "actual-shared" else "build/qodana/source-views/" + name if mode == "actual-build" else name + "/analysis-shared"
+        shared = source_directory(mode, name)
         expected_roots = {"file://$PROJECT_DIR$/" + path for path in (name + "/src/main/kotlin", shared)}
         roots = [source for entry in module["contentEntries"] for source in entry["sourceFolders"]]
         assert {source["path"] for source in roots} == expected_roots and len(roots) == 2, roots
@@ -232,7 +244,7 @@ def inspect(mode, results):
     if mode == "actual-shared":
         assert shared_paths == {"shared/Shared.kt"}, shared_paths
     else:
-        assert shared_paths == {("build/qodana/source-views/" + name if mode == "actual-build" else name + "/analysis-shared") + "/Shared.kt" for name in ("old", "new")}, shared_paths
+        assert shared_paths == {source_directory(mode, name) + "/Shared.kt" for name in ("old", "new")}, shared_paths
 
 
 if sys.argv[1] == "prepare":

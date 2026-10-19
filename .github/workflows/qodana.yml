@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [actual, actual-build]
+        mode: [actual-build-included, actual-ignored]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-strata-java
