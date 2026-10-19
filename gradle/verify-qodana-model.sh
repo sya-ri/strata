@@ -323,6 +323,26 @@ resolve_iml_posix_absolute_source_path() {
   fi
 }
 
+resolve_iml_windows_absolute_source_path() {
+  local native_path=$1
+  local source_url=$2
+  if $windows_paths; then
+    :
+  else
+    echo "The generated IDEA module contains a platform-incompatible source URL: $source_url" >&2
+    exit 1
+  fi
+  local absolute_path
+  absolute_path=$(cygpath -u -- "$native_path")
+  resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+  if paths_equal "$native_path" "$(cygpath -m -- "$resolved_path")"; then
+    :
+  else
+    echo "The generated IDEA module contains a non-canonical absolute source URL: $source_url" >&2
+    exit 1
+  fi
+}
+
 bash "$script_root/plan-minecraft-ci.sh" "$project_root" "$inventory_directory" >/dev/null
 mapfile -t expected_versions < <(sed -n 's#^runtime/minecraft-fabric-##p' "$inventory_directory/minecraft-loom-projects.txt")
 
@@ -702,25 +722,11 @@ PY
         resolved_path=$(realpath -m -- "$module_directory/$relative_path")
         ;;
       file:///[A-Za-z]:/*)
-        absolute_path=${source_url#file:///}
-        if $windows_paths; then
-          absolute_path=$(cygpath -u -- "$absolute_path")
-        else
-          echo "The generated IDEA module contains a platform-incompatible source URL: $iml: $source_url" >&2
-          exit 1
-        fi
-        resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+        resolve_iml_windows_absolute_source_path "${source_url#file:///}" "$source_url"
         relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file://[A-Za-z]:/*)
-        absolute_path=${source_url#file://}
-        if $windows_paths; then
-          absolute_path=$(cygpath -u -- "$absolute_path")
-        else
-          echo "The generated IDEA module contains a platform-incompatible source URL: $iml: $source_url" >&2
-          exit 1
-        fi
-        resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+        resolve_iml_windows_absolute_source_path "${source_url#file://}" "$source_url"
         relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file:///*)

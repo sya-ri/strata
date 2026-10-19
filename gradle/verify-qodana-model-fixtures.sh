@@ -1097,16 +1097,6 @@ fixture_runtime_iml="$fixture_project/runtime/minecraft-fabric-1.2/runtime-minec
 fixture_iml_backup="$fixture_root/runtime-minecraft-fabric-1.2.iml"
 cp -- "$fixture_runtime_iml" "$fixture_iml_backup"
 
-# Native source URLs must work when emitted canonically instead of through IDEA macros.
-owned_source="$(portable_jq -r '.modules[] | select(.name == "runtime-minecraft-fabric-1.2") | .contentEntries[].sourceFolders[] | select(.type == "Source") | .path' "$fixture_root/Modules.json" | head -n 1)"
-owned_relative=${owned_source#'file://$PROJECT_DIR$/'}
-owned_absolute="$fixture_project_file_path/$owned_relative"
-sed -i 's#file://\$MODULE_DIR\$/src/main/kotlin#file://'"$owned_absolute"'#' "$fixture_runtime_iml"
-grep -Fq "file://$owned_absolute" "$fixture_runtime_iml"
-bash "$repository_root/gradle/verify-qodana-model.sh" \
-  "$fixture_root/Modules.json" "$fixture_project" "$qodana_container_project_root" > "$fixture_root/absolute-owned-source.log"
-cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
-
 set_absolute_iml_link() {
   local absolute_path=$1
   cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
@@ -1177,9 +1167,9 @@ grep -Fq 'linked source path outside the repository' "$fixture_root/invalid.log"
 }
 
 set_absolute_iml_link '/data/project/runtime/minecraft-fabric-1.2/src/main/kotlin'
-assert_project_rejected 'a container-absolute URL for a source root owned by its module'
-grep -Fq 'non-canonical owned source URL' "$fixture_root/invalid.log" || {
-  echo 'The container-absolute owned source root was rejected for the wrong reason.' >&2
+assert_project_rejected 'a duplicate owned source root replacing a required linked root'
+grep -Fq 'Qodana project modules do not exactly match' "$fixture_root/invalid.log" || {
+  echo 'The duplicate owned source root was rejected for the wrong reason.' >&2
   exit 1
 }
 
@@ -1434,7 +1424,25 @@ cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 sed -i \
   's#file://\$MODULE_DIR\$/src/main/kotlin#file://'"$fixture_project_file_path"'/runtime/minecraft-fabric-1.2/src/main/kotlin#' \
   "$fixture_runtime_iml"
-assert_project_rejected 'an absolute URL for a source root owned by its module'
+bash "$repository_root/gradle/verify-qodana-model.sh" \
+  "$fixture_root/Modules.json" "$fixture_project" "$qodana_container_project_root" > "$fixture_root/absolute-owned-source.log"
+cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
+
+sed -i \
+  's#file://\$MODULE_DIR\$/src/main/kotlin#file:///data/project/runtime/minecraft-fabric-1.2/src/main/kotlin#' \
+  "$fixture_runtime_iml"
+bash "$repository_root/gradle/verify-qodana-model.sh" \
+  "$fixture_root/Modules.json" "$fixture_project" "$qodana_container_project_root" > "$fixture_root/container-owned-source.log"
+cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
+
+sed -i \
+  's#file://\$MODULE_DIR\$/src/main/kotlin#file://'"$fixture_project_file_path"'/runtime/minecraft-fabric-1.2/src/./main/kotlin#' \
+  "$fixture_runtime_iml"
+assert_project_rejected 'a non-canonical absolute URL for an owned source root'
+grep -Fq 'non-canonical absolute source URL' "$fixture_root/invalid.log" || {
+  echo 'The aliased absolute owned source root was rejected for the wrong reason.' >&2
+  exit 1
+}
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
