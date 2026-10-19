@@ -174,11 +174,13 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         val removed = extensions.filterValues { it === owner }.keys.toSet()
         removed.forEach(extensions::remove)
         transition {
-            peers.values.forEach { peer ->
-                peer.sessions.values.toList().filter { it.owner === owner || it.session.requiredTypes.any { type -> type in removed } }.forEach { active ->
-                    runCatching { peer.closeSession(active.handle.identity, RemoteFailure.OwnerDisabled) }.onFailure(report)
+            val failures =
+                peers.values.flatMap { peer ->
+                    peer.sessions.values.toList().filter { it.owner === owner || it.session.requiredTypes.any { type -> type in removed } }.mapNotNull { active ->
+                        runCatching { peer.closeSession(active.handle.identity, RemoteFailure.OwnerDisabled) }.exceptionOrNull()
+                    }
                 }
-            }
+            failures.forEach(report)
         }
     }
 
@@ -196,9 +198,11 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     public fun containerChanged(player: Player) {
         transition {
             peers[player]?.let { peer ->
-                peer.sessions.values.toList().filter { it.presentation == UiPresentation.Screen || it.session.usesNativeSlots }.forEach { active ->
-                    runCatching { peer.closeSession(active.handle.identity, RemoteFailure.ContainerChanged) }.onFailure(report)
-                }
+                val failures =
+                    peer.sessions.values.toList().filter { it.presentation == UiPresentation.Screen || it.session.usesNativeSlots }.mapNotNull { active ->
+                        runCatching { peer.closeSession(active.handle.identity, RemoteFailure.ContainerChanged) }.exceptionOrNull()
+                    }
+                failures.forEach(report)
             }
         }
     }
@@ -213,7 +217,8 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             val remaining = peers.values.toList()
             peers.clear()
             extensions.clear()
-            remaining.forEach { runCatching { it.close(RemoteFailure.OwnerClosed) }.onFailure(report) }
+            val failures = remaining.mapNotNull { runCatching { it.close(RemoteFailure.OwnerClosed) }.exceptionOrNull() }
+            failures.forEach(report)
         }
     }
 

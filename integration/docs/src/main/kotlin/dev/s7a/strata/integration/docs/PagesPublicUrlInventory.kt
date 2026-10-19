@@ -20,7 +20,7 @@ internal object PagesPublicUrlInventory {
      * @param args repository root, staged Pages root, and output file.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         require(args.size == 3) { "Pages URL inventory requires repository, staged-site, and output paths." }
         write(Path.of(args[0]), Path.of(args[1]), Path.of(args[2]))
     }

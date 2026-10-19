@@ -146,7 +146,7 @@ private class MinecraftImageElement private constructor(
          * @return one retained image description.
          */
         @JvmSynthetic
-        internal fun create(
+        fun create(
             image: DrawImage,
             sourceRegion: IntRect,
             destinationSize: IntSize,

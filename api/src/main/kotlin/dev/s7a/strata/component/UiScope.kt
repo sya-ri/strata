@@ -15,7 +15,7 @@ import kotlin.jvm.JvmSynthetic
  * Application code cannot construct or implement this sealed scope.
  */
 @StrataDsl
-public sealed class UiScope protected constructor() {
+public sealed class UiScope {
     private val owner = currentOwner()
     private val emittedElements: MutableList<Element> = ArrayList()
     private var active: Boolean = true

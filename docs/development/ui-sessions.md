@@ -230,5 +230,6 @@ Stale `Continue` consumes the failure without mutation.
 Stale `FailSession`, or a stale throwing handler, surfaces the task failure from the owner-dispatcher runnable without changing or cleaning the current session.
 
 Terminal cleanup first closes source subscriptions in declaration order and then closes the retained tree.
+Bindings discard committed, captured, and pending observations before closing subscriptions, so retained source callbacks cannot keep those values alive.
 It attempts every resource exactly once even when callbacks fail.
 The original failure instance remains primary, and later distinct handler, subscription, detach, and dispose failures are suppressed in observation order.

@@ -10,7 +10,9 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontOptions
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
+import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -30,6 +32,26 @@ import java.nio.file.StandardOpenOption
 internal class ShowcaseMinecraftAssetsTest {
     @field:TempDir
     lateinit var directory: Path
+
+    @Test
+    fun compiledFontResourceExampleLoadsIndexedArchiveAndCustomPackInputs() {
+        val fixture = ShowcaseMinecraftAssetFixture(directory)
+        val customPack = directory.resolve("custom")
+        val font = customPack.resolve("assets/example/font/custom.json")
+        Files.createDirectories(font.parent)
+        Files.writeString(font, """{"providers":[{"type":"space","advances":{"A":7}}]}""")
+        val snapshot =
+            loadFonts(
+                fixture.clientJar,
+                fixture.assetIndex,
+                fixture.assetObjects,
+                customPack,
+                MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, packFormat = 0),
+                MinecraftFontOptions(),
+            )
+        assertEquals(setOf(ResourceId("minecraft", "default"), ResourceId("example", "custom")), snapshot.fontIds)
+        assertTrue(snapshot.diagnostics.isEmpty())
+    }
 
     @Test
     fun originalImageOutputsAreDetachedAndTheirInputHashesContainNoLocalPaths() {

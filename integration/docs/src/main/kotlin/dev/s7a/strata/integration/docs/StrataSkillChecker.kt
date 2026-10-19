@@ -10,7 +10,7 @@ internal object StrataSkillChecker {
      * @param args launcher paths consumed by [StrataSkillLaunchArguments].
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         val launch = StrataSkillLaunchArguments.parse(args)
         val prepared = StrataSkillPipeline.prepare(launch)
         StrataSkillPipeline.writeStaging(launch, prepared)

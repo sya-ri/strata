@@ -34,16 +34,16 @@ import dev.s7a.strata.node.Node as RetainedNode
  * The element owns a profile-backed button surface, label, optional selected indicator child, hover state, and tab semantics.
  */
 private class MinecraftTabElement private constructor(
-    internal val normalSprite: MinecraftButtonSpriteSnapshot,
-    internal val highlightedSprite: MinecraftButtonSpriteSnapshot,
-    internal val disabledSprite: MinecraftButtonSpriteSnapshot,
-    internal val normalText: MinecraftTextRun,
-    internal val inactiveText: MinecraftTextRun,
-    internal val label: UiText,
-    internal val width: Int,
-    internal val enabled: Boolean,
-    internal val selected: Boolean,
-    internal val underlined: Boolean,
+    val normalSprite: MinecraftButtonSpriteSnapshot,
+    val highlightedSprite: MinecraftButtonSpriteSnapshot,
+    val disabledSprite: MinecraftButtonSpriteSnapshot,
+    val normalText: MinecraftTextRun,
+    val inactiveText: MinecraftTextRun,
+    val label: UiText,
+    val width: Int,
+    val enabled: Boolean,
+    val selected: Boolean,
+    val underlined: Boolean,
     customIndicator: Element?,
     modifier: Modifier,
     key: ElementKey<*>?,
@@ -53,7 +53,7 @@ private class MinecraftTabElement private constructor(
         children = listOfNotNull(customIndicator),
         modifier = modifier,
     ) {
-    internal val custom: Boolean = customIndicator != null
+    val custom: Boolean = customIndicator != null
 
     /**
      * Retained tab measurement, placement, drawing, hover, lifecycle, and semantics implementation.
@@ -188,7 +188,7 @@ private class MinecraftTabElement private constructor(
          * @return invalidation required by changed measurement, pixels, or semantics.
          */
         @JvmSynthetic
-        internal fun updateFrom(current: MinecraftTabElement): DirtyMask {
+        fun updateFrom(current: MinecraftTabElement): DirtyMask {
             val widthChanged = width != current.width
             val customChanged = custom != current.custom
             val labelChanged = label != current.label
@@ -291,7 +291,7 @@ private class MinecraftTabElement private constructor(
             )
 
         @JvmSynthetic
-        internal fun create(
+        fun create(
             normalSprite: MinecraftButtonSpriteSnapshot,
             highlightedSprite: MinecraftButtonSpriteSnapshot,
             disabledSprite: MinecraftButtonSpriteSnapshot,

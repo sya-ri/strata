@@ -29,10 +29,10 @@ import dev.s7a.strata.node.Node as RetainedNode
  */
 @OptIn(InternalStrataRuntimeApi::class)
 private class MinecraftAsyncPlayerHeadElement private constructor(
-    internal val platform: MinecraftUiPlatform,
-    internal val source: PlayerSkinSource,
-    internal val size: Int,
-    internal val showHat: Boolean,
+    val platform: MinecraftUiPlatform,
+    val source: PlayerSkinSource,
+    val size: Int,
+    val showHat: Boolean,
     loading: Element?,
     failure: Element?,
     modifier: Modifier,
@@ -43,8 +43,8 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
         children = listOfNotNull(loading, failure),
         modifier = modifier,
     ) {
-    internal val loadingIndex: Int? = if (loading == null) null else 0
-    internal val failureIndex: Int? =
+    val loadingIndex: Int? = if (loading == null) null else 0
+    val failureIndex: Int? =
         if (failure == null) {
             null
         } else if (loading == null) {
@@ -147,7 +147,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
          * @return invalidation required by changed state, size, layers, or fallback mapping.
          */
         @JvmSynthetic
-        internal fun updateFrom(current: MinecraftAsyncPlayerHeadElement): DirtyMask {
+        fun updateFrom(current: MinecraftAsyncPlayerHeadElement): DirtyMask {
             val sourceChanged = platform !== current.platform || source != current.source
             val sizeChanged = size != current.size
             val fallbackChanged = loadingIndex != current.loadingIndex || failureIndex != current.failureIndex
@@ -246,7 +246,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
             )
 
         @JvmSynthetic
-        internal fun create(
+        fun create(
             platform: MinecraftUiPlatform,
             source: PlayerSkinSource,
             size: Int,

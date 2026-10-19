@@ -71,7 +71,7 @@ internal sealed interface AxisConstraint {
      * @property value the requested non-negative exact value.
      * @throws IllegalArgumentException when [value] is negative.
      */
-    data class Exact public constructor(
+    data class Exact(
         val value: Int,
     ) : AxisConstraint {
         init {
@@ -94,7 +94,7 @@ internal sealed interface AxisConstraint {
      * @property max the requested maximum, not smaller than [min].
      * @throws IllegalArgumentException when either endpoint is negative or [min] exceeds [max].
      */
-    data class Range public constructor(
+    data class Range(
         val min: Int,
         val max: Int,
     ) : AxisConstraint {
@@ -135,7 +135,7 @@ internal sealed interface AxisConstraint {
      * @property min the inclusive minimum.
      * @property max the inclusive maximum.
      */
-    data class ResolvedAxis public constructor(
+    data class ResolvedAxis(
         val min: Int,
         val max: Int,
     )

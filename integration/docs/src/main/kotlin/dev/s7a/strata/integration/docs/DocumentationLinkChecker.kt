@@ -21,7 +21,7 @@ internal object DocumentationLinkChecker {
      * @throws IllegalArgumentException when a link is malformed, a local target or fragment is unsafe or absent, or a release link is not portable.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         require(args.size == 1) { "Documentation link checker requires exactly one repository root." }
         val projectRoot = Path.of(args.single()).toAbsolutePath().normalize()
         ShowcasePaths.requireDirectory(projectRoot, "documentation project root")

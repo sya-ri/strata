@@ -55,7 +55,7 @@ private class FabricPortableNativeStorage : NativeGuiResource {
      * Non-owning registration view, constructed without allocating a native texture on the render thread.
      */
     @get:JvmSynthetic
-    internal val texture: AbstractTexture = FabricBorrowedTexture(::textureId)
+    val texture: AbstractTexture = FabricBorrowedTexture(::textureId)
 
     /**
      * Allocates and uploads after ownership transfer while preserving the caller's OpenGL bindings.
@@ -63,7 +63,7 @@ private class FabricPortableNativeStorage : NativeGuiResource {
      * The borrowed image remains owned by the outer resource; failure never destroys a possibly used allocation eagerly.
      */
     @JvmSynthetic
-    internal fun initialize(pixels: NativeImage) {
+    fun initialize(pixels: NativeImage) {
         RenderSystem.assertOnRenderThread()
         val maximum = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE)
         require(pixels.width in 1..maximum && pixels.height in 1..maximum) {
@@ -84,7 +84,7 @@ private class FabricPortableNativeStorage : NativeGuiResource {
      * Access before allocation or after destruction is rejected.
      */
     @JvmSynthetic
-    internal fun textureId(): Int {
+    fun textureId(): Int {
         RenderSystem.assertOnRenderThread()
         check(closed.not() && nativeId != 0) { "Portable GUI texture storage is unavailable." }
         return nativeId
