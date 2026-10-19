@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Owns authenticated player transports and declarations under one adapter execution owner.
  * Network callbacks only enqueue bounded bytes; handlers never run in messaging callbacks.
+ * Closing permanently rejects new players, schemas, and definitions before notifying listeners.
  */
 @Suppress("TooManyFunctions") // Keeps the owner, player, transport, and screen lifetime in one service.
 public class RemoteScreenService<Player : Any, Owner : Any>(
@@ -32,6 +33,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     private val peers = ConcurrentHashMap<Player, Peer<Owner>>()
     private val extensions = mutableMapOf<ProjectionType, Owner>()
     private var nextSession = 1L
+    private var closed = false
     private var dispatching = false
     private var dispatchDepth = 0
     private var transitionCount = 0
@@ -41,8 +43,10 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
      * Creates a fresh protocol endpoint for a joined player.
      */
     public fun join(player: Player) {
+        checkOpen()
         transition {
             disconnect(player)
+            if (closed) return@transition
             val address = RemoteAddress(endpoint)
             val stream = RemotePacketStream(address) { bytes -> send(player, bytes) }
             val connection = RemoteConnection(types + extensions.keys, RemotePacket.limits, stream::send)
@@ -75,7 +79,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         owner: Owner,
         type: ProjectionType,
     ) {
-        checkOwner()
+        checkOpen()
         require((type in types).not() && (type in extensions).not()) { "A remote schema is already registered: $type." }
         extensions[type] = owner
     }
@@ -88,7 +92,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         player: Player,
         definition: UiDefinition,
     ): RemoteScreenSession {
-        checkOwner()
+        checkOpen()
         admitTransition()
         check(nextSession < Long.MAX_VALUE) { "Remote screen identity space is exhausted." }
         val settings = RemoteUiSettings(definition.presentation, definition.category, definition.inputPolicy, definition.visibility, definition.hudOrder)
@@ -199,8 +203,13 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         }
     }
 
+    /**
+     * Ends admission before releasing peers and notifying terminal listeners; repeated close has no effect.
+     */
     override fun close() {
         transition {
+            if (closed) return@transition
+            closed = true
             val remaining = peers.values.toList()
             peers.clear()
             extensions.clear()
@@ -320,6 +329,11 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         check(RuntimeExecutionOwner.current() == owner) { "Remote service belongs to another execution owner." }
     }
 
+    private fun checkOpen() {
+        checkOwner()
+        check(closed.not()) { "Remote service is closed." }
+    }
+
     private fun admitTransition() {
         if (dispatchDepth != 0 && 64 <= transitionCount++) {
             throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Too many UI transitions in one event.")
@@ -362,7 +376,10 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         owner: Owner,
         player: Player,
         definition: ScreenDefinition,
-    ): RemoteScreenSession = open(owner, player, definition.asUiDefinition())
+    ): RemoteScreenSession {
+        checkOpen()
+        return open(owner, player, definition.asUiDefinition())
+    }
 
     /**
      * Authenticated transport with one ordinary screen and a bounded set of HUDs.
@@ -450,6 +467,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         }
 
         fun close(reason: RemoteFailure) {
+            discovered = false
             var failure: Throwable? = null
             try {
                 sessions.keys.toList().forEach { identity ->
