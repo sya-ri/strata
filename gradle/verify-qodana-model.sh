@@ -723,16 +723,16 @@ PY
         ;;
       file:///[A-Za-z]:/*)
         resolve_iml_windows_absolute_source_path "${source_url#file:///}" "$source_url"
-        relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
+        relative_path=$(realpath -m --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file://[A-Za-z]:/*)
         resolve_iml_windows_absolute_source_path "${source_url#file://}" "$source_url"
-        relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
+        relative_path=$(realpath -m --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file:///*)
         absolute_path=${source_url#file://}
         resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
-        relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
+        relative_path=$(realpath -m --relative-to="$module_directory" -- "$resolved_path")
         ;;
       *)
         echo "The generated IDEA module contains an unsupported source URL: $iml: $source_url" >&2
