@@ -329,7 +329,6 @@ internal class MinecraftTextRun private constructor(
      * @param other run to compare.
      * @return true when an element update is an exact retained no-op.
      */
-    @Suppress("unused")
     @JvmSynthetic
     internal fun equivalentTo(other: MinecraftTextRun): Boolean = text == other.text && size == other.size && nativeWidth == other.nativeWidth && glyphs == other.glyphs && sampledGlyphs == other.sampledGlyphs && paintPolicy == other.paintPolicy
 
