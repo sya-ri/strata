@@ -1710,6 +1710,41 @@ if (completeIdeaModelActive) {
         }
     }
 
+    tasks.register("probeQodanaCompilerSdks") {
+        description = "Exports the configured compiler toolchains for the isolated SDK diagnostic."
+        notCompatibleWithConfigurationCache("Reads actual configured compiler toolchains for the diagnostic.")
+        doLast {
+            val projects = allprojects.sortedBy { it.path }.mapNotNull { owner ->
+                val kotlin = owner.tasks.withType<KotlinJvmCompile>().associate { task ->
+                    task.name to task.kotlinJavaToolchain.javaVersion.get().majorVersion.toInt()
+                }
+                val java = owner.tasks.withType<JavaCompile>().associate { task ->
+                    task.name to task.javaCompiler.get().metadata
+                }
+                if (kotlin.isEmpty() && java.isEmpty()) return@mapNotNull null
+                val spec = owner.extensions.getByType<JavaPluginExtension>().toolchain
+                val sdk = owner.extensions.getByType<JavaToolchainService>().launcherFor(spec).get().metadata
+                val installation = sdk.installationPath.asFile.canonicalFile
+                require(kotlin.values.all { it == sdk.languageVersion.asInt() }) { "Kotlin task SDK versions differ from the configured project toolchain: ${owner.path}: $kotlin" }
+                require(java.values.all { it.installationPath.asFile.canonicalFile == installation }) { "Java task SDK installations differ from the configured project toolchain: ${owner.path}" }
+                mapOf(
+                    "project" to owner.path,
+                    "module" to owner.extensions.findByType<IdeaModel>()?.module?.name,
+                    "java" to sdk.languageVersion.asInt(),
+                    "vendor" to sdk.vendor,
+                    "runtimeVersion" to sdk.javaRuntimeVersion,
+                    "installation" to installation.invariantSeparatorsPath,
+                    "kotlinCompilers" to kotlin,
+                    "javaCompilers" to java.keys.sorted(),
+                )
+            }
+            val output = layout.buildDirectory.file("qodana/probe-sdks.json").get().asFile
+            output.parentFile.mkdirs()
+            output.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("revision" to gitOutput("rev-parse", "HEAD").trim(), "projects" to projects))))
+            logger.lifecycle("Exported the actual configured SDKs for ${projects.size} JVM projects.")
+        }
+    }
+
     apply(from = rootProject.file("gradle/qodana-idea-model.gradle.kts"))
 
 }

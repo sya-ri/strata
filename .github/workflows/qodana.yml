@@ -106,6 +106,7 @@ jobs:
           args: >-
             --linter=qodana-jvm-community --within-docker=false
             --config=build/qodana/probe-context.yaml
+            ${{ inputs.context == 'copy-shared-sdk' && format('--property=idea.config.path={0}/build/qodana/probe-ide-config', github.workspace) || '' }}
             --property=intellij.platform.shared.source.support=true
             --property=batch.inspections.inspect.all.code.insight.contexts=true
       - name: Verify original roots, dependencies, source bytes and actual clean analysis

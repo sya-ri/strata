@@ -186,7 +186,7 @@ def inspect(mode, results):
     assert 0 < sum(int(row["Times Inspection was Performed"]) for row in rows if row["Inspection Language"].casefold() == "kotlin")
     modules = json.loads((results / "projectStructure/Modules.json").read_text(encoding="utf-8"))["modules"]
     sdks = {module["name"]: [item["name"] for item in module["orderEntries"] if item.get("type") == "SDK"] for module in modules}
-    print(json.dumps(dict(mode=mode, sdks=sdks, sanity=sanity, findings=findings), indent=2))
+    print(json.dumps(dict(mode=mode, sdks=sdks, sanity=[item["message"]["text"] for item in sanity], findings=[(item["ruleId"], item["message"]["text"]) for item in findings]), indent=2))
     if mode == "inherited":
         assert sanity and "Compiler" in json.dumps(sanity), "The wrong-SDK control must expose the removed Java API."
         return
@@ -194,7 +194,10 @@ def inspect(mode, results):
     assert sdks == {"sdk-" + name: [metadata["sdk"]] for name, metadata in expected.items()}, sdks
     assert not sanity, "Actual SDKs must resolve both independently compiled JDK-specific APIs."
     messages = [item["message"]["text"] for item in findings]
-    assert len(findings) == 3 and all(item["ruleId"] == "UnusedSymbol" for item in findings), messages
+    unused = [item for item in findings if item["ruleId"] == "UnusedSymbol"]
+    removal = [item for item in findings if item["ruleId"] == "MarkedForRemoval"]
+    assert len(findings) == 5 and len(unused) == 3 and len(removal) == 2, messages
+    assert all("java.lang.Compiler" in item["message"]["text"] and item["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] == "old/src/main/kotlin/fixture/Value.kt" for item in removal), messages
     assert sum('"unusedSdkCanary"' in message for message in messages) == 1 and sum('"unusedSharedCanary"' in message for message in messages) == 2, messages
     shared_paths = {item["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for item in findings if '"unusedSharedCanary"' in item["message"]["text"]}
     assert len(shared_paths) == 2, "Both independently owned shared sources must really be inspected."
