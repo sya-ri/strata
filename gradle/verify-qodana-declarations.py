@@ -250,15 +250,19 @@ def verify_source_ownership(root, inventory, model, container_root=""):
 
 
 def verify_report(sarif, revision):
-    """Require current-revision analysis without failed execution or semantic-resolution problems."""
-    revisions = {entry.get("revisionId") for run in sarif["runs"] for entry in run.get("versionControlProvenance", [])}
-    if revisions != {revision}:
+    """Require explicit completion of every current-revision run without execution or semantic errors."""
+    if not sarif["runs"]:
         fail("the analysis report does not belong to the selected declaration revision")
     for run in sarif["runs"]:
+        if {entry.get("revisionId") for entry in run.get("versionControlProvenance", [])} != {revision}:
+            fail("the analysis report does not belong to the selected declaration revision")
         if run.get("properties", {}).get("qodana.sanity.results"):
             fail("analysis contains semantic sanity problems")
-        for invocation in run.get("invocations", []):
-            if invocation.get("executionSuccessful") is False:
+        invocations = run.get("invocations", [])
+        if not invocations:
+            fail("the analysis invocation did not complete successfully")
+        for invocation in invocations:
+            if invocation.get("executionSuccessful") is not True:
                 fail("the analysis invocation did not complete successfully")
             for notification in invocation.get("toolExecutionNotifications", []):
                 if notification.get("level") == "error":

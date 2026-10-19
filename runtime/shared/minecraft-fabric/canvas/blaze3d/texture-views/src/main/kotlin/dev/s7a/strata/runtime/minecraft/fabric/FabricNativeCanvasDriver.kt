@@ -42,7 +42,7 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         depth: Boolean,
     ): NativeCanvasTarget {
         RenderSystem.assertOnRenderThread()
-        FabricNativeCanvasShaders.requireSupportedExtent(physicalSize)
+        requireFabricMinecraftCanvasExtent(physicalSize)
         val target = OffscreenTarget(depth)
         try {
             target.createBuffers(physicalSize.width, physicalSize.height)
@@ -91,7 +91,7 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         require(texture.depthOrLayers == 1) { "Canvas accepts only ordinary two-dimensional images." }
         require((texture.usage() and GpuTexture.USAGE_TEXTURE_BINDING) != 0) { "A Canvas texture must support texture binding." }
         require(texture.format == TextureFormat.RGBA8) { "Canvas accepts only RGBA8 straight-alpha color textures." }
-        FabricNativeCanvasShaders.requireSupportedExtent(lease.size)
+        requireFabricMinecraftCanvasExtent(lease.size)
         require(texture.getWidth(0) == lease.size.width && texture.getHeight(0) == lease.size.height) {
             "A Canvas lease extent must match native mip level zero."
         }
@@ -194,6 +194,6 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
     ): String =
         when (stage) {
             ShaderType.VERTEX -> FabricNativeCanvasShaders.vertex
-            ShaderType.FRAGMENT -> FabricNativeCanvasShaders.bufferedFragment(origin)
+            ShaderType.FRAGMENT -> FabricNativeCanvasShaders.fragment(origin, "layout(std140) uniform CanvasCapture { ivec3 CanvasTargetExtent; };")
         }
 }

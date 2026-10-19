@@ -4,11 +4,8 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
-import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.headless.rasterizeHeadlessInto
-import dev.s7a.strata.runtime.headless.rasterizeHeadlessRegion
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.ceil
@@ -238,17 +235,6 @@ internal class FabricMinecraftPortableImage(
         val relative = (center - start) / (end - start)
         return floor(sourceStart * (1f - relative) + sourceEnd * relative).toInt().coerceIn(0, sourceSize - 1)
     }
-
-    /**
-     * Creates only this run's physical storage while preserving original sampled-coordinate arithmetic.
-     */
-    @JvmSynthetic
-    internal fun rasterize(): HeadlessImage =
-        if (origin == IntOffset.Zero) {
-            rasterizeHeadless(commands, size, scale)
-        } else {
-            rasterizeHeadlessRegion(commands, IntRect(origin.x, origin.y, Math.addExact(origin.x, size.width), Math.addExact(origin.y, size.height)), scale)
-        }
 
     /**
      * Borrows a frame-local ARGB buffer for exact region rasterization; retains no mutable storage or image view.

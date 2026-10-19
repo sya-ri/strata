@@ -690,20 +690,19 @@ public class FabricMinecraftScreen private constructor(
                         is FabricMinecraftFrameLayer.Portable -> {
                             val texture = textures[textureIndex++].texture
                             portableQueued()
-                            submitFabricMinecraftGuiCorners(layer.bounds) { x0, y0, x1, y1 ->
-                                graphics.blit(
-                                    texture.getTextureView(),
-                                    texture.getSampler(),
-                                    x0,
-                                    y0,
-                                    x1,
-                                    y1,
-                                    0f,
-                                    1f,
-                                    0f,
-                                    1f,
-                                )
-                            }
+                            val bounds = layer.bounds
+                            graphics.blit(
+                                texture.getTextureView(),
+                                texture.getSampler(),
+                                bounds.left,
+                                bounds.top,
+                                bounds.right,
+                                bounds.bottom,
+                                0f,
+                                1f,
+                                0f,
+                                1f,
+                            )
                         }
 
                         is FabricMinecraftFrameLayer.Sampled -> {

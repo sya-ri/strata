@@ -187,33 +187,6 @@ internal class FabricMinecraftInputMappingTest {
     }
 
     @Test
-    fun legacyCharacterCallbacksAssembleOnlyAdjacentSurrogatePairs() {
-        val input = FabricMinecraftCharacterInput()
-        assertNull(input.accept('\uD83D'))
-        assertEquals(TextInputEvent.Character(0x1F642), input.accept('\uDE42'))
-        assertNull(input.accept('\uDE42'))
-        assertEquals(TextInputEvent.Character('本'.code), input.accept('本'))
-        assertNull(input.accept('\uD83D'))
-        assertEquals(TextInputEvent.Character('A'.code), input.accept('A'))
-        assertNull(input.accept('\uDE42'))
-        assertNull(input.accept('\uD83C'))
-        assertNull(input.accept('\uD83D'))
-        assertEquals(TextInputEvent.Character(0x1F642), input.accept('\uDE42'))
-    }
-
-    @Test
-    fun legacyCharacterResetDiscardsIncompleteInputAtFocusAndLifecycleBoundaries() {
-        val input = FabricMinecraftCharacterInput()
-        assertNull(input.accept('\uD83D'))
-        input.reset()
-        input.reset()
-        assertNull(input.accept('\uDE42'))
-        assertEquals(TextInputEvent.Character('한'.code), input.accept('한'))
-        assertNull(input.accept('\uD83D'))
-        assertEquals(TextInputEvent.Character(0x1F642), input.accept('\uDE42'))
-    }
-
-    @Test
     fun nativeTextInputFocusResubmitsOnlyWhenTheEditableIntervalChanges() {
         val (first, second) = editableFocusIntervals()
         val transitions = ArrayList<Boolean>()

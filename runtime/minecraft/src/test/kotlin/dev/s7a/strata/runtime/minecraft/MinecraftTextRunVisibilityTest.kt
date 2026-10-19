@@ -245,7 +245,10 @@ internal class MinecraftTextRunVisibilityTest {
                 run.paint(scope, origin.x, origin.y)
                 0
             } else {
-                run.paintVisible(scope, origin.x, origin.y, viewport)
+                MinecraftTextReadProbe(listOf(run)).use { probe ->
+                    run.paintVisible(scope, origin.x, origin.y, viewport)
+                    probe.visits
+                }
             }
         return Capture(scope.commands, visits)
     }

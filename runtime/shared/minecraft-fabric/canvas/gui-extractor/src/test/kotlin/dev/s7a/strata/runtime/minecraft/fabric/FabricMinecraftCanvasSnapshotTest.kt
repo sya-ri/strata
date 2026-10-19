@@ -15,9 +15,9 @@ import org.junit.jupiter.api.assertThrows
 internal class FabricMinecraftCanvasSnapshotTest {
     @Test
     fun nativeExtentBoundProtectsIntegerPixelCenterSampling() {
-        assertDoesNotThrow { FabricNativeCanvasShaders.requireSupportedExtent(IntSize(32768, 32768)) }
+        assertDoesNotThrow { requireFabricMinecraftCanvasExtent(IntSize(32768, 32768)) }
         listOf(IntSize(32769, 1), IntSize(1, 32769), IntSize(0, 1), IntSize(1, 0)).forEach { size ->
-            assertThrows<IllegalArgumentException> { FabricNativeCanvasShaders.requireSupportedExtent(size) }
+            assertThrows<IllegalArgumentException> { requireFabricMinecraftCanvasExtent(size) }
         }
     }
 

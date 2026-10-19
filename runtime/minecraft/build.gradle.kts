@@ -5,5 +5,6 @@ dependencies {
     testImplementation(project(":runtime:headless"))
     testImplementation(project(":runtime:remote"))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.asm)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

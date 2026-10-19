@@ -141,7 +141,10 @@ internal class MinecraftTextLayoutVisibilityTest {
                 layout.paint(scope, origin.x, origin.y)
                 0
             } else {
-                layout.paintVisible(scope, viewport, origin.x, origin.y)
+                MinecraftTextReadProbe(layout.lines.map { line -> line.run }).use { probe ->
+                    layout.paintVisible(scope, viewport, origin.x, origin.y)
+                    probe.visits
+                }
             }
         return Capture(scope.commands, visits)
     }

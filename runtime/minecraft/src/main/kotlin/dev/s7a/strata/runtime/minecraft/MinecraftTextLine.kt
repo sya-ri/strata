@@ -102,57 +102,34 @@ internal class MinecraftTextLine private constructor(
      * @return original UTF-16 scalar boundary; equal distances and coordinate plateaus select the earliest logical boundary.
      */
     @JvmSynthetic
-    internal fun offsetAt(x: Int): Int = offsets[nearestIndex(x) { index -> positions[index] }]
+    internal fun offsetAt(x: Int): Int = offsets[nearestIndex(x)]
 
-    /**
-     * Counts coordinate reads through the exact lookup algorithm outside timed input or rendering.
-     * The inline read hook adds no callback, counter, allocation or retained state to [offsetAt].
-     */
-    @JvmSynthetic
-    internal fun boundaryVisits(x: Int): Int {
-        var visits = 0
-        nearestIndex(x) { index ->
-            visits += 1
-            positions[index]
-        }
-        return visits
-    }
-
-    private inline fun nearestIndex(
-        x: Int,
-        position: (Int) -> Int,
-    ): Int {
-        if (monotone.not()) return scannedIndex(x, position)
-        val right = lowerBound(x, position)
+    private fun nearestIndex(x: Int): Int {
+        if (monotone.not()) return scannedIndex(x)
+        val right = lowerBound(x)
         if (right == 0) return 0
-        if (right == positions.size) return lowerBound(position(positions.lastIndex), position)
-        val leftPosition = position(right - 1)
+        if (right == positions.size) return lowerBound(positions[positions.lastIndex])
+        val leftPosition = positions[right - 1]
         val leftDistance = abs(leftPosition.toLong() - x.toLong())
-        val rightDistance = abs(position(right).toLong() - x.toLong())
-        return if (leftDistance <= rightDistance) lowerBound(leftPosition, position) else right
+        val rightDistance = abs(positions[right].toLong() - x.toLong())
+        return if (leftDistance <= rightDistance) lowerBound(leftPosition) else right
     }
 
-    private inline fun lowerBound(
-        x: Int,
-        position: (Int) -> Int,
-    ): Int {
+    private fun lowerBound(x: Int): Int {
         var first = 0
         var end = positions.size
         while (first < end) {
             val middle = first + (end - first) / 2
-            if (position(middle) < x) first = middle + 1 else end = middle
+            if (positions[middle] < x) first = middle + 1 else end = middle
         }
         return first
     }
 
-    private inline fun scannedIndex(
-        x: Int,
-        position: (Int) -> Int,
-    ): Int {
+    private fun scannedIndex(x: Int): Int {
         var nearest = 0
         var distance = Long.MAX_VALUE
         for (index in positions.indices) {
-            val candidate = abs(position(index).toLong() - x.toLong())
+            val candidate = abs(positions[index].toLong() - x.toLong())
             if (candidate < distance) {
                 nearest = index
                 distance = candidate

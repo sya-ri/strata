@@ -12,13 +12,20 @@ import subprocess
 def plan(paths, model=None, full=False):
     """Unknown inputs deliberately select the complete suite instead of silently skipping it."""
     result = {name: False for name in ("common", "web", "docs", "docs_full", "workflow", "qodana", "all_minecraft", "preflight")}
+    if model is not None and (not isinstance(model, dict) or set(model) != {"minecraft", "documentation"}
+                              or not isinstance(model["minecraft"], dict) or not isinstance(model["documentation"], list)):
+        full, model = True, None
+    native_sources = (model or {}).get("minecraft", {})
+    documentation_sources = (model or {}).get("documentation", [])
     versions = set()
     for path in paths:
         if path.startswith(".github/performance/") or path == ".github/performance" or path == "gradle/performance/paired-jvm.example.json":
             result.update(workflow=True, preflight=True)
             continue
         result["preflight"] |= path.startswith("gradle/performance/") or path in ("gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml")
-        if path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")) or (path.startswith("gradle/performance/") and path.endswith(".py")):
+        if path.startswith("build-logic/src/test/") or path == "gradle/qodana-idea-model.gradle.kts":
+            result.update(common=True, workflow=True, qodana=True)
+        elif path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")) or (path.startswith("gradle/performance/") and path.endswith(".py")):
             result["workflow"] = True
         elif path.startswith(("release/", ".github/workflows/publish", ".github/workflows/release", ".github/actions/use-prepared")):
             result["workflow"] = True
@@ -28,12 +35,13 @@ def plan(paths, model=None, full=False):
             result["workflow"] = True
             result["docs_full"] |= path.startswith(".github/workflows/pages")
         elif path.startswith(("runtime/minecraft-fabric-", "integration/minecraft-fabric-", "runtime/shared/", "integration/shared/")):
-            consumers = {version for version, roots in (model or {}).items()
+            consumers = {version for version, roots in native_sources.items()
                          if any(path == root or path.startswith(root.rstrip("/") + "/") for root in roots)}
             if consumers:
                 versions.update(consumers)
             else:
                 result["all_minecraft"] = True
+            result["docs_full"] |= any(path == root or path.startswith(root.rstrip("/") + "/") for root in documentation_sources)
             result["qodana"] = True
         elif path.startswith(("runtime/web/", "integration/web/", "examples/web/", "tools/web/", "kotlin-js-store/")):
             result["web"] = True

@@ -161,7 +161,6 @@ internal class MinecraftTextRun private constructor(
      * @param originX horizontal origin in the same local coordinates as [viewport].
      * @param originY top of the nine-pixel line box in those coordinates.
      * @param viewport half-open local clip; an empty clip emits nothing.
-     * @return candidate and prepared-bounds glyph visits, including a second visit for a separate shadow pass; binary comparisons are excluded.
      * @throws ArithmeticException when an emitted integer quad cannot be represented.
      * @throws IllegalStateException when the borrowed scope is outside its callback lifetime or owner thread.
      */
@@ -171,31 +170,26 @@ internal class MinecraftTextRun private constructor(
         originX: Int,
         originY: Int,
         viewport: IntRect,
-    ): Int {
-        if (viewport.width == 0 || viewport.height == 0) return 0
+    ) {
+        if (viewport.width == 0 || viewport.height == 0) return
         val legacy = legacyRange(originX, viewport)
         val range = sampledRange(originX, viewport)
-        if (legacy.isEmpty() && range.isEmpty()) return 0
-        var visited = 0
-        if (paintPolicy.preparedTextBounds && hasPreparedTextBounds(originX, originY) { visited++ }.not()) return visited
+        if (legacy.isEmpty() && range.isEmpty()) return
+        if (paintPolicy.preparedTextBounds && hasPreparedTextBounds(originX, originY).not()) return
         val source = IntRect(0, 0, glyphSize.width, glyphSize.height)
         for (index in legacy) {
             paintLegacy(glyphs[index], scope, source, originX, originY, viewport)
-            visited++
         }
         if (paintPolicy.interleavedShadows.not() && sampledShadows) {
             for (index in range) {
                 paintSampled(sampledGlyphs[index], scope, originX, originY, true, viewport)
-                visited++
             }
         }
         for (index in range) {
             val positioned = sampledGlyphs[index]
             if (paintPolicy.interleavedShadows) paintSampled(positioned, scope, originX, originY, true, viewport)
             paintSampled(positioned, scope, originX, originY, false, viewport)
-            visited++
         }
-        return visited
     }
 
     private fun legacyRange(
@@ -275,17 +269,15 @@ internal class MinecraftTextRun private constructor(
         }
     }
 
-    private inline fun hasPreparedTextBounds(
+    private fun hasPreparedTextBounds(
         originX: Int,
         originY: Int,
-        onVisit: () -> Unit = {},
     ): Boolean {
         var left = Float.MAX_VALUE
         var top = Float.MAX_VALUE
         var right = -Float.MAX_VALUE
         var bottom = -Float.MAX_VALUE
         for (positioned in sampledGlyphs) {
-            onVisit()
             val glyph = positioned.glyph
             val x = originX + positioned.x
             val rawLeft = if (glyph.orientation.flipX) glyph.right else glyph.left

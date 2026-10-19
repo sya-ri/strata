@@ -172,7 +172,7 @@ public object TextAreaInputOperationReport : JvmOperationReportAdapter {
         val method = methods.singleOrNull()
         val observed = method?.apply { isAccessible = true }?.invoke(line, x) as Int?
         return JsonObject().apply {
-            addProperty("scope", "One actual coordinate diagnostic invocation after sampling; not a timed call count")
+            addProperty("scope", if (method == null) "Unavailable: this runtime exposes no lookup measurement hook" else "One legacy coordinate diagnostic invocation after sampling; not a timed call count")
             addProperty("x", x)
             addProperty("current_line_boundaries", positions.size)
             addProperty("nondecreasing_coordinates", (1 until positions.size).all { index -> positions[index - 1] <= positions[index] })

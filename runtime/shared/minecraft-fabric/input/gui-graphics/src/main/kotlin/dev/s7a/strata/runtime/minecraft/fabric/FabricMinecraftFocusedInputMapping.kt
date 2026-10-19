@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.KeyboardModifiers
-import dev.s7a.strata.input.TextInputEvent
 import org.lwjgl.glfw.GLFW
 
 /**
@@ -41,20 +40,6 @@ internal fun mapMinecraftKeyRelease(
     mapMinecraftKey(keyValue, scanCode, modifierFlags) { key, mappedScanCode, modifiers ->
         KeyboardEvent.Release(key, mappedScanCode, modifiers)
     }
-
-/**
- * Maps one committed Minecraft Unicode character into the platform-neutral typed event.
- *
- * Supported legacy Minecraft releases expose committed character input but have no screen preedit callback, so input-method composition remains native until commitment.
- *
- * @param codePoint committed Unicode code point.
- * @return detached common event, or null for an invalid Unicode scalar value.
- */
-@JvmSynthetic
-internal fun mapMinecraftCharacter(codePoint: Int): TextInputEvent.Character? {
-    if (Character.isValidCodePoint(codePoint).not() || codePoint in 0xD800..0xDFFF) return null
-    return TextInputEvent.Character(codePoint)
-}
 
 private inline fun <T> mapMinecraftKey(
     keyValue: Int,

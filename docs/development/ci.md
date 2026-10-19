@@ -68,6 +68,7 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Changed input | Selected work |
 | --- | --- |
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
+| Build-logic tests, test resources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and Qodana |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
 | Prose and links | Documentation and Skill consistency |
 | Documentation generation, examples, images, or Dokka | Compiled documentation and generated-output checks |
@@ -77,9 +78,11 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Unrecognized input | Full verification |
 
 Native helpers, compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
+Build-logic test-only changes and the IDEA analysis model do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
 
-`writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model.
+`writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model and the documentation project's actual source roots.
 Shared-source selection uses that output; deletions and both sides of renames participate in the diff.
+Changes under a shared documentation source root also select documentation verification, including removed files; this conservatively includes files filtered out by that source set.
 The planner creates one matrix job per selected Minecraft version in numeric order, with fail-fast disabled.
 GitHub runs these jobs independently within the available runner concurrency, and a failed version can be retried separately.
 Documentation and Dokka run in their own parallel job and upload the checked site.
@@ -120,10 +123,12 @@ Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
 Shared Kotlin roots remain in every module that actually compiles them, with that module's dependencies and compiler identity.
-Qodana enables IntelliJ's shared-source support and batch inspection of all code-insight contexts so usages resolve against the corresponding source variant.
+Qodana requests IntelliJ's shared-source support and batch inspection of all code-insight contexts.
+These switches alone do not establish correct Kotlin resolution for every variant; verify actual inspection results as well as model completeness before accepting a model change.
 Source and compiled-library roots use resolved file URLs without directory suffixes, and declared output directories that were never produced are omitted from libraries.
 No synthetic fallback library or cross-variant friend relationship substitutes for a compiler's own sources.
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
+Every SARIF run must identify the selected revision and explicitly record successful analysis invocations.
 The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
 Each Kotlin owner's facet preserves its compiler module name, JVM target, friend paths, and explicit API mode.
 `UnusedSymbol` and `RedundantVisibilityModifier` remain enabled without path exclusions; Mixin annotations identify framework entry points.
