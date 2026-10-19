@@ -327,12 +327,7 @@ internal class QodanaJmhModelFunctionalTest {
                 .nodeValue,
         )
         assertTrue((auxiliary["outputs"] as List<*>).any { ((it as Map<*, *>)["files"] as Map<*, *>).isNotEmpty() })
-        val verifier =
-            ProcessBuilder("python", "-B", repository.resolve("gradle/tests/fixtures/assert_qodana_compiler_model.py").toString(), directory.toString())
-                .redirectErrorStream(true)
-                .start()
-        val verificationOutput = verifier.inputStream.bufferedReader().use { it.readText() }
-        assertEquals(0, verifier.waitFor(), verificationOutput)
+        assertCompilerModel()
         val sourceViews = JsonSlurper().parse(directory.resolve("build/qodana/source-views.json").toFile()) as Map<*, *>
         val firstView = (sourceViews["roots"] as List<*>).first() as Map<*, *>
         val obsoleteSource = directory.resolve(firstView["view"] as String).resolve("Obsolete.kt")
@@ -341,6 +336,14 @@ internal class QodanaJmhModelFunctionalTest {
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
         assertTrue(Files.exists(obsoleteSource).not(), "Each analysis must recreate the exact selected source views.")
         assertEquals(parsed, JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()))
+        val initialSupportHash = supportOutputHash()
+        write("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt", "package fixture\npublic fun kotlinValue(): Int = 6\n")
+        git("add", "--", "support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt")
+        git("-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Change required compiler output")
+        val changed = runner().build()
+        assertEquals(TaskOutcome.SUCCESS, changed.task(":qodanaDeclarationInventory")?.outcome)
+        assertTrue(initialSupportHash != supportOutputHash(), "A later action must fingerprint the newly compiled dependency bytes.")
+        assertCompilerModel()
         val missingDependencyRunner = runner()
         val missingDependency = missingDependencyRunner.withArguments(missingDependencyRunner.arguments + "-Pfixture.missingRequiredClasspath=true").buildAndFail()
         assertTrue(missingDependency.output.contains("missing-required.jar"))
@@ -352,6 +355,26 @@ internal class QodanaJmhModelFunctionalTest {
         assertEquals(TaskOutcome.FAILED, failed.task(":auxiliary-owner:compileVerificationKotlin")?.outcome)
         assertEquals(null, failed.task(":qodanaDeclarationInventory"))
         assertTrue(Files.exists(directory.resolve("build/qodana/declarations.json")).not())
+    }
+
+    /** Checks fresh exports independently, including SDK, classpath and ownership rejection controls. */
+    private fun assertCompilerModel() {
+        val verifier =
+            ProcessBuilder("python", "-B", repository.resolve("gradle/tests/fixtures/assert_qodana_compiler_model.py").toString(), directory.toString())
+                .redirectErrorStream(true)
+                .start()
+        val verificationOutput = verifier.inputStream.bufferedReader().use { it.readText() }
+        assertEquals(0, verifier.waitFor(), verificationOutput)
+    }
+
+    /** Reads the required compiled Kotlin library fingerprint from the current declaration export. */
+    private fun supportOutputHash(): String {
+        val inventory = JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()) as Map<*, *>
+        val auxiliary = (inventory["auxiliary"] as List<*>).single() as Map<*, *>
+        val dependencies = auxiliary["dependencies"] as Map<*, *>
+        return (dependencies.values.first() as List<*>)
+            .map { it as Map<*, *> }
+            .single { it["kind"] == "Library" && (it["path"] as String).endsWith("/support-kotlin/build/classes/kotlin/main") }["sha256"] as String
     }
 
     /** Verifies complete compiler contexts and physical containment, including shared roots outside module directories. */

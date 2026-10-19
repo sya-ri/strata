@@ -1425,17 +1425,6 @@ if (completeIdeaModelActive) {
             commandLine("git", *arguments)
         }.standardOutput.asText.get()
 
-    /** Hashes current bytes; declaration evidence cannot be restored from the build cache. */
-    fun File.sha256(): String {
-        val bytes = if (isDirectory) {
-            val files = walkTopDown().filter { it.isFile }.sortedBy { it.relativeTo(this).invariantSeparatorsPath }.associate { it.relativeTo(this).invariantSeparatorsPath to it.sha256() }
-            JsonOutput.toJson(files).toByteArray(Charsets.UTF_8)
-        } else {
-            readBytes()
-        }
-        return MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
-    }
-
     val repositoryRoot = rootDir.canonicalFile.toPath()
 
     /** Returns a canonical repository path, rejecting linked roots outside the selected checkout. */
@@ -1445,10 +1434,6 @@ if (completeIdeaModelActive) {
         require(path.startsWith(root) && path != root) { "Declaration path must be inside the repository: $this" }
         return root.relativize(path).toString().replace(File.separatorChar, '/')
     }
-
-    /** Captures current directory membership and bytes without reusing acceptance evidence. */
-    fun File.declarationFiles(): Map<String, String> =
-        if (isDirectory) walkTopDown().filter { it.isFile }.map { it.repositoryPath() to it.sha256() }.sortedBy { it.first }.toMap() else emptyMap()
 
     /** Identifies absent declared output directories whose producing tasks actually reported NO_SOURCE. */
     fun unproducedSourceOutputs(): Set<File> =
@@ -1468,49 +1453,6 @@ if (completeIdeaModelActive) {
         }.orEmpty()
     }
 
-    /**
-     * Resolves actual compiler/runtime edges while omitting owner outputs and absent source-set outputs from NO_SOURCE tasks.
-     * Missing required libraries still fail their byte inventory instead of disappearing from analysis.
-     */
-    fun Project.declarationDependencies(selected: List<SourceSet>): Map<String, List<Map<String, String>>> {
-        val owner = this
-        val sourceSets = extensions.getByType<SourceSetContainer>()
-        val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
-        val unproducedOutputs = unproducedSourceOutputs()
-        val artifacts = selected.flatMap { sourceSet ->
-            listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
-                owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
-            }
-        }.distinctBy { it.file.canonicalFile }
-        val dependencies = selected.flatMap { sourceSet ->
-            listOf(sourceSet.compileClasspathConfigurationName to sourceSet.compileClasspath, sourceSet.runtimeClasspathConfigurationName to sourceSet.runtimeClasspath)
-        }.associate { (configurationName, classpath) ->
-            val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs - unproducedOutputs
-            val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
-            val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
-            val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->
-                val component = artifact.id.componentIdentifier
-                when (component) {
-                    is ProjectComponentIdentifier -> {
-                        val dependency = rootProject.project(component.projectPath)
-                        mapOf("kind" to "Module", "identity" to dependency.extensions.getByType<IdeaModel>().module.name, "project" to component.projectPath)
-                    }
-                    is ModuleComponentIdentifier -> mapOf(
-                        "kind" to "Library",
-                        "identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}",
-                        "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'),
-                        "sha256" to artifact.file.sha256(),
-                    )
-                    else -> mapOf("kind" to "Library", "identity" to component.displayName, "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to artifact.file.sha256())
-                }
-            }.distinct() + (requiredFiles - resolvedFiles).sortedBy { it.path }.map { file ->
-                mapOf("kind" to "Library", "identity" to "file:${file.canonicalPath}", "path" to file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to file.sha256())
-            }
-            configurationName to identities
-        }
-        return dependencies
-    }
-
     tasks.register("qodanaDeclarationInventory") {
         group = "verification"
         description = "Recreates revision-bound JVM compiler root, SDK and dependency expectations from Gradle declarations."
@@ -1527,8 +1469,66 @@ if (completeIdeaModelActive) {
             require(changedTrackedSources.isBlank()) {
                 "Declaration acceptance requires the selected revision's clean tracked sources. Changed tracked paths:\n$changedTrackedSources"
             }
+            // All producers have completed; these maps live only for this action's immutable filesystem snapshot.
+            val fileHashes = mutableMapOf<File, String>()
+            val directoryFiles = mutableMapOf<File, Map<String, String>>()
+
+            /** Hashes current bytes once per physical file or directory; no result survives this task action. */
+            fun File.sha256(): String = fileHashes.getOrPut(canonicalFile) {
+                val bytes = if (isDirectory) {
+                    val files = walkTopDown().filter { it.isFile }.sortedBy { it.relativeTo(this).invariantSeparatorsPath }.associate { it.relativeTo(this).invariantSeparatorsPath to it.sha256() }
+                    JsonOutput.toJson(files).toByteArray(Charsets.UTF_8)
+                } else {
+                    readBytes()
+                }
+                MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+            }
+
+            /** Captures each current directory's membership once, preserving canonical repository paths. */
+            fun File.declarationFiles(): Map<String, String> = directoryFiles.getOrPut(canonicalFile) {
+                if (isDirectory) walkTopDown().filter { it.isFile }.map { it.repositoryPath() to it.sha256() }.sortedBy { it.first }.toMap() else emptyMap()
+            }
+
             val tracked = gitOutput("ls-files", "-z").split('\u0000').filter(String::isNotEmpty).sorted().associateWith { file(it).sha256() }
             val absentOutputs = unproducedSourceOutputs()
+
+            /**
+             * Resolves actual compiler/runtime edges while omitting owner outputs and absent source-set outputs from NO_SOURCE tasks.
+             * Missing required libraries still fail their byte inventory instead of disappearing from analysis.
+             */
+            fun Project.declarationDependencies(sourceSet: SourceSet): Map<String, List<Map<String, String>>> {
+                val owner = this
+                val sourceSets = extensions.getByType<SourceSetContainer>()
+                val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
+                val artifacts = listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
+                    owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
+                }.distinctBy { it.file.canonicalFile }
+                return listOf(sourceSet.compileClasspathConfigurationName to sourceSet.compileClasspath, sourceSet.runtimeClasspathConfigurationName to sourceSet.runtimeClasspath).associate { (configurationName, classpath) ->
+                    val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs - absentOutputs
+                    val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
+                    val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
+                    val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->
+                        val component = artifact.id.componentIdentifier
+                        when (component) {
+                            is ProjectComponentIdentifier -> {
+                                val dependency = rootProject.project(component.projectPath)
+                                mapOf("kind" to "Module", "identity" to dependency.extensions.getByType<IdeaModel>().module.name, "project" to component.projectPath)
+                            }
+                            is ModuleComponentIdentifier -> mapOf(
+                                "kind" to "Library",
+                                "identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}",
+                                "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'),
+                                "sha256" to artifact.file.sha256(),
+                            )
+                            else -> mapOf("kind" to "Library", "identity" to component.displayName, "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to artifact.file.sha256())
+                        }
+                    }.distinct() + (requiredFiles - resolvedFiles).sortedBy { it.path }.map { file ->
+                        mapOf("kind" to "Library", "identity" to "file:${file.canonicalPath}", "path" to file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to file.sha256())
+                    }
+                    configurationName to identities
+                }
+            }
+
             val projects = allprojects.sortedBy { it.path }.map { owner ->
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
                 val sourceSets = owner.extensions.findByType<SourceSetContainer>()
@@ -1629,7 +1629,7 @@ if (completeIdeaModelActive) {
                         mapOf(
                             "sourceSet" to sourceSet.name,
                             "classpaths" to mapOf("compile" to sourceSet.compileClasspathConfigurationName, "runtime" to sourceSet.runtimeClasspathConfigurationName),
-                            "dependencies" to owner.declarationDependencies(listOf(sourceSet)),
+                            "dependencies" to owner.declarationDependencies(sourceSet),
                         )
                     },
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
@@ -1676,7 +1676,7 @@ if (completeIdeaModelActive) {
                         declarations.firstOrNull { it["path"] == entry["path"] && it["kind"] in setOf("Source", "Resource") } ?: entry
                     }
                 }.distinctBy { it["kind"] to it["path"] }
-                val dependencies = owner.declarationDependencies(listOf(jmh))
+                val dependencies = owner.declarationDependencies(jmh)
                 mapOf(
                     "project" to owner.path,
                     "directory" to owner.projectDir.repositoryPath(),
@@ -1726,7 +1726,7 @@ if (completeIdeaModelActive) {
                         "java" to owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion.get().asInt(),
                         "iml" to module.outputFile.repositoryPath(), "roots" to roots, "outputs" to outputs,
                         "classpaths" to mapOf("compile" to sourceSet.compileClasspathConfigurationName, "runtime" to sourceSet.runtimeClasspathConfigurationName),
-                        "dependencies" to owner.declarationDependencies(listOf(sourceSet)))
+                        "dependencies" to owner.declarationDependencies(sourceSet))
                 }
             }
             require(owners.isNotEmpty()) { "The complete model must discover configured working JMH owners." }
