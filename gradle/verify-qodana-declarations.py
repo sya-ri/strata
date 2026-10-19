@@ -38,7 +38,7 @@ def read_json(path):
 def sha256(path):
     """Hash current bytes for source and dependency identity."""
     if path.is_dir():
-        files = {file.relative_to(path).as_posix(): sha256(file) for file in sorted(path.rglob("*")) if file.is_file()}
+        files = {file.relative_to(path).as_posix(): sha256(file) for file in sorted(path.rglob("*"), key=lambda value: value.relative_to(path).as_posix()) if file.is_file()}
         data = json.dumps(files, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
     else:
         data = path.read_bytes()
@@ -292,6 +292,11 @@ def verify(root, model_path, container_root, java_path):
     if len(declarations_by_module) != sum(bool(entry["module"]) for entry in declared_projects):
         fail("duplicate configured module identity")
 
+    ownership_fields = {"native" in entry for entry in declared_projects}
+    if ownership_fields == {False, True}:
+        fail("partial compiler ownership declaration schema")
+    canonical = verify_source_ownership(root, inventory, model, container_root) if ownership_fields == {True} else None
+
     def declared_shared_root(module_name, contents, kind, path):
         """Permit exact roots shared by actual configured declarations, including native showcase inputs."""
         declaration = declarations_by_module.get(module_name)
@@ -359,7 +364,7 @@ def verify(root, model_path, container_root, java_path):
         entries = [entry for entry in module_entries if url_path(root, directory, entry.attrib["fileurl"], container_root, False) == iml]
         if len(entries) != 1:
             fail(f"generated project does not own exactly one JMH module: {name}")
-        manager, folders = read_iml(iml)
+        manager, folders = read_iml(iml, multiple_contents=canonical is not None)
         java_owners = [module for module in java["modules"] if module["name"] == name]
         if manager.attrib.get("LANGUAGE_LEVEL") != f"JDK_{owner['java']}" or len(java_owners) != 1 or java_owners[0].get("languageLevel") != owner["java"]:
             fail(f"wrong generated or imported owner language level: {name}")
@@ -382,17 +387,17 @@ def verify(root, model_path, container_root, java_path):
                 fail(f"authored root contains files outside the selected revision: {name}: {path}")
             if declaration["generated"]:
                 fail(f"declared JMH owner hides roots under an excluded build directory: {name}: {path}")
-            if declaration["exists"]:
+            if declaration["exists"] and (canonical is None or canonical[path][0] == name):
                 expected.append((declaration["kind"], path))
         expected = collections.Counter(expected)
         generated = collections.Counter((iml_kind(folder), url_path(root, directory, folder.attrib["url"], container_root)) for folder in folders)
         imported = modules[name][0]
         imported_content = imported.get("contentEntries", [])
-        if len(imported_content) != 1 or url_path(root, directory, imported_content[0]["path"], source=False) != directory:
+        if (canonical is None and len(imported_content) != 1) or url_path(root, directory, imported_content[0]["path"], source=False) != directory:
             fail(f"wrong imported content owner: {name}")
         if imported_content[0].get("excludePatterns", []):
             fail(f"imported owner patterns may hide declared JMH inputs: {name}")
-        actual = collections.Counter((folder["type"], url_path(root, directory, folder["path"])) for folder in imported_content[0].get("sourceFolders", []))
+        actual = collections.Counter((folder["type"], url_path(root, directory, folder["path"])) for content in imported_content for folder in content.get("sourceFolders", []))
         if generated != expected or actual != expected:
             fail(f"missing, duplicate, broader, wrong-owner or wrong-kind roots: {name}: expected={expected} generated={generated} imported={actual}")
         for excluded in manager.findall("./content/excludeFolder"):
@@ -428,7 +433,7 @@ def verify(root, model_path, container_root, java_path):
             foreign_iml = url_path(root, directory, entry.attrib["fileurl"], container_root, False)
             if foreign_iml == iml:
                 continue
-            foreign_manager, foreign_folders = read_iml(foreign_iml)
+            foreign_manager, foreign_folders = read_iml(foreign_iml, multiple_contents=canonical is not None)
             foreign_directory = foreign_iml.parent
             for folder in foreign_folders:
                 foreign_path = url_path(root, foreign_directory, folder.attrib["url"], container_root)
@@ -460,10 +465,10 @@ def verify(root, model_path, container_root, java_path):
             fail(f"wrong generated auxiliary owner: {name}")
         if sum(url_path(root, directory, entry.attrib["fileurl"], container_root, False) == iml for entry in module_entries) != 1:
             fail(f"generated project does not own exactly one auxiliary module: {name}")
-        manager, folders = read_iml(iml)
+        manager, folders = read_iml(iml, multiple_contents=canonical is not None)
         imported = modules[name][0]
         contents = imported.get("contentEntries", [])
-        if len(contents) != 1 or url_path(root, directory, contents[0]["path"], source=False) != directory or url_path(root, directory, manager.find("content").attrib["url"], container_root, False) != directory:
+        if (canonical is None and len(contents) != 1) or url_path(root, directory, contents[0]["path"], source=False) != directory or url_path(root, directory, manager.find("content").attrib["url"], container_root, False) != directory:
             fail(f"wrong auxiliary content owner: {name}")
         expected = set()
         for compilation in compilations:
@@ -477,7 +482,7 @@ def verify(root, model_path, container_root, java_path):
                 files = {file.relative_to(root).as_posix(): sha256(file) for file in path.rglob("*") if file.is_file()} if path.is_dir() else {}
                 if entry["exists"] != path.is_dir() or entry["files"] != files or not set(files).issubset(current):
                     fail(f"auxiliary root membership, existence or bytes changed: {name}: {path}")
-                if entry["exists"]:
+                if entry["exists"] and (canonical is None or canonical[path][0] == name):
                     expected.add((entry["kind"], path))
             outputs = compilation["outputs"]
             if len({entry["path"] for entry in outputs}) != len(outputs) or not any(entry["files"] for entry in outputs):
@@ -493,7 +498,7 @@ def verify(root, model_path, container_root, java_path):
                     fail(f"auxiliary owned output is duplicated or differently attributed: {name}: {path}")
             verify_dependencies(compilation, manager, imported, directory)
         generated = collections.Counter((iml_kind(folder), url_path(root, directory, folder.attrib["url"], container_root)) for folder in folders)
-        actual = collections.Counter((folder["type"], url_path(root, directory, folder["path"])) for folder in contents[0].get("sourceFolders", []))
+        actual = collections.Counter((folder["type"], url_path(root, directory, folder["path"])) for content in contents for folder in content.get("sourceFolders", []))
         for observed in (generated, actual):
             if any(observed[pair] != 1 for pair in expected):
                 fail(f"missing, duplicate or wrong-kind auxiliary root: {name}")
@@ -517,7 +522,7 @@ def verify(root, model_path, container_root, java_path):
             foreign_iml = url_path(root, directory, entry.attrib["fileurl"], container_root, False)
             if foreign_iml == iml:
                 continue
-            foreign_manager, foreign_folders = read_iml(foreign_iml)
+            foreign_manager, foreign_folders = read_iml(foreign_iml, multiple_contents=canonical is not None)
             foreign_contents = [{"path": url_path(root, foreign_iml.parent, item.attrib["url"], container_root, False).as_posix()} for item in foreign_manager.findall("content")]
             for folder in foreign_folders:
                 path = url_path(root, foreign_iml.parent, folder.attrib["url"], container_root)

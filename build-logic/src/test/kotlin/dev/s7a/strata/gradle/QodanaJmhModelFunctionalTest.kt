@@ -27,6 +27,7 @@ internal class QodanaJmhModelFunctionalTest {
         Files.createDirectories(directory.resolve("gradle"))
         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
         Files.copy(repository.resolve("gradle/qodana-idea-model.gradle.kts"), directory.resolve("gradle/qodana-idea-model.gradle.kts"))
+        Files.copy(repository.resolve("gradle/verify-qodana-declarations.py"), directory.resolve("gradle/verify-qodana-declarations.py"))
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)
@@ -66,6 +67,7 @@ internal class QodanaJmhModelFunctionalTest {
                 alias(libs.plugins.kotlin.multiplatform) apply false
                 alias(libs.plugins.jmh) apply false
             }
+            extensions.configure<IdeaModel> { project.setLanguageLevel(JavaVersion.VERSION_25) }
             val completeIdeaModelActive = true
             val minecraftTargetByProjectPath = mapOf(":variant-one" to true, ":variant-two" to true)
             $inventory
@@ -291,6 +293,12 @@ internal class QodanaJmhModelFunctionalTest {
                 .nodeValue,
         )
         assertTrue((auxiliary["outputs"] as List<*>).any { ((it as Map<*, *>)["files"] as Map<*, *>).isNotEmpty() })
+        val verifier =
+            ProcessBuilder("python", "-B", repository.resolve("gradle/tests/fixtures/assert_qodana_compiler_model.py").toString(), directory.toString())
+                .redirectErrorStream(true)
+                .start()
+        val verificationOutput = verifier.inputStream.bufferedReader().use { it.readText() }
+        assertEquals(0, verifier.waitFor(), verificationOutput)
         val reused = runner().build()
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
         assertEquals(parsed, JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()))

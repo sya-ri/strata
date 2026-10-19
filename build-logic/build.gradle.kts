@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.PathSensitivity
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -45,6 +46,14 @@ extensions.configure<KotlinJvmProjectExtension> {
 
 tasks.test {
     useJUnitPlatform()
+    // These production files are read by TestKit outside this included build's normal source inputs.
+    inputs.files(
+        "../build.gradle.kts",
+        "../gradle/libs.versions.toml",
+        "../gradle/qodana-idea-model.gradle.kts",
+        "../gradle/verify-qodana-declarations.py",
+        "../gradle/tests/fixtures/assert_qodana_compiler_model.py",
+    ).withPropertyName("qodanaCompilerModel").withPathSensitivity(PathSensitivity.RELATIVE)
     // TestKit releases its dedicated daemons when the class worker finishes.
     forkEvery = 1
 }

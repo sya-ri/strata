@@ -68,26 +68,30 @@ tasks.register("qodanaKotlinModel") {
                 content.element("sourceFolder", mapOf("url" to url, kind))
             }
             val lostRoots = roots.any { it.module == module && canonical.getValue(it.path).module != module }
-            val outputs = (owner["outputs"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == true && (it["files"] as Map<*, *>).isNotEmpty() }
-            val fallback = if (lostRoots) outputs else emptyList()
-            fallback.forEach { compiled ->
-                val path = rootProject.file(compiled["path"] as String).canonicalFile
-                val present = manager.children("orderEntry").filter { it.getAttribute("type") == "module-library" }.any { entry ->
-                    entry.children("library").flatMap { it.children("CLASSES") }.flatMap { it.children("root") }.any { classes ->
-                        val url = classes.getAttribute("url").removePrefix("jar://").removePrefix("file://").removeSuffix("!/")
-                            .replace("\$PROJECT_DIR\$", rootDir.canonicalPath.replace(File.separatorChar, '/'))
-                            .replace("\$MODULE_DIR\$", output.parentFile.canonicalPath.replace(File.separatorChar, '/'))
-                        File(url).canonicalFile == path
+            val outputs = (owner["outputs"] as List<*>).map { it as Map<*, *> }
+            val fallback = if (lostRoots) outputs.filter { it["exists"] == true && (it["files"] as Map<*, *>).isNotEmpty() } else emptyList()
+            if (lostRoots) {
+                val ownedPaths = outputs.map { rootProject.file(it["path"] as String).toPath().toAbsolutePath().normalize() }.toSet()
+                // JMH exports main outputs under TEST; displaced production inputs need their actual COMPILE visibility.
+                manager.children("orderEntry").filter { it.getAttribute("type") == "module-library" }.forEach { entry ->
+                    val classes = entry.children("library").flatMap { it.children("CLASSES") }.flatMap { it.children("root") }
+                    val ownedRoots = classes.filter { classesRoot ->
+                        val url = classesRoot.getAttribute("url").removePrefix("jar://").removePrefix("file://").removeSuffix("!/")
+                            .replace("\$PROJECT_DIR\$", rootDir.absolutePath.replace(File.separatorChar, '/'))
+                            .replace("\$MODULE_DIR\$", output.parentFile.absolutePath.replace(File.separatorChar, '/'))
+                        File(url).toPath().toAbsolutePath().normalize() in ownedPaths
                     }
+                    ownedRoots.forEach { it.parentNode.removeChild(it) }
+                    if (ownedRoots.isNotEmpty() && entry.children("library").flatMap { it.children("CLASSES") }.all { it.children("root").isEmpty() }) manager.removeChild(entry)
                 }
-                if (present.not()) {
-                    val scope = if (compiled["production"] == true) emptyMap() else mapOf("scope" to "TEST")
-                    val entry = manager.element("orderEntry", mapOf("type" to "module-library") + scope)
-                    val library = entry.element("library")
-                    library.element("CLASSES").element("root", mapOf("url" to "file://\$PROJECT_DIR\$/${compiled["path"]}/"))
-                    library.element("JAVADOC")
-                    library.element("SOURCES")
-                }
+            }
+            fallback.forEach { compiled ->
+                val scope = if (compiled["production"] == true) emptyMap() else mapOf("scope" to "TEST")
+                val entry = manager.element("orderEntry", mapOf("type" to "module-library") + scope)
+                val library = entry.element("library")
+                library.element("CLASSES").element("root", mapOf("url" to "file://\$PROJECT_DIR\$/${compiled["path"]}/"))
+                library.element("JAVADOC")
+                library.element("SOURCES")
             }
             val compiler = owner["compiler"] as Map<*, *>?
             if (compiler != null) {

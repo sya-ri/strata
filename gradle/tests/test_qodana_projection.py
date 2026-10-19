@@ -2,6 +2,8 @@
 
 import copy
 import importlib.util
+import hashlib
+import json
 import pathlib
 import tempfile
 import unittest
@@ -101,12 +103,25 @@ class QodanaProjectionTest(unittest.TestCase):
         """Run only the additional checker; the existing verifier remains independently covered."""
         return DECLARATIONS.verify_source_ownership(self.root, self.inventory, self.model)
 
+    def test_directory_digest_matches_the_compilers_case_sensitive_relative_path_order(self):
+        path = self.root / "directory-hash"
+        metadata = path / "META-INF/module.kotlin_module"
+        classes = path / "fixture/Value.class"
+        metadata.parent.mkdir(parents=True)
+        classes.parent.mkdir(parents=True)
+        metadata.write_bytes(b"module metadata")
+        classes.write_bytes(b"compiled class")
+        declared = {"META-INF/module.kotlin_module": DECLARATIONS.sha256(metadata), "fixture/Value.class": DECLARATIONS.sha256(classes)}
+        expected = hashlib.sha256(json.dumps(declared, separators=(",", ":")).encode("utf-8")).hexdigest()
+        self.assertEqual(expected, DECLARATIONS.sha256(path))
+
     def test_complete_source_owner_and_exact_compiled_variant_pass(self):
         canonical = self.validate()
         self.assertEqual({("alpha", "Source"), ("alpha", "Resource")}, set(canonical.values()))
 
-    def test_partial_physical_owner_cannot_steal_a_complete_native_closure(self):
-        self.inventory["projects"][1]["roots"][0]["inputs"] = []
+    def test_complete_compiler_membership_precedes_partial_physical_ownership(self):
+        self.inventory["projects"][1]["native"] = False
+        self.inventory["projects"][1]["roots"][1]["inputs"] = []
         self.validate()
 
     def test_imported_forgeries_are_rejected(self):
