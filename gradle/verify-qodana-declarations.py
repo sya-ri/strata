@@ -484,7 +484,7 @@ def verify_model(root, model_path, container_root, java_path):
             dependency_indices[name] = generated_index, imported_index
         return dependency_indices[name]
 
-    def verify_dependencies(owner, manager, imported, directory):
+    def verify_dependencies(owner, manager, imported, directory, production=False):
         """Check each real compiler/runtime closure without assuming auxiliary dependencies match main."""
         name = owner["module"]
         dependencies = owner["dependencies"]
@@ -514,18 +514,35 @@ def verify_model(root, model_path, container_root, java_path):
                     imported_dependencies = imported_index["Library", library]
                 else:
                     fail(f"unsupported dependency kind: {dependency['kind']}")
-                scopes = {"COMPILE", "TEST", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "TEST", "RUNTIME"}
+                scopes = {"COMPILE", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "RUNTIME"}
                 actual_scopes = [entry.attrib.get("scope", "COMPILE") for entry in generated_dependencies]
                 if "sourceSet" in owner:
-                    # PROVIDED is on IDEA's test runtime classpath as well as its test compile classpath.
-                    scopes.add("PROVIDED")
+                    if not production:
+                        # PROVIDED is on IDEA's test runtime classpath as well as its test compile classpath.
+                        scopes.update({"TEST", "PROVIDED"})
                     # IDEA retains distinct production-runtime and test edges; Qodana flattens their scope labels.
                     if not actual_scopes or not set(actual_scopes).issubset({"COMPILE", "TEST", "PROVIDED", "RUNTIME"}) or len(imported_dependencies) != len(actual_scopes) or len(set(actual_scopes)) != len(actual_scopes):
-                        fail(f"missing, duplicate or wrong-owner auxiliary dependency: {name}: {dependency['identity']}")
+                        fail(f"missing, duplicate or wrong-owner compilation dependency: {name}: {dependency['identity']}")
                 elif len(generated_dependencies) != 1 or len(imported_dependencies) != 1:
                     fail(f"missing, duplicate or wrong-owner dependency: {name}: {dependency['identity']}")
+                else:
+                    scopes.add("TEST")
                 if not scopes.intersection(actual_scopes):
                     fail(f"required dependency has an incompatible compile/runtime scope: {name}: {configuration}: {dependency['identity']}")
+
+    if source_owners is not None:
+        for declaration in declared_projects:
+            if not declaration["iml"]:
+                continue
+            name = declaration["module"]
+            compilations = declaration["productionCompilations"]
+            expected = {entry["sourceSet"] for entry in declaration["outputs"] if entry["production"]}
+            if len({entry["sourceSet"] for entry in compilations}) != len(compilations) or {entry["sourceSet"] for entry in compilations} != expected:
+                fail(f"production compiler outputs and dependency declarations differ: {name}")
+            directory = root / declaration["directory"] if declaration["directory"] else root
+            manager, _ = read_iml(repository_path(root, declaration["iml"]), multiple_contents=True)
+            for compilation in compilations:
+                verify_dependencies(dict(compilation, module=name), manager, modules[name][0], directory, production=True)
 
     for owner in owners:
         name = owner["module"]

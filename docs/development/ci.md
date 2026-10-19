@@ -151,6 +151,7 @@ This IDE view is an analysis union; isolated Gradle compilations and `checkStrat
 The same inventory depends on working auxiliary compiler outputs, records their actual bytes, and rejects missing or changed outputs before accepting their generated/imported model roots.
 Nonexistent directories remain explicit declarations without becoming model roots; compiler and harness outputs are build intermediates, and authored JMH roots inside excluded build directories fail verification.
 The verifier compares the declaration inventory with both generated IML and imported Qodana roots, SDKs, language levels, and dependency closures.
+Production JVM compilations retain separate compile/runtime closures; a dependency present only in the TEST scope cannot satisfy either production closure.
 The selected Git revision, clean tracked bytes, authored membership, and SARIF revision must agree before declaration completeness can pass.
 Missing owners or roots, paired omission from both models, wrong kinds or owners, duplicate roots or dependencies, broader paths, changed source membership, and unresolved required libraries fail verification.
 Native consumers retain their exact canonical component `TestSource` links.

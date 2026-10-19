@@ -37,6 +37,7 @@ internal class QodanaJmhModelFunctionalTest {
         val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
         val auxiliaryCallback = production.substringAfter("    // Export configured auxiliary JVM inputs through the existing TEST analysis view.\n").substringBefore("    tasks.withType<JavaCompile>()")
+        val multiplatformCallback = production.substringAfter("        if (completeIdeaModelActive && hasJvmTarget) {\n").substringBefore("        tasks.matching { it.name in setOf(\"buildWeb\"").substringBeforeLast("        }")
         Files.writeString(
             directory.resolve("build.gradle.kts"),
             """
@@ -81,6 +82,9 @@ internal class QodanaJmhModelFunctionalTest {
                     extensions.configure<JavaPluginExtension> { toolchain.languageVersion.set(JavaLanguageVersion.of(17)) }
                 }
                 apply(plugin = "idea")
+                if (name == "shared-kmp") {
+            $multiplatformCallback
+                }
                 repositories { mavenCentral() }
                 plugins.withId("me.champeau.jmh") {
             $callback
@@ -136,6 +140,8 @@ internal class QodanaJmhModelFunctionalTest {
                     resources.srcDir(rootProject.file("shared-inputs/resources"))
                 }
             }
+            val jvmMain = extensions.getByType<SourceSetContainer>().getByName("jvmMain")
+            dependencies { add(jvmMain.runtimeOnlyConfigurationName, project(":support")) }
             """.trimIndent(),
         )
         write("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt", "package fixture\npublic fun ownedValue(): Int = 13\n")
@@ -234,12 +240,24 @@ internal class QodanaJmhModelFunctionalTest {
         val support = projects.single { it["project"] == ":support-kotlin" }
         assertTrue(support["outputs"] is List<*>, "Each configured JVM compilation must retain current owned output evidence.")
         val supportCompiler = support["compiler"] as Map<*, *>
+        val productionCompilation = (projects.single { it["project"] == ":auxiliary-owner" }["productionCompilations"] as List<*>).single() as Map<*, *>
+        assertEquals("main", productionCompilation["sourceSet"])
+        (productionCompilation["dependencies"] as Map<*, *>).values.forEach { closure ->
+            assertTrue((closure as List<*>).any { (it as Map<*, *>)["identity"] == "support" })
+        }
         assertEquals("fixture-support", supportCompiler["moduleName"])
         assertEquals("11", supportCompiler["jvmTarget"])
         assertEquals(17, (support["compilerToolchain"] as Map<*, *>)["java"])
         assertEquals("strict", supportCompiler["explicitApi"])
         val sharedCompiler = projects.single { it["project"] == ":shared-kmp" }["compiler"] as Map<*, *>
         assertEquals("strict", sharedCompiler["explicitApi"])
+        val sharedProduction = (projects.single { it["project"] == ":shared-kmp" }["productionCompilations"] as List<*>).single() as Map<*, *>
+        val sharedClasspaths = sharedProduction["classpaths"] as Map<*, *>
+        val sharedDependencies = sharedProduction["dependencies"] as Map<*, *>
+        val compileDependencies = (sharedDependencies[sharedClasspaths["compile"]] as List<*>).map { it as Map<*, *> }
+        val runtimeDependencies = (sharedDependencies[sharedClasspaths["runtime"]] as List<*>).map { it as Map<*, *> }
+        assertTrue(compileDependencies.none { it["identity"] == "support" })
+        assertTrue(runtimeDependencies.any { it["identity"] == "support" })
         val supportRoots = (support["roots"] as List<*>).map { it as Map<*, *> }
         val supportInputs = supportRoots.single { it["path"] == "support-kotlin/src/main/kotlin" }["inputs"] as List<*>
         assertEquals(setOf("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt"), supportInputs.toSet())
@@ -464,6 +482,7 @@ internal class QodanaJmhModelFunctionalTest {
             evaluationDependsOn(":support-kotlin")
             val kotlinDependency = project(":support-kotlin").extensions.getByType<SourceSetContainer>().getByName("main")
             dependencies {
+                implementation(project(":support"))
                 add(verification.implementationConfigurationName, project(":support"))
                 add(verification.implementationConfigurationName, files(kotlinDependency.output))
                 if (providers.gradleProperty("fixture.missingRequiredClasspath").isPresent) {
@@ -474,7 +493,7 @@ internal class QodanaJmhModelFunctionalTest {
             kotlin.sourceSets.named("verification") { kotlin.setSrcDirs(listOf("authored-kotlin", "shared-production")) }
             """.trimIndent(),
         )
-        write("auxiliary-owner/shared-production/fixture/ProductionValue.kt", "package fixture\npublic fun productionValue(): Int = 3\n")
+        write("auxiliary-owner/shared-production/fixture/ProductionValue.kt", "package fixture\npublic fun productionValue(): Int = Support.value()\n")
         write("auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt", "package fixture\npublic fun auxiliaryValue(): Int = Support.value() + productionValue() + kotlinValue()\n")
         write("auxiliary-owner/authored-java/fixture/JavaAuxiliary.java", "package fixture; public class JavaAuxiliary { public int value() { return Support.value(); } }")
         write("auxiliary-owner/authored-resources/payload.txt", "auxiliary compiler resource\n")

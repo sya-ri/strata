@@ -1623,6 +1623,15 @@ if (completeIdeaModelActive) {
                     "outputs" to outputs,
                     "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends) },
                     "compilerToolchain" to compilerToolchain,
+                    "productionCompilations" to sourceSets.orEmpty().filter { sourceSet ->
+                        sourceSet.name == "main" || platformCompilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name }
+                    }.map { sourceSet ->
+                        mapOf(
+                            "sourceSet" to sourceSet.name,
+                            "classpaths" to mapOf("compile" to sourceSet.compileClasspathConfigurationName, "runtime" to sourceSet.runtimeClasspathConfigurationName),
+                            "dependencies" to owner.declarationDependencies(listOf(sourceSet)),
+                        )
+                    },
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
                     "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
                 )
@@ -1820,8 +1829,9 @@ subprojects {
                         resourceDirs = setOf("commonMain", "jvmMain").flatMap { kotlinSources.getByName(it).resources.srcDirs }.toSet()
                         testSources.setFrom(setOf("commonTest", "jvmTest").flatMap { kotlinSources.getByName(it).kotlin.srcDirs }, javaSources.getByName("jvmTest").java.srcDirs)
                         testResources.setFrom(setOf("commonTest", "jvmTest").flatMap { kotlinSources.getByName(it).resources.srcDirs }, javaSources.getByName("jvmTest").resources.srcDirs)
-                        scopes["COMPILE"] = mapOf("plus" to listOf(configurations.getByName("jvmCompileClasspath")), "minus" to emptyList())
-                        scopes["TEST"] = mapOf("plus" to listOf(configurations.getByName("jvmTestCompileClasspath")), "minus" to emptyList())
+                        scopes["PROVIDED"] = mapOf("plus" to listOf(configurations.getByName("jvmCompileClasspath")), "minus" to emptyList())
+                        scopes["RUNTIME"] = mapOf("plus" to listOf(configurations.getByName("jvmRuntimeClasspath")), "minus" to emptyList())
+                        scopes["TEST"] = mapOf("plus" to listOf(configurations.getByName("jvmTestCompileClasspath"), configurations.getByName("jvmTestRuntimeClasspath")), "minus" to emptyList())
                     }
                 }
             }

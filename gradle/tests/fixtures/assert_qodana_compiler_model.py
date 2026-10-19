@@ -28,6 +28,7 @@ misc.append(sdk)
 (idea / "misc.xml").write_text(ET.tostring(misc, encoding="unicode"), encoding="utf-8")
 modules = []
 java = []
+library_edge_budget = collections.Counter()
 for owner in inventory["projects"]:
     if not owner["iml"]:
         continue
@@ -50,6 +51,9 @@ for owner in inventory["projects"]:
                 url = classes.attrib["url"]
                 name = url[len("file://"):] if url.startswith("file://$PROJECT_DIR$/") else checker.url_path(root, directory, url, source=False).as_posix()
                 entries.append(dict(type="Library", name=name))
+                for value in (url, name):
+                    if value.endswith(".jar") or value.endswith(".jar!/"):
+                        library_edge_budget[directory, value] += 1
     modules.append(dict(name=owner["module"], contentEntries=contents, orderEntries=entries))
     java.append(dict(name=owner["module"], languageLevel=int(manager.attrib.get("LANGUAGE_LEVEL", f"JDK_{project_java}")[4:])))
 fixture = root / "build/qodana-import-fixture"
@@ -80,7 +84,44 @@ try:
     checker.verify_model(root, model_path, "", java_path)
 finally:
     checker.url_path = resolve_url
-assert library_resolutions and max(library_resolutions.values()) <= 2, library_resolutions.most_common(5)
+assert library_resolutions and all(count <= library_edge_budget[edge] for edge, count in library_resolutions.items()), library_resolutions.most_common(5)
+production_owner = next((owner for owner in inventory["projects"] if owner["project"] == ":auxiliary-owner"), None)
+if production_owner is not None:
+    # The TestKit owner calls Support.value() from production code, so TEST-only edges cannot provide its classpath.
+    production_iml = root / production_owner["iml"]
+    original_iml = production_iml.read_bytes()
+    original_model = model_path.read_bytes()
+    for mutation in ("missing-production-edge", "test-only-production-edge", "provided-only-runtime-edge", "duplicate-production-edge"):
+        changed_model = copy.deepcopy(dict(modules=modules))
+        module = next(item for item in changed_model["modules"] if item["name"] == production_owner["module"])
+        document = ET.fromstring(original_iml)
+        manager = document.find("./component[@name='NewModuleRootManager']")
+        edge = manager.find("orderEntry[@type='module'][@module-name='support']")
+        imported_edge = next(item for item in module["orderEntries"] if item.get("type") == "Module" and item.get("name") == "support")
+        if mutation == "missing-production-edge":
+            manager.remove(edge)
+            module["orderEntries"].remove(imported_edge)
+        elif mutation == "test-only-production-edge":
+            edge.attrib["scope"] = "TEST"
+        elif mutation == "provided-only-runtime-edge":
+            edge.attrib["scope"] = "PROVIDED"
+        else:
+            manager.append(copy.deepcopy(edge))
+            module["orderEntries"].append(copy.deepcopy(imported_edge))
+        production_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(document, encoding="utf-8"))
+        model_path.write_text(json.dumps(changed_model), encoding="utf-8")
+        try:
+            checker.verify_model(root, model_path, "", java_path)
+        except ValueError as failure:
+            expected = "incompatible compile/runtime scope" if mutation in {"test-only-production-edge", "provided-only-runtime-edge"} else "compilation dependency"
+            assert expected in str(failure) and production_owner["module"] in str(failure), (mutation, failure)
+            if mutation == "provided-only-runtime-edge":
+                assert "runtimeClasspath" in str(failure), failure
+        else:
+            raise AssertionError(f"Accepted invalid production dependency control: {mutation}")
+        finally:
+            production_iml.write_bytes(original_iml)
+            model_path.write_bytes(original_model)
 sdk_model = dict(sdks=sdk_entries)
 sdk_owner = next(owner["module"] for owner in inventory["projects"] if owner.get("iml") and owner["compilerToolchain"])
 for mutation in ("inherited-project-sdk", "missing-module-sdk", "wrong-sdk-version", "missing-java-base"):
