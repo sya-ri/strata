@@ -66,7 +66,7 @@ internal class JmhEvidenceConventionsFunctionalTest {
                     attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.JAR))
                 }
             }
-            listOf(":api", ":runtime:core", ":runtime:headless").forEach { dependencies.add(runtime.name, project(it)) }
+            listOf(":api", ":runtime:core", ":runtime:headless").forEach { dependencies.add(runtime.name, dependencies.project(it)) }
             if (providers.gradleProperty("fixture.emptyLibraries").isPresent.not()) dependencies.add(runtime.name, "fixture:control:1")
             val historicalGenerated = tasks.register("generated")
             val historicalGenerator = tasks.register("generator")

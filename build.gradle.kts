@@ -996,7 +996,7 @@ tasks.named("check") {
 
 dependencies {
     dokkaPlugin(libs.dokka.versioning)
-    releasePublicationProjectPaths.filter { it != ":runtime:web" }.mapNotNull(::findProject).forEach { dokka(it) }
+    releasePublicationProjectPaths.filter { it != ":runtime:web" }.mapNotNull(::findProject).forEach { dokka(project(it.path)) }
 }
 
 val compatibilityDocumentation = layout.projectDirectory.file("docs/reference/compatibility.md")
@@ -1279,7 +1279,7 @@ val stagePagesSourceRevision =
 
 val detektRulesProject = project(":quality:detekt-rules")
 dependencies {
-    add("detektPlugins", detektRulesProject)
+    add("detektPlugins", project(detektRulesProject.path))
 }
 
 extensions.configure<DetektExtension> {
@@ -1817,7 +1817,7 @@ subprojects {
             config.setFrom(rootProject.file("config/detekt/detekt.yml"))
             source.from("src/main/kotlin", "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/jsMain/kotlin", "src/commonTest/kotlin", "src/jsTest/kotlin", "src/jvmTest/kotlin", "src/test/kotlin")
         }
-        dependencies.add("detektPlugins", project(":quality:detekt-rules"))
+        dependencies.add("detektPlugins", dependencies.project(":quality:detekt-rules"))
 
         if (published.not()) return@subprojects
 
@@ -1908,13 +1908,13 @@ subprojects {
         // Loom must establish the target's mapping mode before these shared inputs can resolve it.
         afterEvaluate {
             listOf(":runtime:remote", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:headless").forEach { dependency ->
-                dependencies.add("compileOnly", project(dependency))
+                dependencies.add("compileOnly", dependencies.project(dependency))
             }
             listOf(":api", ":runtime:core", ":runtime:remote", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl").forEach { dependency ->
-                dependencies.add("include", project(dependency))
+                dependencies.add("include", dependencies.project(dependency))
             }
             listOf(":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:headless").forEach { dependency ->
-                dependencies.add("testImplementation", project(dependency))
+                dependencies.add("testImplementation", dependencies.project(dependency))
             }
             dependencies.add("runtimeOnly", rootProject.libs.fabric.language.kotlin)
             dependencies.add("testRuntimeOnly", rootProject.libs.fabric.loader)
@@ -2103,7 +2103,7 @@ subprojects {
 
     if (this != detektRulesProject) {
         dependencies {
-            add("detektPlugins", detektRulesProject)
+            add("detektPlugins", project(detektRulesProject.path))
         }
     }
 
@@ -2166,7 +2166,7 @@ subprojects {
             }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
-                    dependencies.add(implementationConfigurationName, project(":performance-testkit"))
+                    dependencies.add(implementationConfigurationName, dependencies.project(":performance-testkit"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
                 }
             }
