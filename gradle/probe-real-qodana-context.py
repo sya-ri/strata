@@ -24,8 +24,17 @@ def checker():
     return module
 
 
+def compiler_sources(source):
+    """Project exactly the compiler-selected files without changing authored source membership."""
+    prefix = source["path"] + "/"
+    inputs = source["inputs"]
+    assert len(set(inputs)) == len(inputs)
+    assert all(path.startswith(prefix) and path in source["files"] for path in inputs)
+    return {path[len(prefix):]: source["files"][path] for path in inputs}
+
+
 def copy_shared(owners, revision):
-    """Test distinct physical analysis inputs while retaining exact original compiler bytes."""
+    """Test distinct physical compiler inputs while retaining exact original selected bytes."""
     parser = checker()
     contexts = collections.defaultdict(set)
     for name, owner in owners.items():
@@ -43,18 +52,22 @@ def copy_shared(owners, revision):
                 relative = original.relative_to(root).as_posix()
                 if parser.iml_kind(folder) not in {"Source", "TestSource"} or len(contexts[relative]) < 2:
                     continue
-                destination = root / "qodana-analysis-sources" / revision / name / hashlib.sha256(relative.encode()).hexdigest()[:16]
-                if not destination.exists():
-                    shutil.copytree(original, destination)
                 current = {path.relative_to(original).as_posix(): parser.sha256(path) for path in original.rglob("*") if path.is_file()}
-                copied = {path.relative_to(destination).as_posix(): parser.sha256(path) for path in destination.rglob("*") if path.is_file()}
-                assert copied == current
                 declaration = next(source for source in owner["roots"] if source["path"] == relative)
                 assert declaration["files"] == {relative + "/" + key: value for key, value in current.items()}
+                selected = compiler_sources(declaration)
+                destination = root / "qodana-analysis-sources" / revision / name / hashlib.sha256(relative.encode()).hexdigest()[:16]
+                destination.mkdir(parents=True, exist_ok=True)
+                for path in selected:
+                    target = destination / path
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(original / path, target)
+                copied = {path.relative_to(destination).as_posix(): parser.sha256(path) for path in destination.rglob("*") if path.is_file()}
+                assert copied == selected
                 attributes = dict(folder.attrib, url="file://" + destination.as_posix())
                 ET.SubElement(ET.SubElement(manager, "content", url=attributes["url"]), "sourceFolder", **attributes)
                 content.remove(folder)
-                copies.append(dict(module=name, original=relative, copy=destination.relative_to(root).as_posix(), kind=parser.iml_kind(folder), files=current))
+                copies.append(dict(module=name, original=relative, copy=destination.relative_to(root).as_posix(), kind=parser.iml_kind(folder), files=selected, inputs=declaration["inputs"]))
             if not content.findall("sourceFolder") and content.attrib["url"] != "file://$MODULE_DIR$/":
                 manager.remove(content)
         document.write(root / owner["iml"], encoding="utf-8", xml_declaration=True)
@@ -140,7 +153,13 @@ def inspect(results):
                 item = replacements.get((owner["module"], source["kind"], source["path"]))
                 path = root / (item["copy"] if item else source["path"])
                 actual = {file.relative_to(path).as_posix(): parser.sha256(file) for file in path.rglob("*") if file.is_file()}
-                assert {source["path"] + "/" + key: value for key, value in actual.items()} == source["files"]
+                if item:
+                    assert actual == item["files"] == compiler_sources(source)
+                    assert item["inputs"] == source["inputs"]
+                    original = root / source["path"]
+                    assert {file.relative_to(root).as_posix(): parser.sha256(file) for file in original.rglob("*") if file.is_file()} == source["files"]
+                else:
+                    assert {source["path"] + "/" + key: value for key, value in actual.items()} == source["files"]
                 sources.append((source["kind"], path))
             actual = [(folder["type"], parser.url_path(root, root, folder["path"])) for content in imported[owner["module"]].get("contentEntries", []) for folder in content.get("sourceFolders", [])]
             assert collections.Counter(actual) == collections.Counter(sources), owner["module"]
