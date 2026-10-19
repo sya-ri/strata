@@ -68,7 +68,7 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Changed input | Selected work |
 | --- | --- |
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
-| Build-logic tests and test resources | JVM tests and coverage, workflow fixtures, and Qodana |
+| Build-logic tests, test resources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and Qodana |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
 | Prose and links | Documentation and Skill consistency |
 | Documentation generation, examples, images, or Dokka | Compiled documentation and generated-output checks |
@@ -78,7 +78,7 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Unrecognized input | Full verification |
 
 Native helpers, compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
-Build-logic test-only changes do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
+Build-logic test-only changes and the IDEA analysis model do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
 
 `writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model.
 Shared-source selection uses that output; deletions and both sides of renames participate in the diff.

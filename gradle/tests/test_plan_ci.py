@@ -158,6 +158,21 @@ class PlanCiTest(unittest.TestCase):
         self.assertEqual([], result.pop("minecraft"))
         self.assertTrue(all(result.values()))
 
+    def test_idea_analysis_model_keeps_real_compiler_and_inspection_checks(self):
+        path = "gradle/qodana-idea-model.gradle.kts"
+        expected = planner.plan([])
+        expected.update(common=True, workflow=True, qodana=True)
+        self.assertEqual(expected, planner.plan([path]))
+        for other in ("build.gradle.kts", "settings.gradle.kts", "gradle/unknown-model.gradle.kts", "gradle/qodana-idea-model-other.gradle.kts",
+                      "gradle/libs.versions.toml", "build-logic/src/main/kotlin/Plugin.kt"):
+            for paths in ([path, other], [other, path]):
+                with self.subTest(paths=paths):
+                    self.assertEqual(planner.plan([other]), planner.plan(paths))
+        self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
+        mixed = planner.plan(["api/src/main/kotlin/Element.kt"])
+        mixed["workflow"] = True
+        self.assertEqual(mixed, planner.plan([path, "api/src/main/kotlin/Element.kt"]))
+
     def test_build_logic_tests_keep_jvm_analysis_without_unrelated_platform_acceptance(self):
         expected = planner.plan([])
         expected.update(common=True, workflow=True, qodana=True)
