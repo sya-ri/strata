@@ -20,19 +20,6 @@ internal fun copyFabricMinecraftArgbPixels(image: NativeImage): IntArray {
     return pixels
 }
 
-/**
- * Stores a straight-ARGB pixel through the native ABGR image API.
- */
-@JvmSynthetic
-internal fun setFabricMinecraftArgbPixel(
-    image: NativeImage,
-    x: Int,
-    y: Int,
-    argb: Int,
-) {
-    image.setPixelRGBA(x, y, swapRedBlue(argb))
-}
-
 private fun swapRedBlue(color: Int): Int =
     (color and 0xFF00FF00.toInt()) or
         (color and 0x00FF0000 ushr 16) or
