@@ -121,8 +121,8 @@ Each versioned native integration links exactly one canonical component `TestSou
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
 Canonical Kotlin source roots have one physical owner, while compiled variants remain on the relevant JVM classpaths.
 Source and compiled-library roots use resolved file URLs without directory suffixes, and declared output directories that were never produced are omitted from libraries.
-Compiled variants attach their declared source roots, and fallback libraries preserve the production or test scope of displaced inputs.
-Attachments use fresh archives of the exact compiler inputs so library navigation cannot replace a physical project source owner; completeness verification checks archive membership and bytes.
+Fallback libraries preserve the production or test scope of displaced inputs.
+Kotlin source-owner visibility follows shared compiler inputs without adding module classpath dependencies; completeness verification rejects missing or unrelated owner links.
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
 The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
 Each Kotlin owner's facet preserves its compiler module name, JVM target, friend paths, and explicit API mode.

@@ -11,7 +11,6 @@ import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
-import zipfile
 
 
 def fail(message):
@@ -232,21 +231,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                 imported_libraries = [entry for entry in imported.get("orderEntries", []) if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == path]
                 if len(libraries) != 1 or len(imported_libraries) != 1 or libraries[0].attrib.get("scope", "COMPILE") != ("COMPILE" if output["production"] else "TEST"):
                     fail(f"missing, duplicate or incorrectly scoped compiled variant: {name}: {path}")
-                source_roots = [source for source in owner["roots"] if output["classes"] and source["exists"] and not source["generated"] and source["inputs"]
-                                and source["kind"] == ("Source" if output["production"] else "TestSource")]
-                archive = repository_path(root, f"build/qodana/sources/{name}-{output['sourceSet']}.jar")
-                expected_sources = {f"jar://{archive.as_posix()}!/{source['path']}" for source in source_roots}
-                attached_sources = [source.attrib["url"] for source in libraries[0].findall("./library/SOURCES/root")]
-                if len(attached_sources) != len(expected_sources) or set(attached_sources) != expected_sources:
-                    fail(f"compiled variant source attachments differ from compiler inputs: {name}: {path}")
-                if source_roots:
-                    if archive.is_symlink() or not archive.is_file():
-                        fail(f"missing regular compiler source archive: {name}")
-                    expected_files = {file for source in source_roots for file in source["inputs"]}
-                    with zipfile.ZipFile(archive) as sources:
-                        entries = sources.namelist()
-                        if len(entries) != len(expected_files) or set(entries) != expected_files or any(sources.read(file) != repository_path(root, file).read_bytes() for file in expected_files):
-                            fail(f"compiled variant source archive differs from actual compiler inputs: {name}")
+
         compiler = owner["compiler"]
         if compiler:
             if "explicitApi" not in compiler or compiler["explicitApi"] not in (None, "strict", "warning", "disable"):
@@ -261,6 +246,13 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             values = {item.attrib["name"]: item.attrib.get("value") for item in options}
             if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != compiler["jvmTarget"] or values.get("explicitApi") != compiler["explicitApi"] or configuration.attrib != {"version": "3", "platform": "JVM " + compiler["jvmTarget"], "useProjectSettings": "false"}:
                 fail(f"incorrect Kotlin compiler identity: {name}")
+            expected_visible = {canonical[repository_path(root, source["path"])][0] for source in owner["roots"]
+                                if source["exists"] and not source["generated"] and source["inputs"] and source["kind"] in {"Source", "TestSource"}
+                                and canonical[repository_path(root, source["path"])][0] != name}
+            visible_groups = configuration.findall("additionalVisibleModuleNames")
+            visible = [item.text for group in visible_groups for item in group.findall("friend")]
+            if len(visible_groups) != bool(expected_visible) or len(visible) != len(expected_visible) or set(visible) != expected_visible:
+                fail(f"source-owner visibility differs from shared compiler inputs: {name}")
             friends = set()
             for friend in compiler["friends"]:
                 path = pathlib.Path(friend["path"])
@@ -622,6 +614,6 @@ def verify(root, model_path, container_root, java_path):
 if __name__ == "__main__":
     try:
         verify(pathlib.Path(sys.argv[1]).resolve(), pathlib.Path(sys.argv[2]), sys.argv[3], pathlib.Path(sys.argv[4]))
-    except (ValueError, KeyError, OSError, ET.ParseError, zipfile.BadZipFile, subprocess.CalledProcessError) as error:
+    except (ValueError, KeyError, OSError, ET.ParseError, subprocess.CalledProcessError) as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(1)

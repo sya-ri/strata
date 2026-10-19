@@ -1,7 +1,5 @@
 import groovy.json.JsonSlurper
 import java.io.StringWriter
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -97,25 +95,7 @@ tasks.register("qodanaKotlinModel") {
                 val library = entry.element("library")
                 library.element("CLASSES").element("root", mapOf("url" to "file://${rootProject.file(compiled["path"] as String).canonicalPath.replace(File.separatorChar, '/')}"))
                 library.element("JAVADOC")
-                val sources = library.element("SOURCES")
-                val sourceRoots = (owner["roots"] as List<*>).map { it as Map<*, *> }.filter {
-                    compiled["classes"] == true && it["exists"] == true && it["generated"] == false &&
-                        it["kind"] == (if (compiled["production"] == true) "Source" else "TestSource") && (it["inputs"] as List<*>).isNotEmpty()
-                }
-                if (sourceRoots.isNotEmpty()) {
-                    val archive = rootProject.file("build/qodana/sources/$module-${compiled["sourceSet"]}.jar")
-                    archive.parentFile.mkdirs()
-                    ZipOutputStream(archive.outputStream()).use { zip ->
-                        sourceRoots.flatMap { it["inputs"] as List<*> }.map { it as String }.distinct().sorted().forEach { path ->
-                            zip.putNextEntry(ZipEntry(path).apply { time = 0 })
-                            rootProject.file(path).inputStream().use { it.copyTo(zip) }
-                            zip.closeEntry()
-                        }
-                    }
-                    sourceRoots.map { it["path"] as String }.distinct().sorted().forEach { path ->
-                        sources.element("root", mapOf("url" to "jar://${archive.canonicalPath.replace(File.separatorChar, '/')}!/$path"))
-                    }
-                }
+                library.element("SOURCES")
             }
             val compiler = owner["compiler"] as Map<*, *>?
             if (compiler != null) {
@@ -124,6 +104,11 @@ tasks.register("qodanaKotlinModel") {
                 val facet = facets.element("facet", mapOf("type" to "kotlin-language", "name" to "Kotlin"))
                 val target = compiler["jvmTarget"] as String
                 val configuration = facet.element("configuration", mapOf("version" to "3", "platform" to "JVM $target", "useProjectSettings" to "false"))
+                val visibleOwners = roots.filter { it.module == module && it.resource.not() && it.inputs != 0 }.map { canonical.getValue(it.path).module }.filter { it != module }.distinct().sorted()
+                if (visibleOwners.isNotEmpty()) {
+                    val visible = configuration.element("additionalVisibleModuleNames")
+                    visibleOwners.forEach { visible.element("friend").textContent = it }
+                }
                 val arguments = configuration.element("compilerArguments")
                 arguments.element("option", mapOf("name" to "moduleName", "value" to compiler["moduleName"] as String))
                 arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))

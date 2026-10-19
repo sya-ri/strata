@@ -8,7 +8,6 @@ import pathlib
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
-import zipfile
 
 
 SPEC = importlib.util.spec_from_file_location("qodana_declarations", pathlib.Path(__file__).parents[1] / "verify-qodana-declarations.py")
@@ -75,11 +74,13 @@ class QodanaProjectionTest(unittest.TestCase):
                         entry.set("scope", "TEST")
                     library = ET.SubElement(entry, "library")
                     ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url="file://$PROJECT_DIR$/" + output["path"] + "/")
-                    self.attach_sources(library, owner, output)
+                    ET.SubElement(library, "SOURCES")
                     libraries.append(dict(type="Library", name=(self.root / output["path"]).as_posix()))
             facets = ET.SubElement(document, "component", name="FacetManager")
             facet = ET.SubElement(facets, "facet", type="kotlin-language", name="Kotlin")
             configuration = ET.SubElement(facet, "configuration", version="3", platform="JVM 17", useProjectSettings="false")
+            if name == "beta":
+                ET.SubElement(ET.SubElement(configuration, "additionalVisibleModuleNames"), "friend").text = "alpha"
             arguments = ET.SubElement(configuration, "compilerArguments")
             ET.SubElement(arguments, "option", name="moduleName", value=compiler["moduleName"])
             ET.SubElement(arguments, "option", name="jvmTarget", value="17")
@@ -105,20 +106,6 @@ class QodanaProjectionTest(unittest.TestCase):
     def write_iml(self, name, document):
         """Write the production XML declaration without permitting parser-dependent encodings."""
         (self.root / name / (name + ".iml")).write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(document, encoding="unicode"), encoding="utf-8")
-
-    def attach_sources(self, library, owner, output):
-        """Build independent source attachments from selected fixture compiler inputs."""
-        sources = ET.SubElement(library, "SOURCES")
-        roots = [source for source in owner["roots"] if output["classes"] and source["inputs"] and source["kind"] == ("Source" if output["production"] else "TestSource")]
-        if not roots:
-            return
-        archive = self.root / f"build/qodana/sources/{owner['module']}-{output['sourceSet']}.jar"
-        archive.parent.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(archive, "w") as files:
-            for file in sorted({file for source in roots for file in source["inputs"]}):
-                files.write(self.root / file, arcname=file)
-        for source in roots:
-            ET.SubElement(sources, "root", url=f"jar://{archive.as_posix()}!/{source['path']}")
 
     def validate(self):
         """Run only the additional checker; the existing verifier remains independently covered."""
@@ -151,7 +138,7 @@ class QodanaProjectionTest(unittest.TestCase):
         output = next(output for output in owner["outputs"] if output["sourceSet"] == "test")
         url = "file://$PROJECT_DIR$/" + output["path"]
         ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url=url)
-        self.attach_sources(library, owner, output)
+        ET.SubElement(library, "SOURCES")
         array = document.find(".//array")
         ET.SubElement(array, "option", value=(self.root / output["path"]).as_posix())
         self.write_iml("beta", document)
@@ -166,32 +153,7 @@ class QodanaProjectionTest(unittest.TestCase):
         owner = self.inventory["projects"][1]
         owner["native"] = False
         owner["roots"][1]["inputs"] = []
-        document = ET.parse(self.root / owner["iml"]).getroot()
-        for entry, output in zip(document.find("component").findall("orderEntry"), (output for output in owner["outputs"] if output["production"])):
-            library = entry.find("library")
-            library.remove(library.find("SOURCES"))
-            self.attach_sources(library, owner, output)
-        self.write_iml("beta", document)
         self.validate()
-
-    def test_source_archive_must_contain_exact_current_compiler_input_bytes(self):
-        archive = self.root / "build/qodana/sources/beta-main.jar"
-        original = archive.read_bytes()
-        with zipfile.ZipFile(archive) as files:
-            selected = {file: files.read(file) for file in files.namelist()}
-        for mutation in ("missing", "changed", "extra", "malformed"):
-            with self.subTest(mutation=mutation):
-                entries = selected.copy()
-                if mutation == "missing": entries.pop(next(iter(entries)))
-                elif mutation == "changed": entries[next(iter(entries))] = b"changed source"
-                elif mutation == "extra": entries["undeclared.kt"] = b"extra source"
-                with zipfile.ZipFile(archive, "w") as files:
-                    for name, data in entries.items():
-                        files.writestr(name, data)
-                if mutation == "malformed": archive.write_bytes(b"not an archive")
-                with self.assertRaises((ValueError, zipfile.BadZipFile)):
-                    self.validate()
-                archive.write_bytes(original)
 
     def test_qodana_binary_names_may_omit_the_scheme_but_retain_an_exact_ide_macro(self):
         original = copy.deepcopy(self.model)
@@ -233,9 +195,9 @@ class QodanaProjectionTest(unittest.TestCase):
                 self.model = original
 
     def test_generated_forgeries_are_rejected(self):
-        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "missing-binary", "wrong-scope", "duplicate-binary", "missing-library-source", "foreign-library-source", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager", "explicit-api", "missing-explicit-api"):
+        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "missing-binary", "wrong-scope", "duplicate-binary", "missing-source-friend", "foreign-source-friend", "duplicate-source-friend", "reverse-source-friend", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager", "explicit-api", "missing-explicit-api"):
             with self.subTest(mutation=mutation):
-                name = "beta" if mutation in {"missing-binary", "wrong-scope", "duplicate-binary", "missing-library-source", "foreign-library-source"} else "alpha"
+                name = "beta" if mutation in {"missing-binary", "wrong-scope", "duplicate-binary", "missing-source-friend", "foreign-source-friend", "duplicate-source-friend"} else "alpha"
                 path = self.root / name / (name + ".iml")
                 original = path.read_bytes()
                 document = ET.fromstring(original)
@@ -252,8 +214,10 @@ class QodanaProjectionTest(unittest.TestCase):
                 elif mutation == "missing-binary": manager.remove(entry)
                 elif mutation == "wrong-scope": entry.set("scope", "TEST")
                 elif mutation == "duplicate-binary": manager.append(copy.deepcopy(entry))
-                elif mutation == "missing-library-source": entry.find("./library/SOURCES").clear()
-                elif mutation == "foreign-library-source": entry.find("./library/SOURCES/root").set("url", "file://$PROJECT_DIR$/shared/resources")
+                elif mutation == "missing-source-friend": document.find(".//additionalVisibleModuleNames").clear()
+                elif mutation == "foreign-source-friend": document.find(".//additionalVisibleModuleNames/friend").text = "beta"
+                elif mutation == "duplicate-source-friend": document.find(".//additionalVisibleModuleNames").append(copy.deepcopy(document.find(".//additionalVisibleModuleNames/friend")))
+                elif mutation == "reverse-source-friend": ET.SubElement(ET.SubElement(document.find(".//configuration"), "additionalVisibleModuleNames"), "friend").text = "beta"
                 elif mutation == "module-name": document.find(".//option[@name='moduleName']").set("value", "foreign-module")
                 elif mutation == "extra-friend": ET.SubElement(document.find(".//array"), "option", value=(self.root / "beta/build/classes/kotlin/main").as_posix())
                 elif mutation == "missing-friend": document.find(".//array").clear()
