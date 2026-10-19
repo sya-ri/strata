@@ -752,7 +752,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
                             renderHeadless(
                                 profile,
-                                createPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
+                                createPlayerHeadShowcaseScreenDefinition(PlayerSkinSource.Pixels(skin)),
                                 playerHeadViewport,
                             )
                         },
@@ -762,7 +762,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
                 context.setScreen {
                     createMinecraftScreen(
-                        createPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
+                        createPlayerHeadShowcaseScreenDefinition(PlayerSkinSource.Pixels(skin)),
                         profile,
                         parent = null,
                     )

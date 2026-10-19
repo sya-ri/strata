@@ -165,6 +165,7 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/scenarios/native-parity/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-extractor/src/gametest/kotlin"),
         )
@@ -176,6 +177,7 @@ extensions.configure<KotlinJvmProjectExtension> {
 
 extensions.configure<DetektExtension> {
     source.from(layout.projectDirectory.dir("src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"))
+    source.from(rootProject.file("integration/shared/minecraft-fabric/scenarios/native-parity/src/gametest/kotlin"))
 }
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")

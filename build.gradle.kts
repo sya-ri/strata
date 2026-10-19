@@ -29,6 +29,7 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.Task
 import org.gradle.api.Project
+import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
@@ -2174,7 +2175,7 @@ subprojects {
             val nativeShowcase = objects.sourceDirectorySet("nativePerformanceShowcase", "Compiled API-only showcase definitions").apply {
                 srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
                 include("**/*Example.kt")
-                exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
+                exclude("**/MinecraftSocialExample.kt")
             }
             val continuousScrollTests =
                 rootProject.file(
@@ -2732,9 +2733,14 @@ tasks.register("writeCiSourceModel") {
             } + target.allSourceLinkPaths
             target.version to roots.map { it.replace('\\', '/') }.distinct().sorted()
         }
-        val documentationSources = project(":integration:docs").extensions.getByType<SourceSetContainer>().flatMap { source ->
-            source.allSource.srcDirs.map { directory -> rootProject.relativePath(directory).replace('\\', '/') }
-        }.distinct().sorted()
+        val documentationProject = project(":integration:docs")
+        val documentationSources = (
+            documentationProject.extensions.getByType<SourceSetContainer>().flatMap { source ->
+                source.allSource.srcDirs.map { directory -> rootProject.relativePath(directory).replace('\\', '/') }
+            } + (documentationProject.extensions.getByName("documentationSourceInputs") as FileCollection).files.map { file ->
+                rootProject.relativePath(file).replace('\\', '/')
+            }
+        ).distinct().sorted()
         val model = mapOf("minecraft" to minecraftSources, "documentation" to documentationSources)
         destination.get().asFile.apply {
             parentFile.mkdirs()

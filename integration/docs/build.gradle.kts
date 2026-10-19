@@ -114,6 +114,8 @@ tasks.withType<Test>().configureEach {
     doFirst { systemProperty("strata.test.apiClasses", apiKotlinClasses.get().asFile.absolutePath) }
 }
 val showcaseSources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
+val nativeInventoryExample = rootProject.layout.projectDirectory.file("integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt")
+extensions.add("documentationSourceInputs", files(nativeInventoryExample))
 val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources")
 val showcaseExampleSources = objects.sourceDirectorySet("showcaseExamples", "API-only showcase examples").apply {
     srcDir(showcaseSources)
@@ -284,7 +286,7 @@ fun JavaExec.configureShowcaseLauncher(
             apiMainClasses,
         ),
     )
-    inputs.files(showcaseExampleSources).withPropertyName("showcaseExamples").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.files(showcaseExampleSources, nativeInventoryExample).withPropertyName("showcaseExamples").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(showcaseFixtureResources).withPropertyName("showcaseFixtureResources").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.files(showcaseClientJar).withPropertyName("minecraftClientJar").withPathSensitivity(PathSensitivity.NONE)
     inputs.files(showcaseAssetIndex).withPropertyName("minecraftAssetIndex").withPathSensitivity(PathSensitivity.NONE)
