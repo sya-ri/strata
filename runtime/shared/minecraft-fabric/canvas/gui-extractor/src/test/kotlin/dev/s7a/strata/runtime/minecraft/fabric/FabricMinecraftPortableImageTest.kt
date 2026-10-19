@@ -7,7 +7,9 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -19,6 +21,23 @@ import org.junit.jupiter.api.Test
  * Verifies the pure portable-image key and checked logical-to-physical extent contract without a native device.
  */
 internal class FabricMinecraftPortableImageTest {
+    @Test
+    @OptIn(InternalStrataRuntimeApi::class)
+    fun reusedRasterScratchMatchesIndependentReferenceAndClearsBorrowedPixels() {
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0x80ABCDEF.toInt(), 0x40123456, 0))
+        val scratch = HeadlessRasterScratch()
+        for (scale in 1..4) {
+            for (origin in listOf(IntOffset.Zero, IntOffset(40, 24), IntOffset(16_777_216, 20))) {
+                val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(origin.x + 1f, origin.y + 1f, origin.x + 5f, origin.y + 5f), ArgbColor(0xC0ABCDEF.toInt()), 0.1f)
+                val input = FabricMinecraftPortableImage(listOf(command), IntSize(8, 7), scale, origin)
+                val expected = input.rasterize().copyArgb()
+                val pixels = IntArray(Math.multiplyExact(input.physicalSize.width, input.physicalSize.height)) { 0x12345678 }
+                input.rasterizeInto(pixels, scratch)
+                assertArrayEquals(expected, pixels, "GUI$scale $origin")
+            }
+        }
+    }
+
     @Test
     fun manySmallSamplesChargeOnlyTheirCoveredAxesInsideALargeRun() {
         val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0x80ABCDEF.toInt(), 0x40123456, 0))

@@ -218,40 +218,6 @@ internal fun ResourceManager.readScrollbarImage(path: String): DrawImage {
 }
 
 /**
- * Copies one printable ASCII cell while enforcing the common profile's binary-white mask contract.
- *
- * The returned image owns a fresh eight-by-eight pixel snapshot and retains neither [image] nor any native resource.
- *
- * @param image immutable 128-by-128 ASCII atlas pixels.
- * @param codePoint printable ASCII code point mapped by the active atlas.
- * @return an immutable eight-by-eight binary-white glyph mask.
- * @throws IllegalArgumentException when the atlas size, code point, or any selected pixel is outside the verified contract.
- */
-@JvmSynthetic
-internal fun extractMinecraftAsciiGlyph(
-    image: DrawImage,
-    codePoint: Int,
-): DrawImage {
-    require(image.size == IntSize(128, 128)) { "Minecraft ASCII glyph extraction requires a 128 by 128 atlas." }
-    require(codePoint in printableAsciiRange) { "Minecraft ASCII glyph extraction requires one printable ASCII code point." }
-    val pixels = IntArray(64)
-    val originX = (codePoint % 16) * 8
-    val originY = (codePoint / 16) * 8
-    for (y in 0 until 8) {
-        for (x in 0 until 8) {
-            val pixel = ArgbColor(image.argbAt(originX + x, originY + y))
-            pixels[y * 8 + x] =
-                when (pixel) {
-                    transparentMaskPixel -> transparentMaskPixel.value
-                    opaqueMaskPixel -> opaqueMaskPixel.value
-                    else -> throw IllegalArgumentException("Minecraft ASCII glyph masks must contain only transparent or opaque white pixels.")
-                }
-        }
-    }
-    return createDrawImage(IntSize(8, 8), pixels)
-}
-
-/**
  * Borrows one required Minecraft resource from this captured manager without opening a stream.
  *
  * @param path resource path in the Minecraft namespace.
@@ -329,11 +295,8 @@ internal fun validateMinecraftScrollbarScaling(scaling: FabricMinecraftGuiScalin
 @get:JvmSynthetic
 internal val scrollbarImageSize: IntSize = IntSize(6, 32)
 
-private val printableAsciiRange: IntRange = 0x21..0x7E
-private val transparentMaskPixel: ArgbColor = ArgbColor(0x00FFFFFF)
-
 /**
- * Immutable opaque-white pixel shared by legacy glyph validation and focused text-field borders.
+ * Immutable opaque-white pixel used by focused text-field borders.
  */
 @get:JvmSynthetic
 internal val opaqueMaskPixel: ArgbColor = ArgbColor(-1)
