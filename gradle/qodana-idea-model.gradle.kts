@@ -1,5 +1,7 @@
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.io.StringWriter
+import java.security.MessageDigest
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -27,6 +29,13 @@ fun Element.element(name: String, attributes: Map<String, String> = emptyMap()):
         appendChild(child)
     }
 
+/** Identifies a resolved compiler installation independently of the requested bytecode target. */
+fun compilerSdkName(toolchain: Map<*, *>): String {
+    val identity = listOf("installation", "java", "runtimeVersion", "vendor").joinToString("\u0000") { toolchain[it].toString() }
+    val digest = MessageDigest.getInstance("SHA-256").digest(identity.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+    return "strata-compiler-${toolchain["java"]}-${digest.take(12)}"
+}
+
 tasks.register("qodanaKotlinModel") {
     group = "verification"
     description = "Retains source roots and Kotlin settings in every actual compiler context."
@@ -35,6 +44,34 @@ tasks.register("qodanaKotlinModel") {
     doLast {
         val inventory = JsonSlurper().parse(rootProject.file("build/qodana/declarations.json")) as Map<*, *>
         val projects = (inventory["projects"] as List<*>).map { it as Map<*, *> }.filter { it["iml"] != null }
+        val sdkDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
+        val application = sdkDocument.createElement("application").also { sdkDocument.appendChild(it) }
+        val sdkTable = application.element("component", mapOf("name" to "ProjectJdkTable"))
+        val sdks = projects.mapNotNull { it["compilerToolchain"] as Map<*, *>? }
+            .distinctBy { toolchain -> listOf("installation", "java", "runtimeVersion", "vendor").map { toolchain[it] } }
+            .sortedBy { it["installation"].toString() }.map { toolchain ->
+            val home = File(toolchain["installation"] as String).canonicalFile
+            val executable = home.resolve("bin/java").takeIf(File::isFile) ?: home.resolve("bin/java.exe")
+            require(home.isDirectory && executable.isFile) { "Compiler SDK is unavailable: $home" }
+            val modules = providers.exec { commandLine(executable, "--list-modules") }.standardOutput.asText.get().lineSequence()
+                .filter(String::isNotBlank).map { it.substringBefore('@') }.sorted().toList()
+            require("java.base" in modules && modules.distinct().size == modules.size) { "Invalid compiler SDK modules: $home" }
+            val name = compilerSdkName(toolchain)
+            val sdk = sdkTable.element("jdk", mapOf("version" to "2"))
+            listOf("name" to name, "type" to "JavaSDK", "version" to "java version \"${toolchain["runtimeVersion"]}\"", "homePath" to home.invariantSeparatorsPath).forEach { (tag, value) ->
+                sdk.element(tag, mapOf("value" to value))
+            }
+            val roots = sdk.element("roots")
+            val classes = roots.element("classPath").element("root", mapOf("type" to "composite"))
+            val classRoots = modules.map { "jrt://${home.invariantSeparatorsPath}!/$it" }
+            classRoots.forEach { classes.element("root", mapOf("type" to "simple", "url" to it)) }
+            val sources = roots.element("sourcePath").element("root", mapOf("type" to "composite"))
+            home.resolve("lib/src.zip").takeIf(File::isFile)?.let { sources.element("root", mapOf("type" to "simple", "url" to "jar://${it.invariantSeparatorsPath}!/")) }
+            roots.element("javadocPath").element("root", mapOf("type" to "composite"))
+            sdk.element("additional")
+            mapOf("name" to name, "java" to toolchain["java"], "runtimeVersion" to toolchain["runtimeVersion"], "installation" to home.invariantSeparatorsPath, "roots" to classRoots)
+        }
+        require(sdks.map { it["name"] }.distinct().size == sdks.size) { "Compiler SDK identities collide." }
         val absentOutputs = projects.flatMap { owner ->
             (owner["outputs"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == false }.map { rootProject.file(it["path"] as String).toPath().toAbsolutePath().normalize() }
         }.toSet()
@@ -52,6 +89,12 @@ tasks.register("qodanaKotlinModel") {
             val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(output)
             val root = document.documentElement
             val manager = root.children("component").single { it.getAttribute("name") == "NewModuleRootManager" }
+            (owner["compilerToolchain"] as Map<*, *>?)?.let { toolchain ->
+                val previous = manager.children("orderEntry").filter { it.getAttribute("type") in setOf("jdk", "inheritedJdk") }
+                require(previous.size == 1) { "Expected one original SDK binding: $module" }
+                manager.removeChild(previous.single())
+                manager.element("orderEntry", mapOf("type" to "jdk", "jdkName" to compilerSdkName(toolchain), "jdkType" to "JavaSDK"))
+            }
             val primary = manager.children("content").single()
             require(primary.getAttribute("url") == "file://\$MODULE_DIR\$/") { "Unexpected primary IDEA content: $module" }
             primary.children("sourceFolder").forEach { primary.removeChild(it) }
@@ -99,6 +142,13 @@ tasks.register("qodanaKotlinModel") {
             transformer.transform(DOMSource(document), StreamResult(text))
             output.writeText("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n$text\n")
         }
+        val sdkOutput = rootProject.file("build/qodana/ide-config/options/jdk.table.xml")
+        sdkOutput.parentFile.mkdirs()
+        TransformerFactory.newInstance().newTransformer().transform(DOMSource(sdkDocument), StreamResult(sdkOutput))
+        val sdkBindings = projects.mapNotNull { owner ->
+            (owner["compilerToolchain"] as Map<*, *>?)?.let { owner["module"] to compilerSdkName(it) }
+        }.toMap()
+        rootProject.file("build/qodana/compiler-sdks.json").writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("revision" to inventory["revision"], "sdks" to sdks, "modules" to sdkBindings))) + "\n")
         logger.lifecycle("Retained ${roots.size} compiler roots in their declared IDEA contexts.")
     }
 }

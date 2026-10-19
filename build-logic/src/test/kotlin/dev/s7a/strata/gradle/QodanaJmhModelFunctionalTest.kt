@@ -93,8 +93,16 @@ internal class QodanaJmhModelFunctionalTest {
         write(
             "support-kotlin/build.gradle.kts",
             """
+            import org.gradle.api.tasks.compile.JavaCompile
+            import org.jetbrains.kotlin.gradle.dsl.JvmTarget
             import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+            tasks.withType<JavaCompile>().configureEach {
+                sourceCompatibility = "11"
+                targetCompatibility = "11"
+                options.release.set(11)
+            }
             tasks.named<KotlinJvmCompile>("compileKotlin") {
+                compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
                 compilerOptions.moduleName.set("fixture-support")
                 compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
             }
@@ -186,7 +194,7 @@ internal class QodanaJmhModelFunctionalTest {
                 }.toMap()
         assertTrue(Files.isRegularFile(directory.resolve("support-kotlin/build/classes/kotlin/main/META-INF/fixture-support.kotlin_module")))
         assertEquals("fixture-support", compilerOptions["moduleName"])
-        assertEquals("17", compilerOptions["jvmTarget"])
+        assertEquals("11", compilerOptions["jvmTarget"])
         assertEquals("strict", compilerOptions["explicitApi"])
         val parsed = JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()) as Map<*, *>
         val inventoried = parsed["owners"] as List<*>
@@ -226,7 +234,8 @@ internal class QodanaJmhModelFunctionalTest {
         assertTrue(support["outputs"] is List<*>, "Each configured JVM compilation must retain current owned output evidence.")
         val supportCompiler = support["compiler"] as Map<*, *>
         assertEquals("fixture-support", supportCompiler["moduleName"])
-        assertEquals("17", supportCompiler["jvmTarget"])
+        assertEquals("11", supportCompiler["jvmTarget"])
+        assertEquals(17, (support["compilerToolchain"] as Map<*, *>)["java"])
         assertEquals("strict", supportCompiler["explicitApi"])
         val sharedCompiler = projects.single { it["project"] == ":shared-kmp" }["compiler"] as Map<*, *>
         assertEquals("strict", sharedCompiler["explicitApi"])

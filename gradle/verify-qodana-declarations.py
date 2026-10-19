@@ -269,6 +269,72 @@ def verify_report(sarif, revision):
                     fail(f"analysis reported an error: {notification['message'].get('text', '')}")
 
 
+def compiler_sdk_name(toolchain):
+    """Identify the resolved compiler installation without substituting its bytecode target."""
+    identity = "\0".join(str(toolchain[key]) for key in ("installation", "java", "runtimeVersion", "vendor"))
+    return f"strata-compiler-{toolchain['java']}-{hashlib.sha256(identity.encode('utf-8')).hexdigest()[:12]}"
+
+
+def verify_compiler_sdks(root, inventory, model, sdk_model):
+    """Require each generated and imported JVM owner to use its independently declared compiler SDK."""
+    bindings = {}
+    expected = {}
+    for owner in inventory["projects"]:
+        if not owner.get("iml"):
+            continue
+        toolchain = owner["compilerToolchain"]
+        if toolchain is None:
+            if owner["compiler"] is not None:
+                fail(f"missing Kotlin compiler toolchain: {owner['module']}")
+            continue
+        if type(toolchain["java"]) is not int or toolchain["java"] < 9:
+            fail("invalid modular compiler SDK version")
+        if not toolchain["kotlinCompilers"] and not toolchain["javaCompilers"]:
+            fail("compiler toolchain has no configured compilation")
+        if any(version != toolchain["java"] for version in toolchain["kotlinCompilers"].values()):
+            fail("Kotlin compiler SDK differs from the project toolchain")
+        if len(set(toolchain["javaCompilers"])) != len(toolchain["javaCompilers"]):
+            fail("duplicate Java compiler declaration")
+        name = compiler_sdk_name(toolchain)
+        if name not in expected:
+            home = pathlib.Path(toolchain["installation"])
+            if not home.is_absolute() or home.resolve() != home or not home.is_dir():
+                fail(f"compiler SDK installation is unavailable: {home}")
+            executable = home / "bin" / ("java.exe" if os.name == "nt" else "java")
+            modules = sorted(line.split("@", 1)[0] for line in subprocess.check_output([str(executable), "--list-modules"], text=True, stderr=subprocess.PIPE).splitlines())
+            if "java.base" not in modules or len(set(modules)) != len(modules):
+                fail(f"invalid compiler SDK modules: {home}")
+            expected[name] = dict(name=name, java=toolchain["java"], runtimeVersion=toolchain["runtimeVersion"], installation=home.as_posix(), roots=[f"jrt://{home.as_posix()}!/{module}" for module in modules])
+        bindings[owner["module"]] = name
+        manager, _ = read_iml(repository_path(root, owner["iml"]), multiple_contents=True)
+        entries = [entry for entry in manager.findall("orderEntry") if entry.attrib.get("type") in {"jdk", "inheritedJdk"}]
+        if len(entries) != 1 or entries[0].attrib != dict(type="jdk", jdkName=name, jdkType="JavaSDK"):
+            fail(f"wrong generated compiler SDK: {owner['module']}")
+        imported = [module for module in model["modules"] if module["name"] == owner["module"]]
+        if len(imported) != 1 or [entry.get("name") for entry in imported[0]["orderEntries"] if entry.get("type") == "SDK"] != [name]:
+            fail(f"wrong imported compiler SDK: {owner['module']}")
+    if not bindings:
+        fail("missing JVM compiler SDK declarations")
+    receipt = read_json(root / "build/qodana/compiler-sdks.json")
+    if receipt["revision"] != inventory["revision"] or receipt["modules"] != bindings or sorted(receipt["sdks"], key=lambda item: item["name"]) != sorted(expected.values(), key=lambda item: item["name"]):
+        fail("compiler SDK receipt differs from the selected Gradle declarations")
+    table = ET.parse(root / "build/qodana/ide-config/options/jdk.table.xml").getroot()
+    generated = table.findall("./component[@name='ProjectJdkTable']/jdk")
+    if table.tag != "application" or collections.Counter(entry.find("name").attrib["value"] for entry in generated) != collections.Counter(expected.keys()):
+        fail("generated compiler SDK table differs from Gradle declarations")
+    for name, sdk in expected.items():
+        generated_sdk = next(entry for entry in generated if entry.find("name").attrib["value"] == name)
+        imported = [entry for entry in sdk_model["sdks"] if entry["name"] == name]
+        version = f'java version "{sdk["runtimeVersion"]}"'
+        if generated_sdk.find("type").attrib["value"] != "JavaSDK" or generated_sdk.find("version").attrib["value"] != version or generated_sdk.find("homePath").attrib["value"] != sdk["installation"]:
+            fail(f"wrong generated compiler SDK identity: {name}")
+        if collections.Counter(entry.attrib["url"] for entry in generated_sdk.findall("./roots/classPath/root/root")) != collections.Counter(sdk["roots"]):
+            fail(f"wrong generated compiler SDK modules: {name}")
+        if len(imported) != 1 or imported[0]["sdkType"] != "JavaSDK" or imported[0]["sdkVersion"] != version or collections.Counter(imported[0]["roots"]) != collections.Counter(sdk["roots"]):
+            fail(f"wrong imported compiler SDK identity or modules: {name}")
+    return bindings
+
+
 def verify_model(root, model_path, container_root, java_path):
     """Verify declaration provenance and both downstream models, returning the model and report directory."""
     inventory = read_json(root / "build/qodana/declarations.json")
@@ -310,6 +376,7 @@ def verify_model(root, model_path, container_root, java_path):
     if ownership_fields == {False, True}:
         fail("partial compiler ownership declaration schema")
     source_owners = verify_source_ownership(root, inventory, model, container_root) if ownership_fields == {True} else None
+    compiler_sdks = verify_compiler_sdks(root, inventory, model, read_json(report_directory / "projectStructure/SDKs.json")) if source_owners is not None else {}
 
     def declared_shared_root(module_name, contents, kind, path):
         """Permit exact roots shared by actual configured declarations, including native showcase inputs."""
@@ -424,9 +491,10 @@ def verify_model(root, model_path, container_root, java_path):
                 fail(f"imported exclusion hides a declared root: {name}")
         sdks = [entry for entry in imported.get("orderEntries", []) if entry.get("type") == "SDK"]
         generated_sdks = manager.findall("orderEntry[@type='inheritedJdk']") + manager.findall("orderEntry[@type='jdk']")
-        if len(sdks) != 1 or sdks[0].get("name") != sdk or len(generated_sdks) != 1 or project_java < owner["java"]:
+        owner_sdk = compiler_sdks.get(name, sdk)
+        if len(sdks) != 1 or sdks[0].get("name") != owner_sdk or len(generated_sdks) != 1 or project_java < owner["java"]:
             fail(f"missing or incompatible owner SDK: {name}")
-        if generated_sdks[0].attrib.get("jdkName", sdk) != sdk:
+        if generated_sdks[0].attrib.get("jdkName", sdk) != owner_sdk:
             fail(f"wrong generated SDK: {name}")
         verify_dependencies(owner, manager, imported, directory)
         # Explicitly shared declarations preserve native component and showcase inputs; undeclared attribution fails.
@@ -530,7 +598,8 @@ def verify_model(root, model_path, container_root, java_path):
         generated_sdks = manager.findall("orderEntry[@type='inheritedJdk']") + manager.findall("orderEntry[@type='jdk']")
         if len(java_owners) != 1 or any(entry["java"] != java_owners[0].get("languageLevel") for entry in compilations) or manager.attrib.get("LANGUAGE_LEVEL", f"JDK_{project_java}") != f"JDK_{owner['java']}" or project_java < owner["java"]:
             fail(f"wrong auxiliary compiler language level: {name}")
-        if len(sdks) != 1 or sdks[0].get("name") != sdk or len(generated_sdks) != 1 or generated_sdks[0].attrib.get("jdkName", sdk) != sdk:
+        owner_sdk = compiler_sdks.get(name, sdk)
+        if len(sdks) != 1 or sdks[0].get("name") != owner_sdk or len(generated_sdks) != 1 or generated_sdks[0].attrib.get("jdkName", sdk) != owner_sdk:
             fail(f"wrong auxiliary SDK: {name}")
         for entry in module_entries:
             foreign_iml = url_path(root, directory, entry.attrib["fileurl"], container_root, False)

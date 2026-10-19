@@ -120,6 +120,8 @@ Each run analyzes the complete selected revision once with a zero-problem thresh
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
 One `--no-daemon` Gradle invocation compiles `classes`, `gametestClasses`, and every discovered JMH owner's `jmhClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model and declaration inventory.
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
+The declaration export validates each JVM owner's configured toolchain against all of its Kotlin and Java compilation tasks, and the analysis module binds to that compiler SDK independently of the bytecode target or analysis JVM.
+The bootstrap registers the SDK's actual JRT modules in a disposable IDE configuration; verification checks the generated table, imported SDKs and each module binding against the fresh declarations.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.

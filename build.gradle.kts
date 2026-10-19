@@ -1565,6 +1565,33 @@ if (completeIdeaModelActive) {
                 val main = kotlin?.target?.compilations?.findByName("main")
                     ?: multiplatform?.targets?.findByName("jvm")?.compilations?.findByName("main")
                 val compiler = main?.compileTaskProvider?.name?.let { owner.tasks.named<KotlinJvmCompile>(it).get() }
+                val kotlinCompilers = owner.tasks.withType<KotlinJvmCompile>().associate { task ->
+                    task.name to task.kotlinJavaToolchain.javaVersion.get().majorVersion.toInt()
+                }
+                val javaCompilers = owner.tasks.withType<JavaCompile>().associate { task ->
+                    task.name to task.javaCompiler.get().metadata
+                }
+                val compilerToolchain = if (kotlinCompilers.isEmpty() && javaCompilers.isEmpty()) {
+                    null
+                } else {
+                    val specification = owner.extensions.getByType<JavaPluginExtension>().toolchain
+                    val metadata = owner.extensions.getByType<JavaToolchainService>().launcherFor(specification).get().metadata
+                    val installation = metadata.installationPath.asFile.canonicalFile
+                    require(kotlinCompilers.values.all { it == metadata.languageVersion.asInt() }) {
+                        "Kotlin compiler SDK versions differ from the project toolchain: ${owner.path}: $kotlinCompilers"
+                    }
+                    require(javaCompilers.values.all { it.installationPath.asFile.canonicalFile == installation }) {
+                        "Java compiler SDK installations differ from the project toolchain: ${owner.path}"
+                    }
+                    mapOf(
+                        "java" to metadata.languageVersion.asInt(),
+                        "vendor" to metadata.vendor,
+                        "runtimeVersion" to metadata.javaRuntimeVersion,
+                        "installation" to installation.invariantSeparatorsPath,
+                        "kotlinCompilers" to kotlinCompilers,
+                        "javaCompilers" to javaCompilers.keys.sorted(),
+                    )
+                }
                 val configuredApi = kotlin?.explicitApi ?: multiplatform?.explicitApi
                 val explicitApi = compiler?.compilerOptions?.freeCompilerArgs?.get()?.lastOrNull { it.startsWith("-Xexplicit-api=") }?.substringAfter('=')
                     ?: when (configuredApi) {
@@ -1595,6 +1622,7 @@ if (completeIdeaModelActive) {
                     }.distinct(),
                     "outputs" to outputs,
                     "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends) },
+                    "compilerToolchain" to compilerToolchain,
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
                     "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
                 )

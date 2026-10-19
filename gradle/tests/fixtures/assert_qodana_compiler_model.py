@@ -58,5 +58,32 @@ java_path = fixture / "Java.json"
 model_path.write_text(json.dumps(dict(modules=modules)), encoding="utf-8")
 java_path.write_text(json.dumps(dict(modules=java)), encoding="utf-8")
 (fixture / "qodana.sarif.json").write_text(json.dumps(dict(runs=[dict(versionControlProvenance=[dict(revisionId=inventory["revision"])], invocations=[dict(executionSuccessful=True)])])), encoding="utf-8")
+sdk_table = ET.parse(root / "build/qodana/ide-config/options/jdk.table.xml").getroot()
+sdk_entries = [dict(name=entry.find("name").attrib["value"], sdkType=entry.find("type").attrib["value"], sdkVersion=entry.find("version").attrib["value"],
+                    roots=[item.attrib["url"] for item in entry.findall("./roots/classPath/root/root")]) for entry in sdk_table.findall("./component/jdk")]
+(fixture / "projectStructure").mkdir(exist_ok=True)
+(fixture / "projectStructure/SDKs.json").write_text(json.dumps(dict(sdks=sdk_entries)), encoding="utf-8")
 checker.verify_model(root, model_path, "", java_path)
+sdk_model = dict(sdks=sdk_entries)
+sdk_owner = next(owner["module"] for owner in inventory["projects"] if owner.get("iml") and owner["compilerToolchain"])
+for mutation in ("inherited-project-sdk", "missing-module-sdk", "wrong-sdk-version", "missing-java-base"):
+    changed_model = copy.deepcopy(dict(modules=modules))
+    changed_sdks = copy.deepcopy(sdk_model)
+    module = next(item for item in changed_model["modules"] if item["name"] == sdk_owner)
+    binding = next(item for item in module["orderEntries"] if item["type"] == "SDK")
+    imported_sdk = next(item for item in changed_sdks["sdks"] if item["name"] == binding["name"])
+    if mutation == "inherited-project-sdk":
+        binding["name"] = sdk_name
+    elif mutation == "missing-module-sdk":
+        module["orderEntries"].remove(binding)
+    elif mutation == "wrong-sdk-version":
+        imported_sdk["sdkVersion"] += "-changed"
+    else:
+        imported_sdk["roots"] = [url for url in imported_sdk["roots"] if not url.endswith("!/java.base")]
+    try:
+        checker.verify_compiler_sdks(root, inventory, changed_model, changed_sdks)
+    except ValueError as failure:
+        assert "compiler SDK" in str(failure), (mutation, failure)
+    else:
+        raise AssertionError(f"Accepted invalid compiler SDK control: {mutation}")
 print("Verified real compiler inputs, source ownership, output bytes, Kotlin identities and dependency closures using a synthetic import fixture.")

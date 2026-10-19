@@ -111,6 +111,7 @@ jobs:
         pr-mode: false
         args: >-
           --linter=qodana-jvm-community --within-docker=false
+          --property=idea.config.path=${{ github.workspace }}/build/qodana/ide-config
           --property=intellij.platform.shared.source.support=true
           --property=batch.inspections.inspect.all.code.insight.contexts=true
     - name: Verify complete Gradle IDE model
