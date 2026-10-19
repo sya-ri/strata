@@ -238,23 +238,6 @@ internal fun portableFabricSampledFallback(layer: FabricMinecraftFrameLayer.Samp
     return FabricMinecraftFrameLayer.Portable(commands, bounds, absoluteCoordinates = true)
 }
 
-/**
- * Forwards one logical rectangle as the absolute corner coordinates required by the modern GUI extractor texture overload.
- *
- * [submit] is borrowed synchronously on the caller's thread, invoked exactly once, and never retained.
- * Any exception from [submit] propagates without translation.
- *
- * @param bounds logical destination whose right and bottom edges are absolute coordinates rather than extents.
- * @param submit borrowed native call receiving `x0`, `y0`, `x1`, and `y1` in that order.
- */
-@JvmSynthetic
-internal inline fun submitFabricMinecraftGuiCorners(
-    bounds: IntRect,
-    submit: (x0: Int, y0: Int, x1: Int, y1: Int) -> Unit,
-) {
-    submit(bounds.left, bounds.top, bounds.right, bounds.bottom)
-}
-
 private fun sampledFabricLayer(
     command: DrawCommand.SampledImage,
     clip: IntRect?,
