@@ -2,6 +2,7 @@
 """Qualify the real compiled preflight route and retained negative attempts on the hosted Windows boundary."""
 import argparse
 import copy
+from enum import Enum
 import importlib.util
 import json
 import os
@@ -14,6 +15,49 @@ import zipfile
 SPEC = importlib.util.spec_from_file_location("paired_jvm", Path(__file__).with_name("paired-jvm.py"))
 PAIRED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PAIRED)
+
+
+class QualificationCase(Enum):
+    """Identifies each real compiled control and its external controller argument."""
+
+    COMPLETE = ("complete", "Complete")
+    MISSING_CONTROL = ("missing-control", "Missing")
+    ALTERED_BYTES = ("altered-bytes", "Altered")
+    CONTROLLER_FAILURE = ("controller-failure", "Failure")
+
+    def __init__(self, selector, behavior):
+        """Keep command-line selectors distinct from the compiled controller's protocol values."""
+        self.selector = selector
+        self.behavior = behavior
+
+
+def ci_matrix():
+    """Separate independent rejection cases from the complete paired timing route."""
+    return {"include": [
+        {"id": "complete", "cases": [QualificationCase.COMPLETE.selector], "host_boundary": True},
+        {"id": "negative", "cases": [case.selector for case in QualificationCase if case is not QualificationCase.COMPLETE], "host_boundary": False},
+    ]}
+
+
+def verify_negative_case(case, attempt, record, phase):
+    """Reject unrelated preflight failures even when another host passed the complete route."""
+    expected_exit = 1 if case is QualificationCase.CONTROLLER_FAILURE else 0
+    PAIRED.require(type(phase.get("exit_code")) is int and phase["exit_code"] == expected_exit
+                   and type(phase.get("terminal", {}).get("exitCode")) is int and phase["terminal"]["exitCode"] == expected_exit,
+                   "Negative qualification failed for an unexpected process outcome")
+    if case is QualificationCase.CONTROLLER_FAILURE:
+        PAIRED.require(record.get("error", "").startswith(f"ValueError: Owned phase failed: {phase['name']};"),
+                       "The controller failure did not reject its owned preflight phase")
+        console = (attempt / "phases" / phase["name"] / "console.log").resolve()
+        PAIRED.require(console.is_relative_to(attempt.resolve()), "Controller console escaped its attempt")
+        PAIRED.require("IllegalStateException: Required independent controller failure" in console.read_text(encoding="utf-8", errors="replace"),
+                       "An unrelated JVM or Gradle failure replaced the required controller exception")
+    else:
+        errors = {
+            QualificationCase.MISSING_CONTROL: "ValueError: Incomplete or reordered whole preflight control inventory",
+            QualificationCase.ALTERED_BYTES: "ValueError: Control changed prepared or original classpath bytes",
+        }
+        PAIRED.require(case in errors and record.get("error") == errors[case], "The negative case did not reject its intended control violation")
 
 
 def frozen_fixture(root, output):
@@ -51,10 +95,24 @@ def pack_qualification(output):
 
 
 def main():
-    """Run a complete real B0/C0/B1/C1/B2/C2 pair, then actual missing/altered/failure attempts without collection."""
+    """Run every real case by default, or an explicit group without splitting its paired timing route."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, required=True)
-    output = parser.parse_args().output.resolve()
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--case", choices=[case.selector for case in QualificationCase], nargs="+")
+    parser.add_argument("--ci-matrix", action="store_true", help="Print the complete CI grouping as JSON without preparing fixtures.")
+    arguments = parser.parse_args()
+    if arguments.ci_matrix:
+        if arguments.output is not None or arguments.case is not None:
+            parser.error("--ci-matrix does not execute cases or create output.")
+        print(json.dumps(ci_matrix()))
+        return
+    if arguments.output is None:
+        parser.error("--output is required when executing qualification.")
+    if arguments.case is not None and len(set(arguments.case)) != len(arguments.case):
+        parser.error("Qualification cases must be distinct.")
+    cases = {case.selector: case for case in QualificationCase}
+    selected = [cases[name] for name in arguments.case] if arguments.case is not None else list(QualificationCase)
+    output = arguments.output.resolve()
     root = Path(__file__).resolve().parents[2]
     PAIRED.require(os.name == "nt" and output.is_relative_to(root), "Use a fresh Windows repository output")
     output.mkdir(parents=True, exist_ok=False)
@@ -74,20 +132,20 @@ def main():
                                           "runtime_classes": {":api": "dev.s7a.strata.projection.ProjectionValue", ":runtime:core": "dev.s7a.strata.runtime.spi.RuntimeUiSession", ":runtime:remote": "dev.s7a.strata.runtime.remote.RemoteTree"},
                                           "controls": [{"id": f"independent-{size}", "arguments": ["Complete", str(size)]} for size in (1, 31, 4096)]}}],
                 "inputs": [], "compiled_pins": {side: [] for side in ("fixture", "baseline", "candidate")}, "dependency_pins": [], "java_pins": []}
-        for case, behavior in (("complete", "Complete"), ("missing-control", "Missing"), ("altered-bytes", "Altered"), ("controller-failure", "Failure")):
+        for case in selected:
             manifest = copy.deepcopy(data)
-            manifest["suites"][0]["preflight"]["controls"][-1]["arguments"][0] = behavior
-            manifest_path = output / f"{case}-manifest.json"
+            manifest["suites"][0]["preflight"]["controls"][-1]["arguments"][0] = case.behavior
+            manifest_path = output / f"{case.selector}-manifest.json"
             PAIRED.write_new(manifest_path, manifest)
-            attempt = output / case
+            attempt = output / case.selector
             error = None
             try:
                 PAIRED.run(root, manifest_path, attempt)
             except (ValueError, subprocess.CalledProcessError) as failure:
                 error = str(failure)
             record = PAIRED.read_json(attempt / "attempt.json")
-            positive = case == "complete"
-            PAIRED.require((record["status"] == "passed") == positive and (error is None) == positive, f"Wrong compiled route result: {case}")
+            positive = case is QualificationCase.COMPLETE
+            PAIRED.require((record["status"] == "passed") == positive and (error is None) == positive, f"Wrong compiled route result: {case.selector}")
             phases = record["phases"]
             controls = [index for index, phase in enumerate(phases) if phase["name"].startswith("preflight-")]
             collections = [index for index, phase in enumerate(phases) if phase["name"].startswith("collect-")]
@@ -103,7 +161,9 @@ def main():
                 PAIRED.require(not (attempt / "raw").exists(), "Negative preflight retained timed output")
                 PAIRED.require((attempt / "prepared/baseline/target-0.jar").is_file()
                                and (attempt / "prepared-classpaths/qualified-control-route/baseline/classpath.json").is_file(), "First-control failure lost prepared runtime/harness bytes")
-            result["cases"].append({"case": case, "status": "passed", "attempt_status": record["status"], "error": error,
+                PAIRED.require(controls[-1] == len(phases) - 1, "A negative case failed after its preflight control")
+                verify_negative_case(case, attempt, record, phases[controls[-1]])
+            result["cases"].append({"case": case.selector, "status": "passed", "attempt_status": record["status"], "error": error,
                                     "attempt_sha256": PAIRED.digest(attempt / "attempt.json"), "archive_sha256": PAIRED.digest(attempt.with_suffix(".zip"))})
         result["status"] = "passed"
     except BaseException as failure:
