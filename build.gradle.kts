@@ -195,14 +195,14 @@ private data class MinecraftFabricTarget(
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
     enum class CanvasFamily(val testSource: String, vararg val sourceRoots: String) {
-        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        OpenGlBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        OpenGlNonReloadableTextures("opengl/common", "opengl/common", "opengl/non-reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dDirectTextures("blaze3d/direct-textures", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dTextureViews("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dSamplers("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dGuiExtractor("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
-        Blaze3dBindGroups("blaze3d/bind-groups", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        OpenGlPlatformBuffers("opengl/common", "glsl", "opengl/common", "opengl/reloadable-textures", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlBuffers("opengl/common", "glsl", "opengl/common", "opengl/reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlNonReloadableTextures("opengl/common", "glsl", "opengl/common", "opengl/non-reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        Blaze3dDirectTextures("blaze3d/direct-textures", "glsl", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        Blaze3dTextureViews("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dSamplers("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dGuiExtractor("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
+        Blaze3dBindGroups("blaze3d/bind-groups", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
         RenderPearl("renderpearl", "portable-storage", "sampled-storage", "renderpearl", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
     }
 
@@ -1075,6 +1075,8 @@ val sharedSourceMarkdown = providers.provider {
         "canvas" to linkedMapOf(
             "Rendering backend" to listOf(
                 "FabricNativeCanvasDriver",
+                "FabricNativeCanvasShaders",
+                "FabricMinecraftSamplingShaders",
                 "MinecraftCanvasContext",
                 "FabricNativeCanvasTextureFactory",
                 "FabricBorrowedTexture",
@@ -2730,7 +2732,7 @@ tasks.register("writeCiSourceModel") {
     outputs.file(destination)
     outputs.upToDateWhen { false }
     doLast {
-        val model = minecraftFabricTargets.associate { target ->
+        val minecraftSources = minecraftFabricTargets.associate { target ->
             val roots = listOf(target.runtimeProjectPath, target.integrationProjectPath).flatMap { path ->
                 val owner = project(path)
                 listOf(rootProject.relativePath(owner.projectDir)) +
@@ -2740,6 +2742,10 @@ tasks.register("writeCiSourceModel") {
             } + target.allSourceLinkPaths
             target.version to roots.map { it.replace('\\', '/') }.distinct().sorted()
         }
+        val documentationSources = project(":integration:docs").extensions.getByType<SourceSetContainer>().flatMap { source ->
+            source.allSource.srcDirs.map { directory -> rootProject.relativePath(directory).replace('\\', '/') }
+        }.distinct().sorted()
+        val model = mapOf("minecraft" to minecraftSources, "documentation" to documentationSources)
         destination.get().asFile.apply {
             parentFile.mkdirs()
             writeText(JsonOutput.prettyPrint(JsonOutput.toJson(model)) + "\n")

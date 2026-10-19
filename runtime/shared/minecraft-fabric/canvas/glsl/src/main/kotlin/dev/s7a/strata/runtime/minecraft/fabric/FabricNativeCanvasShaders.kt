@@ -1,7 +1,5 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import dev.s7a.strata.geometry.IntSize
-
 /**
  * Supplies immutable shader source for exact nearest sampling without changing externally owned texture parameters.
  *
@@ -9,21 +7,6 @@ import dev.s7a.strata.geometry.IntSize
  * This object owns no native objects, source leases, target generations, or mutable cache.
  */
 internal object FabricNativeCanvasShaders {
-    private const val MAXIMUM_AXIS = 32_768
-
-    /**
-     * Validates native source or target axes in 1 through 32,768 for exact signed-integer sampling.
-     * The device may impose a lower limit; CPU sources and common logical geometry use their own bounds.
-     *
-     * @throws IllegalArgumentException when either axis is outside that range.
-     */
-    @JvmSynthetic
-    internal fun requireSupportedExtent(size: IntSize) {
-        require(size.width in 1..MAXIMUM_AXIS && size.height in 1..MAXIMUM_AXIS) {
-            "Native Canvas image axes must be between 1 and $MAXIMUM_AXIS pixels; the device may impose a lower limit."
-        }
-    }
-
     /**
      * Immutable vertex-shader source for a fullscreen triangle with normalized image coordinates.
      *
@@ -43,24 +26,14 @@ internal object FabricNativeCanvasShaders {
         """.trimIndent()
 
     /**
-     * Builds exact nearest mip-zero GLSL using a direct CanvasTargetExtent uniform.
-     * The driver sets the validated physical target extent and owns compilation and its failures.
+     * Builds exact nearest mip-zero GLSL with the native driver's target extent binding.
+     * The driver owns compilation failures and the matching uniform or capture-buffer lifetime.
      *
      * @param origin logical edge stored at source texel row zero.
+     * @param targetDeclaration GLSL declaration exposing the driver's `ivec3 CanvasTargetExtent` value.
      */
     @JvmSynthetic
-    internal fun fragment(origin: MinecraftCanvasTextureOrigin): String = fragment(origin, "uniform ivec3 CanvasTargetExtent;")
-
-    /**
-     * Builds the nearest sampler with a 16-byte std140 CanvasCapture block: physical width, height, then two unused integers.
-     * The driver owns compilation and keeps the capture-specific buffer alive through its completion fence.
-     *
-     * @param origin logical edge stored at source texel row zero.
-     */
-    @JvmSynthetic
-    internal fun bufferedFragment(origin: MinecraftCanvasTextureOrigin): String = fragment(origin, "layout(std140) uniform CanvasCapture { ivec3 CanvasTargetExtent; };")
-
-    private fun fragment(
+    internal fun fragment(
         origin: MinecraftCanvasTextureOrigin,
         targetDeclaration: String,
     ): String {

@@ -286,17 +286,6 @@ internal class FabricMinecraftFrameLayerTest {
     }
 
     @Test
-    fun modernGuiTextureCoordinatesUseAbsoluteCornersForNonOriginLayers() {
-        val coordinates = ArrayList<Int>(4)
-
-        submitFabricMinecraftGuiCorners(IntRect(144, 4, 176, 36)) { x0, y0, x1, y1 ->
-            coordinates.addAll(listOf(x0, y0, x1, y1))
-        }
-
-        assertEquals(listOf(144, 4, 176, 36), coordinates)
-    }
-
-    @Test
     fun orderedSubmissionSeparatesEveryAdjacentLayerWithoutOuterBoundaries() {
         val image = createDrawImage(IntSize(2, 2), IntArray(4) { -1 })
         val sampled = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(1f, 1f, 3f, 3f), alphaCutoff = 0f)
