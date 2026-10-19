@@ -1770,7 +1770,6 @@ subprojects {
             tasks.named<Jar>("jvmJar") { archiveAppendix.set("") }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "jvmTest" }.configureEach {
-                    java.srcDir("src/test/java")
                     resources.srcDir("src/test/resources")
                 }
             }
@@ -1919,11 +1918,7 @@ subprojects {
         val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + target.serverSourcePaths + target.hudSourcePath).map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
-                java.srcDirs(runtimeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("resources") })
-            }
-            named("test") {
-                java.srcDirs(testRoots.map { sourceRoot -> sourceRoot.resolve("java") })
             }
         }
         extensions.configure<KotlinJvmProjectExtension> {
@@ -1947,7 +1942,6 @@ subprojects {
         }
         extensions.configure<SourceSetContainer> {
             matching { it.name == "gametest" }.configureEach {
-                java.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("resources") })
                 if (target.remapped) {
                     val gameTestCompileClasspath = compileClasspath
@@ -2159,8 +2153,6 @@ subprojects {
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
                     dependencies.add(implementationConfigurationName, project(":performance-testkit"))
-                    java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
-                    java.srcDir(remoteVerificationFamily.resolve("java"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
                 }
             }
@@ -2642,40 +2634,16 @@ subprojects {
                     ?: listOf(path.removePrefix(":").replace(":", "/"))
             dokkaSourceSets.named("main") {
                 for (sourcePath in sourcePaths) {
-                    for (language in listOf("kotlin", "java")) {
-                        val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
-                        if (sourceDirectory.isDirectory) {
-                            sourceLink {
-                                localDirectory.set(sourceDirectory)
-                                remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language")
-                                remoteLineSuffix.set("#L")
-                            }
+                    val sourceDirectory = rootProject.file("$sourcePath/src/main/kotlin")
+                    if (sourceDirectory.isDirectory) {
+                        sourceLink {
+                            localDirectory.set(sourceDirectory)
+                            remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/kotlin")
+                            remoteLineSuffix.set("#L")
                         }
                     }
                 }
             }
-
-            val verifyDokkaSourceLinks =
-                tasks.register("verifyDokkaSourceLinks") {
-                    group = "verification"
-                    description = "Verifies that every existing Kotlin and Java source root uses the configured Dokka revision."
-                    inputs.property("sourceRevision", sourceRevision)
-                    doLast {
-                        sourcePaths.forEach { sourcePath ->
-                            listOf("kotlin", "java").forEach { language ->
-                                val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
-                                if (sourceDirectory.isDirectory) {
-                                    val expectedUrl =
-                                        "https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language"
-                                    check(expectedUrl.contains("/tree/$sourceRevision/")) {
-                                        "Dokka source link is not pinned to $sourceRevision: $expectedUrl"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            tasks.named("check").configure { dependsOn(verifyDokkaSourceLinks) }
         }
 
         tasks.withType<GenerateModuleMetadata>().configureEach {
