@@ -671,7 +671,8 @@ The caller still owns the actual clip, and the selected native shadow order rema
 Prepared-text bounds return early only after both accumulated raw axes are strictly ordered; this cannot turn a later native rejection into acceptance and preserves the existing NaN comparison behavior.
 
 Tests require bounded candidate visits and command counts at the beginning, middle, and end of a 32,767-glyph forward run, compare clipped full painting with visible painting pixel-for-pixel at scales one through three, and cover signed advances, overhang, shadows, large coordinates, empty clips, and unchanged retention across many viewport replacements.
-The returned diagnostic count includes prepared-bounds visits and a second candidate visit when a target draws all shadows before the foreground pass; it excludes the logarithmic binary-search comparisons.
+Test-owned list probes observe the original painter's candidate and prepared-bounds reads, including a second candidate read for a separate shadow pass and excluding logarithmic binary-search comparisons.
+The production painters return no diagnostic count and retain no measurement callback.
 Run construction and exceptional signed-metric fallback remain proportional to the current text; this is a submission bound, not an incremental text-editing or universal constant-time guarantee.
 
 ### Fabric profile reuse between screen opens
@@ -840,8 +841,9 @@ Existing editor navigation, viewport, composition and replacement tests remain r
 
 The separate `TextAreaInputBenchmark` corpus keeps actual public input cycles apart from isolated lookup, complete initial host/layout ownership and clean frames.
 The cycle includes its public opportunity restoration and frame settlement in both measured JMH elapsed time and normalized allocation; composed cycles include layout replacement and do not claim isolated event latency.
-Its bounded coordinate-read diagnostic executes the same inlined search outside measurement; ordinary input carries no counter or callback.
-At B boundaries, admitted lookup reads at most `2 * bitLength(B) + 2` coordinates; fallback reads exactly B.
+Deterministic tests instrument integer-array loads in a hidden test-only copy of the actual compiled lookup and compare its selected offset with the unmodified runtime.
+At B boundaries, admitted lookup reads at most `2 * bitLength(B) + 2` coordinates; fallback reads exactly B, and the probe includes one final offset-array read.
+Ordinary input exposes no diagnostic method, counter or callback; the operation report marks this optional legacy diagnostic unavailable for current runtimes.
 The constructor's admission scan remains part of the separately measured initial-layout cost.
 JMH elapsed-time and normalized-allocation comparisons require the complete frozen corpus and independent Standard repetitions described in [the testkit contract](performance-testkit.md); structural bounds alone establish no measured speedup.
 The optional shared operation-report adapter measures all 60 original boundaries with owner-thread CPU and allocation counters separately from JMH elapsed time; unavailable counters remain explicit.
