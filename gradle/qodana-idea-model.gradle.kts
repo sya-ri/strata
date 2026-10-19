@@ -1,5 +1,7 @@
 import groovy.json.JsonSlurper
 import java.io.StringWriter
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -96,8 +98,23 @@ tasks.register("qodanaKotlinModel") {
                 library.element("CLASSES").element("root", mapOf("url" to "file://${rootProject.file(compiled["path"] as String).canonicalPath.replace(File.separatorChar, '/')}"))
                 library.element("JAVADOC")
                 val sources = library.element("SOURCES")
-                roots.filter { it.module == module && it.resource.not() && it.test == (compiled["production"] != true) }.distinctBy { it.path }.sortedBy { it.path }.forEach { source ->
-                    sources.element("root", mapOf("url" to "file://${rootProject.file(source.path).canonicalPath.replace(File.separatorChar, '/')}"))
+                val sourceRoots = (owner["roots"] as List<*>).map { it as Map<*, *> }.filter {
+                    compiled["classes"] == true && it["exists"] == true && it["generated"] == false &&
+                        it["kind"] == (if (compiled["production"] == true) "Source" else "TestSource") && (it["inputs"] as List<*>).isNotEmpty()
+                }
+                if (sourceRoots.isNotEmpty()) {
+                    val archive = rootProject.file("build/qodana/sources/$module-${compiled["sourceSet"]}.jar")
+                    archive.parentFile.mkdirs()
+                    ZipOutputStream(archive.outputStream()).use { zip ->
+                        sourceRoots.flatMap { it["inputs"] as List<*> }.map { it as String }.distinct().sorted().forEach { path ->
+                            zip.putNextEntry(ZipEntry(path).apply { time = 0 })
+                            rootProject.file(path).inputStream().use { it.copyTo(zip) }
+                            zip.closeEntry()
+                        }
+                    }
+                    sourceRoots.map { it["path"] as String }.distinct().sorted().forEach { path ->
+                        sources.element("root", mapOf("url" to "jar://${archive.canonicalPath.replace(File.separatorChar, '/')}!/$path"))
+                    }
                 }
             }
             val compiler = owner["compiler"] as Map<*, *>?

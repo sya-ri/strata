@@ -77,6 +77,14 @@ class QodanaAnalysisTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing Kotlin inspection statistics columns"):
             self.verify()
 
+    def test_semantic_errors_are_rejected_without_waiting_for_inspection_suspension(self):
+        run = {"versionControlProvenance": [{"revisionId": "current"}], "invocations": [{"executionSuccessful": True}]}
+        report = {"runs": [run]}
+        CHECKER.verify_report(report, "current")
+        run["properties"] = {"qodana.sanity.results": [{"ruleId": "QodanaKotlinSanity", "level": "error", "message": {"text": "Unresolved reference."}}]}
+        with self.assertRaisesRegex(ValueError, "semantic sanity problems"):
+            CHECKER.verify_report(report, "current")
+
 
 if __name__ == "__main__":
     unittest.main()

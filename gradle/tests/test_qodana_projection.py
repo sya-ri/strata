@@ -8,6 +8,7 @@ import pathlib
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+import zipfile
 
 
 SPEC = importlib.util.spec_from_file_location("qodana_declarations", pathlib.Path(__file__).parents[1] / "verify-qodana-declarations.py")
@@ -74,10 +75,7 @@ class QodanaProjectionTest(unittest.TestCase):
                         entry.set("scope", "TEST")
                     library = ET.SubElement(entry, "library")
                     ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url="file://$PROJECT_DIR$/" + output["path"] + "/")
-                    sources = ET.SubElement(library, "SOURCES")
-                    for source in roots:
-                        if source["kind"] == "Source":
-                            ET.SubElement(sources, "root", url="file://$PROJECT_DIR$/" + source["path"])
+                    self.attach_sources(library, owner, output)
                     libraries.append(dict(type="Library", name=(self.root / output["path"]).as_posix()))
             facets = ET.SubElement(document, "component", name="FacetManager")
             facet = ET.SubElement(facets, "facet", type="kotlin-language", name="Kotlin")
@@ -107,6 +105,20 @@ class QodanaProjectionTest(unittest.TestCase):
     def write_iml(self, name, document):
         """Write the production XML declaration without permitting parser-dependent encodings."""
         (self.root / name / (name + ".iml")).write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(document, encoding="unicode"), encoding="utf-8")
+
+    def attach_sources(self, library, owner, output):
+        """Build independent source attachments from selected fixture compiler inputs."""
+        sources = ET.SubElement(library, "SOURCES")
+        roots = [source for source in owner["roots"] if output["classes"] and source["inputs"] and source["kind"] == ("Source" if output["production"] else "TestSource")]
+        if not roots:
+            return
+        archive = self.root / f"build/qodana/sources/{owner['module']}-{output['sourceSet']}.jar"
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(archive, "w") as files:
+            for file in sorted({file for source in roots for file in source["inputs"]}):
+                files.write(self.root / file, arcname=file)
+        for source in roots:
+            ET.SubElement(sources, "root", url=f"jar://{archive.as_posix()}!/{source['path']}")
 
     def validate(self):
         """Run only the additional checker; the existing verifier remains independently covered."""
@@ -139,7 +151,7 @@ class QodanaProjectionTest(unittest.TestCase):
         output = next(output for output in owner["outputs"] if output["sourceSet"] == "test")
         url = "file://$PROJECT_DIR$/" + output["path"]
         ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url=url)
-        ET.SubElement(ET.SubElement(library, "SOURCES"), "root", url="file://$PROJECT_DIR$/shared/kotlin")
+        self.attach_sources(library, owner, output)
         array = document.find(".//array")
         ET.SubElement(array, "option", value=(self.root / output["path"]).as_posix())
         self.write_iml("beta", document)
@@ -151,9 +163,35 @@ class QodanaProjectionTest(unittest.TestCase):
             self.validate()
 
     def test_complete_compiler_membership_precedes_partial_physical_ownership(self):
-        self.inventory["projects"][1]["native"] = False
-        self.inventory["projects"][1]["roots"][1]["inputs"] = []
+        owner = self.inventory["projects"][1]
+        owner["native"] = False
+        owner["roots"][1]["inputs"] = []
+        document = ET.parse(self.root / owner["iml"]).getroot()
+        for entry, output in zip(document.find("component").findall("orderEntry"), (output for output in owner["outputs"] if output["production"])):
+            library = entry.find("library")
+            library.remove(library.find("SOURCES"))
+            self.attach_sources(library, owner, output)
+        self.write_iml("beta", document)
         self.validate()
+
+    def test_source_archive_must_contain_exact_current_compiler_input_bytes(self):
+        archive = self.root / "build/qodana/sources/beta-main.jar"
+        original = archive.read_bytes()
+        with zipfile.ZipFile(archive) as files:
+            selected = {file: files.read(file) for file in files.namelist()}
+        for mutation in ("missing", "changed", "extra", "malformed"):
+            with self.subTest(mutation=mutation):
+                entries = selected.copy()
+                if mutation == "missing": entries.pop(next(iter(entries)))
+                elif mutation == "changed": entries[next(iter(entries))] = b"changed source"
+                elif mutation == "extra": entries["undeclared.kt"] = b"extra source"
+                with zipfile.ZipFile(archive, "w") as files:
+                    for name, data in entries.items():
+                        files.writestr(name, data)
+                if mutation == "malformed": archive.write_bytes(b"not an archive")
+                with self.assertRaises((ValueError, zipfile.BadZipFile)):
+                    self.validate()
+                archive.write_bytes(original)
 
     def test_qodana_binary_names_may_omit_the_scheme_but_retain_an_exact_ide_macro(self):
         original = copy.deepcopy(self.model)

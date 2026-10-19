@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+import zipfile
 
 
 def fail(message):
@@ -231,11 +232,21 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                 imported_libraries = [entry for entry in imported.get("orderEntries", []) if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == path]
                 if len(libraries) != 1 or len(imported_libraries) != 1 or libraries[0].attrib.get("scope", "COMPILE") != ("COMPILE" if output["production"] else "TEST"):
                     fail(f"missing, duplicate or incorrectly scoped compiled variant: {name}: {path}")
-                expected_sources = {repository_path(root, source["path"]) for source in owner["roots"]
-                                    if source["exists"] and not source["generated"] and source["kind"] == ("Source" if output["production"] else "TestSource")}
-                attached_sources = [url_path(root, directory, source.attrib["url"], container_root) for source in libraries[0].findall("./library/SOURCES/root")]
+                source_roots = [source for source in owner["roots"] if output["classes"] and source["exists"] and not source["generated"] and source["inputs"]
+                                and source["kind"] == ("Source" if output["production"] else "TestSource")]
+                archive = repository_path(root, f"build/qodana/sources/{name}-{output['sourceSet']}.jar")
+                expected_sources = {f"jar://{archive.as_posix()}!/{source['path']}" for source in source_roots}
+                attached_sources = [source.attrib["url"] for source in libraries[0].findall("./library/SOURCES/root")]
                 if len(attached_sources) != len(expected_sources) or set(attached_sources) != expected_sources:
                     fail(f"compiled variant source attachments differ from compiler inputs: {name}: {path}")
+                if source_roots:
+                    if archive.is_symlink() or not archive.is_file():
+                        fail(f"missing regular compiler source archive: {name}")
+                    expected_files = {file for source in source_roots for file in source["inputs"]}
+                    with zipfile.ZipFile(archive) as sources:
+                        entries = sources.namelist()
+                        if len(entries) != len(expected_files) or set(entries) != expected_files or any(sources.read(file) != repository_path(root, file).read_bytes() for file in expected_files):
+                            fail(f"compiled variant source archive differs from actual compiler inputs: {name}")
         compiler = owner["compiler"]
         if compiler:
             if "explicitApi" not in compiler or compiler["explicitApi"] not in (None, "strict", "warning", "disable"):
@@ -264,6 +275,22 @@ def verify_source_ownership(root, inventory, model, container_root=""):
     return canonical
 
 
+def verify_report(sarif, revision):
+    """Require current-revision analysis without failed execution or semantic-resolution problems."""
+    revisions = {entry.get("revisionId") for run in sarif["runs"] for entry in run.get("versionControlProvenance", [])}
+    if revisions != {revision}:
+        fail("the analysis report does not belong to the selected declaration revision")
+    for run in sarif["runs"]:
+        if run.get("properties", {}).get("qodana.sanity.results"):
+            fail("analysis contains semantic sanity problems")
+        for invocation in run.get("invocations", []):
+            if invocation.get("executionSuccessful") is False:
+                fail("the analysis invocation did not complete successfully")
+            for notification in invocation.get("toolExecutionNotifications", []):
+                if notification.get("level") == "error":
+                    fail(f"analysis reported an error: {notification['message'].get('text', '')}")
+
+
 def verify_model(root, model_path, container_root, java_path):
     """Verify declaration provenance and both downstream models, returning the model and report directory."""
     inventory = read_json(root / "build/qodana/declarations.json")
@@ -280,16 +307,7 @@ def verify_model(root, model_path, container_root, java_path):
     java = read_json(java_path)
     report_directory = java_path.parent.parent if java_path.parent.name == "projectStructure" else java_path.parent
     sarif = read_json(report_directory / "qodana.sarif.json")
-    revisions = {entry.get("revisionId") for run in sarif["runs"] for entry in run.get("versionControlProvenance", [])}
-    if revisions != {revision}:
-        fail("the analysis report does not belong to the selected declaration revision")
-    for run in sarif["runs"]:
-        for invocation in run.get("invocations", []):
-            if invocation.get("executionSuccessful") is False:
-                fail("the analysis invocation did not complete successfully")
-            for notification in invocation.get("toolExecutionNotifications", []):
-                if notification.get("level") == "error":
-                    fail(f"analysis reported an error: {notification['message'].get('text', '')}")
+    verify_report(sarif, revision)
     modules = collections.defaultdict(list)
     for module in model["modules"]:
         modules[module["name"]].append(module)
@@ -604,6 +622,6 @@ def verify(root, model_path, container_root, java_path):
 if __name__ == "__main__":
     try:
         verify(pathlib.Path(sys.argv[1]).resolve(), pathlib.Path(sys.argv[2]), sys.argv[3], pathlib.Path(sys.argv[4]))
-    except (ValueError, KeyError, OSError, ET.ParseError, subprocess.CalledProcessError) as error:
+    except (ValueError, KeyError, OSError, ET.ParseError, zipfile.BadZipFile, subprocess.CalledProcessError) as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(1)
