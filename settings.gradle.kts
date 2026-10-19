@@ -145,7 +145,7 @@ val minecraftChecksOnly = completeIdeaModel.not() && ":ciMinecraftCheck" in requ
     it in setOf(":ciMinecraftCheck", ":integration:docs:checkMinecraftShowcaseParity")
 }
 val documentationChecksOnly = completeIdeaModel.not() && requestedTasks.isNotEmpty() && requestedTasks.all {
-    it in setOf(":integration:docs:check", ":integration:docs:checkDokkaPagesStaging")
+    it in setOf(":integration:docs:check", ":integration:docs:checkDokkaPagesStaging", ":integration:docs:checkDocumentationLinks", ":integration:docs:checkStrataSkill")
 }
 val nativeBenchmarkOnly = requestedTasks.size == 1 &&
     requestedTasks.single().removePrefix(":") in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick") &&

@@ -632,12 +632,17 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
+    - name: Select documentation asset owner
+      id: assets
+      run: bash gradle/plan-minecraft-ci.sh
     - uses: ./.github/actions/setup-strata-java
     - uses: gradle/actions/setup-gradle@v6
       with:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Check reader documentation
-      run: bash ./gradlew :integration:docs:checkDocumentationLinks :integration:docs:checkStrataSkill
+      run: bash ./gradlew :integration:docs:checkDocumentationLinks :integration:docs:checkStrataSkill -Pstrata.minecraftVersions="$MINECRAFT_VERSION"
+      env:
+        MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
   result:
     name: CI result
     needs:

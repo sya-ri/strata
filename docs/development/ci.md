@@ -15,6 +15,8 @@ This scope accepts only fully qualified module `check` and `jsTest` tasks; publi
 An invocation containing only `:ciMinecraftCheck` includes the Minecraft versions selected by `strata.minecraftVersions` and omits the documentation project.
 Adding `:integration:docs:checkMinecraftShowcaseParity` retains that project for the native showcase comparison without loading other Minecraft versions.
 The separate documentation job includes every runtime for Dokka and only the integration project supplying its assets.
+Reader documentation checks use the same project scope, selecting the asset owner from the checked documentation build through the existing Minecraft planner.
+All runtime sources remain available for the shared-source and Skill consistency checks.
 Paired dedicated Fabric acceptance launches select their exact target from the requested integration task and invocation identity.
 Other task combinations retain the complete project inventory.
 Integration projects evaluate their paired runtime before reading compiled output; documentation launchers inherit dependencies from their runtime classpath.
