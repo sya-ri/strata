@@ -46,6 +46,7 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.engine.plugins.DokkaVersioningPluginParameters
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
@@ -1438,13 +1439,27 @@ if (completeIdeaModelActive) {
         return MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
     }
 
+    val repositoryRoot = rootDir.canonicalFile.toPath()
+
     /** Returns a canonical repository path, rejecting linked roots outside the selected checkout. */
     fun File.repositoryPath(): String {
-        val root = rootDir.canonicalFile.toPath()
+        val root = repositoryRoot
         val path = canonicalFile.toPath()
         require(path.startsWith(root) && path != root) { "Declaration path must be inside the repository: $this" }
         return root.relativize(path).toString().replace(File.separatorChar, '/')
     }
+
+    /** Captures current directory membership and bytes without reusing acceptance evidence. */
+    fun File.declarationFiles(): Map<String, String> =
+        if (isDirectory) walkTopDown().filter { it.isFile }.map { it.repositoryPath() to it.sha256() }.sortedBy { it.first }.toMap() else emptyMap()
+
+    /** Identifies absent declared output directories whose producing tasks actually reported NO_SOURCE. */
+    fun unproducedSourceOutputs(): Set<File> =
+        rootProject.allprojects.flatMap { dependency ->
+            val declared = dependency.extensions.findByType<SourceSetContainer>()?.flatMap { it.output.files }.orEmpty().map { it.canonicalFile }.toSet()
+            dependency.tasks.filter { it.state.noSource }.flatMap { it.outputs.files.files }.map { it.canonicalFile }
+                .filter { it in declared && it.exists().not() }
+        }.toSet()
 
     /** Finds authored auxiliary JVM compilations without introducing fixture names or KMP aliases. */
     fun Project.workingAuxiliarySourceSets(): List<SourceSet> {
@@ -1456,11 +1471,15 @@ if (completeIdeaModelActive) {
         }.orEmpty()
     }
 
-    /** Resolves the actual selected compiler/runtime edges, excluding this owner's own output directories. */
+    /**
+     * Resolves actual compiler/runtime edges while omitting owner outputs and absent source-set outputs from NO_SOURCE tasks.
+     * Missing required libraries still fail their byte inventory instead of disappearing from analysis.
+     */
     fun Project.declarationDependencies(selected: List<SourceSet>): Map<String, List<Map<String, String>>> {
         val owner = this
         val sourceSets = extensions.getByType<SourceSetContainer>()
         val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
+        val unproducedOutputs = unproducedSourceOutputs()
         val artifacts = selected.flatMap { sourceSet ->
             listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
                 owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
@@ -1469,7 +1488,7 @@ if (completeIdeaModelActive) {
         val dependencies = selected.flatMap { sourceSet ->
             listOf(sourceSet.compileClasspathConfigurationName to sourceSet.compileClasspath, sourceSet.runtimeClasspathConfigurationName to sourceSet.runtimeClasspath)
         }.associate { (configurationName, classpath) ->
-            val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs
+            val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs - unproducedOutputs
             val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
             val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
             val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->
@@ -1503,7 +1522,7 @@ if (completeIdeaModelActive) {
         outputs.upToDateWhen { false }
         dependsOn(provider {
             allprojects.filter { it.plugins.hasPlugin("me.champeau.jmh") }.map { it.tasks.named("jmhClasses") } +
-                allprojects.flatMap { owner -> owner.workingAuxiliarySourceSets().map { it.output } }
+                allprojects.flatMap { owner -> owner.extensions.findByType<SourceSetContainer>()?.map { it.output }.orEmpty() }
         })
         mustRunAfter(provider { allprojects.flatMap { it.tasks.matching { task -> task.name == "ideaModule" }.toList() } })
         doLast {
@@ -1512,28 +1531,73 @@ if (completeIdeaModelActive) {
                 "Declaration acceptance requires the selected revision's clean tracked sources. Changed tracked paths:\n$changedTrackedSources"
             }
             val tracked = gitOutput("ls-files", "-z").split('\u0000').filter(String::isNotEmpty).sorted().associateWith { file(it).sha256() }
+            val absentOutputs = unproducedSourceOutputs()
             val projects = allprojects.sortedBy { it.path }.map { owner ->
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
                 val sourceSets = owner.extensions.findByType<SourceSetContainer>()
                 val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
-                val platformCompilations = owner.extensions.findByType<KotlinMultiplatformExtension>()?.targets?.flatMap { it.compilations }.orEmpty()
+                val multiplatform = owner.extensions.findByType<KotlinMultiplatformExtension>()
+                val platformCompilations = multiplatform?.targets?.flatMap { it.compilations }.orEmpty()
                 val roots = sourceSets?.flatMap { sourceSet ->
                     val matching = platformCompilations.filter { it.name == sourceSet.name || it.defaultSourceSet.name == sourceSet.name }
                     val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() + matching.flatMap { it.allKotlinSourceSets }
                     val test = sourceSet.name != "main" && matching.none { it.name == "main" }
                     listOf(
-                        (if (test) "TestSource" else "Source") to (sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }),
-                        (if (test) "TestResource" else "Resource") to (sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }),
-                    ).flatMap { (kind, directories) -> directories.map { mapOf("kind" to kind, "path" to it.repositoryPath()) } }
+                        Triple(if (test) "TestSource" else "Source", sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }, sourceSet.java.files + inputs.flatMap { it.kotlin.files }),
+                        Triple(if (test) "TestResource" else "Resource", sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }, sourceSet.resources.files + inputs.flatMap { it.resources.files }),
+                    ).flatMap { (kind, directories, compilerInputs) ->
+                        val selectedInputs = compilerInputs.map { it.canonicalFile.toPath() }.distinct()
+                        directories.map { directory ->
+                            val directoryPath = directory.canonicalFile.toPath()
+                            val generated = directoryPath.startsWith(owner.layout.buildDirectory.get().asFile.canonicalFile.toPath())
+                            val files = directory.declarationFiles()
+                            require(generated || tracked.keys.containsAll(files.keys)) { "Authored compiler roots must belong to the selected revision: ${owner.path}: $directory" }
+                            require((generated && files.keys.any { it in tracked }).not()) { "Authored compiler inputs must not be hidden under build: $directory" }
+                            val selected = selectedInputs.filter { it.startsWith(directoryPath) }.map { it.toFile().repositoryPath() }.sorted()
+                            mapOf("kind" to kind, "path" to directory.repositoryPath(), "exists" to directory.isDirectory, "generated" to generated, "files" to files, "inputs" to selected, "sourceSets" to listOf(sourceSet.name))
+                        }
+                    }
                 }.orEmpty().distinct()
+                val outputs = sourceSets?.flatMap { sourceSet ->
+                    val production = sourceSet.name == "main" || platformCompilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name }
+                    sourceSet.output.files.sortedBy { it.repositoryPath() }.map { directory ->
+                        mapOf("sourceSet" to sourceSet.name, "production" to production, "classes" to sourceSet.output.classesDirs.files.any { it.canonicalFile == directory.canonicalFile },
+                            "path" to directory.repositoryPath(), "exists" to directory.isDirectory, "files" to directory.declarationFiles())
+                    }
+                }.orEmpty()
+                val main = kotlin?.target?.compilations?.findByName("main")
+                    ?: multiplatform?.targets?.findByName("jvm")?.compilations?.findByName("main")
+                val compiler = main?.compileTaskProvider?.name?.let { owner.tasks.named<KotlinJvmCompile>(it).get() }
+                val configuredApi = kotlin?.explicitApi ?: multiplatform?.explicitApi
+                val explicitApi = compiler?.compilerOptions?.freeCompilerArgs?.get()?.lastOrNull { it.startsWith("-Xexplicit-api=") }?.substringAfter('=')
+                    ?: when (configuredApi) {
+                        ExplicitApiMode.Strict -> "strict"
+                        ExplicitApiMode.Warning -> "warning"
+                        ExplicitApiMode.Disabled -> "disable"
+                        null -> null
+                    }
+                require(explicitApi == null || explicitApi in setOf("strict", "warning", "disable")) { "Unsupported explicit API compiler mode: $explicitApi" }
+                val friends = owner.tasks.withType<KotlinJvmCompile>().flatMap { it.friendPaths.files }.map { it.canonicalFile }.distinct().sortedBy { it.path }.map { input ->
+                    require(input.exists() || input in absentOutputs) { "Missing required Kotlin friend input: ${owner.path}: $input" }
+                    mapOf("path" to input.canonicalPath.replace(File.separatorChar, '/'), "exists" to input.exists(), "sha256" to input.takeIf { it.exists() }?.sha256())
+                }
                 mapOf(
                     "project" to owner.path,
                     "module" to idea?.name,
                     "directory" to owner.projectDir.takeUnless { it.canonicalFile == rootDir.canonicalFile }?.repositoryPath(),
+                    "iml" to idea?.outputFile?.repositoryPath(),
+                    "native" to (owner.path in minecraftTargetByProjectPath),
                     "roots" to roots.map { entry ->
                         val production = roots.firstOrNull { it["path"] == entry["path"] && it["kind"] in setOf("Source", "Resource") }
-                        production ?: entry
+                        val selected = production ?: entry
+                        val sameKind = roots.filter { it["path"] == entry["path"] && it["kind"].toString().removePrefix("Test") == selected["kind"].toString().removePrefix("Test") }
+                        selected + mapOf(
+                            "inputs" to sameKind.flatMap { it["inputs"] as List<*> }.distinct().sortedBy { it.toString() },
+                            "sourceSets" to sameKind.flatMap { it["sourceSets"] as List<*> }.distinct().sortedBy { it.toString() },
+                        )
                     }.distinct(),
+                    "outputs" to outputs,
+                    "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends) },
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
                     "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
                 )
@@ -1561,7 +1625,7 @@ if (completeIdeaModelActive) {
                             require(generated.not() || directory.walkTopDown().none { it.isFile && it.extension in setOf("kt", "java") }) {
                                 "JMH declarations must not hide authored compiler inputs under build: $directory"
                             }
-                            val files = if (directory.isDirectory) directory.walkTopDown().filter { it.isFile }.sortedBy { it.repositoryPath() }.associate { it.repositoryPath() to it.sha256() } else emptyMap()
+                            val files = directory.declarationFiles()
                             require(tracked.keys.containsAll(files.keys)) { "Authored JMH model roots must belong to the selected revision: ${owner.path}: $directory" }
                             mapOf(
                                 "sourceSet" to sourceSetName,
@@ -1614,13 +1678,13 @@ if (completeIdeaModelActive) {
                         val authored = tracked.keys.any { it.startsWith("$relative/") }
                         require((generated && authored).not()) { "Auxiliary compiler inputs must not be hidden under build: $directory" }
                         if (generated) return@mapNotNull null
-                        val files = if (directory.isDirectory) directory.walkTopDown().filter { it.isFile }.sortedBy { it.repositoryPath() }.associate { it.repositoryPath() to it.sha256() } else emptyMap()
+                        val files = directory.declarationFiles()
                         require(tracked.keys.containsAll(files.keys)) { "Authored auxiliary roots must belong to the selected revision: ${owner.path}: $directory" }
                         val production = directory in if (kind == "TestSource") mainSources else mainResources
                         mapOf("sourceSet" to sourceSet.name, "kind" to (if (production) kind.removePrefix("Test") else kind), "path" to relative, "exists" to directory.isDirectory, "generated" to false, "files" to files)
                     } }.distinctBy { it["kind"] to it["path"] }
                     val outputs = sourceSet.output.classesDirs.files.sortedBy { it.repositoryPath() }.map { directory ->
-                        val files = if (directory.isDirectory) directory.walkTopDown().filter { it.isFile }.sortedBy { it.repositoryPath() }.associate { it.repositoryPath() to it.sha256() } else emptyMap()
+                        val files = directory.declarationFiles()
                         mapOf("path" to directory.repositoryPath(), "exists" to directory.isDirectory, "files" to files)
                     }
                     require(outputs.any { (it["files"] as Map<*, *>).isNotEmpty() }) { "Working auxiliary compilation produced no classes or metadata: ${owner.path}:${sourceSet.name}" }
@@ -1639,6 +1703,9 @@ if (completeIdeaModelActive) {
             logger.lifecycle("Inventoried ${owners.size} declared JMH owners independently of generated IDEA and Qodana metadata.")
         }
     }
+
+    apply(from = rootProject.file("gradle/qodana-idea-model.gradle.kts"))
+
 }
 
 allprojects {
