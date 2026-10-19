@@ -199,10 +199,10 @@ private data class MinecraftFabricTarget(
         OpenGlPlatformBuffers("opengl/common", "glsl", "opengl/common", "opengl/reloadable-textures", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         OpenGlBuffers("opengl/common", "glsl", "opengl/common", "opengl/reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         OpenGlNonReloadableTextures("opengl/common", "glsl", "opengl/common", "opengl/non-reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dDirectTextures("blaze3d/direct-textures", "glsl", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dTextureViews("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dSamplers("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dGuiExtractor("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
+        Blaze3dDirectTextures("blaze3d/direct-textures", "glsl", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release", "lifecycle/immediate-portable-release"),
+        Blaze3dTextureViews("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release", "lifecycle/immediate-portable-release"),
+        Blaze3dSamplers("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release", "lifecycle/immediate-portable-release"),
+        Blaze3dGuiExtractor("blaze3d/texture-views", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/immediate-portable-release", "lifecycle/frame"),
         Blaze3dBindGroups("blaze3d/bind-groups", "glsl", "blaze3d/indexed-sampling", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
         RenderPearl("renderpearl", "portable-storage", "sampled-storage", "renderpearl", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
     }
@@ -268,7 +268,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.1",
@@ -295,7 +294,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.1",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -321,7 +319,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.2",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.4",
@@ -350,7 +347,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.3",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.4",
@@ -378,7 +374,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.4",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -405,7 +400,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.5",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
@@ -433,7 +427,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.6",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
@@ -460,7 +453,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/minecraft-fabric-1.21",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
@@ -488,7 +480,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/minecraft-fabric-1.21.1",
                     "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
@@ -516,7 +507,6 @@ private val minecraftFabricTargets =
                     "runtime/shared/minecraft-fabric/screen/client-initialization",
                     "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/minecraft-fabric-1.21.2",
                     "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
@@ -535,7 +525,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -563,7 +553,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -591,7 +581,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -620,7 +610,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -647,7 +637,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -674,7 +664,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
@@ -700,7 +690,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
@@ -724,7 +714,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
-                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
                     "runtime/shared/minecraft-fabric/resources/argb-pixels",
                     "runtime/shared/minecraft-fabric/resources/asset-skin",
@@ -1086,7 +1076,7 @@ val sharedSourceMarkdown = providers.provider {
             ),
             "GUI drawing" to listOf("FabricNativeCanvasDrawing", "FabricMinecraftExactSampledImageDrawing"),
             "GUI consumption and discard" to listOf("FabricMinecraftCanvasGuiConsumption", "FabricMinecraftCanvasRenderStateAccess"),
-            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin", "FabricMinecraftPortableTextureOwnership", "FabricMinecraftPortableTextureStorage"),
+            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricNativeCanvasPortableDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin", "FabricMinecraftPortableTextureOwnership", "FabricMinecraftPortableTextureStorage"),
         ),
         "input" to linkedMapOf(
             "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftInventoryNative", "FabricMinecraftKeyBindingBridge"),
