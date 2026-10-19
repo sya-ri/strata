@@ -52,6 +52,7 @@ jobs:
       paired_data_ref: ${{ steps.paired.outputs.paired_data_ref }}
       paired_manifest_sha256: ${{ steps.paired.outputs.paired_manifest_sha256 }}
       preflight: ${{ steps.plan.outputs.preflight }}
+      preflight_matrix: ${{ steps.plan.outputs.preflight_matrix }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -125,6 +126,7 @@ jobs:
           args=(--paired-manifest "$MANIFEST")
         fi
         python3 gradle/plan-ci.py "${args[@]}"
+        echo "preflight_matrix=$(python3 -B gradle/performance/verify-qualified-preflight.py --ci-matrix)" >> "$GITHUB_OUTPUT"
       id: plan
       env:
         MANIFEST: ${{ inputs.paired_manifest }}
@@ -208,11 +210,14 @@ jobs:
           build/performance-ci/bootstrap.json
         if-no-files-found: error
   preflight-qualification:
-    name: Qualified compiled fixture controls
+    name: Qualified compiled fixture controls (${{ matrix.id }})
     needs: plan
     if: needs.plan.outputs.preflight == 'true'
     runs-on: windows-2022
     timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.preflight_matrix) }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -228,17 +233,21 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify real resource refusal and terminal cleanup
+      if: matrix.host_boundary
       shell: pwsh
       run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/qualified-boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - name: Qualify the real whole control and timing boundary
       shell: pwsh
       env:
         STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
-      run: python -B gradle/performance/verify-qualified-preflight.py --output "build/performance-ci/qualified-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+        CASES_JSON: ${{ toJSON(matrix.cases) }}
+      run: |
+        $selectedCases = @($env:CASES_JSON | ConvertFrom-Json)
+        python -B gradle/performance/verify-qualified-preflight.py --case @selectedCases --output "build/performance-ci/qualified-${{ matrix.id }}-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - uses: actions/upload-artifact@v7
       if: always()
       with:
-        name: qualified-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+        name: qualified-preflight-${{ matrix.id }}-${{ github.run_id }}-${{ github.run_attempt }}
         path: build/performance-ci/*.zip
         if-no-files-found: error
   web-demos:
