@@ -27,7 +27,7 @@ internal class QodanaJmhModelFunctionalTest {
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)
-        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"support-kotlin\", \"shared-kmp\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
+        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"support-kotlin\", \"shared-inputs\", \"shared-kmp\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
         val production = Files.readString(repository.resolve("build.gradle.kts")).replace("\r\n", "\n")
         val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
@@ -92,7 +92,18 @@ internal class QodanaJmhModelFunctionalTest {
         )
         write("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt", "package fixture\npublic fun kotlinValue(): Int = 5\n")
         write("shared-inputs/kotlin/fixture/SharedValue.kt", "package fixture\ninternal fun sharedValue(): Int = 11\n")
+        write("shared-inputs/kotlin/fixture/SelectedValue.kt", "package fixture\ninternal fun selectedValue(): Int = 17\n")
         write("shared-inputs/resources/shared.txt", "shared compilation resource\n")
+        write(
+            "shared-inputs/build.gradle.kts",
+            """
+            kotlin.sourceSets.named("main") {
+                kotlin.setSrcDirs(listOf("kotlin"))
+                kotlin.include("**/SharedValue.kt")
+            }
+            sourceSets.named("main") { resources.setSrcDirs(listOf("resources")) }
+            """.trimIndent(),
+        )
         write(
             "shared-kmp/build.gradle.kts",
             """
@@ -122,6 +133,7 @@ internal class QodanaJmhModelFunctionalTest {
                 val additionalJmh = kotlin.sourceSets.create("additionalJmh") {
                     kotlin.setSrcDirs(listOf(rootProject.file("shared-inputs/kotlin")))
                     resources.setSrcDirs(listOf(rootProject.file("shared-inputs/resources")))
+                    if (project.name == "bench-two") kotlin.include("**/SharedValue.kt")
                 }
                 kotlin.sourceSets.named("jmh") {
                     kotlin.setSrcDirs(listOf("authored/kotlin"))
@@ -132,7 +144,8 @@ internal class QodanaJmhModelFunctionalTest {
             )
             write("$owner/authored/java/fixture/JavaBenchmark.java", "package fixture; import org.openjdk.jmh.annotations.Benchmark; public class JavaBenchmark { @Benchmark public int value() { return Support.value(); } }")
             write("$owner/src/main/kotlin/fixture/InternalValue.kt", "package fixture\ninternal fun internalValue(): Int = 7\n")
-            write("$owner/authored/kotlin/fixture/KotlinBenchmark.kt", "package fixture\nimport org.openjdk.jmh.annotations.Benchmark\npublic open class KotlinBenchmark { @Benchmark public fun value(): Int = internalValue() + sharedValue() + Support.value() }\n")
+            val selectedCall = if (owner == "bench-one") " + selectedValue()" else ""
+            write("$owner/authored/kotlin/fixture/KotlinBenchmark.kt", "package fixture\nimport org.openjdk.jmh.annotations.Benchmark\npublic open class KotlinBenchmark { @Benchmark public fun value(): Int = internalValue() + sharedValue() + Support.value()$selectedCall }\n")
             write("$owner/authored/resources/payload.txt", "working JMH resource\n")
         }
         git("init", "-q")
@@ -185,6 +198,33 @@ internal class QodanaJmhModelFunctionalTest {
             }
         }
         val projects = (parsed["projects"] as List<*>).map { it as Map<*, *> }
+        val support = projects.single { it["project"] == ":support-kotlin" }
+        assertTrue(support["outputs"] is List<*>, "Each configured JVM compilation must retain current owned output evidence.")
+        val supportCompiler = support["compiler"] as Map<*, *>
+        assertEquals("fixture-support", supportCompiler["moduleName"])
+        assertEquals("17", supportCompiler["jvmTarget"])
+        val supportRoots = (support["roots"] as List<*>).map { it as Map<*, *> }
+        val supportInputs = supportRoots.single { it["path"] == "support-kotlin/src/main/kotlin" }["inputs"] as List<*>
+        assertEquals(setOf("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt"), supportInputs.toSet())
+        val supportOutputs = (support["outputs"] as List<*>).map { it as Map<*, *> }
+        assertTrue(
+            supportOutputs.any { output ->
+                output["production"] == true && output["classes"] == true &&
+                    (output["files"] as Map<*, *>).keys.any { it.toString().endsWith("/META-INF/fixture-support.kotlin_module") }
+            },
+        )
+        val sharedOutputs = (projects.single { it["project"] == ":shared-kmp" }["outputs"] as List<*>).map { it as Map<*, *> }
+        assertTrue(
+            sharedOutputs.any { output ->
+                output["production"] == true && output["classes"] == true &&
+                    (output["files"] as Map<*, *>).keys.any { it.toString().endsWith("/fixture/OwnedValueKt.class") }
+            },
+        )
+        val partialRoot = ((projects.single { it["project"] == ":shared-inputs" }["roots"] as List<*>).map { it as Map<*, *> }).single { it["path"] == "shared-inputs/kotlin" }
+        assertEquals(listOf("shared-inputs/kotlin/fixture/SharedValue.kt"), partialRoot["inputs"])
+        assertEquals(2, (partialRoot["files"] as Map<*, *>).size)
+        val fullRoot = ((projects.single { it["project"] == ":bench-one" }["roots"] as List<*>).map { it as Map<*, *> }).single { it["path"] == "shared-inputs/kotlin" }
+        assertEquals(2, (fullRoot["inputs"] as List<*>).size)
         val sharedRoots = projects.single { it["project"] == ":shared-kmp" }["roots"] as List<*>
         val roots = sharedRoots.map { it as Map<*, *> }
         assertTrue(roots.any { it["kind"] == "Source" && it["path"] == "shared-kmp/src/commonMain/kotlin" })
