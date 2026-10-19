@@ -29,7 +29,6 @@ import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.ItemStack
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
-import java.util.function.BooleanSupplier
 
 /**
  * Owns retained inventory and skin bindings for one client-thread host.
@@ -173,7 +172,7 @@ internal class FabricMinecraftInventoryBridge private constructor(
                 if (failure == null && resolved.isPresent) {
                     completionTarget.publish(SkinReady(resolved.get()))
                 } else {
-                    completionTarget.publish(SkinFailed.INSTANCE)
+                    completionTarget.publish(SkinFailed)
                 }
             }
         }
@@ -315,7 +314,7 @@ internal class FabricMinecraftInventoryBridge private constructor(
     /**
      * Dispatches a pointer move while collecting the topmost synchronized slot as the keyboard target.
      */
-    fun withPointerMove(operation: BooleanSupplier): Boolean = withInput(NativeInput(InputKind.MOVE, null, 0, shift = false, doubleClick = false), operation)
+    fun withPointerMove(operation: () -> Boolean): Boolean = withInput(NativeInput(InputKind.MOVE, null, 0, shift = false, doubleClick = false), operation)
 
     /**
      * Dispatches one native press with its immutable modifiers and double-click marker.
@@ -323,7 +322,7 @@ internal class FabricMinecraftInventoryBridge private constructor(
     fun withMousePress(
         event: FabricMinecraftNativeMouseInput,
         doubleClick: Boolean,
-        operation: BooleanSupplier,
+        operation: () -> Boolean,
     ): Boolean = withInput(NativeInput(InputKind.PRESS, event, FabricMinecraftInventoryNative.containerButton(event), FabricMinecraftInventoryNative.shiftDown(event), doubleClick), operation)
 
     /**
@@ -331,7 +330,7 @@ internal class FabricMinecraftInventoryBridge private constructor(
      */
     fun withMouseDrag(
         event: FabricMinecraftNativeMouseInput,
-        operation: BooleanSupplier,
+        operation: () -> Boolean,
     ): Boolean = withInput(NativeInput(InputKind.DRAG, event, FabricMinecraftInventoryNative.containerButton(event), FabricMinecraftInventoryNative.shiftDown(event), doubleClick = false), operation)
 
     /**
@@ -339,7 +338,7 @@ internal class FabricMinecraftInventoryBridge private constructor(
      */
     fun withMouseRelease(
         event: FabricMinecraftNativeMouseInput,
-        operation: BooleanSupplier,
+        operation: () -> Boolean,
     ): Boolean = withInput(NativeInput(InputKind.RELEASE, event, FabricMinecraftInventoryNative.containerButton(event), FabricMinecraftInventoryNative.shiftDown(event), doubleClick = false), operation)
 
     /**
@@ -470,7 +469,7 @@ internal class FabricMinecraftInventoryBridge private constructor(
 
     private fun withInput(
         current: NativeInput<FabricMinecraftNativeMouseInput, Binding>,
-        operation: BooleanSupplier,
+        operation: () -> Boolean,
     ): Boolean {
         requireUsable()
         return dispatchInput(current, operation)

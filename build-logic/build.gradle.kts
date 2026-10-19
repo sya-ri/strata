@@ -57,3 +57,8 @@ tasks.test {
     // TestKit releases its dedicated daemons when the class worker finishes.
     forkEvery = 1
 }
+
+// Exercise the same game-independent pacing and option-lifetime code used by loaded clients.
+kotlin.sourceSets.named("test") {
+    kotlin.srcDir("../integration/shared/minecraft-fabric/canvas/pacing/common/src/gametest/kotlin")
+}

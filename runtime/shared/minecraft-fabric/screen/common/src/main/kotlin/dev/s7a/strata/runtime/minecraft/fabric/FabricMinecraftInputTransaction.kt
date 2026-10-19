@@ -1,7 +1,5 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import java.util.function.BooleanSupplier
-
 /**
  * Owns one non-reentrant inventory input transaction on its caller's client thread.
  * Completion runs only after successful host dispatch and retains the guard until it returns or throws.
@@ -26,14 +24,14 @@ internal abstract class FabricMinecraftInputTransaction<I : Any, H : Any> {
      */
     fun dispatchInput(
         current: I,
-        operation: BooleanSupplier,
+        operation: () -> Boolean,
     ): Boolean {
         check(input == null) { "Minecraft inventory input transactions are non-reentrant." }
         input = current
         offeredHover = null
         var completed = false
         try {
-            val result = operation.asBoolean
+            val result = operation()
             completed = true
             return result
         } finally {

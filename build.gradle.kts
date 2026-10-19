@@ -122,7 +122,7 @@ private data class MinecraftFabricTarget(
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
     val canvasTestExtraction: CanvasTestExtraction =
         when (canvasFamily) {
-            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> CanvasTestExtraction.Flush
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> CanvasTestExtraction.Flush
             CanvasFamily.Blaze3dTextureViews -> CanvasTestExtraction.Buffered
             CanvasFamily.Blaze3dSamplers -> CanvasTestExtraction.BufferedPointer
             CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> CanvasTestExtraction.GuiExtractor
@@ -159,20 +159,21 @@ private data class MinecraftFabricTarget(
     /** Independent vanilla carried-item context selected by the verified native framebuffer API. */
     val tooltipReferenceSourcePath: String =
         when (canvasFamily) {
-            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics"
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics"
             CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/stratum-gui-graphics"
             CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor"
         }
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
+            "integration/shared/minecraft-fabric/canvas/pacing/common",
             tooltipReferenceSourcePath,
             "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
             "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
             when (canvasFamily) {
-                CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
+                CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
                 CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers, CanvasFamily.Blaze3dGuiExtractor -> "integration/shared/minecraft-fabric/canvas/consumption/buffer-source"
                 CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/consumption/vertex-buffer"
             },
@@ -194,8 +195,9 @@ private data class MinecraftFabricTarget(
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
     enum class CanvasFamily(val testSource: String, vararg val sourceRoots: String) {
-        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        OpenGlBuffers("opengl/common", "opengl/common", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlNonReloadableTextures("opengl/common", "opengl/common", "opengl/non-reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         Blaze3dDirectTextures("blaze3d/direct-textures", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         Blaze3dTextureViews("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
         Blaze3dSamplers("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
@@ -213,15 +215,16 @@ private data class MinecraftFabricTarget(
         GuiExtractor("gui-extractor"),
     }
 
-    /** Native custom-payload families verified against their exact mapped client archives. */
+    /** Publication support exposed by the Paper distribution table. */
     enum class PaperDistribution(val description: String) {
         Available("✅"),
         Unavailable("❌"),
     }
 
+    /** Native packet families; compatible buffer APIs share one compiled transport implementation. */
     enum class RemoteNetworkFamily(val sourceRoot: String) {
         IdentifierBuffer("identifier-buffer"),
-        CustomPayload("custom-payload"),
+        CustomPayload("identifier-buffer"),
         StreamCodec("stream-codec"),
     }
 }
@@ -553,7 +556,7 @@ private val minecraftFabricTargets =
             nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             hudApi = MinecraftFabricTarget.HudApi.Layer,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlNonReloadableTextures,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
@@ -1074,6 +1077,7 @@ val sharedSourceMarkdown = providers.provider {
                 "FabricNativeCanvasDriver",
                 "MinecraftCanvasContext",
                 "FabricNativeCanvasTextureFactory",
+                "FabricBorrowedTexture",
                 "FabricNativeCanvasTargetFactory",
                 "FabricMinecraftCompositionTextureAllocation",
             ),
@@ -1082,7 +1086,7 @@ val sharedSourceMarkdown = providers.provider {
             "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin", "FabricMinecraftPortableTextureOwnership", "FabricMinecraftPortableTextureStorage"),
         ),
         "input" to linkedMapOf(
-            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),
+            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftInventoryNative", "FabricMinecraftKeyBindingBridge"),
             "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
             "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
             "Mouse routing" to listOf("FabricUiMouseMixin"),
@@ -1778,7 +1782,6 @@ subprojects {
             tasks.named<Jar>("jvmJar") { archiveAppendix.set("") }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "jvmTest" }.configureEach {
-                    java.srcDir("src/test/java")
                     resources.srcDir("src/test/resources")
                 }
             }
@@ -1927,11 +1930,7 @@ subprojects {
         val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + target.serverSourcePaths + target.hudSourcePath).map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
-                java.srcDirs(runtimeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("resources") })
-            }
-            named("test") {
-                java.srcDirs(testRoots.map { sourceRoot -> sourceRoot.resolve("java") })
             }
         }
         extensions.configure<KotlinJvmProjectExtension> {
@@ -1955,7 +1954,6 @@ subprojects {
         }
         extensions.configure<SourceSetContainer> {
             matching { it.name == "gametest" }.configureEach {
-                java.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("resources") })
                 if (target.remapped) {
                     val gameTestCompileClasspath = compileClasspath
@@ -2167,8 +2165,6 @@ subprojects {
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
                     dependencies.add(implementationConfigurationName, project(":performance-testkit"))
-                    java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
-                    java.srcDir(remoteVerificationFamily.resolve("java"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
                 }
             }
@@ -2213,6 +2209,12 @@ subprojects {
                         listOf(
                             "integration/shared/minecraft-fabric/runner/standalone-world-presets/src/gametest/kotlin",
                             "integration/shared/minecraft-fabric/canvas/terminal/gui-holder/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/gui-holder/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/component-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/registry-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/lookup-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin",
                         ).map(rootProject::file).filter(selectedGameTestRoots::contains)
                     },
                 )
@@ -2644,40 +2646,16 @@ subprojects {
                     ?: listOf(path.removePrefix(":").replace(":", "/"))
             dokkaSourceSets.named("main") {
                 for (sourcePath in sourcePaths) {
-                    for (language in listOf("kotlin", "java")) {
-                        val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
-                        if (sourceDirectory.isDirectory) {
-                            sourceLink {
-                                localDirectory.set(sourceDirectory)
-                                remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language")
-                                remoteLineSuffix.set("#L")
-                            }
+                    val sourceDirectory = rootProject.file("$sourcePath/src/main/kotlin")
+                    if (sourceDirectory.isDirectory) {
+                        sourceLink {
+                            localDirectory.set(sourceDirectory)
+                            remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/kotlin")
+                            remoteLineSuffix.set("#L")
                         }
                     }
                 }
             }
-
-            val verifyDokkaSourceLinks =
-                tasks.register("verifyDokkaSourceLinks") {
-                    group = "verification"
-                    description = "Verifies that every existing Kotlin and Java source root uses the configured Dokka revision."
-                    inputs.property("sourceRevision", sourceRevision)
-                    doLast {
-                        sourcePaths.forEach { sourcePath ->
-                            listOf("kotlin", "java").forEach { language ->
-                                val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
-                                if (sourceDirectory.isDirectory) {
-                                    val expectedUrl =
-                                        "https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language"
-                                    check(expectedUrl.contains("/tree/$sourceRevision/")) {
-                                        "Dokka source link is not pinned to $sourceRevision: $expectedUrl"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            tasks.named("check").configure { dependsOn(verifyDokkaSourceLinks) }
         }
 
         tasks.withType<GenerateModuleMetadata>().configureEach {

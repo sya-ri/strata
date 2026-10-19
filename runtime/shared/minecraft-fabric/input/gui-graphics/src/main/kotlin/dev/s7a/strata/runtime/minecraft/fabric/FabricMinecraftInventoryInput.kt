@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import org.lwjgl.glfw.GLFW
-import java.util.function.BooleanSupplier
 
 /**
  * Captures legacy native press metadata before dispatching to the shared inventory owner.
@@ -10,7 +9,7 @@ internal fun FabricMinecraftInventoryBridge.withMousePress(
     button: Int,
     modifiers: Int,
     doubleClick: Boolean,
-    operation: BooleanSupplier,
+    operation: () -> Boolean,
 ): Boolean = withMousePress(FabricMinecraftNativeMouseInput(button, modifiers), doubleClick, operation)
 
 /**
@@ -19,7 +18,7 @@ internal fun FabricMinecraftInventoryBridge.withMousePress(
 internal fun FabricMinecraftInventoryBridge.withMouseDrag(
     button: Int,
     modifiers: Int,
-    operation: BooleanSupplier,
+    operation: () -> Boolean,
 ): Boolean = withMouseDrag(FabricMinecraftNativeMouseInput(button, modifiers), operation)
 
 /**
@@ -28,7 +27,7 @@ internal fun FabricMinecraftInventoryBridge.withMouseDrag(
 internal fun FabricMinecraftInventoryBridge.withMouseRelease(
     button: Int,
     modifiers: Int,
-    operation: BooleanSupplier,
+    operation: () -> Boolean,
 ): Boolean = withMouseRelease(FabricMinecraftNativeMouseInput(button, modifiers), operation)
 
 /**

@@ -34,14 +34,9 @@ fabricApi {
     }
 }
 
-extensions.configure<SourceSetContainer> {
-    named("gametest") {
-        java.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/java"))
-    }
-}
-
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-world-presets/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location-constructor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics/src/gametest/kotlin"))

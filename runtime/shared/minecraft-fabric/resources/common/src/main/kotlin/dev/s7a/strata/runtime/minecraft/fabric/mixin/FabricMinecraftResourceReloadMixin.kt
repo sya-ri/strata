@@ -20,8 +20,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
  */
 @Mixin(ReloadableResourceManager::class)
 internal abstract class FabricMinecraftResourceReloadMixin private constructor() {
-    // Why: Mixin requires a callback argument even when the observer never cancels native work.
-    @Suppress("UnusedParameter")
     @Inject(
         method = ["createReload(Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;Ljava/util/concurrent/CompletableFuture;Ljava/util/List;)Lnet/minecraft/server/packs/resources/ReloadInstance;"],
         at = [At("HEAD")],
@@ -30,7 +28,6 @@ internal abstract class FabricMinecraftResourceReloadMixin private constructor()
         invalidateFabricMinecraftProfile(this)
     }
 
-    @Suppress("UnusedParameter")
     @Inject(method = ["close()V"], at = [At("HEAD")])
     private fun beforeResourceClose(callback: CallbackInfo) {
         closeFabricMinecraftProfile(this)

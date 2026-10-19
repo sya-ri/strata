@@ -27,9 +27,9 @@ def frozen_fixture(root, output):
     attributes.parent.mkdir(parents=True, exist_ok=True)
     attributes.write_bytes(b"* -text\n")
     PAIRED.git(workspace, "checkout", "--quiet", "--detach", head)
-    target = workspace / "quality/remote-benchmarks/src/jmh/java/independent/fixture/QualifiedFixtureController.java"
+    target = workspace / "quality/remote-benchmarks/src/jmh/kotlin/independent/fixture/QualifiedFixtureController.kt"
     target.parent.mkdir(parents=True)
-    controller = root / "gradle/performance/fixtures/QualifiedFixtureController.java"
+    controller = root / "gradle/performance/fixtures/QualifiedFixtureController.kt"
     shutil.copyfile(controller, target)
     PAIRED.git(workspace, "add", "--", target.relative_to(workspace).as_posix())
     tree = PAIRED.git(workspace, "write-tree")

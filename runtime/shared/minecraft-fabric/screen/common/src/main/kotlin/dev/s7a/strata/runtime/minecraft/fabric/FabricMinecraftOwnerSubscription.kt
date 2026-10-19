@@ -6,13 +6,13 @@ package dev.s7a.strata.runtime.minecraft.fabric
  */
 internal fun minecraftOwnerSubscription(
     ownerThread: Thread,
-    release: Runnable,
+    release: () -> Unit,
 ): AutoCloseable {
-    var pendingRelease: Runnable? = release
+    var pendingRelease: (() -> Unit)? = release
     return AutoCloseable {
         check(Thread.currentThread() === ownerThread) { "Minecraft inventory platform requires its creator thread." }
         val current = pendingRelease
         pendingRelease = null
-        current?.run()
+        current?.invoke()
     }
 }

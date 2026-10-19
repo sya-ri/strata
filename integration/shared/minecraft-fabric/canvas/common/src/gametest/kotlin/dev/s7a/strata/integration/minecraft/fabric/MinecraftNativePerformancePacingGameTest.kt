@@ -183,7 +183,7 @@ internal object MinecraftNativePerformancePacingGameTest {
     private fun snapshot(context: MinecraftCanvasTestContext): Snapshot =
         context.onClient {
             val client = Minecraft.getInstance()
-            Snapshot(client.options.enableVsync().get(), client.options.framerateLimit().get(), client.nativePerformancePacing().inactivity())
+            Snapshot(client.options.enableVsync().get(), client.options.framerateLimit().get(), client.nativePerformancePacing().inactivity)
         }
 
     /**

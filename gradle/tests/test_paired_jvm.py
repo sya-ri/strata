@@ -2482,7 +2482,7 @@ class PairedJvmTest(unittest.TestCase):
         original = self.root / relative
         original.parent.mkdir(parents=True)
         original.write_bytes(b"original long-path runtime source\n")
-        controller = self.root / "gradle/performance/fixtures/QualifiedFixtureController.java"
+        controller = self.root / "gradle/performance/fixtures/QualifiedFixtureController.kt"
         controller.parent.mkdir(parents=True)
         controller.write_bytes(b"independent source fixture; never compiled\n")
         head = self.selector_commit("Preserve long-path qualification sources")
@@ -2501,7 +2501,7 @@ class PairedJvmTest(unittest.TestCase):
             self.assertEqual(PAIRED.git(checkout, "config", "--local", "--get", "core.longpaths"), "true")
             self.assertEqual(source["ref"], head)
             self.assertEqual(copied_controller, controller)
-            self.assertEqual((checkout / "quality/remote-benchmarks/src/jmh/java/independent/fixture/QualifiedFixtureController.java").read_bytes(), controller.read_bytes())
+            self.assertEqual((checkout / "quality/remote-benchmarks/src/jmh/kotlin/independent/fixture/QualifiedFixtureController.kt").read_bytes(), controller.read_bytes())
 
     def test_source_java_exec_caps_bind_actual_closed_generations_without_changing_forks(self):
         cases = ((512, 256, "java_exec", 512, 256, True), (768, 384, "java_exec", 768, 384, True),

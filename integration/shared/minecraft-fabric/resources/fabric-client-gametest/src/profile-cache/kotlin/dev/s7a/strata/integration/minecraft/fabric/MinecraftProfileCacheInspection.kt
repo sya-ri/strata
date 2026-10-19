@@ -10,7 +10,6 @@ import java.lang.reflect.Modifier
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Supplier
 
 /**
  * Observes Strata-owned private cache and immutable payload fields without depending on mapped Minecraft field names.
@@ -55,9 +54,12 @@ internal object MinecraftProfileCacheInspection {
                     Any::class.java,
                     MinecraftFontCompatibility::class.java,
                     MinecraftFontOptions::class.java,
-                    Supplier::class.java,
+                    Function0::class.java,
+                    Function0::class.java,
                 ).apply { isAccessible = true }
-        check(method.invoke(cache, manager, fonts.compatibility, fonts.options, Supplier { profile }) === profile)
+        val beforeClaim = {}
+        val extract = { profile }
+        check(method.invoke(cache, manager, fonts.compatibility, fonts.options, beforeClaim, extract) === profile)
     }
 
     /**

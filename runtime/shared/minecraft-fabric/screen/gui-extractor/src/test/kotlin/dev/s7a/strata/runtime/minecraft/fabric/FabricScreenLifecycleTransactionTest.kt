@@ -40,7 +40,7 @@ internal class FabricScreenLifecycleTransactionTest {
         val trace = mutableListOf<Event>()
         lateinit var transaction: FabricScreenLifecycleTransaction
         transaction =
-            FabricScreenLifecycleTransaction.create(
+            FabricScreenLifecycleTransaction(
                 {
                     trace += Event.Attach
                     transaction.requestDetach()
@@ -60,7 +60,7 @@ internal class FabricScreenLifecycleTransactionTest {
         val trace = mutableListOf<Event>()
         lateinit var transaction: FabricScreenLifecycleTransaction
         transaction =
-            FabricScreenLifecycleTransaction.create(
+            FabricScreenLifecycleTransaction(
                 { trace += Event.Attach },
                 { trace += Event.Detach },
                 { trace += Event.Close },
@@ -101,7 +101,7 @@ internal class FabricScreenLifecycleTransactionTest {
         val cleanup = IllegalStateException("cleanup")
         val navigation = IllegalArgumentException("navigation")
         val transaction =
-            FabricScreenLifecycleTransaction.create(
+            FabricScreenLifecycleTransaction(
                 {},
                 {},
                 { throw cleanup },
@@ -124,7 +124,7 @@ internal class FabricScreenLifecycleTransactionTest {
         val operation = IllegalStateException("operation")
         val cleanup = IllegalArgumentException("cleanup")
         val transaction =
-            FabricScreenLifecycleTransaction.create(
+            FabricScreenLifecycleTransaction(
                 {},
                 {},
                 { throw cleanup },
@@ -183,7 +183,7 @@ internal class FabricScreenLifecycleTransactionTest {
     }
 
     private fun transaction(trace: MutableList<Event>): FabricScreenLifecycleTransaction =
-        FabricScreenLifecycleTransaction.create(
+        FabricScreenLifecycleTransaction(
             { trace += Event.Attach },
             { trace += Event.Detach },
             { trace += Event.Close },
