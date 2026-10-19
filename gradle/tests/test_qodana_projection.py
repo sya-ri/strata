@@ -124,8 +124,19 @@ class QodanaProjectionTest(unittest.TestCase):
         self.inventory["projects"][1]["roots"][1]["inputs"] = []
         self.validate()
 
+    def test_qodana_binary_names_may_omit_the_scheme_but_retain_an_exact_ide_macro(self):
+        original = copy.deepcopy(self.model)
+        for prefix in ("$PROJECT_DIR$/beta/", "$MODULE_DIR$/"):
+            with self.subTest(prefix=prefix):
+                self.model = copy.deepcopy(original)
+                for entry in self.model["modules"][1]["orderEntries"]:
+                    relative = pathlib.Path(entry["name"]).relative_to(self.root / "beta").as_posix()
+                    entry["name"] = prefix + relative + "/"
+                self.validate()
+                self.model = copy.deepcopy(original)
+
     def test_imported_forgeries_are_rejected(self):
-        for mutation in ("missing-source", "duplicate-source", "wrong-kind", "outside-content", "missing-content", "duplicate-content", "broader-content", "pattern", "exclusion", "missing-module", "duplicate-module", "missing-binary", "duplicate-binary", "wrong-binary"):
+        for mutation in ("missing-source", "duplicate-source", "wrong-kind", "outside-content", "missing-content", "duplicate-content", "broader-content", "pattern", "exclusion", "missing-module", "duplicate-module", "missing-binary", "duplicate-binary", "wrong-binary", "bare-source", "unknown-macro", "relative-binary", "aliased-binary"):
             with self.subTest(mutation=mutation):
                 original = copy.deepcopy(self.model)
                 alpha, beta = self.model["modules"]
@@ -144,6 +155,10 @@ class QodanaProjectionTest(unittest.TestCase):
                 elif mutation == "missing-binary": beta["orderEntries"].pop()
                 elif mutation == "duplicate-binary": beta["orderEntries"] *= 2
                 elif mutation == "wrong-binary": beta["orderEntries"][0]["name"] = self.model["modules"][0]["name"]
+                elif mutation == "bare-source": content["sourceFolders"][0]["path"] = "$PROJECT_DIR$/shared/kotlin"
+                elif mutation == "unknown-macro": beta["orderEntries"][0]["name"] = "$OTHER_DIR$/beta/build/classes/kotlin/main/"
+                elif mutation == "relative-binary": beta["orderEntries"][0]["name"] = "beta/build/classes/kotlin/main/"
+                elif mutation == "aliased-binary": beta["orderEntries"][0]["name"] = "$PROJECT_DIR$/beta/../beta/build/classes/kotlin/main/"
                 with self.assertRaises((ValueError, KeyError)):
                     self.validate()
                 self.model = original

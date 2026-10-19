@@ -63,7 +63,9 @@ def url_path(root, module_dir, value, container_root="", source=True):
     if not isinstance(value, str) or "\\" in value or "%" in value or any(ord(char) < 32 for char in value):
         fail(f"invalid model URL: {value!r}")
     value = value[:-2] if value.endswith("!/") else value
-    prefixes = {scheme + variable: parent for scheme in ("file://", "jar://") for variable, parent in (("$PROJECT_DIR$/", root), ("$MODULE_DIR$/", module_dir))}
+    # Imported binary-library names retain IDE macros after Qodana removes the URI scheme.
+    schemes = ("file://", "jar://") if source else ("file://", "jar://", "")
+    prefixes = {scheme + variable: parent for scheme in schemes for variable, parent in (("$PROJECT_DIR$/", root), ("$MODULE_DIR$/", module_dir))}
     for prefix, parent in prefixes.items():
         if value.startswith(prefix):
             relative = value[len(prefix):]

@@ -46,7 +46,9 @@ for owner in inventory["projects"]:
             entries.append(dict(type="Module", name=entry.attrib["module-name"]))
         elif entry.attrib["type"] == "module-library":
             for classes in entry.findall("./library/CLASSES/root"):
-                entries.append(dict(type="Library", name=checker.url_path(root, directory, classes.attrib["url"], source=False).as_posix()))
+                url = classes.attrib["url"]
+                name = url[len("file://"):] if url.startswith("file://$PROJECT_DIR$/") else checker.url_path(root, directory, url, source=False).as_posix()
+                entries.append(dict(type="Library", name=name))
     modules.append(dict(name=owner["module"], contentEntries=contents, orderEntries=entries))
     java.append(dict(name=owner["module"], languageLevel=int(manager.attrib.get("LANGUAGE_LEVEL", f"JDK_{project_java}")[4:])))
 fixture = root / "build/qodana-import-fixture"
