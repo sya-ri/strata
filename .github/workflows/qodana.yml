@@ -1,181 +1,51 @@
-name: Qodana
-'on':
-  pull_request: {}
-  workflow_dispatch: {}
-  workflow_call:
-    inputs:
-      ref:
-        type: string
-        required: true
+name: Analysis source-view probe
+on:
+  workflow_dispatch:
 permissions:
-  actions: read
   contents: read
   checks: write
-  pull-requests: write
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
-  plan:
+  source-views:
     runs-on: ubuntu-latest
-    outputs:
-      qodana: ${{ steps.plan.outputs.qodana }}
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [actual, actual-build]
     steps:
-    - uses: actions/checkout@v7
-      with:
-        fetch-depth: 0
-        persist-credentials: false
-    - name: Select analysis inputs
-      run: |-
-        if [[ "$EVENT" == pull_request ]]; then
-          python3 gradle/plan-ci.py --base "$BASE" --head "$HEAD"
-        else
-          python3 gradle/plan-ci.py --full
-        fi
-      id: plan
-      env:
-        EVENT: ${{ github.event_name }}
-        BASE: ${{ github.event.pull_request.base.sha }}
-        HEAD: ${{ github.event.pull_request.head.sha }}
-  qodana:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out source
-      uses: actions/checkout@v7
-      with:
-        ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
-        fetch-depth: 0
-    - name: Set up Java
-      uses: ./.github/actions/setup-strata-java
-    - name: Check analysis disk space
-      id: analysis_disk
-      shell: bash
-      run: |
-        available_kib=$(df --output=avail -k "$GITHUB_WORKSPACE" | tail -n 1 | tr -d ' ')
-        [[ "$available_kib" =~ ^[0-9]+$ ]] || { echo 'Cannot measure analysis disk space.' >&2; exit 1; }
-        df -h "$GITHUB_WORKSPACE"
-        # Leave room for the complete Loom model and the disposable Qodana IDE cache.
-        if (( available_kib < 40 * 1024 * 1024 )); then
-          echo 'reclaim=true' >> "$GITHUB_OUTPUT"
-        else
-          echo 'reclaim=false' >> "$GITHUB_OUTPUT"
-        fi
-    - name: Reclaim analysis disk space
-      if: steps.analysis_disk.outputs.reclaim == 'true'
-      uses: insightsengineering/disk-space-reclaimer@v1
-      with:
-        tools-cache: false
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: false
-    - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@v6
-      with:
-        cache-read-only: false
-        gradle-home-cache-strict-match: false
-        gradle-home-cache-excludes: caches/fabric-loom
-    - name: Generate Minecraft cache inventory
-      run: bash gradle/plan-minecraft-ci.sh
-    - name: Hash all Minecraft Loom cache inputs
-      id: loom_inputs
-      shell: bash
-      run: |
-        LOOM_PROJECTS="$(< build/github-actions/minecraft-loom-projects.txt)"
-        export LOOM_PROJECTS
-        bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
-    - name: Restore Minecraft Loom project cache
-      id: loom_cache
-      uses: actions/cache/restore@v6
-      with:
-        path: .gradle/loom-cache
-        key: loom-${{ runner.os }}-minecraft-all-${{ steps.loom_inputs.outputs.hash }}
-        restore-keys: |
-          loom-${{ runner.os }}-minecraft-
-    - name: Restore Qodana indexes
-      id: analysis_cache
-      uses: actions/cache/restore@v6
-      with:
-        path: ${{ runner.temp }}/qodana/caches
-        key: qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-${{ github.sha }}
-        restore-keys: |
-          qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-
-    - name: Run Qodana
-      uses: JetBrains/qodana-action@v2026.2
-      with:
-        cache-dir: ${{ runner.temp }}/qodana/caches
-        results-dir: ${{ runner.temp }}/qodana/results
-        use-caches: false
-        pr-mode: false
-        args: >-
-          --linter=qodana-jvm-community --within-docker=false
-          --property=idea.config.path=${{ github.workspace }}/build/qodana/ide-config
-          --property=intellij.platform.shared.source.support=true
-          --property=batch.inspections.inspect.all.code.insight.contexts=true
-    - name: Verify complete Gradle IDE model
-      if: always()
-      run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" "$GITHUB_WORKSPACE"
-        /data/project
-    - name: Measure Qodana cache
-      if: always()
-      run: |
-        df -h "$GITHUB_WORKSPACE"
-        if [[ -d "${{ runner.temp }}/qodana/caches" ]]; then
-          du -sh "${{ runner.temp }}/qodana/caches"
-        else
-          echo 'Qodana did not create an IDE cache directory.'
-        fi
-    - name: Retain declaration and generated model evidence
-      if: always()
-      shell: bash
-      env:
-        RESULTS: ${{ runner.temp }}/qodana/results
-      run: |
-        python3 - <<'PY'
-        import os
-        import pathlib
-        import shutil
-        import xml.etree.ElementTree as ET
-        root = pathlib.Path.cwd()
-        destination = pathlib.Path(os.environ['RESULTS']) / 'modelEvidence'
-        shutil.copytree(root / 'build/qodana', destination / 'build/qodana', dirs_exist_ok=True)
-        for relative in ('.idea/modules.xml', '.idea/misc.xml', 'strata.ipr'):
-            target = destination / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(root / relative, target)
-        for module in ET.parse(root / '.idea/modules.xml').getroot().findall('./component/modules/module'):
-            url = module.attrib['fileurl']
-            prefix = 'file://$PROJECT_DIR$/'
-            if not url.startswith(prefix):
-                raise SystemExit(f'Unsupported generated module URL: {url}')
-            relative = pathlib.PurePosixPath(url[len(prefix):])
-            if relative.is_absolute() or '..' in relative.parts:
-                raise SystemExit(f'Noncanonical generated module URL: {url}')
-            target = destination / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(root / relative, target)
-        PY
-    - name: Upload Qodana report
-      if: always()
-      uses: actions/upload-artifact@v7
-      with:
-        name: qodana-report
-        path: ${{ runner.temp }}/qodana/results
-        if-no-files-found: error
-        include-hidden-files: true
-    - name: Save verified Qodana indexes
-      if: success() && steps.analysis_cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v6
-      with:
-        path: ${{ runner.temp }}/qodana/caches
-        key: ${{ steps.analysis_cache.outputs.cache-primary-key }}
-    - name: Save complete Minecraft Loom project cache
-      if: success() && steps.loom_cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v6
-      with:
-        path: .gradle/loom-cache
-        key: ${{ steps.loom_cache.outputs.cache-primary-key }}
-    needs: plan
-    if: needs.plan.outputs.qodana == 'true'
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-strata-java
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+      - name: Compile and execute the real SDK-specific controls
+        run: |
+          python3 -B gradle/probe-qodana-sdks.py prepare
+          ./gradlew -p qodana-sdk-analysis-fixture :old:verifyFixture :new:verifyFixture :old:writeClasspaths :new:writeClasspaths --no-daemon --console=plain
+          python3 -B gradle/probe-qodana-sdks.py export "${{ matrix.mode }}"
+      - name: Inspect the selected source views
+        continue-on-error: true
+        uses: JetBrains/qodana-action@v2026.2
+        with:
+          cache-dir: ${{ runner.temp }}/sdk-cache
+          results-dir: ${{ runner.temp }}/sdk-results
+          use-caches: false
+          pr-mode: false
+          args: >-
+            --linter=qodana-jvm-community --within-docker=false
+            --project-dir=${{ github.workspace }}/qodana-sdk-analysis-fixture
+            --config=${{ github.workspace }}/qodana-sdk-analysis-fixture/probe.yaml
+            --property=idea.config.path=${{ github.workspace }}/qodana-sdk-analysis-fixture/ide-config
+            --property=intellij.platform.shared.source.support=true
+            --property=batch.inspections.inspect.all.code.insight.contexts=true
+      - name: Require both compiler contexts and all genuine unused canaries
+        if: always()
+        run: python3 -B gradle/probe-qodana-sdks.py inspect "${{ matrix.mode }}" "${{ runner.temp }}/sdk-results"
+      - name: Retain the exact source, compiled and analysis evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: source-view-control-${{ matrix.mode }}
+          path: |
+            ${{ runner.temp }}/sdk-results
+            qodana-sdk-analysis-fixture
+          include-hidden-files: true
