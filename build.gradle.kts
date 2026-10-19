@@ -2732,7 +2732,7 @@ tasks.register("writeCiSourceModel") {
     outputs.file(destination)
     outputs.upToDateWhen { false }
     doLast {
-        val model = minecraftFabricTargets.associate { target ->
+        val minecraftSources = minecraftFabricTargets.associate { target ->
             val roots = listOf(target.runtimeProjectPath, target.integrationProjectPath).flatMap { path ->
                 val owner = project(path)
                 listOf(rootProject.relativePath(owner.projectDir)) +
@@ -2742,6 +2742,10 @@ tasks.register("writeCiSourceModel") {
             } + target.allSourceLinkPaths
             target.version to roots.map { it.replace('\\', '/') }.distinct().sorted()
         }
+        val documentationSources = project(":integration:docs").extensions.getByType<SourceSetContainer>().flatMap { source ->
+            source.allSource.srcDirs.map { directory -> rootProject.relativePath(directory).replace('\\', '/') }
+        }.distinct().sorted()
+        val model = mapOf("minecraft" to minecraftSources, "documentation" to documentationSources)
         destination.get().asFile.apply {
             parentFile.mkdirs()
             writeText(JsonOutput.prettyPrint(JsonOutput.toJson(model)) + "\n")

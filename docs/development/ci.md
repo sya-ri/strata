@@ -80,8 +80,9 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 Native helpers, compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
 Build-logic test-only changes and the IDEA analysis model do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
 
-`writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model.
+`writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model and the documentation project's actual source roots.
 Shared-source selection uses that output; deletions and both sides of renames participate in the diff.
+Changes under a shared documentation source root also select documentation verification, including removed files; this conservatively includes files filtered out by that source set.
 The planner creates one matrix job per selected Minecraft version in numeric order, with fail-fast disabled.
 GitHub runs these jobs independently within the available runner concurrency, and a failed version can be retried separately.
 Documentation and Dokka run in their own parallel job and upload the checked site.

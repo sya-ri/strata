@@ -40,7 +40,7 @@ jobs:
       common: ${{ steps.plan.outputs.common }}
       web: ${{ steps.plan.outputs.web }}
       docs: ${{ steps.plan.outputs.docs }}
-      docs_full: ${{ steps.plan.outputs.docs_full }}
+      docs_full: ${{ steps.ownership.outputs.docs_full || steps.plan.outputs.docs_full }}
       workflow: ${{ steps.plan.outputs.workflow }}
       qodana: ${{ steps.plan.outputs.qodana }}
       all_minecraft: ${{ steps.ownership.outputs.all_minecraft || steps.plan.outputs.all_minecraft }}
