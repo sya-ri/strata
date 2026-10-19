@@ -99,9 +99,7 @@ internal object MinecraftHostImplementation {
     }
 
     private class Metadata(
-        @Suppress("unused")
         val title: UiText,
-        @Suppress("unused")
         val pausesGame: Boolean,
     )
 

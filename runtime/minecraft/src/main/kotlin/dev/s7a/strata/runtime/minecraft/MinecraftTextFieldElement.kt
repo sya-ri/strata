@@ -228,7 +228,6 @@ private class MinecraftTextFieldElement(
             preedit = null
         }
 
-        @Suppress("unused")
         @JvmSynthetic
         internal fun updateFrom(current: MinecraftTextFieldElement): DirtyMask {
             val previousState = checkNotNull(state)

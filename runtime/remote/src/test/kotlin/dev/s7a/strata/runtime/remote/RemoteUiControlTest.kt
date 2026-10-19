@@ -16,6 +16,8 @@ import dev.s7a.strata.ui.UiSessionStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
@@ -23,6 +25,33 @@ import org.junit.jupiter.api.Test
  */
 internal class RemoteUiControlTest {
     private val registry = RemoteRegistry().also(RemoteBuiltins::register)
+
+    @Test
+    fun failedControlReceiptsCloseTheServerAfterChangedAndUnchangedRequests() {
+        UiPresentation.entries.forEach { presentation ->
+            val outbound = mutableListOf<RemoteMessage>()
+            val failure = RemoteProtocolException(RemoteFailure.ResourceLimit, "Control receipt queue is full.")
+            RemoteServerSession(1, ProjectionValue.Text("test"), registry.types, send = {
+                if (it is RemoteMessage.ControlReceipt) throw failure
+                outbound.add(it)
+            }) { evaluateComponentTree { Spacer() } }.use { server ->
+                server.tick()
+                val state = checkNotNull((outbound.single() as RemoteMessage.Snapshot).control)
+                server.receive(RemoteMessage.ControlApplied(1, state.sequence))
+                assertSame(
+                    failure,
+                    assertThrows(RemoteProtocolException::class.java) {
+                        server.receive(RemoteMessage.ControlRequest(1, state.copy(sequence = 1, presentation = presentation)))
+                    },
+                )
+                assertEquals(RemoteSessionStatus.Closed(RemoteFailure.ResourceLimit), server.status)
+                assertEquals(UiSessionStatus.Closed(RemoteFailure.ResourceLimit.uiReason), server.uiSession.status)
+                assertEquals(0, server.nodeCount)
+                assertEquals(RemoteMessage.Close(1, RemoteFailure.ResourceLimit), outbound.last())
+            }
+            assertEquals(1, outbound.filterIsInstance<RemoteMessage.Close>().size)
+        }
+    }
 
     @Test
     fun nativeInteractionExitReachesItsServerOnceAndCannotReviveAfterClose() {

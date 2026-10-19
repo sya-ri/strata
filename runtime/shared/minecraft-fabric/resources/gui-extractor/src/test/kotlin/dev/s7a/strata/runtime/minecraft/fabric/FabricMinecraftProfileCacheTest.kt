@@ -121,17 +121,15 @@ internal class FabricMinecraftProfileCacheTest {
             assertNull(retainedEntry(cache))
         }
         val state = retainedState(cache)
-        repeat(512) { cache.invalidate(Any(), true) }
+        repeat(512) {
+            val previous = retainedState(cache)
+            cache.invalidate(Any(), true)
+            assertNotSame(previous, retainedState(cache))
+        }
         assertNull(retainedEntry(cache))
         val finalState = retainedState(cache)
         assertNotSame(state, finalState)
-        val epoch =
-            finalState.javaClass
-                .getDeclaredField("epoch")
-                .apply { isAccessible = true }
-                .getLong(finalState)
-        assertEquals(1536L, epoch)
-        assertEquals(setOf("epoch", "entry", "terminal"), finalState.javaClass.declaredFields.mapTo(HashSet()) { it.name })
+        assertEquals(setOf("entry", "terminal"), finalState.javaClass.declaredFields.mapTo(HashSet()) { it.name })
     }
 
     @Test
