@@ -18,7 +18,7 @@ val remoteGenerator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGener
 val remoteClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(remoteGenerated.flatMap { it.destinationDirectory }, remoteGenerator.flatMap { it.generatedResourcesDir })
 val remoteLauncher = tasks.named<JMHTask>("jmh").flatMap { it.javaLauncher }
 
-val verifyRemoteWorkloads by tasks.registering(JavaExec::class) {
+val verifyRemoteWorkloads = tasks.register<JavaExec>("verifyRemoteWorkloads") {
     group = "verification"
     description = "Checks actual remote trees, codecs and framing against the shared generated JMH inventory."
     dependsOn(remoteGenerated, remoteGenerator)
