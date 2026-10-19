@@ -1,7 +1,6 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.papermc.hangarpublishplugin.model.Platforms
-import java.io.StringWriter
 import java.security.MessageDigest
 import java.util.UUID
 import com.vanniktech.maven.publish.Checksum
@@ -52,12 +51,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import javax.inject.Inject
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
-import org.w3c.dom.Element
 import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -1449,9 +1442,11 @@ if (completeIdeaModelActive) {
         return MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
     }
 
+    val repositoryRoot = rootDir.canonicalFile.toPath()
+
     /** Returns a canonical repository path, rejecting linked roots outside the selected checkout. */
     fun File.repositoryPath(): String {
-        val root = rootDir.canonicalFile.toPath()
+        val root = repositoryRoot
         val path = canonicalFile.toPath()
         require(path.startsWith(root) && path != root) { "Declaration path must be inside the repository: $this" }
         return root.relativize(path).toString().replace(File.separatorChar, '/')
@@ -1459,7 +1454,7 @@ if (completeIdeaModelActive) {
 
     /** Captures current directory membership and bytes without reusing acceptance evidence. */
     fun File.declarationFiles(): Map<String, String> =
-        if (isDirectory) walkTopDown().filter { it.isFile }.sortedBy { it.repositoryPath() }.associate { it.repositoryPath() to it.sha256() } else emptyMap()
+        if (isDirectory) walkTopDown().filter { it.isFile }.map { it.repositoryPath() to it.sha256() }.sortedBy { it.first }.toMap() else emptyMap()
 
     /** Identifies absent declared output directories whose producing tasks actually reported NO_SOURCE. */
     fun unproducedSourceOutputs(): Set<File> =
@@ -1552,14 +1547,18 @@ if (completeIdeaModelActive) {
                     listOf(
                         Triple(if (test) "TestSource" else "Source", sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }, sourceSet.java.files + inputs.flatMap { it.kotlin.files }),
                         Triple(if (test) "TestResource" else "Resource", sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }, sourceSet.resources.files + inputs.flatMap { it.resources.files }),
-                    ).flatMap { (kind, directories, compilerInputs) -> directories.map { directory ->
-                        val generated = directory.canonicalFile.toPath().startsWith(owner.layout.buildDirectory.get().asFile.canonicalFile.toPath())
-                        val files = directory.declarationFiles()
-                        require(generated || tracked.keys.containsAll(files.keys)) { "Authored compiler roots must belong to the selected revision: ${owner.path}: $directory" }
-                        require((generated && files.keys.any { it in tracked }).not()) { "Authored compiler inputs must not be hidden under build: $directory" }
-                        val selected = compilerInputs.filter { it.canonicalFile.toPath().startsWith(directory.canonicalFile.toPath()) }.map { it.repositoryPath() }.distinct().sorted()
-                        mapOf("kind" to kind, "path" to directory.repositoryPath(), "exists" to directory.isDirectory, "generated" to generated, "files" to files, "inputs" to selected, "sourceSets" to listOf(sourceSet.name))
-                    } }
+                    ).flatMap { (kind, directories, compilerInputs) ->
+                        val selectedInputs = compilerInputs.map { it.canonicalFile.toPath() }.distinct()
+                        directories.map { directory ->
+                            val directoryPath = directory.canonicalFile.toPath()
+                            val generated = directoryPath.startsWith(owner.layout.buildDirectory.get().asFile.canonicalFile.toPath())
+                            val files = directory.declarationFiles()
+                            require(generated || tracked.keys.containsAll(files.keys)) { "Authored compiler roots must belong to the selected revision: ${owner.path}: $directory" }
+                            require((generated && files.keys.any { it in tracked }).not()) { "Authored compiler inputs must not be hidden under build: $directory" }
+                            val selected = selectedInputs.filter { it.startsWith(directoryPath) }.map { it.toFile().repositoryPath() }.sorted()
+                            mapOf("kind" to kind, "path" to directory.repositoryPath(), "exists" to directory.isDirectory, "generated" to generated, "files" to files, "inputs" to selected, "sourceSets" to listOf(sourceSet.name))
+                        }
+                    }
                 }.orEmpty().distinct()
                 val outputs = sourceSets?.flatMap { sourceSet ->
                     val production = sourceSet.name == "main" || platformCompilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name }
@@ -1580,6 +1579,7 @@ if (completeIdeaModelActive) {
                     "module" to idea?.name,
                     "directory" to owner.projectDir.takeUnless { it.canonicalFile == rootDir.canonicalFile }?.repositoryPath(),
                     "iml" to idea?.outputFile?.repositoryPath(),
+                    "native" to (owner.path in minecraftTargetByProjectPath),
                     "roots" to roots.map { entry ->
                         val production = roots.firstOrNull { it["path"] == entry["path"] && it["kind"] in setOf("Source", "Resource") }
                         val selected = production ?: entry
@@ -1697,45 +1697,8 @@ if (completeIdeaModelActive) {
         }
     }
 
-    tasks.register("qodanaKotlinModel") {
-        group = "verification"
-        description = "Exports actual Kotlin compiler module identities into Qodana's generated IDEA model."
-        notCompatibleWithConfigurationCache("Reads configured compiler tasks and updates generated analysis metadata.")
-        dependsOn("idea", "qodanaDeclarationInventory")
-        doLast {
-            /** Appends one standard IDEA element with attributes derived from actual compiler settings. */
-            fun Element.element(name: String, attributes: Map<String, String>): Element {
-                val child = ownerDocument.createElement(name)
-                attributes.forEach { (key, value) -> child.setAttribute(key, value) }
-                appendChild(child)
-                return child
-            }
-            allprojects.forEach { owner ->
-                val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>() ?: return@forEach
-                val main = kotlin.target.compilations.getByName("main")
-                val compiler = owner.tasks.named<KotlinJvmCompile>(main.compileTaskProvider.name).get()
-                val module = owner.extensions.getByType<IdeaModel>().module
-                val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(module.outputFile)
-                val root = document.documentElement
-                val managers = root.getElementsByTagName("component")
-                require((0 until managers.length).none { managers.item(it).attributes.getNamedItem("name")?.nodeValue == "FacetManager" }) {
-                    "Recreate the owned IDEA model with cleanIdea before exporting Kotlin compiler settings."
-                }
-                val facets = root.element("component", mapOf("name" to "FacetManager"))
-                val facet = facets.element("facet", mapOf("type" to "kotlin-language", "name" to "Kotlin"))
-                val target = compiler.compilerOptions.jvmTarget.get().target
-                val configuration = facet.element("configuration", mapOf("version" to "3", "platform" to "JVM $target", "useProjectSettings" to "false"))
-                val arguments = configuration.element("compilerArguments", emptyMap())
-                arguments.element("option", mapOf("name" to "moduleName", "value" to compiler.compilerOptions.moduleName.get()))
-                arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))
-                val text = StringWriter()
-                val transformer = TransformerFactory.newInstance().newTransformer()
-                transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes")
-                transformer.transform(DOMSource(document), StreamResult(text))
-                module.outputFile.writeText("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n$text\n")
-            }
-        }
-    }
+    apply(from = rootProject.file("gradle/qodana-idea-model.gradle.kts"))
+
 }
 
 allprojects {

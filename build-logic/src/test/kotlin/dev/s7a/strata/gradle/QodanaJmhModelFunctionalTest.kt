@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.w3c.dom.Element
+import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
@@ -24,10 +26,11 @@ internal class QodanaJmhModelFunctionalTest {
     fun `discover custom working owners and retain all declared inputs and dependency mappings`() {
         Files.createDirectories(directory.resolve("gradle"))
         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
+        Files.copy(repository.resolve("gradle/qodana-idea-model.gradle.kts"), directory.resolve("gradle/qodana-idea-model.gradle.kts"))
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)
-        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"support-kotlin\", \"shared-inputs\", \"shared-kmp\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
+        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"variant-one\", \"variant-two\", \"support\", \"support-kotlin\", \"shared-inputs\", \"shared-kmp\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
         val production = Files.readString(repository.resolve("build.gradle.kts")).replace("\r\n", "\n")
         val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
@@ -64,6 +67,7 @@ internal class QodanaJmhModelFunctionalTest {
                 alias(libs.plugins.jmh) apply false
             }
             val completeIdeaModelActive = true
+            val minecraftTargetByProjectPath = mapOf(":variant-one" to true, ":variant-two" to true)
             $inventory
             subprojects {
                 if (name == "shared-kmp") {
@@ -120,6 +124,7 @@ internal class QodanaJmhModelFunctionalTest {
         )
         write("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt", "package fixture\npublic fun ownedValue(): Int = 13\n")
         writeAuxiliaryOwner()
+        writeNativeVariants()
         owners.forEach { owner ->
             write(
                 "$owner/build.gradle.kts",
@@ -166,10 +171,12 @@ internal class QodanaJmhModelFunctionalTest {
         )
         val options = kotlinModule.getElementsByTagName("option")
         val compilerOptions =
-            (0 until options.length).associate { index ->
-                val attributes = options.item(index).attributes
-                attributes.getNamedItem("name").nodeValue to attributes.getNamedItem("value").nodeValue
-            }
+            (0 until options.length)
+                .mapNotNull { index ->
+                    val attributes = options.item(index).attributes
+                    val name = attributes.getNamedItem("name")?.nodeValue ?: return@mapNotNull null
+                    name to attributes.getNamedItem("value")?.nodeValue
+                }.toMap()
         assertTrue(Files.isRegularFile(directory.resolve("support-kotlin/build/classes/kotlin/main/META-INF/fixture-support.kotlin_module")))
         assertEquals("fixture-support", compilerOptions["moduleName"])
         assertEquals("17", compilerOptions["jvmTarget"])
@@ -185,7 +192,7 @@ internal class QodanaJmhModelFunctionalTest {
             assertEquals(setOf("$name/src/main/kotlin", "$name/authored/java", "$name/authored/kotlin", "$name/authored/resources", "shared-inputs/kotlin", "shared-inputs/resources"), existing.map { it["path"] }.toSet())
             val iml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(owner["iml"] as String).toFile())
             val folders = iml.getElementsByTagName("sourceFolder")
-            assertEquals(6, folders.length)
+            assertEquals(if (name == "bench-one") 5 else 4, folders.length)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:compileJmhKotlin")?.outcome)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:compileJmhJava")?.outcome)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:processJmhResources")?.outcome)
@@ -198,6 +205,18 @@ internal class QodanaJmhModelFunctionalTest {
             }
         }
         val projects = (parsed["projects"] as List<*>).map { it as Map<*, *> }
+        assertUniqueSourceOwnership(projects)
+        val variantOne = projects.single { it["project"] == ":variant-one" }
+        val variantTwo = projects.single { it["project"] == ":variant-two" }
+        val oneModel = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(variantOne["iml"] as String).toFile())
+        val twoModel = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(variantTwo["iml"] as String).toFile())
+        assertEquals(2, oneModel.getElementsByTagName("sourceFolder").length)
+        assertEquals(0, twoModel.getElementsByTagName("sourceFolder").length)
+        assertTrue(Files.readString(directory.resolve(variantTwo["iml"] as String)).contains("variant-two/build/classes/kotlin/main/"))
+        val compiledVariant = directory.resolve("variant-two/build/classes/kotlin/main")
+        URLClassLoader(arrayOf(compiledVariant.toUri().toURL()), javaClass.classLoader).use { loader ->
+            assertEquals(19, loader.loadClass("fixture.NativeScreenKt").getMethod("nativeScreenValue").invoke(null))
+        }
         val support = projects.single { it["project"] == ":support-kotlin" }
         assertTrue(support["outputs"] is List<*>, "Each configured JVM compilation must retain current owned output evidence.")
         val supportCompiler = support["compiler"] as Map<*, *>
@@ -286,6 +305,46 @@ internal class QodanaJmhModelFunctionalTest {
         assertEquals(TaskOutcome.FAILED, failed.task(":auxiliary-owner:compileVerificationKotlin")?.outcome)
         assertEquals(null, failed.task(":qodanaDeclarationInventory"))
         assertTrue(Files.exists(directory.resolve("build/qodana/declarations.json")).not())
+    }
+
+    /** Verifies physical containment and unique global ownership, including roots outside a module directory. */
+    private fun assertUniqueSourceOwnership(projects: List<Map<*, *>>) {
+        val owners = mutableMapOf<Path, String>()
+        projects.forEach { project ->
+            val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(project["iml"] as String).toFile())
+            val folders = model.getElementsByTagName("sourceFolder")
+            val moduleDirectory = directory.resolve(project["iml"] as String).parent
+
+            fun path(url: String): Path = Path.of(url.removePrefix("file://").replace("\$PROJECT_DIR\$", directory.toString()).replace("\$MODULE_DIR\$", moduleDirectory.toString())).normalize()
+            (0 until folders.length).forEach { index ->
+                val folder = folders.item(index) as Element
+                val source = path(folder.getAttribute("url"))
+                val content = path((folder.parentNode as Element).getAttribute("url"))
+                assertTrue(source.startsWith(content), "Compiler source $source must belong to its direct content root $content.")
+                assertEquals(null, owners.put(source, project["module"] as String), "Compiler roots must have exactly one IDEA owner.")
+            }
+        }
+        val benchmark = directory.resolve("bench-two/resolved-bench-two.iml")
+        val contents = Files.readString(benchmark)
+        assertTrue(contents.contains("bench-two/build/classes/kotlin/jmh/"))
+        assertTrue(contents.contains("bench-two/build/resources/jmh/"))
+        assertTrue(contents.contains("name=\"friendPaths\""))
+    }
+
+    /** Compiles the same native closure in two variants while borrowing a physically versioned source root. */
+    private fun writeNativeVariants() {
+        write("shared-native/kotlin/fixture/NativeValue.kt", "package fixture\ninternal fun nativeValue(): Int = 19\n")
+        write("variant-two/src/main/kotlin/fixture/NativeScreen.kt", "package fixture\ninternal fun nativeScreenValue(): Int = nativeValue()\n")
+        listOf("variant-one", "variant-two").forEach { variant ->
+            write(
+                "$variant/build.gradle.kts",
+                """
+                kotlin.sourceSets.named("main") {
+                    kotlin.setSrcDirs(listOf(rootProject.file("shared-native/kotlin"), rootProject.file("variant-two/src/main/kotlin")))
+                }
+                """.trimIndent(),
+            )
+        }
     }
 
     /** Adds a custom compiler with its own real dependencies and one root already owned by production. */
