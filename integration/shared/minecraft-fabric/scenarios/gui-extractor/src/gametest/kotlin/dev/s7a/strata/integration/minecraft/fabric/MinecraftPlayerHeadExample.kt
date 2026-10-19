@@ -32,32 +32,3 @@ internal fun createPlayerHeadShowcaseScreenDefinition(
         }
     }
 // showcase-source-end:player-head
-
-/**
- * Builds the player-head parity screen used by existing loaded-client checks.
- *
- * @param skin player identity lookup or immutable 64 by 64 skin source.
- * @return one-shot definition with the same geometry as [createPlayerHeadShowcaseScreenDefinition].
- */
-internal fun createPlayerHeadScreenDefinition(
-    skin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
-): ScreenDefinition = createPlayerHeadShowcaseScreenDefinition(skin)
-
-/**
- * Builds the loaded Fabric parity case for the deprecated arbitrary-size compatibility path.
- *
- * @param skin immutable normalized skin used by both the Fabric and headless runtimes.
- * @return one-shot definition containing a centered 10 by 10 bilinearly filtered head.
- */
-@Suppress("DEPRECATION")
-internal fun createFilteredPlayerHeadScreenDefinition(
-    skin: PlayerSkinSource,
-): ScreenDefinition =
-    ScreenDefinition("Filtered player head") {
-        Stack(
-            modifier = Modifier.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
-            contentAlignment = Alignment.Center,
-        ) {
-            PlayerHead(source = skin, size = 10)
-        }
-    }

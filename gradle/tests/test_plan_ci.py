@@ -389,6 +389,18 @@ class PlanCiTest(unittest.TestCase):
         self.assertEqual(["1.20", "26.3"], renamed["minecraft"])
         self.assertTrue(renamed["docs_full"])
 
+    def test_native_inventory_source_keeps_documentation_without_broadening_siblings(self):
+        root = "integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin"
+        inventory = root + "/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt"
+        model = {"minecraft": {version: [root] for version in ("26.1", "26.2", "26.3")}, "documentation": [inventory]}
+        result = planner.plan([inventory], model)
+        self.assertEqual(["26.1", "26.2", "26.3"], result["minecraft"])
+        self.assertTrue(result["docs_full"] and result["qodana"])
+        self.assertFalse(result["all_minecraft"] or result["common"] or result["web"])
+        sibling = planner.plan([inventory.replace("MinecraftInventoryExample", "InventorySlotSynchronizationGameTest")], model)
+        self.assertEqual(result["minecraft"], sibling["minecraft"])
+        self.assertFalse(sibling["docs_full"])
+
     def test_unknown_source_model_shapes_keep_full_verification(self):
         for model in ({}, [], {"26.3": ["runtime/shared/native"]},
                       {"minecraft": [], "documentation": []}, {"minecraft": {}, "documentation": {}}):
