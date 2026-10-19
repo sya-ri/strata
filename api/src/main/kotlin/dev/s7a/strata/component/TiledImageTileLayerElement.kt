@@ -215,7 +215,7 @@ internal class TiledImageTileLayerElement(
          * @param current incoming immutable layer description.
          * @return minimal retained invalidation for the changed contract.
          */
-        internal fun update(current: TiledImageTileLayerElement): DirtyMask {
+        fun update(current: TiledImageTileLayerElement): DirtyMask {
             val sourceChanged = source !== current.source
             val geometryChanged = bounds != current.bounds || levels != current.levels
             check(sourceChanged || geometryChanged.not()) {

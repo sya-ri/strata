@@ -40,21 +40,21 @@ import dev.s7a.strata.node.Node as RetainedNode
  */
 private class MinecraftPointerButtonElement private constructor(
     @get:JvmSynthetic
-    internal val normalSprite: MinecraftButtonSpriteSnapshot,
+    val normalSprite: MinecraftButtonSpriteSnapshot,
     @get:JvmSynthetic
-    internal val highlightedSprite: MinecraftButtonSpriteSnapshot,
+    val highlightedSprite: MinecraftButtonSpriteSnapshot,
     @get:JvmSynthetic
-    internal val disabledSprite: MinecraftButtonSpriteSnapshot,
+    val disabledSprite: MinecraftButtonSpriteSnapshot,
     @get:JvmSynthetic
-    internal val normalText: MinecraftTextRun,
+    val normalText: MinecraftTextRun,
     @get:JvmSynthetic
-    internal val inactiveText: MinecraftTextRun,
+    val inactiveText: MinecraftTextRun,
     @get:JvmSynthetic
-    internal val label: UiText,
+    val label: UiText,
     @get:JvmSynthetic
-    internal val width: Int,
+    val width: Int,
     @get:JvmSynthetic
-    internal val enabled: Boolean,
+    val enabled: Boolean,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -159,7 +159,7 @@ private class MinecraftPointerButtonElement private constructor(
          * @return dirty phases required for the retained update.
          */
         @JvmSynthetic
-        internal fun updateFrom(current: MinecraftPointerButtonElement): DirtyMask {
+        fun updateFrom(current: MinecraftPointerButtonElement): DirtyMask {
             val spriteChanged =
                 normalSprite !== current.normalSprite ||
                     highlightedSprite !== current.highlightedSprite ||
@@ -272,7 +272,7 @@ private class MinecraftPointerButtonElement private constructor(
          * @return a private fixed-height button element.
          */
         @JvmSynthetic
-        internal fun create(
+        fun create(
             normalSprite: MinecraftButtonSpriteSnapshot,
             highlightedSprite: MinecraftButtonSpriteSnapshot,
             disabledSprite: MinecraftButtonSpriteSnapshot,

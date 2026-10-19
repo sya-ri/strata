@@ -337,7 +337,7 @@ internal object MinecraftHostImplementation {
              * @return a new owner-thread host.
              */
             @JvmSynthetic
-            internal fun create(
+            fun create(
                 session: RuntimeUiSession,
                 evaluator: (UiScope.() -> Unit) -> Element,
                 platform: MinecraftUiPlatform?,

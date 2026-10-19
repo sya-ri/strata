@@ -27,9 +27,9 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param key optional stable sibling identity.
  */
 private class MinecraftPlayerHeadElement private constructor(
-    @get:JvmSynthetic internal val skin: DrawImage,
-    @get:JvmSynthetic internal val size: Int,
-    @get:JvmSynthetic internal val showHat: Boolean,
+    @get:JvmSynthetic val skin: DrawImage,
+    @get:JvmSynthetic val size: Int,
+    @get:JvmSynthetic val showHat: Boolean,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -131,7 +131,7 @@ private class MinecraftPlayerHeadElement private constructor(
          * @return one retained player-head description.
          */
         @JvmSynthetic
-        internal fun create(
+        fun create(
             skin: DrawImage,
             size: Int,
             showHat: Boolean,

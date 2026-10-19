@@ -35,9 +35,9 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Internal independent Minecraft scrollbar linked to caller-owned scroll state.
  */
 private class MinecraftScrollbarElement private constructor(
-    internal val background: DrawImage,
-    internal val thumb: DrawImage,
-    internal val state: ScrollState,
+    val background: DrawImage,
+    val thumb: DrawImage,
+    val state: ScrollState,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -144,7 +144,7 @@ private class MinecraftScrollbarElement private constructor(
             thumb = null
         }
 
-        internal fun updateFrom(current: MinecraftScrollbarElement): DirtyMask {
+        fun updateFrom(current: MinecraftScrollbarElement): DirtyMask {
             val imagesChanged = background != current.background || thumb != current.thumb
             if (state !== current.state) {
                 observer?.close()
@@ -249,7 +249,7 @@ private class MinecraftScrollbarElement private constructor(
                 updateNode = { _, current, node -> node.updateFrom(current) },
             )
 
-        internal fun create(
+        fun create(
             background: DrawImage,
             thumb: DrawImage,
             state: ScrollState,

@@ -49,15 +49,15 @@ import dev.s7a.strata.node.Node as RetainedNode
  */
 private class MinecraftScrollElement private constructor(
     @get:JvmSynthetic
-    internal val listBackground: DrawImage,
+    val listBackground: DrawImage,
     @get:JvmSynthetic
-    internal val headerSeparator: DrawImage,
+    val headerSeparator: DrawImage,
     @get:JvmSynthetic
-    internal val footerSeparator: DrawImage,
+    val footerSeparator: DrawImage,
     @get:JvmSynthetic
-    internal val state: ScrollState,
+    val state: ScrollState,
     @get:JvmSynthetic
-    internal val scrollRate: Int,
+    val scrollRate: Int,
     content: Element,
     modifier: Modifier,
     key: ElementKey<*>?,
@@ -203,7 +203,7 @@ private class MinecraftScrollElement private constructor(
          * @return exact dirty phases required by the update.
          */
         @JvmSynthetic
-        internal fun updateFrom(current: MinecraftScrollElement): DirtyMask {
+        fun updateFrom(current: MinecraftScrollElement): DirtyMask {
             val imagesChanged =
                 listBackground != current.listBackground ||
                     headerSeparator != current.headerSeparator ||
@@ -349,7 +349,7 @@ private class MinecraftScrollElement private constructor(
          * @return one immutable Scroll description.
          */
         @JvmSynthetic
-        internal fun create(
+        fun create(
             listBackground: DrawImage,
             headerSeparator: DrawImage,
             footerSeparator: DrawImage,

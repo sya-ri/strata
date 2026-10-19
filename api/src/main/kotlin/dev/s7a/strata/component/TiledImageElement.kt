@@ -175,7 +175,7 @@ internal class TiledImageElement private constructor(
          * @param current incoming immutable description.
          * @return measurement invalidation for geometry or state changes, otherwise no invalidation.
          */
-        internal fun update(current: TiledImageElement): DirtyMask {
+        fun update(current: TiledImageElement): DirtyMask {
             val sourceChanged = source !== current.source
             val geometryChanged =
                 bounds != current.bounds ||

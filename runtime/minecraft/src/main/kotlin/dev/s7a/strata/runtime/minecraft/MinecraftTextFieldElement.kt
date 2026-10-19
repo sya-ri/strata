@@ -49,20 +49,20 @@ import dev.s7a.strata.node.Node as RetainedNode
  */
 private class MinecraftTextFieldElement(
     @get:JvmSynthetic
-    internal val textRenderer: MinecraftTextRenderer,
+    val textRenderer: MinecraftTextRenderer,
     @get:JvmSynthetic
-    internal val font: ResourceId,
+    val font: ResourceId,
     @get:JvmSynthetic
-    internal val state: TextFieldState,
+    val state: TextFieldState,
     @get:JvmSynthetic
-    internal val fieldSize: IntSize,
+    val fieldSize: IntSize,
     @get:JvmSynthetic
-    internal val enabled: Boolean,
+    val enabled: Boolean,
     @get:JvmSynthetic
-    internal val textStyle: TextStyle,
+    val textStyle: TextStyle,
     modifier: Modifier,
     key: ElementKey<*>?,
-    @get:JvmSynthetic internal val appearance: MinecraftTextInputAppearance,
+    @get:JvmSynthetic val appearance: MinecraftTextInputAppearance,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,
@@ -229,7 +229,7 @@ private class MinecraftTextFieldElement(
         }
 
         @JvmSynthetic
-        internal fun updateFrom(current: MinecraftTextFieldElement): DirtyMask {
+        fun updateFrom(current: MinecraftTextFieldElement): DirtyMask {
             val previousState = checkNotNull(state)
             val stateChanged = previousState !== current.state
             if (stateChanged && attached) {

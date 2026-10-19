@@ -46,16 +46,16 @@ import dev.s7a.strata.node.Node as RetainedNode
 @OptIn(InternalStrataRuntimeApi::class)
 private class MinecraftSlotElement private constructor(
     @get:JvmSynthetic
-    internal val backHighlight: DrawImage,
+    val backHighlight: DrawImage,
     @get:JvmSynthetic
-    internal val frontHighlight: DrawImage,
+    val frontHighlight: DrawImage,
     @get:JvmSynthetic
-    internal val highlightable: Boolean,
+    val highlightable: Boolean,
     child: Element?,
     @get:JvmSynthetic
-    internal val platform: MinecraftUiPlatform?,
+    val platform: MinecraftUiPlatform?,
     @get:JvmSynthetic
-    internal val locator: SlotBinding?,
+    val locator: SlotBinding?,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -167,7 +167,7 @@ private class MinecraftSlotElement private constructor(
          * @return Paint when observable visual output changes, otherwise no dirty phase.
          */
         @JvmSynthetic
-        internal fun updateFrom(current: MinecraftSlotElement): DirtyMask {
+        fun updateFrom(current: MinecraftSlotElement): DirtyMask {
             val imagesChanged = backHighlight != current.backHighlight || frontHighlight != current.frontHighlight
             val highlightabilityChanged = highlightable != current.highlightable
             val bindingChanged = platform !== current.platform || locator != current.locator
@@ -266,7 +266,7 @@ private class MinecraftSlotElement private constructor(
          * @return one fixed-size Slot element.
          */
         @JvmSynthetic
-        internal fun create(
+        fun create(
             backHighlight: DrawImage,
             frontHighlight: DrawImage,
             highlightable: Boolean,
