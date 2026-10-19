@@ -43,7 +43,7 @@ internal object MinecraftTextReadabilityEvidence {
             put("minecraft.version", checkNotNull(System.getProperty("strata.minecraftVersion")))
             put("font", "minecraft:default")
             put("style", "ContainerLabel")
-            put("foreground.argb", Integer.toHexString(MinecraftTextReadabilityScene.FOREGROUND))
+            put("foreground.argb", Integer.toHexString(MinecraftTextReadabilityScene.foreground.value))
             put("background.argb", Integer.toHexString(MinecraftTextReadabilityScene.BACKGROUND))
             put("shadow", "false")
             put("font.options.uniform", options.uniform.toString())

@@ -645,14 +645,42 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextInputComponentsKt#public static synthetic fun TextField$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/component/TextInputAppearance;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextInputComponentsKt#public static synthetic fun TextField$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/component/TextInputAppearance;Ldev/s7a/strata/resource/ResourceId;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextInputComponentsKt#public static synthetic fun TextField$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final class dev/s7a/strata/component/TextStyle : java/lang/Enum {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow#public abstract interface class dev/s7a/strata/component/TextShadow {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Automatic#public final class dev/s7a/strata/component/TextShadow$Automatic : dev/s7a/strata/component/TextShadow {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Automatic#public fun equals (Ljava/lang/Object;)Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Automatic#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Automatic#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Automatic#public static final field INSTANCE Ldev/s7a/strata/component/TextShadow$Automatic;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public final class dev/s7a/strata/component/TextShadow$Color : dev/s7a/strata/component/TextShadow {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public final fun component1-e0e5deU ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public final fun copy-NcsifTw (I)Ldev/s7a/strata/component/TextShadow$Color;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public final fun getColor-e0e5deU ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public fun equals (Ljava/lang/Object;)Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public static synthetic fun copy-NcsifTw$default (Ldev/s7a/strata/component/TextShadow$Color;IILjava/lang/Object;)Ldev/s7a/strata/component/TextShadow$Color;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextShadow$Color#public synthetic fun <init> (ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final class dev/s7a/strata/component/TextStyle {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final fun component1-e0e5deU ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final fun component2 ()Ldev/s7a/strata/component/TextShadow;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final fun component3-dpB1lJU ()Ldev/s7a/strata/render/ArgbColor;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final fun copy-19t5ybY (ILdev/s7a/strata/component/TextShadow;Ldev/s7a/strata/render/ArgbColor;)Ldev/s7a/strata/component/TextStyle;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final fun getColor-e0e5deU ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final fun getDisabledColor-dpB1lJU ()Ldev/s7a/strata/render/ArgbColor;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public final fun getShadow ()Ldev/s7a/strata/component/TextShadow;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public fun <init> ()V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public fun equals (Ljava/lang/Object;)Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static final field Companion Ldev/s7a/strata/component/TextStyle$Companion;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static final field ContainerLabel Ldev/s7a/strata/component/TextStyle;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static final field Inactive Ldev/s7a/strata/component/TextStyle;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static final field Normal Ldev/s7a/strata/component/TextStyle;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static final field TextField Ldev/s7a/strata/component/TextStyle;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static fun getEntries ()Lkotlin/enums/EnumEntries;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/component/TextStyle;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static fun values ()[Ldev/s7a/strata/component/TextStyle;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public static synthetic fun copy-19t5ybY$default (Ldev/s7a/strata/component/TextStyle;ILdev/s7a/strata/component/TextShadow;Ldev/s7a/strata/render/ArgbColor;ILjava/lang/Object;)Ldev/s7a/strata/component/TextStyle;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public synthetic fun <init> (ILdev/s7a/strata/component/TextShadow;Ldev/s7a/strata/render/ArgbColor;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle#public synthetic fun <init> (ILdev/s7a/strata/component/TextShadow;Ldev/s7a/strata/render/ArgbColor;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TextStyle$Companion#public final class dev/s7a/strata/component/TextStyle$Companion {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TiledImageCachePolicy#public final class dev/s7a/strata/component/TiledImageCachePolicy {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TiledImageCachePolicy#public final fun component1 ()I
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/TiledImageCachePolicy#public final fun component2 ()J
@@ -2813,15 +2841,44 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.component/TextInputAppearance.Default.toString|toString(){}[0]#final fun toString(): kotlin/String
 :api@Web	:api@Web	klib:dev.s7a.strata.component/TextInputAppearance.Default|null[0]#final object Default : dev.s7a.strata.component/TextInputAppearance {
 :api@Web	:api@Web	klib:dev.s7a.strata.component/TextInputAppearance|null[0]#sealed interface dev.s7a.strata.component/TextInputAppearance {
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.ContainerLabel|null[0]#enum entry ContainerLabel
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Inactive|null[0]#enum entry Inactive
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Normal|null[0]#enum entry Normal
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.TextField|null[0]#enum entry TextField
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.entries.<get-entries>|<get-entries>#static(){}[0]#final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.component/TextStyle>
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.entries|#static{}entries[0]#final val entries
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.valueOf|valueOf#static(kotlin.String){}[0]#final fun valueOf(kotlin/String): dev.s7a.strata.component/TextStyle
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.values|values#static(){}[0]#final fun values(): kotlin/Array<dev.s7a.strata.component/TextStyle>
-:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle|null[0]#final enum class dev.s7a.strata.component/TextStyle : kotlin/Enum<dev.s7a.strata.component/TextStyle> {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Automatic.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Automatic.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Automatic.toString|toString(){}[0]#final fun toString(): kotlin/String
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Automatic|null[0]#final object Automatic : dev.s7a.strata.component/TextShadow {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.<init>|<init>(dev.s7a.strata.render.ArgbColor){}[0]#constructor <init>(dev.s7a.strata.render/ArgbColor)
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.color.<get-color>|<get-color>(){}[0]#final fun <get-color>(): dev.s7a.strata.render/ArgbColor
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.color|{}color[0]#final val color
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.component1|component1(){}[0]#final fun component1(): dev.s7a.strata.render/ArgbColor
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.copy|copy(dev.s7a.strata.render.ArgbColor){}[0]#final fun copy(dev.s7a.strata.render/ArgbColor = ...): dev.s7a.strata.component/TextShadow.Color
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color.toString|toString(){}[0]#final fun toString(): kotlin/String
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow.Color|null[0]#final class Color : dev.s7a.strata.component/TextShadow {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextShadow|null[0]#sealed interface dev.s7a.strata.component/TextShadow {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.<init>|<init>(dev.s7a.strata.render.ArgbColor;dev.s7a.strata.component.TextShadow?;dev.s7a.strata.render.ArgbColor?){}[0]#constructor <init>(dev.s7a.strata.render/ArgbColor = ..., dev.s7a.strata.component/TextShadow? = ..., dev.s7a.strata.render/ArgbColor? = ...)
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.ContainerLabel.<get-ContainerLabel>|<get-ContainerLabel>(){}[0]#final fun <get-ContainerLabel>(): dev.s7a.strata.component/TextStyle
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.ContainerLabel|{}ContainerLabel[0]#final val ContainerLabel
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.Inactive.<get-Inactive>|<get-Inactive>(){}[0]#final fun <get-Inactive>(): dev.s7a.strata.component/TextStyle
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.Inactive|{}Inactive[0]#final val Inactive
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.Normal.<get-Normal>|<get-Normal>(){}[0]#final fun <get-Normal>(): dev.s7a.strata.component/TextStyle
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.Normal|{}Normal[0]#final val Normal
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.TextField.<get-TextField>|<get-TextField>(){}[0]#final fun <get-TextField>(): dev.s7a.strata.component/TextStyle
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion.TextField|{}TextField[0]#final val TextField
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.Companion|null[0]#final object Companion {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.color.<get-color>|<get-color>(){}[0]#final fun <get-color>(): dev.s7a.strata.render/ArgbColor
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.color|{}color[0]#final val color
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.component1|component1(){}[0]#final fun component1(): dev.s7a.strata.render/ArgbColor
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.component2|component2(){}[0]#final fun component2(): dev.s7a.strata.component/TextShadow?
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.component3|component3(){}[0]#final fun component3(): dev.s7a.strata.render/ArgbColor?
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.copy|copy(dev.s7a.strata.render.ArgbColor;dev.s7a.strata.component.TextShadow?;dev.s7a.strata.render.ArgbColor?){}[0]#final fun copy(dev.s7a.strata.render/ArgbColor = ..., dev.s7a.strata.component/TextShadow? = ..., dev.s7a.strata.render/ArgbColor? = ...): dev.s7a.strata.component/TextStyle
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.disabledColor.<get-disabledColor>|<get-disabledColor>(){}[0]#final fun <get-disabledColor>(): dev.s7a.strata.render/ArgbColor?
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.disabledColor|{}disabledColor[0]#final val disabledColor
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.shadow.<get-shadow>|<get-shadow>(){}[0]#final fun <get-shadow>(): dev.s7a.strata.component/TextShadow?
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.shadow|{}shadow[0]#final val shadow
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle.toString|toString(){}[0]#final fun toString(): kotlin/String
+:api@Web	:api@Web	klib:dev.s7a.strata.component/TextStyle|null[0]#final class dev.s7a.strata.component/TextStyle {
 :api@Web	:api@Web	klib:dev.s7a.strata.component/Text|Text@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<dev.s7a.strata.text.UiText>;dev.s7a.strata.resource.ResourceId;dev.s7a.strata.text.TextLayout;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]#final fun (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Text(dev.s7a.strata.state/StateSource<dev.s7a.strata.text/UiText>, dev.s7a.strata.resource/ResourceId, dev.s7a.strata.text/TextLayout = ..., dev.s7a.strata.component/TextStyle = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ...)
 :api@Web	:api@Web	klib:dev.s7a.strata.component/Text|Text@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<dev.s7a.strata.text.UiText>;dev.s7a.strata.text.TextLayout;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]#final fun (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Text(dev.s7a.strata.state/StateSource<dev.s7a.strata.text/UiText>, dev.s7a.strata.text/TextLayout = ..., dev.s7a.strata.component/TextStyle = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ...)
 :api@Web	:api@Web	klib:dev.s7a.strata.component/Text|Text@dev.s7a.strata.component.UiScope(dev.s7a.strata.state.StateSource<kotlin.String>;dev.s7a.strata.resource.ResourceId;dev.s7a.strata.text.TextLayout;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]#final fun (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/Text(dev.s7a.strata.state/StateSource<kotlin/String>, dev.s7a.strata.resource/ResourceId, dev.s7a.strata.text/TextLayout = ..., dev.s7a.strata.component/TextStyle = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ...)

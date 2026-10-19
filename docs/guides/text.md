@@ -58,6 +58,24 @@ No font objects or rendering implementation are needed in application declaratio
 See [Font resources](../guides/fonts.md) for profile snapshots, offline resource loading, and native backend configuration.
 The older profile builder that accepts a finite printable-ASCII glyph table remains available for compatibility; that table alone cannot render arbitrary Unicode or custom fonts.
 
+## Foreground and shadow
+
+`TextStyle` is an immutable value shared by `Text`, `TextField`, and `TextArea`.
+Keep `TextStyle.Normal`, `Inactive`, `ContainerLabel`, or `TextField` for the standard Minecraft palettes, or use `copy` to change one part.
+For example, `Text("Search guidance", style = TextStyle.Inactive.copy(shadow = null))` draws muted gray glyphs without offset shadow pixels or a background overlay.
+The [compiled style example](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyTextStyleScreen.kt) includes single-line and multiline text and independently styled editors.
+
+Set `color` to a straight `ArgbColor`, including alpha.
+Set `shadow` to null to omit shadow drawing, leave `TextShadow.Automatic` to darken the effective foreground's RGB channels by a factor of four while preserving alpha, or select `TextShadow.Color(ArgbColor(...))` for a fixed shadow tint.
+The renderer retains its ordinary glyph shadow offset.
+An optional `disabledColor` replaces the foreground only when an editor is disabled; null uses `color` in both states.
+The shadow policy applies in both states, so `TextStyle.TextField.copy(shadow = null)` disables both enabled and disabled shadows.
+Style changes do not select fonts or change logical text metrics, clipping, or semantic labels.
+
+Both Web themes use these text colors and a one-CSS-pixel shadow offset.
+The Native theme uses a dark default root background so the standard white foreground remains readable; it retains browser fonts and native controls.
+This color contract does not imply matching browser and Minecraft font pixels or geometry.
+
 ## Input appearance
 
 Use `TextInputAppearance.Custom` on standard TextField or TextArea for a light or colored editor.

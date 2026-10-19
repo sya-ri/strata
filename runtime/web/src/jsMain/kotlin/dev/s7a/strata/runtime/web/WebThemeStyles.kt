@@ -8,8 +8,7 @@ import org.w3c.dom.HTMLElement
 internal fun installWebTheme(
     root: HTMLElement,
     theme: WebTheme,
-): HTMLElement? {
-    if (theme == WebTheme.Native) return null
+): HTMLElement {
     val document = checkNotNull(root.ownerDocument)
     val style = document.createElement("style") as HTMLElement
     style.setAttribute("data-strata-styles", theme.token)
@@ -24,7 +23,9 @@ internal fun installWebTheme(
 internal fun webThemeStyles(theme: WebTheme): String =
     when (theme) {
         WebTheme.Native -> {
-            ""
+            """
+            [data-strata-theme-root="native"] { background-color: #292522; color: #fff; }
+            """.trimIndent()
         }
 
         WebTheme.Minecraft -> {

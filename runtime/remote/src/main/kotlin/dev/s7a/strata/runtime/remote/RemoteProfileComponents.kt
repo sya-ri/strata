@@ -5,7 +5,6 @@ package dev.s7a.strata.runtime.remote
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.TabSelectionIndicator
-import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.projection.ProjectionFields
@@ -33,7 +32,7 @@ internal object RemoteProfileComponents {
         element(registry, RemoteProfileComponent.Text) {
             val text = RemoteTextCodec.decode(value())
             val layout = RemoteProperties.textLayout(value())
-            val style = enumeration<TextStyle>(this)
+            val style = RemoteProperties.textStyle(value())
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.isEmpty())
                 ComponentRuntimeBridge.current().text(text, layout, style, context.modifier, context.key)

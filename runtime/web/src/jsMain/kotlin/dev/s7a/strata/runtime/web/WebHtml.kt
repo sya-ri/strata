@@ -81,11 +81,9 @@ public fun renderWebDocument(
     viewportMeta.setAttribute("name", "viewport")
     viewportMeta.setAttribute("content", "width=device-width, initial-scale=1")
     head.appendChild(viewportMeta)
-    if (theme != WebTheme.Native) {
-        val stylesheet = output.createElement("style")
-        stylesheet.textContent = webThemeStyles(theme)
-        head.appendChild(stylesheet)
-    }
+    val stylesheet = output.createElement("style")
+    stylesheet.textContent = webThemeStyles(theme)
+    head.appendChild(stylesheet)
     val body = requireNotNull(output.body)
     body.style.margin = "0"
     if (theme == WebTheme.Minecraft) body.style.backgroundColor = "#171717"

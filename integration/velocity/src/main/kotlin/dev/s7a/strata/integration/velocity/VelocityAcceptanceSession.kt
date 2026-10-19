@@ -7,6 +7,7 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
@@ -119,7 +120,7 @@ internal class VelocityAcceptanceSession(
         checkOwner()
         return UiDefinition(title) {
             Column(Modifier.padding(8), spacing = 4) {
-                TextField(field, IntSize(160, 20))
+                TextField(field, IntSize(160, 20), textStyle = TextStyle.Inactive.copy(shadow = null))
                 Button(
                     "Apply",
                     160,

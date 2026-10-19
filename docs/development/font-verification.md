@@ -65,13 +65,14 @@ The Minecraft 1.20.5 development and production test launches also set the game'
 This test-only launch setting leaves font resources, providers, rendering, and acceptance assertions unchanged.
 
 The representative ordinary-font fixtures compare Minecraft 1.20, 1.20.5, and 26.3 at GUI scales 1, 2, and 3; a pass requires fresh successful receipts from the selected revision and environment.
-Each target compares 23 provider metric probes, 21 glyph rasters, 19 layout rows, and 1,075,200 final pixels across the three scales, with no unclassified final-image differences.
+Each target compares 23 provider metric probes, 21 glyph rasters, 20 layout rows, and 1,146,880 final pixels across the three scales, with no unclassified final-image differences.
+The scene includes a custom muted foreground without a shadow through the standard Text API.
 A successful receipt establishes evidence for its resources, target contract, and device observations, not pixel identity for every resource pack or graphics device.
 Build-only native evidence lives under each representative integration module's `font-parity` output; the separate CPU receipts live under `runtime/minecraft-fonts-lwjgl/build/font-offline-parity`.
 Earlier failed runs remain diagnostics, not acceptance receipts.
 
 Minecraft 26.3 also runs a separate default-font readability scene with Japanese, Korean, and a supplementary emoji, using the active resource stack and unchanged native font options.
-Its opaque container-label text must match native Minecraft, Fabric, and headless ARGB exactly at GUI scales 1, 2, and 3, without a GPU-difference allowance.
+Its custom muted shadowless text must match native Minecraft, Fabric, and headless ARGB exactly at GUI scales 1, 2, and 3, without a GPU-difference allowance.
 The `font-parity/readability` receipt records resource hashes, options, actual scales, and full-frame captures; separately labelled Text and TextArea previews are newly rasterized headlessly at scales 2 and 3.
 These previews explain the loss of CJK strokes at scale 1 without substituting a different font or enlarging an existing raster; see [rendering density](../guides/text.md#rendering-density).
 
