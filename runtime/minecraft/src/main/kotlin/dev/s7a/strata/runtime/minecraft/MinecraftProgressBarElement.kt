@@ -1,5 +1,3 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.element.Element
@@ -19,7 +17,6 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.semantics.SemanticsScope
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.node.Node as RetainedNode
 

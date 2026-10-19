@@ -2,7 +2,6 @@ package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Immutable internal Button sprite policy retained by one complete profile.
@@ -11,7 +10,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * @property border positive horizontal nine-slice border that leaves a nonempty source center; each component validates its destination width.
  * @property centerMode typed center sampling policy.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftButtonSpriteSnapshot private constructor(
     @get:JvmSynthetic
     internal val image: DrawImage,

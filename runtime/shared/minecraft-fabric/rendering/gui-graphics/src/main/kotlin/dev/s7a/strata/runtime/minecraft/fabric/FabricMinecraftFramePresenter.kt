@@ -112,6 +112,25 @@ internal class FabricMinecraftFramePresenter(
             } else {
                 FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling()), scale, compositionEnabled = supportsFabricMinecraftOrderedComposition())
             }
+        submitFrame(graphics, inputs, viewport, scale, platformRenderer)
+        if (reusePreparedFrame.not() && portableFrames.releaseGeneration == generation) {
+            preparedCommands = commands
+            preparedViewport = viewport
+            preparedScale = scale
+            preparedInputs = inputs
+        }
+    }
+
+    /**
+     * Borrows sampled and portable textures through one synchronous ordered frame submission.
+     */
+    private fun submitFrame(
+        graphics: GuiGraphics,
+        inputs: FabricMinecraftFrameInputs,
+        viewport: IntSize,
+        scale: Int,
+        platformRenderer: (GuiGraphics, DrawCommand.Platform) -> Unit,
+    ) {
         sampledImages.present(
             inputs,
         ) { resolved, textureFor, sampledQueued ->
@@ -147,16 +166,7 @@ internal class FabricMinecraftFramePresenter(
                         is FabricMinecraftFrameLayer.Portable -> {
                             val texture = textures[textureIndex++]
                             portableQueued()
-                            FabricMinecraftTextureBlitter.blit(
-                                graphics,
-                                texture.location,
-                                layer.bounds.left,
-                                layer.bounds.top,
-                                layer.bounds.width,
-                                layer.bounds.height,
-                                Math.multiplyExact(layer.bounds.width, scale),
-                                Math.multiplyExact(layer.bounds.height, scale),
-                            )
+                            presentPortableTexture(graphics, texture, layer.bounds, scale)
                         }
 
                         is FabricMinecraftFrameLayer.Sampled -> {
@@ -168,8 +178,7 @@ internal class FabricMinecraftFramePresenter(
                             } else {
                                 val output = textures[textureIndex++]
                                 portableQueued()
-                                val bounds = layer.visibleBounds
-                                FabricMinecraftTextureBlitter.blit(graphics, output.location, bounds.left, bounds.top, bounds.width, bounds.height, Math.multiplyExact(bounds.width, scale), Math.multiplyExact(bounds.height, scale))
+                                presentPortableTexture(graphics, output, layer.visibleBounds, scale)
                             }
                         }
 
@@ -180,13 +189,27 @@ internal class FabricMinecraftFramePresenter(
                 }
             }
         }
+    }
 
-        if (reusePreparedFrame.not() && portableFrames.releaseGeneration == generation) {
-            preparedCommands = commands
-            preparedViewport = viewport
-            preparedScale = scale
-            preparedInputs = inputs
-        }
+    /**
+     * Submits one queued portable texture at the frame's validated GUI scale.
+     */
+    private fun presentPortableTexture(
+        graphics: GuiGraphics,
+        texture: FabricMinecraftPortableTexture,
+        bounds: IntRect,
+        scale: Int,
+    ) {
+        FabricMinecraftTextureBlitter.blit(
+            graphics,
+            texture.location,
+            bounds.left,
+            bounds.top,
+            bounds.width,
+            bounds.height,
+            Math.multiplyExact(bounds.width, scale),
+            Math.multiplyExact(bounds.height, scale),
+        )
     }
 
     /**

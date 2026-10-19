@@ -1,22 +1,21 @@
 package dev.s7a.strata.runtime.minecraft.fabric;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.NativeImage;
 import dev.s7a.strata.component.PlayerSkinSource;
 import dev.s7a.strata.component.SlotBinding;
-import dev.s7a.strata.geometry.IntSize;
 import dev.s7a.strata.input.InputResult;
 import dev.s7a.strata.input.PointerButton;
 import dev.s7a.strata.input.PointerEvent;
 import dev.s7a.strata.render.DrawImage;
-import dev.s7a.strata.render.DrawImages;
 import dev.s7a.strata.render.PlatformDrawCommand;
 import dev.s7a.strata.resource.ResourceId;
 import dev.s7a.strata.runtime.minecraft.MinecraftInventorySlotBinding;
 import dev.s7a.strata.runtime.minecraft.MinecraftPlayerSkinBinding;
 import dev.s7a.strata.runtime.minecraft.MinecraftPlatformCommandRenderer;
 import dev.s7a.strata.runtime.minecraft.MinecraftUiPlatform;
+import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSkinBindingLifecycle.SkinCompletion;
+import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSkinBindingLifecycle.SkinFailed;
+import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSkinBindingLifecycle.SkinReady;
 import dev.s7a.strata.runtime.render.DrawCommand;
 import dev.s7a.strata.runtime.remote.RemoteFailure;
 import dev.s7a.strata.runtime.remote.RemoteProtocolException;
@@ -25,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
@@ -35,15 +34,11 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -69,6 +64,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     private final Set<SkinBinding> skinBindings = new LinkedHashSet<>();
     private final Set<Binding> quickCraftSlots = new LinkedHashSet<>();
     private Minecraft minecraft;
+    private final BiFunction<Minecraft, PlayerSkinSource, CompletableFuture<Optional<FabricMinecraftSkinReference>>> skinLookup;
     private NativeInput input;
     private Binding hovered;
     private Binding offeredHover;
@@ -242,152 +238,13 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         }
     }
 
-    /**
-     * One terminal result delivered by the asynchronous Minecraft skin lookup.
-     */
-    interface SkinCompletion {
-    }
-
-    /**
-     * Successful Minecraft skin lookup retained only until the owner-thread frame boundary.
-     */
-    private static final class SkinReady implements SkinCompletion {
-        private final PlayerSkin skin;
-
-        private SkinReady(PlayerSkin skin) {
-            this.skin = skin;
-        }
-    }
-
-    /**
-     * Unusable or failed Minecraft skin lookup result.
-     */
-    enum SkinFailed implements SkinCompletion {
-        INSTANCE
-    }
-
-    private interface SkinLifecycleState {
-    }
-
-    private enum SkinLookingUp implements SkinLifecycleState {
-        INSTANCE
-    }
-
-    private static final class SkinCompleted implements SkinLifecycleState {
-        private final SkinCompletion completion;
-
-        private SkinCompleted(SkinCompletion completion) {
-            this.completion = completion;
-        }
-    }
-
-    private enum SkinResolved implements SkinLifecycleState {
-        INSTANCE
-    }
-
-    private enum SkinClosed implements SkinLifecycleState {
-        INSTANCE
-    }
-
-    /**
-     * Atomic lookup lifecycle shared by the owner thread and one asynchronous completion callback.
-     *
-     * <p>Only {@link #publish(SkinCompletion)} may run away from the owner thread. Closing atomically replaces every active state, drops a queued native completion, and clears the retained immutable snapshot.</p>
-     */
-    static final class SkinBindingLifecycle {
-        private final AtomicReference<SkinLifecycleState> state = new AtomicReference<>(SkinLookingUp.INSTANCE);
-        private MinecraftPlayerSkinBinding.Snapshot snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending.INSTANCE;
-
-        /**
-         * Publishes the sole asynchronous completion if lookup ownership remains active.
-         *
-         * @param completion terminal lookup result retained until the owner-thread frame boundary.
-         * @return whether this lifecycle accepted the completion.
-         */
-        boolean publish(SkinCompletion completion) {
-            Objects.requireNonNull(completion, "Minecraft player skin completion must not be null.");
-            SkinLifecycleState current = state.get();
-            while (current == SkinLookingUp.INSTANCE) {
-                SkinCompleted completed = new SkinCompleted(completion);
-                if (state.compareAndSet(current, completed)) {
-                    return true;
-                }
-                current = state.get();
-            }
-            return false;
-        }
-
-        /**
-         * Transfers one accepted completion to the owner thread exactly once.
-         *
-         * @return queued completion, or null while lookup is pending, already resolved, or closed.
-         */
-        SkinCompletion drainCompletion() {
-            SkinLifecycleState current = state.get();
-            while (current instanceof SkinCompleted completed) {
-                if (state.compareAndSet(current, SkinResolved.INSTANCE)) {
-                    return completed.completion;
-                }
-                current = state.get();
-            }
-            return null;
-        }
-
-        /**
-         * Commits one immutable owner-thread snapshot after a completion has been drained.
-         *
-         * @param next normalized ready or failed snapshot.
-         * @return whether a distinct active snapshot was retained.
-         */
-        boolean commitSnapshot(MinecraftPlayerSkinBinding.Snapshot next) {
-            Objects.requireNonNull(next, "Minecraft player skin snapshot must not be null.");
-            if (state.get() != SkinResolved.INSTANCE || snapshot.equals(next)) {
-                return false;
-            }
-            snapshot = next;
-            return true;
-        }
-
-        /**
-         * Returns the currently retained owner-thread snapshot.
-         *
-         * @return pending, ready, or failed snapshot; close resets this value to pending.
-         */
-        MinecraftPlayerSkinBinding.Snapshot retainedSnapshot() {
-            return snapshot;
-        }
-
-        /**
-         * Atomically abandons lookup ownership and releases every queued or committed result.
-         *
-         * @return whether this call performed the active-to-closed transition.
-         */
-        boolean close() {
-            SkinLifecycleState previous = state.getAndSet(SkinClosed.INSTANCE);
-            if (previous == SkinClosed.INSTANCE) {
-                return false;
-            }
-            snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending.INSTANCE;
-            return true;
-        }
-
-        /**
-         * Returns whether lookup ownership has been released.
-         *
-         * @return true only after the atomic closed transition.
-         */
-        boolean isClosed() {
-            return state.get() == SkinClosed.INSTANCE;
-        }
-    }
-
     private final class SkinBinding implements MinecraftPlayerSkinBinding {
-        private final SkinBindingLifecycle lifecycle = new SkinBindingLifecycle();
+        private final FabricMinecraftSkinBindingLifecycle lifecycle = new FabricMinecraftSkinBindingLifecycle();
         private Function0<Unit> observer;
 
         private SkinBinding(PlayerSkinSource source) {
-            SkinBindingLifecycle completionTarget = lifecycle;
-            lookupSkin(source).whenComplete((resolved, failure) -> {
+            FabricMinecraftSkinBindingLifecycle completionTarget = lifecycle;
+            skinLookup.apply(requireMinecraft(), source).whenComplete((resolved, failure) -> {
                 if (failure == null && resolved.isPresent()) {
                     completionTarget.publish(new SkinReady(resolved.get()));
                 } else {
@@ -434,7 +291,7 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
             MinecraftPlayerSkinBinding.Snapshot next;
             if (completion instanceof SkinReady ready) {
                 try {
-                    next = new MinecraftPlayerSkinBinding.Snapshot.Ready(snapshotSkin(ready.skin));
+                    next = new MinecraftPlayerSkinBinding.Snapshot.Ready(ready.skin.snapshot(requireMinecraft()));
                 } catch (RuntimeException failure) {
                     next = MinecraftPlayerSkinBinding.Snapshot.Failed.INSTANCE;
                 }
@@ -467,19 +324,21 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         }
     }
 
-    private FabricMinecraftInventoryBridge(Minecraft minecraft) {
+    private FabricMinecraftInventoryBridge(Minecraft minecraft, BiFunction<Minecraft, PlayerSkinSource, CompletableFuture<Optional<FabricMinecraftSkinReference>>> skinLookup) {
         this.minecraft = minecraft;
+        this.skinLookup = skinLookup;
     }
 
     /**
      * Creates one bridge on the current Minecraft client thread.
      *
      * @param minecraft active client instance retained until close.
+     * @param skinLookup compiler-selected resolver called on the client owner; completions retain descriptors or detached pixels only.
      * @return a new platform bridge.
      */
-    static FabricMinecraftInventoryBridge create(Minecraft minecraft) {
+    static FabricMinecraftInventoryBridge create(Minecraft minecraft, BiFunction<Minecraft, PlayerSkinSource, CompletableFuture<Optional<FabricMinecraftSkinReference>>> skinLookup) {
         checkState(minecraft.isSameThread(), "Minecraft inventory Slots require the client thread.");
-        return new FabricMinecraftInventoryBridge(minecraft);
+        return new FabricMinecraftInventoryBridge(minecraft, skinLookup);
     }
 
     @Override
@@ -973,45 +832,6 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
             throw new IllegalArgumentException("Container slot index is not exposed by the active menu: " + index);
         }
         return resolved;
-    }
-
-    private CompletableFuture<Optional<PlayerSkin>> lookupSkin(PlayerSkinSource source) {
-        Minecraft client = requireMinecraft();
-        CompletableFuture<GameProfile> profile;
-        if (source == PlayerSkinSource.CurrentPlayer.INSTANCE) {
-            profile = CompletableFuture.completedFuture(client.getGameProfile());
-        } else if (source instanceof PlayerSkinSource.Name name) {
-            profile = ResolvableProfile.createUnresolved(name.getValue()).resolveProfile(client.services().profileResolver());
-        } else if (source instanceof PlayerSkinSource.Uuid uuid) {
-            profile = ResolvableProfile.createUnresolved(uuid.getValue()).resolveProfile(client.services().profileResolver());
-        } else {
-            throw new IllegalArgumentException("Unsupported player skin source: " + source.getClass().getName());
-        }
-        return profile.thenCompose(client.getSkinManager()::get);
-    }
-
-    private DrawImage snapshotSkin(PlayerSkin skin) {
-        ClientAsset.Texture body = skin.body();
-        if (body instanceof ClientAsset.ResourceTexture resource) {
-            var identifier = resource.texturePath();
-            return FabricMinecraftAssets.loadMinecraftUiImage(new ResourceId(identifier.getNamespace(), identifier.getPath()));
-        }
-        if (body instanceof ClientAsset.DownloadedTexture downloaded) {
-            var texture = requireMinecraft().getTextureManager().getTexture(downloaded.texturePath());
-            if ((texture instanceof DynamicTexture) == false) {
-                throw new IllegalStateException("The downloaded player skin is not backed by a dynamic texture.");
-            }
-            NativeImage image = ((DynamicTexture) texture).getPixels();
-            if (image.isClosed()) {
-                throw new IllegalStateException("The downloaded player skin has already been released.");
-            }
-            IntSize size = new IntSize(image.getWidth(), image.getHeight());
-            if (size.equals(new IntSize(64, 64)) == false) {
-                throw new IllegalArgumentException("Minecraft player skins must normalize to exactly 64 by 64 pixels.");
-            }
-            return DrawImages.createDrawImage(size, image.getPixels());
-        }
-        throw new IllegalArgumentException("Unsupported Minecraft player skin texture kind: " + body.getClass().getName());
     }
 
     private Minecraft requireMinecraft() {

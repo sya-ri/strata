@@ -25,18 +25,18 @@ import java.io.IOException
  */
 public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
     val minecraft = Minecraft.getInstance()
-    check(minecraft.isSameThread()) { "Minecraft UI images must be loaded on the client thread." }
+    check(minecraft.isSameThread) { "Minecraft UI images must be loaded on the client thread." }
     val identifier = minecraftResourceLocation(asset.namespace, asset.path)
     val resource =
         minecraft
-            .getResourceManager()
+            .resourceManager
             .getResource(identifier)
             .orElseThrow { IllegalArgumentException("Missing Minecraft resource: $identifier") }
     val pixels: IntArray
     val size: IntSize
     resource.open().use { stream ->
         NativeImage.read(stream).use { image ->
-            size = IntSize(image.getWidth(), image.getHeight())
+            size = IntSize(image.width, image.height)
             require(0 < size.width && 0 < size.height) { "Minecraft UI image dimensions must be positive." }
             pixels = copyFabricMinecraftArgbPixels(image)
         }
@@ -45,17 +45,23 @@ public fun loadMinecraftUiImage(asset: ResourceId): DrawImage {
 }
 
 /**
- * Copies one normalized native skin into an immutable platform-neutral image.
- *
- * @param image allocated RGBA native image read synchronously without mutation.
- * @return detached straight-ARGB pixels with the same dimensions.
- * @throws IllegalArgumentException when [image] is not exactly 64 by 64.
+ * Copies a borrowed native image after checking its normalized skin dimensions.
+ * The caller serializes pixel access on the image owner; this call neither retains nor closes the image.
  */
 @JvmSynthetic
 internal fun createPlayerSkinSnapshot(image: NativeImage): DrawImage {
     val size = IntSize(image.width, image.height)
     require(size == playerSkinSize) { "Minecraft player skins must normalize to exactly 64 by 64 pixels." }
     return createDrawImage(size, copyFabricMinecraftArgbPixels(image))
+}
+
+/**
+ * Validates a detached resource-backed skin without copying its immutable pixels.
+ */
+@JvmSynthetic
+internal fun requireNormalizedPlayerSkin(image: DrawImage): DrawImage {
+    require(image.size == playerSkinSize) { "Minecraft player skins must normalize to exactly 64 by 64 pixels." }
+    return image
 }
 
 private val playerSkinSize = IntSize(64, 64)

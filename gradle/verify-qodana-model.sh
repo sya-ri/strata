@@ -802,7 +802,6 @@ if [[ "$docs_showcase_source_count" -ne 1 || "$docs_target_source_count" -ne 1 ]
 fi
 
 for version in "${expected_versions[@]}"; do
-  runtime_font_source="file://\$PROJECT_DIR\$/runtime/minecraft-fabric-$version/src/font/kotlin"
   runtime_font_source_count=0
   integration_test_source_count=0
   integration_component_source_count=0
@@ -811,7 +810,7 @@ for version in "${expected_versions[@]}"; do
     if [[ "$expected_owner" == 'runtime' && \
       "$expected_version" == "$version" && \
       "$expected_type" == 'Source' && \
-      "$expected_path" == "$runtime_font_source" ]]; then
+      "$expected_path" == 'file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/resources/font-'*'/src/main/kotlin' ]]; then
       ((runtime_font_source_count += 1))
     elif [[ "$expected_owner" == 'integration' && \
       "$expected_version" == "$version" && \
@@ -828,7 +827,7 @@ for version in "${expected_versions[@]}"; do
     fi
   done < "$expected_target_source_roots"
   if [[ "$runtime_font_source_count" -ne 1 ]]; then
-    echo "The generated runtime IDEA module must contain exactly one owned font Source: version=$version count=$runtime_font_source_count" >&2
+    echo "The generated runtime IDEA module must contain exactly one selected font Source: version=$version count=$runtime_font_source_count" >&2
     exit 1
   elif [[ "$integration_test_source_count" -eq 0 ]]; then
     echo "The generated integration IDEA module must contain at least one TestSource: version=$version" >&2

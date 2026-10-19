@@ -1,10 +1,7 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.runtime.remote.toUiCapabilities
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiClientCapabilities
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiSession

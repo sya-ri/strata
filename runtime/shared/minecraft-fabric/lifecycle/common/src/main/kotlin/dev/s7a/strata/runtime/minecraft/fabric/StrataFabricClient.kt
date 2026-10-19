@@ -51,7 +51,7 @@ public class StrataFabricClient : ClientModInitializer {
     private object Presenter : ScreenPresenter {
         override fun present(definition: ScreenDefinition) {
             val minecraft = Minecraft.getInstance()
-            if (minecraft.isSameThread().not()) throw ScreenOpenThreadException("UI opening requires the Minecraft client thread.")
+            if (minecraft.isSameThread.not()) throw ScreenOpenThreadException("UI opening requires the Minecraft client thread.")
             definition.asUiDefinition().open()
         }
     }
