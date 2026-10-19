@@ -158,6 +158,25 @@ class PlanCiTest(unittest.TestCase):
         self.assertEqual([], result.pop("minecraft"))
         self.assertTrue(all(result.values()))
 
+    def test_build_logic_tests_keep_jvm_analysis_without_unrelated_platform_acceptance(self):
+        expected = planner.plan([])
+        expected.update(common=True, workflow=True, qodana=True)
+        tests = ["build-logic/src/test/kotlin/dev/s7a/strata/gradle/ProjectModelFunctionalTest.kt",
+                 "build-logic/src/test/resources/model/settings.gradle.kts"]
+        for path in tests:
+            with self.subTest(path=path):
+                self.assertEqual(expected, planner.plan([path]))
+        self.assertEqual(expected, planner.plan(tests))
+        for path in ("build-logic/src/main/kotlin/dev/s7a/strata/gradle/Plugin.kt", "build-logic/build.gradle.kts",
+                     "build-logic/unknown-input", "gradle/libs.versions.toml"):
+            for paths in ([tests[0], path], [path, tests[0]]):
+                with self.subTest(paths=paths):
+                    self.assertEqual(planner.plan([path]), planner.plan(paths))
+        self.assertEqual(planner.plan([], full=True), planner.plan(tests, full=True))
+        mixed = planner.plan(["api/src/main/kotlin/Element.kt"])
+        mixed["workflow"] = True
+        self.assertEqual(mixed, planner.plan(tests + ["api/src/main/kotlin/Element.kt"]))
+
     def test_source_model_setup_is_limited_to_unresolved_native_changes(self):
         native = "runtime/shared/minecraft-fabric/input/Changed.kt"
         cases = [([native], None, (True, True, False)),
