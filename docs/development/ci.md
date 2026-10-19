@@ -124,6 +124,7 @@ Qodana enables IntelliJ's shared-source support and batch inspection of all code
 Source and compiled-library roots use resolved file URLs without directory suffixes, and declared output directories that were never produced are omitted from libraries.
 No synthetic fallback library or cross-variant friend relationship substitutes for a compiler's own sources.
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
+Every SARIF run must identify the selected revision and explicitly record successful analysis invocations.
 The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
 Each Kotlin owner's facet preserves its compiler module name, JVM target, friend paths, and explicit API mode.
 `UnusedSymbol` and `RedundantVisibilityModifier` remain enabled without path exclusions; Mixin annotations identify framework entry points.

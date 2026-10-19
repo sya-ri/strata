@@ -504,7 +504,7 @@ inventory = dict(revision=revision, tracked={name: hashlib.sha256((root / name).
 model_path.write_text(json.dumps(model))
 model_path.with_name("Java.json").write_text(json.dumps({"modules": [{"name": owner["module"], "languageLevel": owner["java"]} for owner in owners] + [{"name": "docs", "languageLevel": 17}]}))
 sarif_path = model_path.with_name("qodana.sarif.json")
-sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": revision}]}]}))
+sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": revision}], "invocations": [{"executionSuccessful": True}]}]}))
 analysis_logs = model_path.parent / "log"
 analysis_logs.mkdir(exist_ok=True)
 (analysis_logs / "idea.log").write_text("Synthetic resolved module evidence.\nJVM options: [-Dintellij.platform.shared.source.support=true, -Dbatch.inspections.inspect.all.code.insight.contexts=true]\n", encoding="utf-8")
@@ -753,12 +753,15 @@ for mutation in ("stale-revision", "missing-owner", "omitted-owner-inventory", "
     inventory_path.write_bytes(original_inventory)
 validate(model_path)
 original_sarif = sarif_path.read_bytes()
-sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": "0" * 40}]}]}))
+sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": "0" * 40}], "invocations": [{"executionSuccessful": True}]}]}))
 validate(model_path, rejected=True)
 sarif_path.write_bytes(original_sarif)
 
 # Successful model import does not make an incomplete analysis acceptable.
 for invocation in (
+    {},
+    {"executionSuccessful": None},
+    {"executionSuccessful": 1},
     {"executionSuccessful": False},
     {"executionSuccessful": True, "toolExecutionNotifications": [{"level": "error", "message": {"text": "Unresolved compiler library."}}]},
 ):

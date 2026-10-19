@@ -99,6 +99,33 @@ class QodanaAnalysisTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "semantic sanity problems"):
             CHECKER.verify_report(report, "current")
 
+    def test_every_run_requires_its_own_selected_revision(self):
+        valid = {"versionControlProvenance": [{"revisionId": "current"}], "invocations": [{"executionSuccessful": True}]}
+        for provenance in (None, [], [{"revisionId": "other"}]):
+            with self.subTest(provenance=provenance):
+                additional = copy.deepcopy(valid)
+                if provenance is None:
+                    additional.pop("versionControlProvenance")
+                else:
+                    additional["versionControlProvenance"] = provenance
+                with self.assertRaisesRegex(ValueError, "selected declaration revision"):
+                    CHECKER.verify_report({"runs": [valid, additional]}, "current")
+
+    def test_missing_or_non_boolean_invocation_success_is_rejected(self):
+        valid = {"versionControlProvenance": [{"revisionId": "current"}], "invocations": [{"executionSuccessful": True}]}
+        CHECKER.verify_report({"runs": [valid, copy.deepcopy(valid)]}, "current")
+        for invocations in (None, [], [{}], [{"executionSuccessful": None}], [{"executionSuccessful": 1}],
+                            [{"executionSuccessful": "true"}], [{"executionSuccessful": False}],
+                            [{"executionSuccessful": True}, {"executionSuccessful": False}]):
+            with self.subTest(invocations=invocations):
+                additional = copy.deepcopy(valid)
+                if invocations is None:
+                    additional.pop("invocations")
+                else:
+                    additional["invocations"] = invocations
+                with self.assertRaisesRegex(ValueError, "analysis invocation did not complete successfully"):
+                    CHECKER.verify_report({"runs": [valid, additional]}, "current")
+
 
 if __name__ == "__main__":
     unittest.main()
