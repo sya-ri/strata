@@ -47,7 +47,10 @@ public class FabricRemotePayload : CustomPacketPayload {
          * Namespaced native type for the external Strata plugin-message channel.
          */
         @JvmField
-        public val TYPE: Type<FabricRemotePayload> = Type(parseMinecraftResourceLocation(RemoteConnection.CHANNEL))
+        public val TYPE: Type<FabricRemotePayload> =
+            RemoteConnection.CHANNEL.split(':', limit = 2).let { (namespace, path) ->
+                Type(minecraftResourceLocation(namespace, path))
+            }
 
         /**
          * Copies bounded incoming bytes once and encodes owned frames without transferring their storage.
