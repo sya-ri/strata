@@ -8,11 +8,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 /**
- * JVM worker-local storage kept outside the shared companion-key declaration.
- */
-private val generationStorage = ThreadLocal<SessionGenerationToken>()
-
-/**
  * Installs this attachment through the JVM coroutine hooks, including worker sections entered with withContext.
  */
 internal actual class SessionGenerationToken actual constructor() :
@@ -40,19 +35,20 @@ internal actual class SessionGenerationToken actual constructor() :
             block.run()
         }
 
-        override fun updateThreadContext(context: CoroutineContext): SessionGenerationToken? = generationStorage.get().also { generationStorage.set(this) }
+        override fun updateThreadContext(context: CoroutineContext): SessionGenerationToken? = storage.get().also { storage.set(this) }
 
         override fun restoreThreadContext(
             context: CoroutineContext,
             oldState: SessionGenerationToken?,
         ) {
-            if (oldState == null) generationStorage.remove() else generationStorage.set(oldState)
+            if (oldState == null) storage.remove() else storage.set(oldState)
         }
 
         /**
          * Identifies this context element and isolates the executing generation per JVM thread.
          */
         actual companion object Key : CoroutineContext.Key<SessionGenerationToken> {
-            actual val current: SessionGenerationToken? get() = generationStorage.get()
+            private val storage = ThreadLocal<SessionGenerationToken>()
+            actual val current: SessionGenerationToken? get() = storage.get()
         }
     }
