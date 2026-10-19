@@ -57,7 +57,7 @@ jobs:
             qodana-shared-analysis-fixture
           include-hidden-files: true
   actual-context:
-    if: inputs.context != '' && inputs.context != 'fixture-copy' && inputs.context != 'fixture-sdk'
+    if: inputs.context != '' && inputs.context != 'fixture-copy' && inputs.context != 'fixture-sdk' && inputs.context != 'fixture-sdk-shared'
     runs-on: ubuntu-latest
     env:
       STRATA_PROBE_CONTEXT: ${{ inputs.context }}
@@ -123,12 +123,12 @@ jobs:
             .idea
           include-hidden-files: true
   sdk-context:
-    if: inputs.context == 'fixture-sdk'
+    if: inputs.context == 'fixture-sdk' || inputs.context == 'fixture-sdk-shared'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        mode: [inherited, actual]
+        mode: ${{ fromJSON(inputs.context == 'fixture-sdk-shared' && '["actual", "actual-shared"]' || '["inherited", "actual"]') }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-strata-java
@@ -153,6 +153,8 @@ jobs:
             --project-dir=${{ github.workspace }}/qodana-sdk-analysis-fixture
             --config=${{ github.workspace }}/qodana-sdk-analysis-fixture/probe.yaml
             --property=idea.config.path=${{ github.workspace }}/qodana-sdk-analysis-fixture/ide-config
+            --property=intellij.platform.shared.source.support=true
+            --property=batch.inspections.inspect.all.code.insight.contexts=true
       - name: Check real SDK APIs and unused canaries
         if: always()
         run: python3 -B gradle/probe-qodana-sdks.py inspect "${{ matrix.mode }}" "${{ runner.temp }}/sdk-results"

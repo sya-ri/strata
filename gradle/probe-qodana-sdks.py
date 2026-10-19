@@ -97,6 +97,8 @@ import java.lang.ScopedValue
 
 /** Resolves a real Java 25 API absent from the Java 17 SDK. */
 internal fun versionValue(): Int = ScopedValue::class.java.simpleName.length + 9
+
+private fun unusedNewSdkCanary(): Int = 0
 ''')
     for name, expected in (("old", 13), ("new", 23)):
         write(f"{name}/src/main/kotlin/fixture/Host.kt", f'''package fixture
@@ -108,7 +110,7 @@ public fun main() {{ check(entry() == {expected}) }}
 
 def export(mode):
     """Keep compiled bytes and classpaths fixed while changing only the IDEA SDK binding."""
-    assert mode in {"inherited", "actual"}
+    assert mode in {"inherited", "actual", "actual-shared"}
     application = ET.Element("application")
     table = ET.SubElement(application, "component", name="ProjectJdkTable")
     project = ET.Element("project", version="4")
@@ -140,15 +142,17 @@ def export(mode):
         ET.SubElement(sdk, "additional")
         module = ET.Element("module", type="JAVA_MODULE", version="4")
         manager = ET.SubElement(module, "component", name="NewModuleRootManager", LANGUAGE_LEVEL=f"JDK_{metadata['java']}")
-        shared = fixture / name / "analysis-shared"
-        shutil.copytree(fixture / "shared", shared, dirs_exist_ok=True)
-        assert {path.relative_to(shared): path.read_bytes() for path in shared.rglob("*") if path.is_file()} == {
-            path.relative_to(fixture / "shared"): path.read_bytes() for path in (fixture / "shared").rglob("*") if path.is_file()
-        }
+        shared = fixture / "shared"
+        if mode != "actual-shared":
+            shared = fixture / name / "analysis-shared"
+            shutil.copytree(fixture / "shared", shared, dirs_exist_ok=True)
+            assert {path.relative_to(shared): path.read_bytes() for path in shared.rglob("*") if path.is_file()} == {
+                path.relative_to(fixture / "shared"): path.read_bytes() for path in (fixture / "shared").rglob("*") if path.is_file()
+            }
         for path in (fixture / name / "src/main/kotlin", shared):
             url = "file://" + path.as_posix()
             ET.SubElement(ET.SubElement(manager, "content", url=url), "sourceFolder", url=url, isTestSource="false")
-        if mode == "actual":
+        if mode != "inherited":
             ET.SubElement(manager, "orderEntry", type="jdk", jdkName=sdk_name, jdkType="JavaSDK")
         else:
             ET.SubElement(manager, "orderEntry", type="inheritedJdk")
@@ -185,6 +189,14 @@ def inspect(mode, results):
     rows = list(csv.DictReader((results / "log/qodana_inspections_summary.csv").open(encoding="utf-8-sig"), delimiter=";"))
     assert 0 < sum(int(row["Times Inspection was Performed"]) for row in rows if row["Inspection Language"].casefold() == "kotlin")
     modules = json.loads((results / "projectStructure/Modules.json").read_text(encoding="utf-8"))["modules"]
+    for module in modules:
+        name = module["name"].removeprefix("sdk-")
+        shared = "shared" if mode == "actual-shared" else name + "/analysis-shared"
+        expected_roots = {"file://$PROJECT_DIR$/" + path for path in (name + "/src/main/kotlin", shared)}
+        roots = [source for entry in module["contentEntries"] for source in entry["sourceFolders"]]
+        assert {source["path"] for source in roots} == expected_roots and len(roots) == 2, roots
+        assert all(source["type"] == "Source" and not source.get("packagePrefix") for source in roots), roots
+        assert all(not entry.get("excludePatterns") and not entry.get("excludeFolders") for entry in module["contentEntries"]), module
     sdks = {module["name"]: [item["name"] for item in module["orderEntries"] if item.get("type") == "SDK"] for module in modules}
     print(json.dumps(dict(mode=mode, sdks=sdks, sanity=[item["message"]["text"] for item in sanity], findings=[(item["ruleId"], item["message"]["text"]) for item in findings]), indent=2))
     if mode == "inherited":
@@ -196,11 +208,17 @@ def inspect(mode, results):
     messages = [item["message"]["text"] for item in findings]
     unused = [item for item in findings if item["ruleId"] == "UnusedSymbol"]
     removal = [item for item in findings if item["ruleId"] == "MarkedForRemoval"]
-    assert len(findings) == 5 and len(unused) == 3 and len(removal) == 2, messages
+    assert len(findings) == len(unused) + len(removal) and len(removal) == 2, messages
     assert all("java.lang.Compiler" in item["message"]["text"] and item["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] == "old/src/main/kotlin/fixture/Value.kt" for item in removal), messages
-    assert sum('"unusedSdkCanary"' in message for message in messages) == 1 and sum('"unusedSharedCanary"' in message for message in messages) == 2, messages
+    assert sum('"unusedSdkCanary"' in message for message in messages) == 1 and sum('"unusedNewSdkCanary"' in message for message in messages) == 1, messages
+    shared_count = sum('"unusedSharedCanary"' in message for message in messages)
+    assert shared_count in ({1, 2} if mode == "actual-shared" else {2}), messages
+    assert len(unused) == 2 + shared_count, messages
     shared_paths = {item["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for item in findings if '"unusedSharedCanary"' in item["message"]["text"]}
-    assert len(shared_paths) == 2, "Both independently owned shared sources must really be inspected."
+    if mode == "actual-shared":
+        assert shared_paths == {"shared/Shared.kt"}, shared_paths
+    else:
+        assert shared_paths == {name + "/analysis-shared/Shared.kt" for name in ("old", "new")}, shared_paths
 
 
 if sys.argv[1] == "prepare":
