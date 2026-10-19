@@ -18,7 +18,7 @@ import kotlin.random.Random
 
 /**
  * Compares real logical-boundary lookup with a complete ordered Long-distance reference.
- * Coordinate-read counts execute the same inlined search without adding instrumentation to ordinary input.
+ * Array-read counts execute a test-only instrumented copy of the actual compiled search.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftTextLineLookupTest {
@@ -69,17 +69,23 @@ internal class MinecraftTextLineLookupTest {
         for (length in listOf(1, 8, 32_768)) {
             val positions = IntArray(length) { it / 64 - 200 }
             val line = line(positions)
-            val bound = 2 * (32 - Integer.numberOfLeadingZeros(length)) + 2
+            val probe = MinecraftTextLineReadProbe(line)
+            val bound = 2 * (32 - Integer.numberOfLeadingZeros(length)) + 3
             for (x in listOf(Int.MIN_VALUE, -200, 0, positions.last(), Int.MAX_VALUE)) {
                 assertEquals(reference(positions, x), line.offsetAt(x))
-                assertTrue(line.boundaryVisits(x) <= bound)
+                val sample = probe.lookup(x)
+                assertEquals(line.offsetAt(x), sample.offset)
+                assertTrue(sample.arrayReads <= bound)
             }
         }
         val unordered = IntArray(32_768) { if (it % 2 == 0) it else -it }
         val fallback = line(unordered)
+        val probe = MinecraftTextLineReadProbe(fallback)
         for (x in listOf(Int.MIN_VALUE, -16_384, 0, 16_384, Int.MAX_VALUE)) {
             assertEquals(reference(unordered, x), fallback.offsetAt(x))
-            assertEquals(unordered.size, fallback.boundaryVisits(x))
+            val sample = probe.lookup(x)
+            assertEquals(fallback.offsetAt(x), sample.offset)
+            assertEquals(unordered.size + 1, sample.arrayReads)
         }
     }
 
@@ -156,10 +162,11 @@ internal class MinecraftTextLineLookupTest {
                 positions[index + 1] = renderer.roundedWidth(width)
             }
             val before = calls
+            val probe = MinecraftTextLineReadProbe(line)
             for (index in offsets.indices) assertEquals(positions[index], line.caretX(offsets[index]))
             for (x in listOf(Int.MIN_VALUE, -4, 0, 1, 2, 4, Int.MAX_VALUE)) {
                 assertEquals(offsets[reference(positions, x)], line.offsetAt(x))
-                line.boundaryVisits(x)
+                assertEquals(line.offsetAt(x), probe.lookup(x).offset)
             }
             assertEquals(before, calls)
         }

@@ -106,7 +106,8 @@ internal object TextAreaInputAccess {
     }
 
     /**
-     * Checks candidate coordinate reads when available; old runtimes still execute the identical complete-scan oracle.
+     * Checks a former subject's optional diagnostic; current runtimes expose no lookup measurement hook.
+     * Every subject still executes the independent complete-scan oracle.
      */
     internal fun verifyVisits(
         line: Any,

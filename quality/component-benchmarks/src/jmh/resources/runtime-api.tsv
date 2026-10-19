@@ -3848,10 +3848,6 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRenderer$Compa
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRun#field:25:Companion:Ldev/s7a/strata/runtime/minecraft/MinecraftTextRun$Companion;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRun#type:17:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRun$Companion#type:25:java.lang.Object:
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRun$hasPreparedTextBounds$1#constructor:1:()V
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRun$hasPreparedTextBounds$1#field:25:INSTANCE:Ldev/s7a/strata/runtime/minecraft/MinecraftTextRun$hasPreparedTextBounds$1;
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRun$hasPreparedTextBounds$1#method:17:invoke:()V
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRun$hasPreparedTextBounds$1#type:25:java.lang.Object:kotlin.jvm.functions.Function0
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextVerticalBounds#constructor:1:(DD)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextVerticalBounds#method:17:component1$dev_s7a_strata_minecraft:()D
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextVerticalBounds#method:17:component2$dev_s7a_strata_minecraft:()D
