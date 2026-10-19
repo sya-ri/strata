@@ -753,6 +753,21 @@ sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revis
 validate(model_path, rejected=True)
 sarif_path.write_bytes(original_sarif)
 
+# Successful model import does not make an incomplete analysis acceptable.
+for invocation in (
+    {"executionSuccessful": False},
+    {"executionSuccessful": True, "toolExecutionNotifications": [{"level": "error", "message": {"text": "Unresolved compiler library."}}]},
+):
+    candidate = json.loads(original_sarif)
+    candidate["runs"][0]["invocations"] = [invocation]
+    sarif_path.write_text(json.dumps(candidate))
+    validate(model_path, rejected=True)
+candidate = json.loads(original_sarif)
+candidate["runs"][0]["invocations"] = [{"executionSuccessful": True, "toolExecutionNotifications": [{"level": "warning", "message": {"text": "Optional diagnostic."}}]}]
+sarif_path.write_text(json.dumps(candidate))
+validate(model_path)
+sarif_path.write_bytes(original_sarif)
+
 # The full native stage must admit an exact declared shared root in an arbitrary working owner.
 native_path = "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"
 native_url = "file://$PROJECT_DIR$/" + native_path

@@ -213,6 +213,7 @@ internal class QodanaJmhModelFunctionalTest {
             }
         }
         val projects = (parsed["projects"] as List<*>).map { it as Map<*, *> }
+        assertLibraryOutputRoots(projects)
         assertUniqueSourceOwnership(projects)
         val variantOne = projects.single { it["project"] == ":variant-one" }
         val variantTwo = projects.single { it["project"] == ":variant-two" }
@@ -346,6 +347,32 @@ internal class QodanaJmhModelFunctionalTest {
         assertTrue(contents.contains("bench-two/build/classes/kotlin/jmh/"))
         assertTrue(contents.contains("bench-two/build/resources/jmh/"))
         assertTrue(contents.contains("name=\"friendPaths\""))
+    }
+
+    /** Requires compiled libraries to resolve directly while omitting declared outputs that were never produced. */
+    private fun assertLibraryOutputRoots(projects: List<Map<*, *>>) {
+        val missing =
+            projects
+                .flatMap { project ->
+                    (project["outputs"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == false }.map { directory.resolve(it["path"] as String).normalize() }
+                }.toSet()
+        val unresolved = mutableListOf<String>()
+        projects.forEach { project ->
+            val modelFile = directory.resolve(project["iml"] as String)
+            val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(modelFile.toFile())
+            val libraries = model.getElementsByTagName("CLASSES")
+            (0 until libraries.length).forEach { libraryIndex ->
+                val roots = (libraries.item(libraryIndex) as Element).getElementsByTagName("root")
+                (0 until roots.length).forEach { rootIndex ->
+                    val url = (roots.item(rootIndex) as Element).getAttribute("url")
+                    if (url.startsWith("file://")) {
+                        val path = Path.of(url.removePrefix("file://").replace("\$PROJECT_DIR\$", directory.toString()).replace("\$MODULE_DIR\$", modelFile.parent.toString())).normalize()
+                        if (url.contains("\$PROJECT_DIR\$") || path in missing) unresolved.add("${project["module"]}: $url")
+                    }
+                }
+            }
+        }
+        assertEquals(emptyList<String>(), unresolved, "IDE libraries must not retain unresolved output roots.")
     }
 
     /** Compiles the same native closure in two variants while borrowing a physically versioned source root. */

@@ -276,6 +276,13 @@ def verify(root, model_path, container_root, java_path):
     revisions = {entry.get("revisionId") for run in sarif["runs"] for entry in run.get("versionControlProvenance", [])}
     if revisions != {revision}:
         fail("the analysis report does not belong to the selected declaration revision")
+    for run in sarif["runs"]:
+        for invocation in run.get("invocations", []):
+            if invocation.get("executionSuccessful") is False:
+                fail("the analysis invocation did not complete successfully")
+            for notification in invocation.get("toolExecutionNotifications", []):
+                if notification.get("level") == "error":
+                    fail(f"analysis reported an error: {notification['message'].get('text', '')}")
     modules = collections.defaultdict(list)
     for module in model["modules"]:
         modules[module["name"]].append(module)

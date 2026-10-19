@@ -41,6 +41,9 @@ tasks.register("qodanaKotlinModel") {
     doLast {
         val inventory = JsonSlurper().parse(rootProject.file("build/qodana/declarations.json")) as Map<*, *>
         val projects = (inventory["projects"] as List<*>).map { it as Map<*, *> }.filter { it["iml"] != null }
+        val absentOutputs = projects.flatMap { owner ->
+            (owner["outputs"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == false }.map { rootProject.file(it["path"] as String).toPath().toAbsolutePath().normalize() }
+        }.toSet()
         val roots = projects.flatMap { owner ->
             (owner["roots"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == true && it["generated"] == false }.map { root ->
                 val kind = root["kind"] as String
@@ -70,26 +73,26 @@ tasks.register("qodanaKotlinModel") {
             val lostRoots = roots.any { it.module == module && canonical.getValue(it.path).module != module }
             val outputs = (owner["outputs"] as List<*>).map { it as Map<*, *> }
             val fallback = if (lostRoots) outputs.filter { it["exists"] == true && (it["files"] as Map<*, *>).isNotEmpty() } else emptyList()
-            if (lostRoots) {
-                val ownedPaths = outputs.map { rootProject.file(it["path"] as String).toPath().toAbsolutePath().normalize() }.toSet()
-                // JMH exports main outputs under TEST; displaced production inputs need their actual COMPILE visibility.
-                manager.children("orderEntry").filter { it.getAttribute("type") == "module-library" }.forEach { entry ->
-                    val classes = entry.children("library").flatMap { it.children("CLASSES") }.flatMap { it.children("root") }
-                    val ownedRoots = classes.filter { classesRoot ->
-                        val url = classesRoot.getAttribute("url").removePrefix("jar://").removePrefix("file://").removeSuffix("!/")
-                            .replace("\$PROJECT_DIR\$", rootDir.absolutePath.replace(File.separatorChar, '/'))
-                            .replace("\$MODULE_DIR\$", output.parentFile.absolutePath.replace(File.separatorChar, '/'))
-                        File(url).toPath().toAbsolutePath().normalize() in ownedPaths
-                    }
-                    ownedRoots.forEach { it.parentNode.removeChild(it) }
-                    if (ownedRoots.isNotEmpty() && entry.children("library").flatMap { it.children("CLASSES") }.all { it.children("root").isEmpty() }) manager.removeChild(entry)
+            val displacedOutputs = if (lostRoots) outputs.map { rootProject.file(it["path"] as String).toPath().toAbsolutePath().normalize() }.toSet() else emptySet()
+            // JMH exports main outputs under TEST; displaced production inputs need their actual COMPILE visibility.
+            // NO-SOURCE Java and resource tasks do not create every declared output directory.
+            manager.children("orderEntry").filter { it.getAttribute("type") == "module-library" }.forEach { entry ->
+                val classes = entry.children("library").flatMap { it.children("CLASSES") }.flatMap { it.children("root") }
+                val discardedRoots = classes.filter { classesRoot ->
+                    val url = classesRoot.getAttribute("url").removePrefix("jar://").removePrefix("file://").removeSuffix("!/")
+                        .replace("\$PROJECT_DIR\$", rootDir.absolutePath.replace(File.separatorChar, '/'))
+                        .replace("\$MODULE_DIR\$", output.parentFile.absolutePath.replace(File.separatorChar, '/'))
+                    val path = File(url).toPath().toAbsolutePath().normalize()
+                    path in displacedOutputs || path in absentOutputs
                 }
+                discardedRoots.forEach { it.parentNode.removeChild(it) }
+                if (discardedRoots.isNotEmpty() && entry.children("library").flatMap { it.children("CLASSES") }.all { it.children("root").isEmpty() }) manager.removeChild(entry)
             }
             fallback.forEach { compiled ->
                 val scope = if (compiled["production"] == true) emptyMap() else mapOf("scope" to "TEST")
                 val entry = manager.element("orderEntry", mapOf("type" to "module-library") + scope)
                 val library = entry.element("library")
-                library.element("CLASSES").element("root", mapOf("url" to "file://\$PROJECT_DIR\$/${compiled["path"]}/"))
+                library.element("CLASSES").element("root", mapOf("url" to "file://${rootProject.file(compiled["path"] as String).canonicalPath.replace(File.separatorChar, '/')}/"))
                 library.element("JAVADOC")
                 library.element("SOURCES")
             }
