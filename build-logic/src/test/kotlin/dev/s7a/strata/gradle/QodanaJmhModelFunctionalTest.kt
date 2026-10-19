@@ -11,6 +11,7 @@ import org.w3c.dom.Element
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import javax.xml.parsers.DocumentBuilderFactory
 
 /** Runs production compiler exports and declaration inventory against working, Minecraft-independent owners. */
@@ -314,8 +315,13 @@ internal class QodanaJmhModelFunctionalTest {
                 .start()
         val verificationOutput = verifier.inputStream.bufferedReader().use { it.readText() }
         assertEquals(0, verifier.waitFor(), verificationOutput)
+        val sourceViews = JsonSlurper().parse(directory.resolve("build/qodana/source-views.json").toFile()) as Map<*, *>
+        val firstView = (sourceViews["roots"] as List<*>).first() as Map<*, *>
+        val obsoleteSource = directory.resolve(firstView["view"] as String).resolve("Obsolete.kt")
+        Files.writeString(obsoleteSource, "This stale file must not enter a later analysis.\n")
         val reused = runner().build()
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
+        assertTrue(Files.exists(obsoleteSource).not(), "Each analysis must recreate the exact selected source views.")
         assertEquals(parsed, JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()))
         val missingDependencyRunner = runner()
         val missingDependency = missingDependencyRunner.withArguments(missingDependencyRunner.arguments + "-Pfixture.missingRequiredClasspath=true").buildAndFail()
@@ -332,6 +338,25 @@ internal class QodanaJmhModelFunctionalTest {
 
     /** Verifies complete compiler contexts and physical containment, including shared roots outside module directories. */
     private fun assertDeclaredSourceContexts(projects: List<Map<*, *>>) {
+        val contexts =
+            projects
+                .flatMap { project ->
+                    (project["roots"] as List<*>)
+                        .map { it as Map<*, *> }
+                        .filter { it["exists"] == true && it["generated"] == false && it["kind"] in setOf("Source", "TestSource") }
+                        .map { it["path"] to project["module"] }
+                }.groupBy({ it.first }, { it.second })
+                .mapValues { (_, modules) -> modules.toSet() }
+
+        fun identity(
+            value: String,
+            length: Int,
+        ): String =
+            MessageDigest
+                .getInstance("SHA-256")
+                .digest(value.toByteArray())
+                .joinToString("") { "%02x".format(it) }
+                .take(length)
         projects.forEach { project ->
             val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(project["iml"] as String).toFile())
             val folders = model.getElementsByTagName("sourceFolder")
@@ -357,7 +382,26 @@ internal class QodanaJmhModelFunctionalTest {
                 (project["roots"] as List<*>)
                     .map { it as Map<*, *> }
                     .filter { it["exists"] == true && it["generated"] == false }
-                    .map { directory.resolve(it["path"] as String).normalize() to it["kind"] as String }
+                    .map { source ->
+                        val original = source["path"] as String
+                        val kind = source["kind"] as String
+                        val inputs = (source["inputs"] as List<*>).map { it as String }
+                        val filtered = inputs.toSet() != (source["files"] as Map<*, *>).keys
+                        val view =
+                            if (kind in setOf("Source", "TestSource") && (filtered || 1 < contexts.getValue(original).size)) {
+                                directory.resolve("qodana-analysis-sources/${identity(project["module"] as String, 12)}/${identity(original, 16)}")
+                            } else {
+                                directory.resolve(original)
+                            }
+                        if (view != directory.resolve(original)) {
+                            val files = Files.walk(view).use { paths -> paths.filter { Files.isRegularFile(it) }.map { view.relativize(it).toString().replace('\\', '/') }.toList() }
+                            assertEquals(inputs.map { it.removePrefix("$original/") }.toSet(), files.toSet(), "A source view must retain exactly the compiler-selected files.")
+                            inputs.forEach { input ->
+                                assertTrue(Files.readAllBytes(directory.resolve(input)).contentEquals(Files.readAllBytes(view.resolve(input.removePrefix("$original/")))), "Analysis source bytes must match the working compiler input: $input")
+                            }
+                        }
+                        view.normalize() to kind
+                    }
             assertEquals(expected.toSet(), observed.toSet(), "Every real compiler context must retain its declared roots.")
             assertEquals(observed.size, observed.toSet().size, "A compiler context must not repeat a root.")
         }

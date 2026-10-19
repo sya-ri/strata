@@ -128,6 +128,64 @@ def iml_kind(folder):
     fail(f"invalid generated source kind: {attributes}")
 
 
+def verify_source_views(root, inventory):
+    """Require exact fresh compiler-selected bytes in a stable, distinct view for each shared or filtered root."""
+    sources = [(owner["module"], source) for owner in inventory["projects"] if owner.get("iml")
+               for source in owner["roots"] if source["exists"] and not source["generated"] and source["kind"] in {"Source", "TestSource"}]
+    contexts = collections.defaultdict(set)
+    selected = collections.defaultdict(set)
+    for name, source in sources:
+        contexts[source["path"]].add(name)
+        if selected[name].intersection(source["inputs"]):
+            fail(f"compiler source roots overlap within {name}")
+        selected[name].update(source["inputs"])
+    expected = {}
+    for name, source in sources:
+        if len(contexts[source["path"]]) < 2 and set(source["inputs"]) == set(source["files"]):
+            continue
+        path = source["path"]
+        view = "qodana-analysis-sources/" + hashlib.sha256(name.encode("utf-8")).hexdigest()[:12] + "/" + hashlib.sha256(path.encode("utf-8")).hexdigest()[:16]
+        if any(not value.startswith(path + "/") for value in source["inputs"]):
+            fail(f"compiler input is outside its declared source root: {name}: {path}")
+        files = {value[len(path) + 1:]: source["files"][value] for value in source["inputs"]}
+        expected[name, path] = dict(module=name, path=path, view=view, kind=source["kind"], files=files)
+    receipt = read_json(root / "build/qodana/source-views.json")
+    if set(receipt) != {"revision", "roots"} or receipt["revision"] != inventory["revision"]:
+        fail("source-view receipt belongs to another revision or schema")
+    actual = {(entry["module"], entry["path"]): entry for entry in receipt["roots"]}
+    if len(actual) != len(receipt["roots"]) or actual != expected or len({entry["view"] for entry in actual.values()}) != len(actual):
+        fail("source-view ownership or selected inputs differ from the compiler declarations")
+    views = {}
+    for identity, entry in expected.items():
+        directory = repository_path(root, entry["view"])
+        if not directory.is_dir():
+            fail(f"missing compiler source view: {entry['view']}")
+        paths = list(directory.rglob("*"))
+        if any(path.is_symlink() or path.resolve() != path for path in paths):
+            fail(f"aliased compiler source view: {entry['view']}")
+        files = {path.relative_to(directory).as_posix(): sha256(path) for path in paths if path.is_file()}
+        if files != entry["files"]:
+            fail(f"compiler source-view membership or bytes changed: {entry['view']}")
+        views[identity] = directory
+    if any(name.startswith("qodana-analysis-sources/") for name in inventory["tracked"]):
+        fail("generated analysis source views must not become tracked source")
+    return views
+
+
+def verify_source_view_scope(root, views):
+    """Reject generated compiler inputs hidden by Git rules used by Qodana's recommended profile."""
+    paths = sorted(path.relative_to(root).as_posix() for directory in views.values() for path in directory.rglob("*") if path.is_file())
+    if not paths:
+        return
+    result = subprocess.run(["git", "check-ignore", "--no-index", "-z", "--stdin"], cwd=root,
+                            input=("\0".join(paths) + "\0").encode("utf-8"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode == 0:
+        ignored = result.stdout.decode("utf-8").strip("\0").split("\0")
+        fail(f"Git exclusions hide generated compiler inputs: {ignored[:3]}")
+    if result.returncode != 1:
+        fail("cannot verify Git visibility of generated compiler inputs")
+
+
 def verify_source_ownership(root, inventory, model, container_root=""):
     """Verify exact source membership in every declared compiler context and its compiled bytes."""
     declarations = [owner for owner in inventory["projects"] if owner.get("iml")]
@@ -167,6 +225,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                 source_owners[path].add((name, kind))
         if len(paths) != len(set(paths)):
             fail(f"duplicate declared compiler root: {name}")
+    views = verify_source_views(root, inventory)
     entries = ET.parse(root / ".idea/modules.xml").getroot().findall("./component[@name='ProjectModuleManager']/modules/module")
     actual_imls = [url_path(root, root, entry.attrib["fileurl"], container_root, False) for entry in entries]
     expected_imls = {repository_path(root, owner["iml"]) for owner in declarations}
@@ -176,7 +235,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
         directory = repository_path(root, owner["directory"]) if owner["directory"] else root
         iml = repository_path(root, owner["iml"])
         manager, folders = read_iml(iml, multiple_contents=True)
-        expected = collections.Counter((kind, path) for path, owners in source_owners.items() for module, kind in owners if module == name)
+        expected = collections.Counter((kind, views.get((module, path.relative_to(root).as_posix()), path)) for path, owners in source_owners.items() for module, kind in owners if module == name)
         contents = manager.findall("content")
         expected_contents = {directory} | {path for _, path in expected if directory not in path.parents}
         generated_paths = [url_path(root, directory, item.attrib["url"], container_root, False) for item in contents]
@@ -246,7 +305,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             observed = arguments.findall("./option[@name='friendPaths']/array/option")
             if len(observed) != len(friends) or {item.attrib["value"] for item in observed} != friends:
                 fail(f"Kotlin friends differ from actual compiler inputs: {name}")
-    return source_owners
+    return source_owners, views
 
 
 def verify_report(sarif, revision):
@@ -375,8 +434,13 @@ def verify_model(root, model_path, container_root, java_path):
     ownership_fields = {"native" in entry for entry in declared_projects}
     if ownership_fields == {False, True}:
         fail("partial compiler ownership declaration schema")
-    source_owners = verify_source_ownership(root, inventory, model, container_root) if ownership_fields == {True} else None
+    source_owners, source_views = verify_source_ownership(root, inventory, model, container_root) if ownership_fields == {True} else (None, {})
+    verify_source_view_scope(root, source_views)
     compiler_sdks = verify_compiler_sdks(root, inventory, model, read_json(report_directory / "projectStructure/SDKs.json")) if source_owners is not None else {}
+
+    def analysis_path(module, path):
+        """Preserve authored declarations while comparing their exact imported source views."""
+        return source_views.get((module, path.relative_to(root).as_posix()), path)
 
     def declared_shared_root(module_name, contents, kind, path):
         """Permit exact roots shared by actual configured declarations, including native showcase inputs."""
@@ -386,7 +450,7 @@ def verify_model(root, model_path, container_root, java_path):
             candidates = [entry for entry in declared_projects if entry.get("directory") and repository_path(root, entry["directory"]) in directories]
             if len(candidates) == 1:
                 declaration = candidates[0]
-        return declaration is not None and any(item["kind"] == kind and repository_path(root, item["path"]) == path for item in declaration["roots"])
+        return declaration is not None and any(item["kind"] == kind and (repository_path(root, item["path"]) == path or analysis_path(declaration["module"], repository_path(root, item["path"])) == path) for item in declaration["roots"])
 
     project_model = root / ".idea/modules.xml"
     if project_model.is_symlink():
@@ -469,7 +533,7 @@ def verify_model(root, model_path, container_root, java_path):
             if declaration["generated"]:
                 fail(f"declared JMH owner hides roots under an excluded build directory: {name}: {path}")
             if declaration["exists"]:
-                expected.append((declaration["kind"], path))
+                expected.append((declaration["kind"], analysis_path(name, path)))
         expected = collections.Counter(expected)
         generated = collections.Counter((iml_kind(folder), url_path(root, directory, folder.attrib["url"], container_root)) for folder in folders)
         imported = modules[name][0]
@@ -565,7 +629,7 @@ def verify_model(root, model_path, container_root, java_path):
                 if entry["exists"] != path.is_dir() or entry["files"] != files or not set(files).issubset(current):
                     fail(f"auxiliary root membership, existence or bytes changed: {name}: {path}")
                 if entry["exists"]:
-                    expected.add((entry["kind"], path))
+                    expected.add((entry["kind"], analysis_path(name, path)))
             outputs = compilation["outputs"]
             if len({entry["path"] for entry in outputs}) != len(outputs) or not any(entry["files"] for entry in outputs):
                 fail(f"working auxiliary compilation has no unique compiler outputs: {name}")
@@ -646,10 +710,7 @@ def verify_analysis(root, model, report_directory):
                 if folder["type"] in {"Source", "TestSource"}:
                     contexts[url_path(root, root, folder["path"])].add(module["name"])
     if any(len(modules) != 1 for modules in contexts.values()):
-        options = re.findall(r"JVM options: \[([^\n]+)\]", log)
-        for key in ("intellij.platform.shared.source.support", "batch.inspections.inspect.all.code.insight.contexts"):
-            if len(options) != 1 or not re.search(r"(?:^|, )-D" + re.escape(key) + r"=true(?:,|$)", options[0]):
-                fail(f"shared Kotlin roots require the analysis JVM option {key}=true")
+        fail("Kotlin source roots must have one actual compiler context")
     unresolved = set(re.findall(r"No source roots detected for module '([^']+)'", log))
     if unresolved.intersection(owners):
         fail(f"IDE did not resolve Kotlin source owners: {sorted(unresolved.intersection(owners))}")

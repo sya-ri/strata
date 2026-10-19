@@ -126,9 +126,11 @@ API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common a
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
-Shared Kotlin roots remain in every module that actually compiles them, with that module's dependencies and compiler identity.
-Qodana requests IntelliJ's shared-source support and batch inspection of all code-insight contexts.
-These switches alone do not establish correct Kotlin resolution for every variant; verify actual inspection results as well as model completeness before accepting a model change.
+Each module retains its actual compiler's selected inputs, dependencies and Kotlin identity.
+Shared or filtered source roots use byte-identical per-module views under `qodana-analysis-sources/`, while the declaration inventory retains the authoritative original paths and hashes.
+Each execution recreates that owned directory, copies exactly the compiler-selected files and records the current revision in `build/qodana/source-views.json`.
+These analysis inputs are never published or committed and must remain outside Git and IDEA exclusions; Qodana's recommended profile ignores Git-ignored paths even when they remain registered as source roots.
+Completeness verification rejects hidden inputs, stale provenance, changed bytes, missing or extra files, collapsed contexts and tracked generated views.
 Source and compiled-library roots use resolved file URLs without directory suffixes, and declared output directories that were never produced are omitted from libraries.
 No synthetic fallback library or cross-variant friend relationship substitutes for a compiler's own sources.
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.

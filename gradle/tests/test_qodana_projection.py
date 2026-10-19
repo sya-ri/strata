@@ -5,6 +5,7 @@ import importlib.util
 import hashlib
 import json
 import pathlib
+import subprocess
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -22,7 +23,7 @@ class QodanaProjectionTest(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = pathlib.Path(self.temporary.name).resolve()
-        self.inventory = {"projects": [], "tracked": {}}
+        self.inventory = {"revision": "a" * 40, "projects": [], "tracked": {}}
         self.model = {"modules": []}
         for path, text in (("shared/kotlin/Value.kt", "internal fun value(): Int = 19\n"),
                            ("beta/src/main/kotlin/Screen.kt", "internal fun screen(): Int = value()\n"),
@@ -84,6 +85,57 @@ class QodanaProjectionTest(unittest.TestCase):
         idea = self.root / ".idea"
         idea.mkdir()
         (idea / "modules.xml").write_text(ET.tostring(project, encoding="unicode"), encoding="utf-8")
+        self.project_source_views()
+
+    def view_path(self, module, path):
+        """Use independently computed stable context identities in the fixture."""
+        return "qodana-analysis-sources/" + hashlib.sha256(module.encode()).hexdigest()[:12] + "/" + hashlib.sha256(path.encode()).hexdigest()[:16]
+
+    def project_source_views(self):
+        """Write only the declared selected bytes, retaining source and resource kinds independently."""
+        records = []
+        contexts = {}
+        for owner in self.inventory["projects"]:
+            for source in owner["roots"]:
+                if source["kind"] in {"Source", "TestSource"}:
+                    contexts.setdefault(source["path"], set()).add(owner["module"])
+        for owner in self.inventory["projects"]:
+            name = owner["module"]
+            document = ET.parse(self.root / owner["iml"]).getroot()
+            manager = document.find("component")
+            for content in manager.findall("content"):
+                manager.remove(content)
+            primary = ET.SubElement(manager, "content", url="file://$MODULE_DIR$/")
+            contents = [dict(path=f"file://$PROJECT_DIR$/{name}/", sourceFolders=[])]
+            for source in owner["roots"]:
+                path = source["path"]
+                if source["kind"] in {"Source", "TestSource"} and (len(contexts[path]) != 1 or set(source["inputs"]) != set(source["files"])):
+                    path = self.view_path(name, source["path"])
+                    directory = self.root / path
+                    directory.mkdir(parents=True, exist_ok=True)
+                    for file in directory.rglob("*"):
+                        if file.is_file():
+                            file.unlink()
+                    selected = {value[len(source["path"]) + 1:]: source["files"][value] for value in source["inputs"]}
+                    for relative in selected:
+                        destination = directory / relative
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        destination.write_bytes((self.root / source["path"] / relative).read_bytes())
+                    records.append(dict(module=name, path=source["path"], view=path, kind=source["kind"], files=selected))
+                url = "file://$PROJECT_DIR$/" + path
+                local = path.startswith(name + "/")
+                content = primary if local else ET.SubElement(manager, "content", url=url)
+                attributes = dict(url=url, type="java-resource") if source["kind"] == "Resource" else dict(url=url, isTestSource=str(source["kind"] == "TestSource").lower())
+                ET.SubElement(content, "sourceFolder", **attributes)
+                if local:
+                    contents[0]["sourceFolders"].append(dict(type=source["kind"], path=url))
+                else:
+                    contents.append(dict(path=url, sourceFolders=[dict(type=source["kind"], path=url)]))
+            self.write_iml(name, document)
+            next(module for module in self.model["modules"] if module["name"] == name)["contentEntries"] = contents
+        output = self.root / "build/qodana/source-views.json"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(dict(revision=self.inventory["revision"], roots=records)), encoding="utf-8")
 
     def files(self, path):
         """Hash authored sources or synthetic output identity for a single fixture directory."""
@@ -95,7 +147,7 @@ class QodanaProjectionTest(unittest.TestCase):
 
     def validate(self):
         """Run only the additional checker; the existing verifier remains independently covered."""
-        return DECLARATIONS.verify_source_ownership(self.root, self.inventory, self.model)
+        return DECLARATIONS.verify_source_ownership(self.root, self.inventory, self.model)[0]
 
     def test_directory_digest_matches_the_compilers_case_sensitive_relative_path_order(self):
         path = self.root / "directory-hash"
@@ -118,11 +170,15 @@ class QodanaProjectionTest(unittest.TestCase):
         owner = self.inventory["projects"][1]
         owner["roots"][0].update(kind="TestSource", sourceSets=["test"])
         document = ET.parse(self.root / owner["iml"]).getroot()
-        folder = next(folder for folder in document.findall("./component/content/sourceFolder") if folder.attrib["url"].endswith("shared/kotlin"))
+        folder = next(folder for folder in document.findall("./component/content/sourceFolder") if folder.attrib["url"].endswith(self.view_path("beta", "shared/kotlin")))
         folder.set("isTestSource", "true")
         self.write_iml("beta", document)
         source = self.model["modules"][1]["contentEntries"][1]["sourceFolders"][0]
         source["type"] = "TestSource"
+        receipt = self.root / "build/qodana/source-views.json"
+        values = json.loads(receipt.read_text(encoding="utf-8"))
+        next(entry for entry in values["roots"] if entry["module"] == "beta" and entry["path"] == "shared/kotlin")["kind"] = "TestSource"
+        receipt.write_text(json.dumps(values), encoding="utf-8")
         owners = self.validate()
         self.assertEqual({("alpha", "Source"), ("beta", "TestSource")}, owners[self.root / "shared/kotlin"])
         source["type"] = "Source"
@@ -133,7 +189,69 @@ class QodanaProjectionTest(unittest.TestCase):
         owner = self.inventory["projects"][1]
         owner["native"] = False
         owner["roots"][1]["inputs"] = []
+        self.project_source_views()
         self.validate()
+
+    def test_source_views_preserve_filters_without_importing_unselected_code(self):
+        relative = "shared/kotlin/Excluded.kt"
+        (self.root / relative).write_text("this source must remain excluded\n", encoding="utf-8")
+        self.inventory["tracked"][relative] = DECLARATIONS.sha256(self.root / relative)
+        for owner in self.inventory["projects"]:
+            owner["roots"][0]["files"][relative] = self.inventory["tracked"][relative]
+        self.project_source_views()
+        self.validate()
+        for name in ("alpha", "beta"):
+            self.assertFalse((self.root / self.view_path(name, "shared/kotlin") / "Excluded.kt").exists())
+        extra = self.root / self.view_path("alpha", "shared/kotlin") / "Excluded.kt"
+        extra.write_bytes((self.root / relative).read_bytes())
+        with self.assertRaisesRegex(ValueError, "source-view membership"):
+            self.validate()
+
+    def test_changed_or_missing_projected_source_bytes_are_rejected(self):
+        path = self.root / self.view_path("alpha", "shared/kotlin") / "Value.kt"
+        original = path.read_bytes()
+        for mutation in ("changed", "missing"):
+            with self.subTest(mutation=mutation):
+                if mutation == "changed":
+                    path.write_bytes(original + b"\nprivate fun injected() = 0\n")
+                else:
+                    path.unlink()
+                with self.assertRaisesRegex(ValueError, "source-view membership"):
+                    self.validate()
+                path.write_bytes(original)
+
+    def test_stale_collapsed_or_forged_source_view_receipts_are_rejected(self):
+        path = self.root / "build/qodana/source-views.json"
+        original = path.read_text(encoding="utf-8")
+        for mutation in ("revision", "missing", "duplicate", "collapsed", "original-root", "membership"):
+            with self.subTest(mutation=mutation):
+                receipt = json.loads(original)
+                if mutation == "revision": receipt["revision"] = "b" * 40
+                elif mutation == "missing": receipt["roots"].pop()
+                elif mutation == "duplicate": receipt["roots"].append(copy.deepcopy(receipt["roots"][0]))
+                elif mutation == "collapsed": receipt["roots"][1]["view"] = receipt["roots"][0]["view"]
+                elif mutation == "original-root": receipt["roots"][0]["view"] = receipt["roots"][0]["path"]
+                else: receipt["roots"][0]["files"] = {}
+                path.write_text(json.dumps(receipt), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "source-view"):
+                    self.validate()
+                path.write_text(original, encoding="utf-8")
+
+    def test_generated_views_cannot_become_authored_tracked_source(self):
+        relative = self.view_path("alpha", "shared/kotlin") + "/Value.kt"
+        self.inventory["tracked"][relative] = DECLARATIONS.sha256(self.root / relative)
+        with self.assertRaisesRegex(ValueError, "must not become tracked"):
+            self.validate()
+
+    def test_untracked_views_remain_visible_but_git_ignored_compiler_inputs_fail(self):
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        views = DECLARATIONS.verify_source_views(self.root, self.inventory)
+        DECLARATIONS.verify_source_view_scope(self.root, views)
+        for pattern in ("qodana-analysis-sources/", "*.kt"):
+            with self.subTest(pattern=pattern):
+                (self.root / ".gitignore").write_text(pattern + "\n", encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "Git exclusions hide generated compiler inputs"):
+                    DECLARATIONS.verify_source_view_scope(self.root, views)
 
     def test_imported_forgeries_are_rejected(self):
         for mutation in ("missing-source", "missing-shared-context", "duplicate-source", "wrong-kind", "outside-content", "missing-content", "duplicate-content", "broader-content", "pattern", "exclusion", "missing-module", "duplicate-module", "bare-source"):

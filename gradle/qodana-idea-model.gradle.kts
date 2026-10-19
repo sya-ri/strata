@@ -16,6 +16,8 @@ data class AnalysisRoot(
     val path: String,
     val test: Boolean,
     val resource: Boolean,
+    val inputs: Map<String, String>,
+    val filtered: Boolean,
 )
 
 /** Returns exact direct children, avoiding nested or differently owned IDEA elements. */
@@ -29,18 +31,37 @@ fun Element.element(name: String, attributes: Map<String, String> = emptyMap()):
         appendChild(child)
     }
 
+/** Derives a stable analysis identity from immutable declaration text. */
+fun analysisIdentity(value: String): String =
+    MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+
 /** Identifies a resolved compiler installation independently of the requested bytecode target. */
 fun compilerSdkName(toolchain: Map<*, *>): String {
     val identity = listOf("installation", "java", "runtimeVersion", "vendor").joinToString("\u0000") { toolchain[it].toString() }
-    val digest = MessageDigest.getInstance("SHA-256").digest(identity.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
-    return "strata-compiler-${toolchain["java"]}-${digest.take(12)}"
+    return "strata-compiler-${toolchain["java"]}-${analysisIdentity(identity).take(12)}"
+}
+
+val cleanQodanaSourceViews = tasks.register<Delete>("cleanQodanaSourceViews") {
+    notCompatibleWithConfigurationCache("Recreates owned analysis source views for the selected revision.")
+    val directory = rootProject.file("qodana-analysis-sources")
+    delete(directory)
+    isFollowSymlinks = false
+    doFirst {
+        require(directory.canonicalFile == rootProject.rootDir.canonicalFile.resolve("qodana-analysis-sources")) {
+            "Refusing to replace an aliased analysis source-view directory: $directory"
+        }
+        require(providers.exec {
+            workingDir(rootProject.rootDir)
+            commandLine("git", "ls-files", "--", "qodana-analysis-sources")
+        }.standardOutput.asText.get().isBlank()) { "Analysis source views must not replace tracked files." }
+    }
 }
 
 tasks.register("qodanaKotlinModel") {
     group = "verification"
     description = "Retains source roots and Kotlin settings in every actual compiler context."
     notCompatibleWithConfigurationCache("Updates owned generated IDEA metadata from fresh compiler declarations.")
-    dependsOn("idea", "qodanaDeclarationInventory")
+    dependsOn("idea", "qodanaDeclarationInventory", cleanQodanaSourceViews)
     doLast {
         val inventory = JsonSlurper().parse(rootProject.file("build/qodana/declarations.json")) as Map<*, *>
         val projects = (inventory["projects"] as List<*>).map { it as Map<*, *> }.filter { it["iml"] != null }
@@ -79,10 +100,35 @@ tasks.register("qodanaKotlinModel") {
             (owner["roots"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == true && it["generated"] == false }.map { root ->
                 val kind = root["kind"] as String
                 require(kind in setOf("Source", "TestSource", "Resource", "TestResource")) { "Unsupported compiler root kind: $kind" }
+                val files = root["files"] as Map<*, *>
+                val inputs = (root["inputs"] as List<*>).associate { it as String to files[it] as String }
                 AnalysisRoot(owner["module"] as String, owner["directory"] as String?, root["path"] as String,
-                    kind.startsWith("Test"), kind.endsWith("Resource"))
+                    kind.startsWith("Test"), kind.endsWith("Resource"), inputs, files.keys != inputs.keys)
             }
         }
+        roots.filter { it.resource.not() }.groupBy { it.module }.forEach { (module, sources) ->
+            val inputs = sources.flatMap { it.inputs.keys }
+            require(inputs.distinct().size == inputs.size) { "Compiler source roots overlap within $module" }
+        }
+        val contexts = roots.filter { it.resource.not() }.groupBy { it.path }.mapValues { (_, sources) -> sources.map { it.module }.toSet() }
+        val views = roots.filter { it.resource.not() && (it.filtered || 1 < contexts.getValue(it.path).size) }.associateWith { source ->
+            "qodana-analysis-sources/${analysisIdentity(source.module).take(12)}/${analysisIdentity(source.path).take(16)}"
+        }
+        require(views.values.distinct().size == views.size) { "Analysis source-view identities collide." }
+        val viewRecords = views.map { (source, path) ->
+            val directory = rootProject.file(path)
+            directory.mkdirs()
+            val files = source.inputs.map { (input, expected) ->
+                require(input.startsWith("${source.path}/")) { "Compiler input is outside its declared source root: $input" }
+                val relative = input.removePrefix("${source.path}/")
+                val bytes = rootProject.file(input).readBytes()
+                require(MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) } == expected) { "Compiler source changed before analysis projection: $input" }
+                directory.resolve(relative).apply { parentFile.mkdirs(); writeBytes(bytes) }
+                relative to expected
+            }.toMap()
+            mapOf("module" to source.module, "path" to source.path, "view" to path, "kind" to if (source.test) "TestSource" else "Source", "files" to files)
+        }
+        rootProject.file("build/qodana/source-views.json").writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("revision" to inventory["revision"], "roots" to viewRecords))) + "\n")
         projects.forEach { owner ->
             val module = owner["module"] as String
             val output = rootProject.file(owner["iml"] as String)
@@ -99,8 +145,9 @@ tasks.register("qodanaKotlinModel") {
             require(primary.getAttribute("url") == "file://\$MODULE_DIR\$/") { "Unexpected primary IDEA content: $module" }
             primary.children("sourceFolder").forEach { primary.removeChild(it) }
             roots.filter { it.module == module }.sortedBy { it.path }.forEach { source ->
-                val url = "file://${rootProject.file(source.path).canonicalPath.replace(File.separatorChar, '/')}"
-                val content = if (source.directory != null && source.path.startsWith("${source.directory}/")) primary else manager.element("content", mapOf("url" to url))
+                val path = views[source] ?: source.path
+                val url = "file://${rootProject.file(path).canonicalPath.replace(File.separatorChar, '/')}"
+                val content = if (source.directory != null && path.startsWith("${source.directory}/")) primary else manager.element("content", mapOf("url" to url))
                 val kind = if (source.resource) "type" to if (source.test) "java-test-resource" else "java-resource" else "isTestSource" to source.test.toString()
                 content.element("sourceFolder", mapOf("url" to url, kind))
             }
