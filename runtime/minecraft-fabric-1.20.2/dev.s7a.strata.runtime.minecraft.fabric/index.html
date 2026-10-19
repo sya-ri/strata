@@ -116,7 +116,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-canvas-gui-cleanup/index.html">FabricCanvasGuiCleanup</a></div><div class="brief ">Attempts independent GUI queue cleanup without skipping later reference release after a failure.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-fabric-canvas-gui-cleanup/index.html">FabricCanvasGuiCleanup</a></div><div class="brief "><p class="paragraph">Attempts independent render-thread GUI cleanup without retaining callbacks, handles or queues after return. Every cleanup is attempted even when an earlier one fails, without waiting for GPU work.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -131,7 +131,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-canvas-shutdown-transaction/index.html">FabricCanvasShutdownTransaction</a></div><div class="brief ">Orders native Canvas shutdown before the platform destroys its rendering context.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-fabric-canvas-shutdown-transaction/index.html">FabricCanvasShutdownTransaction</a></div><div class="brief "><p class="paragraph">Orders borrowed owner-thread Canvas shutdown before the platform destroys its rendering context. Screen failures do not skip queue discard or vanilla shutdown; device release requires a successful discard. An original vanilla failure remains primary over independent cleanup failures.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -146,7 +146,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-hud/index.html">FabricHud</a></div><div class="brief ">Registers Strata overlays through the target's official Fabric HUD API.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-fabric-hud/index.html">FabricHud</a></div><div class="brief "><p class="paragraph">Registers Strata overlays through the selected official Fabric HUD API.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -161,7 +161,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-fabric-minecraft-canvas-gui-discard/index.html">FabricMinecraftCanvasGuiDiscard</a></div><div class="brief ">Version-owned capability for discarding queued GUI references without submitting native draws.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-fabric-minecraft-canvas-gui-discard/index.html">FabricMinecraftCanvasGuiDiscard</a></div><div class="brief "><p class="paragraph">Version-owned capability for dropping queued GUI references without submitting native draws. Native GUI owners implement this through typed Mixins; calls belong to the render thread and retain no resources after return.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-minecraft-canvas-hooks/index.html">FabricMinecraftCanvasHooks</a></div><div class="brief ">Version-owned native consumption and device-lifetime bridge.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-fabric-minecraft-canvas-hooks/index.html">FabricMinecraftCanvasHooks</a></div><div class="brief "><p class="paragraph">Connects native GUI consumption and device lifetime on the client/render thread without owning screen or resource references. A native operation's original failure remains primary when independent Canvas cleanup also fails.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -191,7 +191,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-minecraft-screen/index.html">FabricMinecraftScreen</a> : <span data-unresolved-link="net.minecraft.client.gui.screens/Screen///PointingToDeclaration/">Screen</span>, <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a>, <span data-unresolved-link="dev.s7a.strata.runtime.minecraft.fabric/FabricMinecraftInputReset///PointingToDeclaration/">FabricMinecraftInputReset</span></div><div class="brief "><p class="paragraph">Fabric client screen backed by one common Minecraft UI host on Minecraft 1.21.8 and compatible primitive-input releases.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-minecraft-screen/index.html">FabricMinecraftScreen</a> : <span data-unresolved-link="net.minecraft.client.gui.screens/Screen///PointingToDeclaration/">Screen</span>, <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Fabric client screen backed by one common Minecraft UI host on Minecraft 1.21.8 and compatible primitive-input releases.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -221,7 +221,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-remote-server-transport/index.html">FabricRemoteServerTransport</a></div><div class="brief ">Fabric-managed registration and authenticated server transport for opaque Strata frames.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-fabric-remote-server-transport/index.html">FabricRemoteServerTransport</a></div><div class="brief "><p class="paragraph">Registers the authenticated Fabric buffer transport and detaches received fragments before native buffer release.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -236,7 +236,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-fabric-remote-transport/index.html">FabricRemoteTransport</a></div><div class="brief ">Fabric-managed client registration and opaque Strata transport.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.2/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-fabric-remote-transport/index.html">FabricRemoteTransport</a></div><div class="brief "><p class="paragraph">Registers Fabric's buffer-based client receiver and sends detached Strata fragments on the current play connection.</p></div></div></div>
                 </div>
               </div>
             </div>

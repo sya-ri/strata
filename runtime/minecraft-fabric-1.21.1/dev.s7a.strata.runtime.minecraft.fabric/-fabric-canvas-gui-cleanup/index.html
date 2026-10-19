@@ -100,7 +100,7 @@
   <div class="breadcrumbs"><a href="../../index.html">minecraft-fabric-1.21.1</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime.minecraft.fabric</a><span class="delimiter">/</span><span class="current">FabricCanvasGuiCleanup</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Fabric</span><wbr><span>Canvas</span><wbr><span>Gui</span><wbr><span><span>Cleanup</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">FabricCanvasGuiCleanup</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/runtime/shared/minecraft-fabric/canvas/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricCanvasGuiCleanup.java#L14">source</a>)</span></span></div><p class="paragraph">Attempts independent GUI queue cleanup without skipping later reference release after a failure. </p><p class="paragraph">Operations and queues are borrowed synchronously on the render thread. This helper retains no callback, native handle, or queue after returning and never waits for GPU work.</p></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="index.html">FabricCanvasGuiCleanup</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricCanvasGuiCleanup.kt#L10">source</a>)</span></span></div><p class="paragraph">Attempts independent render-thread GUI cleanup without retaining callbacks, handles or queues after return. Every cleanup is attempted even when an earlier one fails, without waiting for GPU work.</p></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
@@ -117,7 +117,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/FunctionalInterface.html"><span class="token annotation builtin">FunctionalInterface</span></a></div></div><span class="token keyword">interface </span><a href="-cleanup/index.html">Cleanup</a></div><div class="brief ">Borrows one synchronous owner-thread cleanup operation without transferring resource ownership.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token keyword">interface </span><a href="-cleanup/index.html">Cleanup</a></div><div class="brief "><p class="paragraph">Borrows one synchronous owner-thread cleanup without transferring native resource ownership.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -126,32 +126,32 @@
       </div>
       <div data-togglable="FUNCTION">
         <h2 class="tableheader">Functions</h2>
-        <div class="table"><a data-name="516462982%2FFunctions%2F-1284230285" anchor-label="closeMeshes" id="516462982%2FFunctions%2F-1284230285" data-filterable-set=":runtime:minecraft-fabric-1.21.1/main"></a>
+        <div class="table"><a data-name="1249524624%2FFunctions%2F-1284230285" anchor-label="closeMeshes" id="1249524624%2FFunctions%2F-1284230285" data-filterable-set=":runtime:minecraft-fabric-1.21.1/main"></a>
           <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.21.1/main" data-filterable-set=":runtime:minecraft-fabric-1.21.1/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="close-meshes.html"><span>close</span><wbr><span><span>Meshes</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="516462982%2FFunctions%2F-1284230285"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1249524624%2FFunctions%2F-1284230285"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="close-meshes.html"><span class="token function">closeMeshes</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">meshes<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html">List</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief ">Removes queued mesh references before closing their independently owned CPU vertex results.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-static/index.html"><span class="token annotation builtin">JvmStatic</span></a></div></div><span class="token keyword">fun </span><a href="close-meshes.html"><span class="token function">closeMeshes</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">meshes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-list/index.html">MutableList</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-auto-closeable/index.html">AutoCloseable</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Drops the GUI queue before attempting every independently owned CPU mesh close, without closing GPU buffers. Previously processed records may appear after partial failure; their native close operations are idempotent.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="1158199468%2FFunctions%2F-1284230285" anchor-label="run" id="1158199468%2FFunctions%2F-1284230285" data-filterable-set=":runtime:minecraft-fabric-1.21.1/main"></a>
+<a data-name="-2115185786%2FFunctions%2F-1284230285" anchor-label="run" id="-2115185786%2FFunctions%2F-1284230285" data-filterable-set=":runtime:minecraft-fabric-1.21.1/main"></a>
           <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.21.1/main" data-filterable-set=":runtime:minecraft-fabric-1.21.1/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="run.html"><span><span>run</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1158199468%2FFunctions%2F-1284230285"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2115185786%2FFunctions%2F-1284230285"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="run.html"><span class="token function">run</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">cleanups<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><a href="-cleanup/index.html">FabricCanvasGuiCleanup.Cleanup</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief ">Attempts every cleanup action and preserves the first failure with later failures suppressed.</div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.21.1/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-static/index.html"><span class="token annotation builtin">JvmStatic</span></a></div></div><span class="token keyword">fun </span><a href="run.html"><span class="token function">run</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">vararg </span>cleanups<span class="token operator">: </span><a href="-cleanup/index.html">FabricCanvasGuiCleanup.Cleanup</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Runs every borrowed cleanup once and preserves the first failure with later distinct failures suppressed.</p></div></div></div>
                 </div>
               </div>
             </div>
