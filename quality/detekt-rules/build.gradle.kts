@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
 }
 
+// Keep internal quality rules distinct from the published authoring rules in dependency graphs.
+group = "${rootProject.group}.quality"
+
 dependencies {
     compileOnly(libs.detekt.api)
     compileOnly(libs.detekt.test)
