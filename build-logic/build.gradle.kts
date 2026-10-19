@@ -59,9 +59,13 @@ tasks.test {
     ).withPropertyName("externalFixtureSources").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.files(
         fileTree("..") {
-            include("runtime/minecraft-fabric-*/build.gradle.kts", "integration/minecraft-fabric-*/build.gradle.kts")
+            include(
+                "runtime/minecraft-fabric-*/build.gradle.kts",
+                "integration/minecraft-fabric-*/build.gradle.kts",
+                "quality/*benchmarks/build.gradle.kts",
+            )
         },
-    ).withPropertyName("nativeFixtureProjects").withPathSensitivity(PathSensitivity.RELATIVE)
+    ).withPropertyName("fixtureProjects").withPathSensitivity(PathSensitivity.RELATIVE)
     // TestKit releases its dedicated daemons when the class worker finishes.
     forkEvery = 1
 }
