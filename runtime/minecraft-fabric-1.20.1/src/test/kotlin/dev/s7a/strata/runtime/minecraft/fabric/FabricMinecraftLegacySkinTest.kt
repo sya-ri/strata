@@ -14,7 +14,7 @@ internal class FabricMinecraftLegacySkinTest {
     fun legacySkinMirrorsLimbsAndClearsAnOpaqueHatBeforeClosingNativePixels() {
         NativeImage(64, 32, true).use { image ->
             image.fillRect(0, 0, 64, 32, 0xFFFFFFFF.toInt())
-            setFabricMinecraftArgbPixel(image, 4, 16, 0xFF123456.toInt())
+            image.setPixelRGBA(4, 16, 0xFF563412.toInt())
             val snapshot = snapshotLegacyFabricMinecraftSkin(image)
             assertEquals(IntSize(64, 64), snapshot.size)
             assertEquals(0xFF123456.toInt(), snapshot.argbAt(23, 48))
@@ -27,7 +27,7 @@ internal class FabricMinecraftLegacySkinTest {
     @Test
     fun modernSkinPreservesHatAlphaAndClosesRejectedDimensions() {
         NativeImage(64, 64, true).use { image ->
-            setFabricMinecraftArgbPixel(image, 40, 8, 0x80123456.toInt())
+            image.setPixelRGBA(40, 8, 0x80563412.toInt())
             val snapshot = snapshotLegacyFabricMinecraftSkin(image)
             assertEquals(0x80123456.toInt(), snapshot.argbAt(40, 8))
             assertThrows(IllegalStateException::class.java) { image.getPixelRGBA(0, 0) }

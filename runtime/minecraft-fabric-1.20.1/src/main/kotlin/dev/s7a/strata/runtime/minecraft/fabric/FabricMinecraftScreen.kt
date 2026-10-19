@@ -430,12 +430,6 @@ public class FabricMinecraftScreen private constructor(
     internal fun isEditingText(): Boolean = closed.not() && attached && host.textInputFocus != null
 
     /**
-     * Whether a native inventory binding belongs to this retained host.
-     */
-    @JvmSynthetic
-    internal fun usesNativeSlots(): Boolean = inventory.hasBindings()
-
-    /**
      * Native container first used by this retained host's Slots, released on terminal close.
      */
     @JvmSynthetic

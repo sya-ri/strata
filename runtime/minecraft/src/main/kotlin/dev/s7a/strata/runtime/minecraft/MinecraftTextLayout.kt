@@ -203,7 +203,6 @@ internal class MinecraftTextLayout(
      * @param viewport half-open clip in scope coordinates, including empty rectangles.
      * @param originX scope-local horizontal origin of each line.
      * @param originY scope-local vertical origin of the first line.
-     * @return number of glyph candidates visited, for deterministic bounded-work verification.
      */
     @JvmSynthetic
     internal fun paintVisible(
@@ -211,9 +210,8 @@ internal class MinecraftTextLayout(
         viewport: IntRect,
         originX: Int = 0,
         originY: Int = 0,
-    ): Int {
-        if (viewport.width == 0 || viewport.height == 0) return 0
-        var visited = 0
+    ) {
+        if (viewport.width == 0 || viewport.height == 0) return
         val top = viewport.top.toDouble() - originY
         val bottom = viewport.bottom.toDouble() - originY
         for (index in visibleLines(top, bottom, originY)) {
@@ -221,10 +219,9 @@ internal class MinecraftTextLayout(
             val metrics = run.verticalMetrics
             val y = originY.toLong() + index.toLong() * lineStep
             if (metrics != null && viewport.top.toDouble() < metrics.maximumBottomAt(y) && metrics.minimumTopAt(y) < viewport.bottom.toDouble()) {
-                visited = Math.addExact(visited, run.paintVisible(scope, originX, Math.toIntExact(y), viewport))
+                run.paintVisible(scope, originX, Math.toIntExact(y), viewport)
             }
         }
-        return visited
     }
 
     private inline fun firstLineMatching(predicate: (Int) -> Boolean): Int {
