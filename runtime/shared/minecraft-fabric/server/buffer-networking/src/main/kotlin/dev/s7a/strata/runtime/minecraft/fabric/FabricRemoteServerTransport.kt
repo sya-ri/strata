@@ -23,7 +23,7 @@ public object FabricRemoteServerTransport {
     @JvmStatic
     public fun read(buffer: FriendlyByteBuf): ByteArray {
         val count = buffer.readableBytes()
-        require(0 < count && count <= 24576) { "Invalid Strata frame length." }
+        require(count in 1..24576) { "Invalid Strata frame length." }
         return ByteArray(count).also { buffer.readBytes(it) }
     }
 

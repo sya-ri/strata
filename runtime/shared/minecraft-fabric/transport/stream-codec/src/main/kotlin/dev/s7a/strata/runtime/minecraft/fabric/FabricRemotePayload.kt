@@ -23,7 +23,7 @@ public class FabricRemotePayload : CustomPacketPayload {
 
     private constructor(buffer: FriendlyByteBuf) {
         val count = buffer.readableBytes()
-        require(0 < count && count <= 24576) { "Invalid Strata frame length." }
+        require(count in 1..24576) { "Invalid Strata frame length." }
         ownedBytes = ByteArray(count)
         buffer.readBytes(ownedBytes)
     }
