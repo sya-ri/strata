@@ -25,6 +25,7 @@ public class StateSubscription<out T> public constructor(
      * Closes this observation exactly once.
      *
      * The source cleanup callback runs at most once and runs synchronously on the first caller.
+     * The handle releases its reference to the callback before invoking it, including when cleanup fails.
      * Other callers wait for it to finish.
      * A cleanup failure without re-entry is propagated unchanged by this and every later call.
      * Re-entry from the cleanup callback is rejected instead of deadlocking.
@@ -41,7 +42,7 @@ public class StateSubscription<out T> public constructor(
      * Retains the shared close operation without retaining this subscription's initial value.
      *
      * Image bindings use this after transferring the initial observation so obsolete pixels do not remain reachable through a cleanup handle.
-     * The returned operation is thread-safe, shares this subscription's exactly-once result, and retains only the source-owned cleanup action and close state.
+     * The returned operation is thread-safe, shares this subscription's exactly-once result, and retains only the source-owned cleanup action while open and the close state.
      *
      * @return a cleanup operation with the same failure and concurrency behavior as [close].
      */
@@ -49,9 +50,10 @@ public class StateSubscription<out T> public constructor(
     internal fun retainCloseAction(): () -> Unit = closeController::close
 
     private class CloseController(
-        private val closeAction: () -> Unit,
+        closeAction: () -> Unit,
     ) : AutoCloseable {
         private val monitor = Any()
+        private var closeAction: (() -> Unit)? = closeAction
         private var state: CloseState = CloseState.Open
         private var reentrantFailure: Throwable? = null
 
@@ -62,7 +64,9 @@ public class StateSubscription<out T> public constructor(
                     when (val current = state) {
                         CloseState.Open -> {
                             state = CloseState.Closing
-                            val cleanupFailure = runCatching(closeAction).exceptionOrNull()
+                            val action = checkNotNull(closeAction)
+                            closeAction = null
+                            val cleanupFailure = runCatching(action).exceptionOrNull()
                             val reentrant = reentrantFailure
                             if (reentrant != null && cleanupFailure != null && reentrant !== cleanupFailure) {
                                 reentrant.addSuppressed(cleanupFailure)
