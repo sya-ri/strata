@@ -11,7 +11,7 @@ import org.lwjgl.system.MemoryStack
  * A window resize request is asynchronous on Windows, so calling resizeDisplay immediately is not completion evidence.
  * Reapply the GUI scale after physical dimensions converge because legacy resizing can clamp an earlier request against the old framebuffer.
  * Automatic scale zero remains valid when restoring the previous test options.
- * The bounded wait preserves strict screenshot dimensions and reports the last native sizes and density on failure.
+ * The bounded wait preserves strict screenshot dimensions and reports the last native sizes and density on timeout.
  */
 internal fun MinecraftLoadedTestContext.configureVerificationViewport(
     size: IntSize,
@@ -48,8 +48,7 @@ internal fun MinecraftLoadedTestContext.configureVerificationViewport(
                     minecraft.resizeDisplay()
                     guiScaleApplied = true
                 }
-                val actualGuiScale: Number = window.guiScale
-                val scaleMatches = guiScale == 0 || actualGuiScale.toDouble() == guiScale.toDouble()
+                val scaleMatches = matchesVerificationGuiScale(guiScale, window.guiScale)
                 if (dimensionsMatch && scaleMatches) {
                     consecutiveMatches += 1
                 } else {
@@ -60,10 +59,18 @@ internal fun MinecraftLoadedTestContext.configureVerificationViewport(
                 2 <= consecutiveMatches
             }
         }
-    } catch (failure: Throwable) {
+    } catch (failure: AssertionError) {
         throw IllegalStateException("Viewport ${size.width}x${size.height} did not settle: $lastDimensions", failure)
     }
     if (0 < mismatches) {
         println("Verification viewport ${size.width}x${size.height} settled after $mismatches mismatched samples: $lastDimensions")
     }
 }
+
+/**
+ * Matches the native automatic setting or one exact requested GUI scale.
+ */
+private fun matchesVerificationGuiScale(
+    requested: Int,
+    actual: Number,
+): Boolean = requested == 0 || actual.toDouble() == requested.toDouble()
