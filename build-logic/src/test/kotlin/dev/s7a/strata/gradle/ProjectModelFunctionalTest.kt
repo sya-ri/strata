@@ -302,6 +302,16 @@ internal class ProjectModelFunctionalTest {
     }
 
     @Test
+    fun `reader documentation checks retain every runtime and only the asset integration`() {
+        val tasks = arrayOf(":integration:docs:checkDocumentationLinks", ":integration:docs:checkStrataSkill")
+        val full = included("check")
+        val selected = included(*tasks, "-Pstrata.minecraftVersions=26.3")
+        assertEquals(full.filter { it.startsWith(":integration:minecraft-fabric-").not() || it.endsWith("-26.3") }.toSet(), selected)
+        assertEquals(full, included(*tasks, ":runtime:core:test", "-Pstrata.minecraftVersions=26.3"))
+        assertEquals(full, included(*tasks, "-Pstrata.minecraftVersions=26.3", "-Pstrata.completeIdeaModel=true"))
+    }
+
+    @Test
     fun `Minecraft source scope retains selected project dependencies and native Test options`() {
         val full = included("check")
         val common = full.filter { it.contains(":minecraft-fabric-").not() && it != ":integration:docs" }.toSet()
@@ -480,7 +490,7 @@ internal class ProjectModelFunctionalTest {
                 "jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses", "jmhHistorical", "jmhComponents", "jmhRemote",
                 "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "processEvidence", "checkApiOnlyClasspath",
                 "verifyPublishedPerformanceInventory", "verifyPublishedHostInventory", "capturePublishedHostInventory",
-                "verifyOfflineFontParity", "ciMinecraftCheck", "idea", "benchmarkMinecraftQuick", "gametestClasses")
+                "verifyOfflineFontParity", "ciMinecraftCheck", "idea", "benchmarkMinecraftQuick", "gametestClasses", "checkDocumentationLinks", "checkStrataSkill")
             available.filter { tasks.names.contains(it).not() }.forEach { name -> tasks.register(name) }
             listOf("koverHtmlReport", "koverXmlReport", "koverBinaryReport", "koverVerify", "koverCachedVerify", "koverLog", "koverJvmTests", "koverHtmlReportJvm").forEach { name ->
                 tasks.register(name) { group = LifecycleBasePlugin.VERIFICATION_GROUP }
