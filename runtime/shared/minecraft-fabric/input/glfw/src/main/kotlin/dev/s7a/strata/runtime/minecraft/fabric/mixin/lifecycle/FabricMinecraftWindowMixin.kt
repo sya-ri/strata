@@ -18,6 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
  */
 @Mixin(Window::class)
 private abstract class FabricMinecraftWindowMixin {
+    // Window installs native callbacks before Minecraft assigns its window field.
+    @Suppress("KotlinConstantConditions", "RedundantNullableReturnType")
     @Inject(method = ["onFocus"], at = [At("TAIL")])
     private fun strataResetInput(
         window: Long,
