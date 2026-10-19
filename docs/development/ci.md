@@ -88,6 +88,8 @@ GitHub runs these jobs independently within the available runner concurrency, an
 Documentation and Dokka run in their own parallel job and upload the checked site.
 Only the native showcase comparison and its CPU reference rendering stay with the Minecraft job producing that evidence; the documentation job does not repeat either check or start a game.
 Common checks and Kover share one Gradle invocation so JVM tests run once.
+The complete compiled fixture route and its negative attempts run in two independent Windows jobs, both required by `CI result`.
+The complete route keeps every paired sample on one host, and the Windows ownership-boundary checks run once with that route.
 API/core JavaScript tests and Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
