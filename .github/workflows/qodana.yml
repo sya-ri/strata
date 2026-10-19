@@ -1,11 +1,17 @@
 name: Shared Kotlin analysis probe
 on:
   workflow_dispatch:
+    inputs:
+      context:
+        description: Declared native project name to inspect; empty runs the small controls
+        type: string
+        default: ''
 permissions:
   contents: read
   checks: write
 jobs:
   probe:
+    if: inputs.context == ''
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -49,4 +55,69 @@ jobs:
           path: |
             ${{ runner.temp }}/probe-results
             qodana-shared-analysis-fixture
+          include-hidden-files: true
+  actual-context:
+    if: inputs.context != ''
+    runs-on: ubuntu-latest
+    env:
+      STRATA_PROBE_CONTEXT: ${{ inputs.context }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-strata-java
+      - uses: insightsengineering/disk-space-reclaimer@v1
+        with:
+          tools-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          gradle-home-cache-strict-match: false
+          gradle-home-cache-excludes: caches/fabric-loom
+      - name: Discover the actual full project inventory
+        run: bash gradle/plan-minecraft-ci.sh
+      - name: Hash complete Loom inputs
+        id: loom
+        run: |
+          LOOM_PROJECTS="$(< build/github-actions/minecraft-loom-projects.txt)"
+          export LOOM_PROJECTS
+          bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        with:
+          path: .gradle/loom-cache
+          key: loom-${{ runner.os }}-minecraft-all-${{ steps.loom.outputs.hash }}
+          restore-keys: |
+            loom-${{ runner.os }}-minecraft-
+      - name: Reuse the complete bootstrap and unchanged inspection profile
+        run: python3 -B gradle/probe-real-qodana-context.py configure
+      - name: Analyze the actual selected native context
+        uses: JetBrains/qodana-action@v2026.2
+        with:
+          cache-dir: ${{ runner.temp }}/context-cache
+          results-dir: ${{ runner.temp }}/context-results
+          use-caches: false
+          pr-mode: false
+          args: >-
+            --linter=qodana-jvm-community --within-docker=false
+            --config=build/qodana/probe-context.yaml
+            --property=intellij.platform.shared.source.support=true
+            --property=batch.inspections.inspect.all.code.insight.contexts=true
+      - name: Verify original roots, dependencies, source bytes and actual clean analysis
+        if: always()
+        run: python3 -B gradle/probe-real-qodana-context.py inspect "${{ runner.temp }}/context-results"
+      - name: Retain actual context evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: qodana-actual-context
+          path: |
+            ${{ runner.temp }}/context-results
+            build/qodana
+            .idea
           include-hidden-files: true
