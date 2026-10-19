@@ -57,6 +57,31 @@ public class RemotePacketStream(
         packet: RemotePacket.Frame,
         nowMillis: Long,
     ) {
+        offer(packet, nowMillis, PayloadOwnership.Snapshot)
+    }
+
+    /**
+     * Consumes a freshly decoded opaque frame without a second payload copy.
+     * [RemotePacketAdmission] defines one-shot ownership and release; arbitrary public Frame arrays cannot select this route.
+     * Admission validation, duplicate handling, gap deadlines and queue accounting match the copying overload.
+     */
+    @InternalStrataRuntimeApi
+    public fun offer(
+        packet: RemotePacketAdmission,
+        nowMillis: Long,
+    ) {
+        checkOwner()
+        offer(packet.takeFrame(), nowMillis, PayloadOwnership.Transfer)
+    }
+
+    /**
+     * Applies the common admission rules before selecting the only storage operation that differs between entry points.
+     */
+    private fun offer(
+        packet: RemotePacket.Frame,
+        nowMillis: Long,
+        ownership: PayloadOwnership,
+    ) {
         checkOwner()
         check(outgoing != null) { "Remote packet stream is closed." }
         if (packet.address != address) return
@@ -71,13 +96,18 @@ public class RemotePacketStream(
         if (limits.pendingBytes - pendingBytes < packet.bytes.size || limits.collectionEntries <= pending.size) {
             throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote packet reorder queue is full.")
         }
-        pending[packet.sequence] = packet.bytes.copyOf()
+        pending[packet.sequence] =
+            when (ownership) {
+                PayloadOwnership.Snapshot -> packet.bytes.copyOf()
+                PayloadOwnership.Transfer -> packet.bytes
+            }
         pendingBytes += packet.bytes.size
         updateGap(nowMillis)
     }
 
     /**
-     * Delivers at most [maxFrames] consecutive fragments and checks deadlines even without new network input.
+     * Delivers at most [maxFrames] consecutive fragments, stopping at the first missing sequence.
+     * Checks deadlines before delivery and records the remaining gap after delivery, even without new input.
      */
     public fun drain(
         nowMillis: Long,
@@ -88,8 +118,8 @@ public class RemotePacketStream(
         check(outgoing != null) { "Remote packet stream is closed." }
         require(0 < maxFrames)
         expire(nowMillis)
-        repeat(maxFrames) {
-            val bytes = pending.remove(nextIncoming) ?: return@repeat
+        for (index in 0 until maxFrames) {
+            val bytes = pending.remove(nextIncoming) ?: break
             nextIncoming++
             pendingBytes -= bytes.size
             receive(bytes)
@@ -112,6 +142,14 @@ public class RemotePacketStream(
     private fun expire(nowMillis: Long) {
         val started = gapSince ?: return
         if (nowMillis < started || limits.assemblyMillis <= nowMillis - started) throw RemoteProtocolException(RemoteFailure.TimedOut, "Remote packet sequence gap timed out.")
+    }
+
+    /**
+     * Storage selected only by the public snapshot overload or the opaque decoder handoff.
+     */
+    private enum class PayloadOwnership {
+        Snapshot,
+        Transfer,
     }
 
     private fun checkOwner() {

@@ -30,7 +30,6 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -50,28 +49,21 @@ internal class PaintOrderPipelineTest {
         val element = PaintOrderElement()
         laidOut(element).use { tree ->
             val before = tree.paint()
-            tree.startRenderMonitoring().use { monitor ->
-                element.content.node.replaceColor(BACKGROUND)
-                val after = tree.paint()
-                val childCommand = fill(IntRect(-1, -1, 5, 5), CONTENT)
-                assertEquals(
-                    before.map { command -> if (command == childCommand) fill(childCommand.bounds, BACKGROUND) else command },
-                    after,
-                )
-                assertEquals(2, element.content.node.paintCalls)
-                assertEquals(1, element.node.paintCalls)
-                assertEquals(1, element.node.overlayCalls)
-                assertEquals(1, element.node.rootOverlayCalls)
-                val counts = monitor.snapshot().counts
-                assertEquals(1L, counts[UiRenderMetric.Paint])
-                assertEquals(0L, counts[UiRenderMetric.OverlayPaint])
-                assertEquals(0L, counts[UiRenderMetric.RootOverlayPaint])
-                assertEquals(0L, counts[UiRenderMetric.Measure])
-                assertEquals(0L, counts[UiRenderMetric.Layout])
-                monitor.checkpoint()
-                assertEquals(after, tree.paint())
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.Paint])
+            element.content.node.replaceColor(BACKGROUND)
+            val after = tree.paint()
+            val childCommand = fill(IntRect(-1, -1, 5, 5), CONTENT)
+            assertEquals(
+                before.map { command -> if (command == childCommand) fill(childCommand.bounds, BACKGROUND) else command },
+                after,
+            )
+            before.zip(after).forEach { (previous, current) ->
+                if (previous != childCommand) assertSame(previous, current)
             }
+            assertEquals(2, element.content.node.paintCalls)
+            assertEquals(1, element.node.paintCalls)
+            assertEquals(1, element.node.overlayCalls)
+            assertEquals(1, element.node.rootOverlayCalls)
+            assertEquals(after, tree.paint())
         }
     }
 

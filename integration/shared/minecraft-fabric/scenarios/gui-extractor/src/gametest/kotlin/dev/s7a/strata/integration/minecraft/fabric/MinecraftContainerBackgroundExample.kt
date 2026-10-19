@@ -29,19 +29,19 @@ internal fun createContainerBackgroundScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Chest") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
             Stack(
-                modifier = Modifier.Empty.containerBackground(rows = 3),
+                modifier = Modifier.containerBackground(rows = 3),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .padding(top = 6)
                             .size(162, 77)
                             .align(Alignment.TopCenter),
@@ -50,12 +50,12 @@ internal fun createContainerBackgroundScreenDefinition(): ScreenDefinition =
                     Text(
                         "Chest",
                         style = TextStyle.ContainerLabel,
-                        modifier = Modifier.Empty.padding(left = 1),
+                        modifier = Modifier.padding(left = 1),
                     )
                     Text(
                         "Inventory",
                         style = TextStyle.ContainerLabel,
-                        modifier = Modifier.Empty.padding(left = 1),
+                        modifier = Modifier.padding(left = 1),
                     )
                 }
             }

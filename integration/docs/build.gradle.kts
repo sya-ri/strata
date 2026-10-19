@@ -459,7 +459,7 @@ val checkDocumentationLinks =
         mainClass.set("dev.s7a.strata.integration.docs.DocumentationLinkChecker")
         classpath = sourceSets.main.get().runtimeClasspath
         args(repositoryRoot.get().asFile.absolutePath)
-        listOf("README.md", "AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md").forEach { name ->
+        listOf("README.md", "AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md", "DEPRECATION.md").forEach { name ->
             inputs.file(rootProject.layout.projectDirectory.file(name))
         }
         inputs.dir(rootProject.layout.projectDirectory.dir("docs"))

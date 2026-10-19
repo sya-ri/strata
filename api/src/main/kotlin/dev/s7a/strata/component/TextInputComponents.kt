@@ -18,13 +18,12 @@ import dev.s7a.strata.text.TextWrap
  * Use [TextStyle.ContainerLabel] for dark text on light frames; the appearance controls caret and composition colors.
  * @throws UnsupportedOperationException when the installed runtime lacks custom appearance support.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.TextField(
     state: TextFieldState,
     appearance: TextInputAppearance,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(state, appearance, IntSize(200, 20), enabled, textStyle, modifier, key)
@@ -45,7 +44,7 @@ public fun UiScope.TextField(
     size: IntSize,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -60,14 +59,13 @@ public fun UiScope.TextField(
  * Use [TextStyle.ContainerLabel] for dark text on light frames; the appearance controls caret and composition colors.
  * @throws UnsupportedOperationException when the installed runtime lacks custom appearance support.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.TextField(
     state: TextFieldState,
     appearance: TextInputAppearance,
     font: ResourceId,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(state, appearance, IntSize(200, 20), font, enabled, textStyle, modifier, key)
@@ -89,7 +87,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -113,7 +111,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -139,7 +137,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()

@@ -17,7 +17,6 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Supplier
 
 /**
  * Verifies one-generation profile reuse and release without native resources or a running Minecraft client.
@@ -51,7 +50,7 @@ internal class FabricMinecraftProfileCacheTest {
     fun everyFontOptionAndCompatibilityChangeReplacesTheSingleEntry() {
         val cache = FabricMinecraftProfileCache<Any>()
         val manager = Any()
-        var previous = cache.get(manager, compatibility, options, ::Any)
+        var previous = cache.get(manager, compatibility, options, extract = ::Any)
         val selections =
             listOf(
                 options.copy(uniform = true),
@@ -60,12 +59,12 @@ internal class FabricMinecraftProfileCacheTest {
                 options,
             )
         selections.forEach { selection ->
-            val current = cache.get(manager, compatibility, selection, ::Any)
+            val current = cache.get(manager, compatibility, selection, extract = ::Any)
             assertNotSame(previous, current)
             assertSame(current, retainedValue(cache))
             previous = current
         }
-        val changed = cache.get(manager, compatibility.copy(fractionalUnihexAdvance = true), options, ::Any)
+        val changed = cache.get(manager, compatibility.copy(fractionalUnihexAdvance = true), options, extract = ::Any)
         assertNotSame(previous, changed)
         assertSame(changed, retainedValue(cache))
     }
@@ -76,8 +75,8 @@ internal class FabricMinecraftProfileCacheTest {
         val first = EqualManager()
         val second = EqualManager()
         assertEquals(first, second)
-        val old = cache.get(first, compatibility, options, ::Any)
-        val current = cache.get(second, compatibility, options, ::Any)
+        val old = cache.get(first, compatibility, options, extract = ::Any)
+        val current = cache.get(second, compatibility, options, extract = ::Any)
 
         assertNotSame(old, current)
         cache.invalidate(first, false)
@@ -115,31 +114,29 @@ internal class FabricMinecraftProfileCacheTest {
         val cache = FabricMinecraftProfileCache<Any>()
         repeat(512) {
             val manager = Any()
-            val value = cache.get(manager, compatibility, options, ::Any)
+            val value = cache.get(manager, compatibility, options, extract = ::Any)
             assertSame(value, retainedValue(cache))
             cache.invalidate(manager, true)
             cache.invalidate(manager, true)
             assertNull(retainedEntry(cache))
         }
         val state = retainedState(cache)
-        repeat(512) { cache.invalidate(Any(), true) }
+        repeat(512) {
+            val previous = retainedState(cache)
+            cache.invalidate(Any(), true)
+            assertNotSame(previous, retainedState(cache))
+        }
         assertNull(retainedEntry(cache))
         val finalState = retainedState(cache)
         assertNotSame(state, finalState)
-        val epoch =
-            finalState.javaClass
-                .getDeclaredField("epoch")
-                .apply { isAccessible = true }
-                .getLong(finalState)
-        assertEquals(1536L, epoch)
-        assertEquals(setOf("epoch", "entry", "terminal"), finalState.javaClass.declaredFields.mapTo(HashSet()) { it.name })
+        assertEquals(setOf("entry", "terminal"), finalState.javaClass.declaredFields.mapTo(HashSet()) { it.name })
     }
 
     @Test
     fun failedReplacementDropsOldAndPendingOwnershipAndPropagatesTheSameFailure() {
         val cache = FabricMinecraftProfileCache<Any>()
         val manager = Any()
-        cache.get(manager, compatibility, options, ::Any)
+        cache.get(manager, compatibility, options, extract = ::Any)
         val failure = AssertionError("extraction")
 
         assertSame(
@@ -149,7 +146,7 @@ internal class FabricMinecraftProfileCacheTest {
             },
         )
         assertNull(retainedEntry(cache))
-        val recovered = cache.get(manager, compatibility, options, ::Any)
+        val recovered = cache.get(manager, compatibility, options, extract = ::Any)
         assertSame(recovered, retainedValue(cache))
     }
 
@@ -165,7 +162,7 @@ internal class FabricMinecraftProfileCacheTest {
             }
         }
         assertNull(retainedEntry(cache))
-        assertSame(cache.get(manager, compatibility, options, ::Any), retainedValue(cache))
+        assertSame(cache.get(manager, compatibility, options, extract = ::Any), retainedValue(cache))
     }
 
     @Test
@@ -177,7 +174,7 @@ internal class FabricMinecraftProfileCacheTest {
             assertThrows(IllegalStateException::class.java) {
                 cache.get(manager, compatibility, options) {
                     if (invalidateFirst) cache.invalidate(manager, true)
-                    cache.get(manager, compatibility, options, ::Any)
+                    cache.get(manager, compatibility, options, extract = ::Any)
                 }
             }
             assertNull(retainedEntry(cache))
@@ -198,12 +195,12 @@ internal class FabricMinecraftProfileCacheTest {
                         manager,
                         compatibility,
                         options,
-                        Supplier {
+                        extract = {
                             extractions++
                             if (phase == ClaimPhase.DuringExtraction) invalidate.run()
                             Any()
                         },
-                        Runnable { if (phase == ClaimPhase.BeforeClaim) invalidate.run() },
+                        beforeClaim = { if (phase == ClaimPhase.BeforeClaim) invalidate.run() },
                     )
                 }
                 assertEquals(if (phase == ClaimPhase.BeforeClaim) 0 else 1, extractions)
@@ -218,13 +215,13 @@ internal class FabricMinecraftProfileCacheTest {
     fun foreignThreadCannotReuseAnEntryAndForeignManagerCloseDoesNotClearIt() {
         val cache = FabricMinecraftProfileCache<Any>()
         val manager = Any()
-        val profile = cache.get(manager, compatibility, options, ::Any)
+        val profile = cache.get(manager, compatibility, options, extract = ::Any)
         val executor = Executors.newSingleThreadExecutor()
         try {
             val rejected =
                 executor.submit<Boolean> {
                     cache.close(Any(), false)
-                    assertThrows(IllegalStateException::class.java) { cache.get(manager, compatibility, options, ::Any) }
+                    assertThrows(IllegalStateException::class.java) { cache.get(manager, compatibility, options, extract = ::Any) }
                     true
                 }
             assertTrue(rejected.get(5, TimeUnit.SECONDS))
@@ -245,11 +242,11 @@ internal class FabricMinecraftProfileCacheTest {
                     manager,
                     compatibility,
                     options,
-                    Supplier {
+                    extract = {
                         if (phase == ClaimPhase.DuringExtraction) cache.close(manager, true)
                         Any()
                     },
-                    Runnable { if (phase == ClaimPhase.BeforeClaim) cache.close(manager, true) },
+                    beforeClaim = { if (phase == ClaimPhase.BeforeClaim) cache.close(manager, true) },
                 )
             }
             val terminal = retainedState(cache)

@@ -51,7 +51,7 @@ internal class UiControlTest {
                 evaluateComponentTree {
                     Observe(source) { value ->
                         Spacer(
-                            Modifier.Empty
+                            Modifier
                                 .size(10, 10)
                                 .onCapturedPointerEvent(PointerButton.Primary, onCancel = {
                                     if (status is UiSessionStatus.Closed) {
@@ -164,7 +164,7 @@ internal class UiControlTest {
                 evaluateComponentTree {
                     Spacer(
                         modifier =
-                            Modifier.Empty.size(10, 10).onActivate {
+                            Modifier.size(10, 10).onActivate {
                                 receiver = this
                                 close()
                                 assertEquals(UiOperationResult.Rejected(UiRejection.Closed), switch(UiPresentation.Hud))
@@ -185,7 +185,7 @@ internal class UiControlTest {
     fun reusedModifierUsesDeliveryOwnerAndCleanupCannotReopenSession() {
         val delivered = mutableListOf<UiSession>()
         val modifier =
-            Modifier.Empty
+            Modifier
                 .size(10, 10)
                 .onActivate {
                     delivered += this

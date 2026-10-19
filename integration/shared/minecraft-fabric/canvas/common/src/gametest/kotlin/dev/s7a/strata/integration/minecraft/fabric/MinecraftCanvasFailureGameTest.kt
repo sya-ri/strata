@@ -70,7 +70,7 @@ internal object MinecraftCanvasFailureGameTest {
     ): Proof {
         val definition =
             ScreenDefinition("Native Canvas producer-failure acceptance") {
-                Stack(Modifier.Empty.background(ArgbColor(0xFF112233.toInt()))) {
+                Stack(Modifier.background(ArgbColor(0xFF112233.toInt()))) {
                     Row {
                         Canvas(fixture.textureSource, IntSize(32, 32))
                         Canvas(fixture.rendererSource, IntSize(32, 32))

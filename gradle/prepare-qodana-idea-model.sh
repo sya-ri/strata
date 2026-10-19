@@ -5,8 +5,8 @@ set -euo pipefail
 project_root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$project_root"
 
-if [[ -f .idea/modules.xml && "${STRATA_QODANA_BOOTSTRAP:-false}" != "true" ]]; then
-  echo 'Refusing to replace an existing local .idea/modules.xml; run Qodana from a disposable checkout.' >&2
+if [[ ( -f .idea/modules.xml || -f .idea/misc.xml ) && "${STRATA_QODANA_BOOTSTRAP:-false}" != "true" ]]; then
+  echo 'Refusing to replace existing local IDEA metadata; run Qodana from a disposable checkout.' >&2
   exit 1
 fi
 
@@ -21,7 +21,10 @@ project_jdk=${java_toolchains[${#java_toolchains[@]} - 1]}
 project_language_level="JDK_$project_jdk"
 
 # Recreate the selected revision's source roots even when the IDE reuses indexes from an earlier scan.
+mkdir -p build/qodana
+rm -f -- build/qodana/declarations.json build/qodana/gradle.log
 bash ./gradlew \
+  --console=plain \
   --no-daemon \
   --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true \
@@ -29,7 +32,11 @@ bash ./gradlew \
   cleanIdea \
   :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar \
   classes gametestClasses \
-  idea
+  idea qodanaDeclarationInventory qodanaKotlinModel 2>&1 | tee build/qodana/gradle.log
+[[ -s build/qodana/declarations.json ]] || {
+  echo 'Gradle did not recreate the declaration-derived JMH inventory.' >&2
+  exit 1
+}
 
 verify_generated_projects() {
   local owner=$1
@@ -83,13 +90,33 @@ if [[ -f .idea/misc.xml ]]; then
     echo "The existing Qodana IDEA metadata does not declare the catalog's required Java $project_jdk project SDK." >&2
     exit 1
   fi
-else
-  {
-    printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>'
-    printf '%s\n' '<project version="4">'
-    printf '  <component name="ProjectRootManager" version="2" languageLevel="%s" default="true" project-jdk-name="jbr-%s" project-jdk-type="JavaSDK" />\n' "$project_language_level" "$project_jdk"
-    printf '%s\n' '</project>'
-  } > .idea/misc.xml
 fi
+
+# Mixin invokes these declarations after transforming native owners; shadow fields are written by those owners.
+# Model the framework entrypoints instead of excluding each annotated source file from unused-code analysis.
+{
+  printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>'
+  printf '%s\n' '<project version="4">'
+  printf '  <component name="ProjectRootManager" version="2" languageLevel="%s" default="true" project-jdk-name="jbr-%s" project-jdk-type="JavaSDK" />\n' "$project_language_level" "$project_jdk"
+  cat <<'XML'
+  <component name="EntryPointsManager">
+    <list size="9">
+      <item index="0" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.Mixin" />
+      <item index="1" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.Shadow" />
+      <item index="2" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.gen.Accessor" />
+      <item index="3" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.gen.Invoker" />
+      <item index="4" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.injection.Inject" />
+      <item index="5" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.injection.ModifyConstant" />
+      <item index="6" class="java.lang.String" itemvalue="com.llamalad7.mixinextras.injector.ModifyExpressionValue" />
+      <item index="7" class="java.lang.String" itemvalue="com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod" />
+      <item index="8" class="java.lang.String" itemvalue="com.llamalad7.mixinextras.injector.v2.WrapWithCondition" />
+    </list>
+    <writeAnnotations>
+      <writeAnnotation name="org.spongepowered.asm.mixin.Shadow" />
+    </writeAnnotations>
+  </component>
+</project>
+XML
+} > .idea/misc.xml
 
 echo "Prepared Qodana IDEA metadata for $runtime_count runtime and $integration_count integration Minecraft modules, Java $project_jdk, and the CPU font backend."

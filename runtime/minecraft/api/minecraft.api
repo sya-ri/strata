@@ -60,7 +60,7 @@ public final class dev/s7a/strata/runtime/minecraft/MinecraftRuntimeFactories {
 	public static final fun createMinecraftUiProfile (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/runtime/minecraft/MinecraftUiProfile;
 }
 
-public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner, java/lang/AutoCloseable {
+public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost : java/lang/AutoCloseable {
 	public abstract fun attach ()V
 	public abstract fun close ()V
 	public abstract fun detach ()V
@@ -73,10 +73,6 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 	public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;
 	public abstract fun getTitle ()Ldev/s7a/strata/text/UiText;
 	public abstract fun resetInputState ()V
-}
-
-public final class dev/s7a/strata/runtime/minecraft/MinecraftUiHost$DefaultImpls {
-	public static fun startRenderMonitoring (Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiPlatform : java/lang/AutoCloseable {

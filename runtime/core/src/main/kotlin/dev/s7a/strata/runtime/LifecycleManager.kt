@@ -17,7 +17,6 @@ internal class LifecycleManager(
     private val registry: NodeOwnershipRegistry,
     private val ownerGuard: OwnerGuard,
     private val dirtyTracker: DirtyTracker,
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
     private val eventSession: UiSession? = null,
     private val beforeEntryCleanup: (RetainedEntry) -> Unit,
 ) {
@@ -38,7 +37,6 @@ internal class LifecycleManager(
                 }
             }.onFailure { registry.release(retained.node) }.getOrThrow()
         retained.bindingRelease = binding
-        monitoring.created(retained)
     }
 
     /**
@@ -48,6 +46,7 @@ internal class LifecycleManager(
      * @param retained the installed node whose local attachment is required.
      */
     fun attachCurrent(retained: RetainedNode) {
+        if (retained.hasPendingAttachments.not()) return
         retained.modifiers.forEach { modifier -> attachModifier(modifier) }
         if (retained.attachAttempted) {
             return
@@ -76,8 +75,11 @@ internal class LifecycleManager(
      * @param retained the installed root to scan.
      */
     fun attachPending(retained: RetainedNode) {
+        if (retained.hasPendingAttachments.not()) return
         attachCurrent(retained)
-        retained.children.forEach(::attachPending)
+        val children = retained.attachmentChildren
+        for (index in children.indices) attachPending(children[index])
+        retained.refreshTraversalSummary(propagate = false)
     }
 
     /**
@@ -112,18 +114,35 @@ internal class LifecycleManager(
     /**
      * Rejects invalidation from every subtree entry before terminal input cancellation or lifecycle cleanup begins.
      *
-     * This owner-confined operation invokes no callbacks, releases no resources, and is safe to repeat before [cleanup].
+     * This owner-confined operation clears shared paint snapshots without invoking callbacks and is safe to repeat before [cleanup].
      *
      * @param retained subtree whose node ownership is entering cleanup.
      */
     fun prepareCleanup(retained: RetainedNode) {
-        retained.cleanupStarted = true
+        markCleanupStarted(retained)
+        retained.clearTraversalSummary()
+        val parent = retained.logicalParent
+        if (parent != null && parent.cleanupStarted.not()) parent.refreshTraversalSummary()
         retained.modifiers.forEach(::markCleanupStarted)
         retained.children.forEach(::prepareCleanup)
     }
 
-    private fun markCleanupStarted(retained: RetainedModifier) {
+    private fun markCleanupStarted(retained: RetainedEntry) {
         retained.cleanupStarted = true
+        retained.childMeasurePass = null
+        retained.childLayoutPass = null
+        retained.parentMeasurePass = null
+        retained.parentLayoutPass = null
+        retained.parentOffset = null
+        retained.paintSnapshot = null
+        retained.paintSubtreeDirty = true
+        var ancestor = retained.parent
+        while (ancestor != null) {
+            if (ancestor.paintSnapshot == null && ancestor.paintSubtreeDirty) break
+            ancestor.paintSnapshot = null
+            ancestor.paintSubtreeDirty = true
+            ancestor = ancestor.parent
+        }
     }
 
     private fun cleanupNode(
@@ -146,6 +165,8 @@ internal class LifecycleManager(
         retained: RetainedEntry,
         failures: FailureAccumulator,
     ) {
+        retained.transformedPaint = null
+        retained.paintSnapshot = null
         failures.capture { beforeEntryCleanup(retained) }
         val lifecycle = retained.node as? LifecycleNode
         if (lifecycle != null && retained.attachAttempted && retained.detachAttempted.not()) {
@@ -157,7 +178,6 @@ internal class LifecycleManager(
             if (lifecycle != null) {
                 failures.capture { lifecycle.dispose() }
             }
-            monitoring.disposed(retained)
         }
         val release = retained.bindingRelease
         retained.bindingRelease = null

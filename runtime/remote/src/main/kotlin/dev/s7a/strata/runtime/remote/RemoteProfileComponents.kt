@@ -5,7 +5,6 @@ package dev.s7a.strata.runtime.remote
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.TabSelectionIndicator
-import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.projection.ProjectionFields
@@ -33,7 +32,7 @@ internal object RemoteProfileComponents {
         element(registry, RemoteProfileComponent.Text) {
             val text = RemoteTextCodec.decode(value())
             val layout = RemoteProperties.textLayout(value())
-            val style = enumeration<TextStyle>(this)
+            val style = RemoteProperties.textStyle(value())
             val factory: (RemoteElementContext) -> Element = { context ->
                 require(context.children.isEmpty())
                 ComponentRuntimeBridge.current().text(text, layout, style, context.modifier, context.key)
@@ -120,29 +119,29 @@ internal object RemoteProfileComponents {
         modifier(registry, RemoteProfileComponent.Tooltip) {
             val text = RemoteTextCodec.decode(value())
             val delay = long().also { require(0 <= it) }
-            val factory = { ComponentRuntimeBridge.current().tooltip(Modifier.Empty, text, delay) }
+            val factory = { ComponentRuntimeBridge.current().tooltip(Modifier, text, delay) }
             factory
         }
         modifier(registry, RemoteProfileComponent.MenuBackground) {
-            val factory = { ComponentRuntimeBridge.current().menuBackground(Modifier.Empty) }
+            val factory = { ComponentRuntimeBridge.current().menuBackground(Modifier) }
             factory
         }
         modifier(registry, RemoteProfileComponent.ContainerBackground) {
             val rows = int(1..6)
-            val factory = { ComponentRuntimeBridge.current().containerBackground(Modifier.Empty, rows) }
+            val factory = { ComponentRuntimeBridge.current().containerBackground(Modifier, rows) }
             factory
         }
         modifier(registry, RemoteProfileComponent.ImageBackground) {
             val source = RemoteProperties.image(value())
             val scale = enumeration<ImageScale>(this)
-            val factory = { ComponentRuntimeBridge.current().imageBackground(Modifier.Empty, source, scale) }
+            val factory = { ComponentRuntimeBridge.current().imageBackground(Modifier, source, scale) }
             factory
         }
         modifier(registry, RemoteProfileComponent.NineSliceBackground) {
             val source = RemoteProperties.image(value())
             val border = RemoteProperties.insets(value())
             val mode = if (flag()) NineSliceCenterMode.Stretched else NineSliceCenterMode.Tiled
-            val factory = { ComponentRuntimeBridge.current().imageBackground(Modifier.Empty, source, border, mode) }
+            val factory = { ComponentRuntimeBridge.current().imageBackground(Modifier, source, border, mode) }
             factory
         }
     }

@@ -25,7 +25,7 @@ internal fun createPlayerHeadShowcaseScreenDefinition(
 ): ScreenDefinition =
     ScreenDefinition("Player head") {
         Stack(
-            modifier = Modifier.Empty.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             PlayerHead(source = skin, scale = PlayerHeadScale(3))
@@ -55,7 +55,7 @@ internal fun createFilteredPlayerHeadScreenDefinition(
 ): ScreenDefinition =
     ScreenDefinition("Filtered player head") {
         Stack(
-            modifier = Modifier.Empty.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             PlayerHead(source = skin, size = 10)

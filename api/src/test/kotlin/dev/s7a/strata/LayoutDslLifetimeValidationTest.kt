@@ -217,13 +217,13 @@ internal class LayoutDslLifetimeValidationTest {
 
         val operations =
             listOf<() -> Unit>(
-                { with(requireNotNull(rowScope)) { Modifier.Empty.weight(1f) } },
-                { with(requireNotNull(rowScope)) { Modifier.Empty.align(VerticalAlignment.Bottom) } },
-                { with(requireNotNull(columnScope)) { Modifier.Empty.weight(1f) } },
-                { with(requireNotNull(columnScope)) { Modifier.Empty.align(HorizontalAlignment.End) } },
-                { with(requireNotNull(stackScope)) { Modifier.Empty.align(Alignment.Center) } },
-                { with(requireNotNull(gridScope)) { Modifier.Empty.align(Alignment.Center) } },
-                { with(requireNotNull(flowRowScope)) { Modifier.Empty.align(VerticalAlignment.Center) } },
+                { with(requireNotNull(rowScope)) { Modifier.weight(1f) } },
+                { with(requireNotNull(rowScope)) { Modifier.align(VerticalAlignment.Bottom) } },
+                { with(requireNotNull(columnScope)) { Modifier.weight(1f) } },
+                { with(requireNotNull(columnScope)) { Modifier.align(HorizontalAlignment.End) } },
+                { with(requireNotNull(stackScope)) { Modifier.align(Alignment.Center) } },
+                { with(requireNotNull(gridScope)) { Modifier.align(Alignment.Center) } },
+                { with(requireNotNull(flowRowScope)) { Modifier.align(VerticalAlignment.Center) } },
             )
 
         operations.forEach { operation ->
@@ -255,7 +255,7 @@ internal class LayoutDslLifetimeValidationTest {
             Row {
                 invalidWeights.forEach { weight ->
                     assertThrows(IllegalArgumentException::class.java) {
-                        Modifier.Empty.weight(weight)
+                        Modifier.weight(weight)
                     }
                 }
                 element(TraceElement())
@@ -265,7 +265,7 @@ internal class LayoutDslLifetimeValidationTest {
             Column {
                 invalidWeights.forEach { weight ->
                     assertThrows(IllegalArgumentException::class.java) {
-                        Modifier.Empty.weight(weight)
+                        Modifier.weight(weight)
                     }
                 }
                 element(TraceElement())
@@ -286,12 +286,12 @@ internal class LayoutDslLifetimeValidationTest {
                         try {
                             entered.await()
                             try {
-                                with(scope) { Modifier.Empty.weight(1f) }
+                                with(scope) { Modifier.weight(1f) }
                             } catch (error: Throwable) {
                                 failures += error
                             }
                             try {
-                                with(scope) { Modifier.Empty.align(VerticalAlignment.Bottom) }
+                                with(scope) { Modifier.align(VerticalAlignment.Bottom) }
                             } catch (error: Throwable) {
                                 failures += error
                             }
@@ -323,12 +323,12 @@ internal class LayoutDslLifetimeValidationTest {
                         try {
                             entered.await()
                             try {
-                                with(scope) { Modifier.Empty.weight(1f) }
+                                with(scope) { Modifier.weight(1f) }
                             } catch (error: Throwable) {
                                 failures += error
                             }
                             try {
-                                with(scope) { Modifier.Empty.align(HorizontalAlignment.End) }
+                                with(scope) { Modifier.align(HorizontalAlignment.End) }
                             } catch (error: Throwable) {
                                 failures += error
                             }
@@ -360,7 +360,7 @@ internal class LayoutDslLifetimeValidationTest {
                         try {
                             entered.await()
                             try {
-                                with(scope) { Modifier.Empty.align(Alignment.Center) }
+                                with(scope) { Modifier.align(Alignment.Center) }
                             } catch (error: Throwable) {
                                 failures += error
                             }
@@ -392,7 +392,7 @@ internal class LayoutDslLifetimeValidationTest {
                         try {
                             entered.await()
                             try {
-                                with(scope) { Modifier.Empty.align(Alignment.Center) }
+                                with(scope) { Modifier.align(Alignment.Center) }
                             } catch (error: Throwable) {
                                 failures += error
                             }
@@ -435,7 +435,7 @@ internal class LayoutDslLifetimeValidationTest {
                         try {
                             entered.await()
                             try {
-                                with(scope) { Modifier.Empty.align(VerticalAlignment.Center) }
+                                with(scope) { Modifier.align(VerticalAlignment.Center) }
                             } catch (error: Throwable) {
                                 failures += error
                             }

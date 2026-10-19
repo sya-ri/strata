@@ -8,7 +8,6 @@ import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextFieldState
-import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.modifier.onCheckedChange
 import dev.s7a.strata.modifier.onCycle
 import dev.s7a.strata.modifier.onSliderChange
@@ -107,7 +106,7 @@ internal object RemoteForms {
             val size = RemoteProperties.size(value())
             val appearance = RemoteProperties.appearance(value())
             val enabled = flag()
-            val style = enumeration<TextStyle>(this)
+            val style = RemoteProperties.textStyle(value())
             val font = optional(value(), RemoteProperties::resource)
             control.specification(binding, { TextFieldState(it, maximum) }, { state, context ->
                 require(context.children.isEmpty())
@@ -133,7 +132,7 @@ internal object RemoteForms {
             val viewport = RemoteProperties.viewport(value())
             val appearance = RemoteProperties.appearance(value())
             val enabled = flag()
-            val style = enumeration<TextStyle>(this)
+            val style = RemoteProperties.textStyle(value())
             val font = optional(value(), RemoteProperties::resource)
             val wrap = enumeration<TextWrap>(this)
             val spacing = int(0..Int.MAX_VALUE)

@@ -45,7 +45,7 @@ private fun UiScope.playerPanel(
 ) {
     Column(
         modifier =
-            Modifier.Empty
+            Modifier
                 .menuBackground()
                 .padding(4),
         spacing = 4,
@@ -54,7 +54,7 @@ private fun UiScope.playerPanel(
         Text("Players (${players.size})")
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .height(142)
                     .imageBackground(
                         panel,
@@ -70,7 +70,7 @@ private fun UiScope.playerPanel(
 private fun UiScope.playerList(
     players: List<ReadmePlayer>,
 ) {
-    Column(Modifier.Empty.width(220), spacing = 6) {
+    Column(Modifier.width(220), spacing = 6) {
         players.forEach { player ->
             playerRow(player)
         }
@@ -80,7 +80,7 @@ private fun UiScope.playerList(
 private fun UiScope.playerRow(player: ReadmePlayer) {
     Row(
         modifier =
-            Modifier.Empty
+            Modifier
                 .background(ArgbColor(0xFF4A4A4A.toInt()))
                 .padding(6)
                 .fillMaxWidth(),

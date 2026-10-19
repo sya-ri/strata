@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.TextShadow
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
@@ -41,17 +42,16 @@ internal class MinecraftTextRenderer private constructor(
         logicalOrder: Boolean = false,
     ): MinecraftTextRun {
         check(Thread.currentThread() === owner && closed.not()) { "Text renderer is closed or accessed from another thread." }
+        val foreground = if (enabled) style.color else style.disabledColor ?: style.color
+        val shadow =
+            when (val policy = style.shadow) {
+                null -> null
+                TextShadow.Automatic -> ArgbColor((foreground.value and 0xff000000.toInt()) or ((foreground.value and 0xfcfcfc) ushr 2))
+                is TextShadow.Color -> policy.color
+            }
         val currentEngine = engine
         if (currentEngine != null) {
-            val foreground =
-                when (style) {
-                    TextStyle.Normal -> 0xffffff
-                    TextStyle.Inactive -> 0xa0a0a0
-                    TextStyle.ContainerLabel -> 0x404040
-                    TextStyle.TextField -> if (enabled) 0xe0e0e0 else 0x707070
-                }
-            val shadow = if (style == TextStyle.ContainerLabel) null else ArgbColor(0xff000000.toInt() or ((foreground and 0xfcfcfc) ushr 2))
-            return MinecraftTextRun.createFonts(text, currentEngine, font, ArgbColor(0xff000000.toInt() or foreground), shadow, logicalOrder)
+            return MinecraftTextRun.createFonts(text, currentEngine, font, foreground, shadow, logicalOrder)
         }
         require(font == defaultFont) { "Custom fonts require a font-resource snapshot." }
         val glyphs = checkNotNull(legacyGlyphs)
@@ -60,6 +60,7 @@ internal class MinecraftTextRenderer private constructor(
             TextStyle.Inactive -> MinecraftTextRun.createInactive(text, glyphs::getValue)
             TextStyle.ContainerLabel -> MinecraftTextRun.createContainerLabel(text, glyphs::getValue)
             TextStyle.TextField -> MinecraftTextRun.createTextField(text, enabled, glyphs::getValue)
+            else -> MinecraftTextRun.createTinted(text, foreground, shadow, glyphs::getValue)
         }
     }
 

@@ -27,7 +27,7 @@ internal class PanZoomModifierTest {
     @Test
     fun primaryPressPansThroughOutsideDragAndMatchingReleaseEndsGesture() {
         val state = attachedState(initialZoom = 2.0)
-        val node = pointerNode(Modifier.Empty.panZoom(state))
+        val node = pointerNode(Modifier.panZoom(state))
 
         assertEquals(InputResult.Ignored, node.onPointerEvent(PointerEvent.Press(IntOffset.Zero, PointerButton.Secondary), IntOffset.Zero))
         assertEquals(InputResult.Consumed, node.onPointerEvent(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero))
@@ -57,7 +57,7 @@ internal class PanZoomModifierTest {
     @Test
     fun cancellationStopsCapturedPanWithoutChangingTransform() {
         val state = attachedState(initialZoom = 2.0)
-        val node = pointerNode(Modifier.Empty.panZoom(state))
+        val node = pointerNode(Modifier.panZoom(state))
         node.onPointerEvent(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)
         node.onPointerCaptureAcquired(PointerButton.Primary)
         node.onPointerCaptureCancelled(PointerButton.Primary)
@@ -75,7 +75,7 @@ internal class PanZoomModifierTest {
     @Test
     fun scrollZoomKeepsPointerAnchorAndConsumesWithoutStartingPan() {
         val state = attachedState(initialZoom = 2.0)
-        val node = pointerNode(Modifier.Empty.panZoom(state))
+        val node = pointerNode(Modifier.panZoom(state))
         val local = IntOffset(75, 50)
         val anchor = DoubleOffset(local.x.toDouble(), local.y.toDouble())
         val before = state.localToContent(anchor)
@@ -99,7 +99,7 @@ internal class PanZoomModifierTest {
     @Test
     fun horizontalOnlyScrollRemainsAvailableToOrdinaryDispatch() {
         val state = attachedState(initialZoom = 2.0)
-        val node = pointerNode(Modifier.Empty.panZoom(state))
+        val node = pointerNode(Modifier.panZoom(state))
 
         assertEquals(
             InputResult.Ignored,
@@ -112,7 +112,7 @@ internal class PanZoomModifierTest {
     @Test
     fun customPanButtonAndScrollStepAreValidatedAndApplied() {
         val state = attachedState(initialZoom = 2.0)
-        val node = pointerNode(Modifier.Empty.panZoom(state, PointerButton.Middle, zoomStep = 2.0))
+        val node = pointerNode(Modifier.panZoom(state, PointerButton.Middle, zoomStep = 2.0))
 
         assertEquals(InputResult.Ignored, node.onPointerEvent(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero))
         assertEquals(InputResult.Consumed, node.onPointerEvent(PointerEvent.Press(IntOffset.Zero, PointerButton.Middle), IntOffset.Zero))
@@ -124,8 +124,8 @@ internal class PanZoomModifierTest {
         )
         assertEquals(4.0, state.metrics.zoom, EPSILON)
 
-        assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.panZoom(state, zoomStep = 1.0) }
-        assertThrows(IllegalArgumentException::class.java) { Modifier.Empty.panZoom(state, zoomStep = Double.NaN) }
+        assertThrows(IllegalArgumentException::class.java) { Modifier.panZoom(state, zoomStep = 1.0) }
+        assertThrows(IllegalArgumentException::class.java) { Modifier.panZoom(state, zoomStep = Double.NaN) }
     }
 
     @Test
@@ -133,12 +133,12 @@ internal class PanZoomModifierTest {
         val firstState = PanZoomState()
         val secondState = PanZoomState()
         val first =
-            Modifier.Empty
+            Modifier
                 .panZoom(firstState)
                 .elements()
                 .single()
         val second =
-            Modifier.Empty
+            Modifier
                 .panZoom(secondState, PointerButton.Middle, 2.0)
                 .elements()
                 .single()

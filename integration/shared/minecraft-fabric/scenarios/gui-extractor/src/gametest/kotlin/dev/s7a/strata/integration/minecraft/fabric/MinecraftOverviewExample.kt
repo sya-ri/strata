@@ -24,7 +24,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createConfirmScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Strata parity") {
         Stack(
-            modifier = Modifier.Empty.size(320, 180).menuBackground(),
+            modifier = Modifier.size(320, 180).menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
             Column(
@@ -41,11 +41,11 @@ internal fun createConfirmScreenDefinition(): ScreenDefinition =
                 Row(spacing = 4) {
                     Button(
                         "Yes",
-                        modifier = Modifier.Empty.onActivate {},
+                        modifier = Modifier.onActivate {},
                     )
                     Button(
                         "No",
-                        modifier = Modifier.Empty.onActivate {},
+                        modifier = Modifier.onActivate {},
                     )
                 }
             }

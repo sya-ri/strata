@@ -35,19 +35,19 @@ public fun UiScope.TiledImage(
     size: IntSize,
     fit: PanZoomFit = PanZoomFit.Contain,
     cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: TiledImageScope.() -> Unit = {},
 ) {
     checkUsable()
     require(0 < size.width && 0 < size.height) { "Tiled image viewport dimensions must be positive." }
     val scope = TiledImageScope.create()
-    val overlays =
+    val parent =
         try {
             scope.content()
-            scope.childElementsSnapshot()
+            TiledImageElement.create(source, state, size, fit, cachePolicy, modifier, key, scope.borrowChildElements())
         } finally {
             scope.close()
         }
-    element(TiledImageElement.create(source, state, size, fit, cachePolicy, modifier, key, overlays))
+    element(parent)
 }

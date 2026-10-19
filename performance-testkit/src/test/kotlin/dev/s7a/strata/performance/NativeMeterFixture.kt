@@ -33,10 +33,29 @@ internal class NativeMeterFixture {
     @JvmField var sampledImageRetainedByteCount = 0L
 
     @JvmField var preparedCommands = listOf("fixture command")
+
+    @JvmField var uploadWork: UploadWork? = null
     var monitorClosed = false
     var retiredRecords = 0
     var work = 0L
     var overflowed = false
+
+    /**
+     * Optional newer-runtime payload surface for compatibility and delta tests.
+     */
+    class UploadWork {
+        @JvmField var sourceUploadByteCount = 0L
+
+        @JvmField var rasterUploadByteCount = 0L
+
+        @JvmField var samplingUploadByteCount = 0L
+
+        @JvmField var tintFallbackCount = 0L
+
+        @JvmField var alphaCutoffFallbackCount = 0L
+
+        @JvmField var otherIneligibleFallbackCount = 0L
+    }
 
     /**
      * Creates a simulated owner monitor whose lifetime can be asserted after success and failure.

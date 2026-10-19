@@ -25,7 +25,7 @@ internal fun createSelectionListShowcaseScreenDefinition(): ScreenDefinition {
         SelectionList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
             val color = if (state.selectedKey == item) ArgbColor(0xFF4A4A4A.toInt()) else ArgbColor(0xFF202020.toInt())
             Stack(
-                modifier = Modifier.Empty.size(120, 16).background(color),
+                modifier = Modifier.size(120, 16).background(color),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(item)

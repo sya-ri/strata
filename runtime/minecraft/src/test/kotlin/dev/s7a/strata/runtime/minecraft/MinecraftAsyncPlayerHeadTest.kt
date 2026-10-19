@@ -174,10 +174,10 @@ internal class MinecraftAsyncPlayerHeadTest {
                 source = source,
                 scale = PlayerHeadScale(1),
                 loadingContent = {
-                    Spacer(modifier = Modifier.Empty.size(4, 4).background(loadingColor))
+                    Spacer(modifier = Modifier.size(4, 4).background(loadingColor))
                 },
                 failureContent = {
-                    Spacer(modifier = Modifier.Empty.size(6, 6).background(failureColor))
+                    Spacer(modifier = Modifier.size(6, 6).background(failureColor))
                 },
             )
         }
@@ -201,7 +201,7 @@ internal class MinecraftAsyncPlayerHeadTest {
         showHat = true,
         loading = null,
         failure = null,
-        modifier = Modifier.Empty,
+        modifier = Modifier,
         key = null,
     )
 

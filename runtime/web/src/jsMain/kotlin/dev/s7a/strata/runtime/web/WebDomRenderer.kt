@@ -1,6 +1,6 @@
 package dev.s7a.strata.runtime.web
 
-import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.TextShadow
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -127,17 +127,19 @@ internal class WebDomRenderer(
         style.setProperty("clip-path", clipPath(bounds, entry.clip))
         style.backgroundColor = entry.background
         val presentation = entry.presentation
-        style.color =
-            if (theme == WebTheme.Minecraft && presentation?.kind == WebPresentation.Kind.Text) {
-                when (presentation.style) {
-                    TextStyle.Inactive -> "#a0a0a0"
-                    TextStyle.ContainerLabel -> "#404040"
-                    else -> "#ffffff"
+        if (presentation?.kind == WebPresentation.Kind.Text) {
+            val foreground = if (presentation.enabled) presentation.style.color else presentation.style.disabledColor ?: presentation.style.color
+            style.color = cssColor(foreground.value)
+            style.textShadow =
+                when (val shadow = presentation.style.shadow) {
+                    null -> "none"
+                    TextShadow.Automatic -> "1px 1px ${cssColor((foreground.value and 0xff000000.toInt()) or ((foreground.value and 0xfcfcfc) ushr 2))}"
+                    is TextShadow.Color -> "1px 1px ${cssColor(shadow.color.value)}"
                 }
-            } else {
-                ""
-            }
-        style.textShadow = if (presentation?.style == TextStyle.ContainerLabel) "none" else ""
+        } else {
+            style.color = ""
+            style.textShadow = ""
+        }
         style.setProperty("pointer-events", if (presentation == null) "none" else "auto")
         if (element.textContent != presentation?.label.orEmpty()) element.textContent = presentation?.label.orEmpty()
         if (element is HTMLButtonElement) {
@@ -165,7 +167,7 @@ internal class WebDomRenderer(
 
                 is DrawCommand.FillRectangle -> {
                     val value = command.color.value
-                    val color = "rgba(${value ushr 16 and 255},${value ushr 8 and 255},${value and 255},${(value ushr 24) / 255.0})"
+                    val color = cssColor(value)
                     entries.add(Entry("d$index", "span", command.bounds, clips.lastOrNull(), color, null))
                 }
 
@@ -185,6 +187,11 @@ internal class WebDomRenderer(
         check(entries.map(Entry::identity).distinct().size == entries.size) { "Duplicate web presentation identity." }
         return entries
     }
+
+    /**
+     * Converts straight ARGB channels without dropping alpha or browser-dependent named colors.
+     */
+    private fun cssColor(value: Int): String = "rgba(${value ushr 16 and 255},${value ushr 8 and 255},${value and 255},${(value ushr 24) / 255.0})"
 
     private fun intersect(
         left: IntRect,

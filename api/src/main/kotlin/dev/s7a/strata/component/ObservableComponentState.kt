@@ -13,6 +13,7 @@ internal class ObservableComponentState<T : Any>(
 ) {
     private val owner = currentOwner()
     private val observers: MutableSet<(T) -> Unit> = LinkedHashSet()
+    private var notificationSnapshot: List<(T) -> Unit>? = null
     private val currentValue = mutableStateOf(initialValue)
 
     init {
@@ -34,7 +35,8 @@ internal class ObservableComponentState<T : Any>(
         checkOwner()
         validate(value)
         if (currentValue.update(value).not()) return false
-        observers.toList().forEach { observer -> observer(value) }
+        val active = notificationSnapshot ?: observers.toList().also { notificationSnapshot = it }
+        active.forEach { observer -> observer(value) }
         return true
     }
 
@@ -45,9 +47,10 @@ internal class ObservableComponentState<T : Any>(
     fun observe(callback: (T) -> Unit): ComponentStateSubscription {
         checkOwner()
         check(observers.add(callback)) { "A component state observer was already registered." }
+        notificationSnapshot = null
         return ComponentStateSubscription {
             checkOwner()
-            observers.remove(callback)
+            if (observers.remove(callback)) notificationSnapshot = null
         }
     }
 

@@ -27,7 +27,7 @@ internal object JmhForkConfiguration {
         val inherited = ManagementFactory.getRuntimeMXBean().inputArguments
         verifyArguments(options.jvmArgs.orElse(inherited) + options.jvmArgsPrepend.orElse(emptyList()) + options.jvmArgsAppend.orElse(emptyList()))
         val output = OutputFormatFactory.createFormatInstance(System.out, VerboseMode.SILENT)
-        val entries = BenchmarkList.defaultList().find(output, options.includes, options.excludes).filter { entry -> fixtures.any { it.name == entry.userClassQName } }
+        val entries = BenchmarkList.defaultList().find(output, options.includes, options.excludes).filter { entry -> fixtures.any { it.name.replace('$', '.') == entry.userClassQName } }
         require(entries.isNotEmpty()) { "Missing generated JMH fixture metadata" }
         entries.forEach { entry ->
             require(0 < options.forkCount.orElse(entry.forks.orElse(1))) { "JMH evidence requires an independent fork" }

@@ -25,7 +25,7 @@ import dev.s7a.strata.modifier.Modifier
 public fun UiScope.Canvas(
     source: CanvasSource,
     size: IntSize,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()

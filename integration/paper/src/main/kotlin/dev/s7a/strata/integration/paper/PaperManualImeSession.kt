@@ -41,13 +41,13 @@ internal class PaperManualImeSession(
             plugin,
             player,
             ScreenDefinition("Strata remote OS IME verification") {
-                Column(Modifier.Empty.menuBackground().padding(8), spacing = 8) {
+                Column(Modifier.menuBackground().padding(8), spacing = 8) {
                     Text("Japanese IME: type nihongo, convert, confirm.")
                     Text("Keep composition active while updates advance.")
                     Text("Updates: ${updates.value}")
                     TextArea(draft, TextAreaViewport.Size(IntSize(304, 72)))
                     Text("Insert an Enter newline, then finish.")
-                    Button("Finish test", enabled = draft.value.contains("日本語") && draft.value.contains('\n'), modifier = Modifier.Empty.onActivate { completed = true })
+                    Button("Finish test", enabled = draft.value.contains("日本語") && draft.value.contains('\n'), modifier = Modifier.onActivate { completed = true })
                 }
             },
         )

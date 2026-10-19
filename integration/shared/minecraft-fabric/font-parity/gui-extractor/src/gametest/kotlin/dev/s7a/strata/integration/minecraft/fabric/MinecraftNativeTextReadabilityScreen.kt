@@ -31,7 +31,7 @@ internal class MinecraftNativeTextReadabilityScreen : Screen(Component.literal("
                 Component.literal(row.text),
                 MinecraftTextReadabilityScene.LEFT,
                 row.top,
-                MinecraftTextReadabilityScene.FOREGROUND,
+                MinecraftTextReadabilityScene.foreground.value,
                 false,
             )
         }

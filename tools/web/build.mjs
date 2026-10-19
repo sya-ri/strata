@@ -11,7 +11,7 @@ import { collectBrowserPerformance } from '../../performance-testkit/src/jsMain/
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(resolve(repository, 'build/js/package.json'));
 const { chromium, firefox, webkit } = require('playwright');
-const [mode, buildArgument, collectorArgument, performanceOutputArgument] = process.argv.slice(2);
+const [mode, buildArgument, collectorArgument, performanceOutputArgument, inputManifestArgument] = process.argv.slice(2);
 assert.ok(mode === 'build' || mode === 'verify' || mode === 'performance', 'Expected build, verify, or performance mode');
 assert.ok(buildArgument, 'Expected an application build directory');
 const build = resolve(buildArgument);
@@ -63,7 +63,7 @@ try {
         ]);
         await collectBrowserPerformance({
             collectorPath: resolve(collectorArgument), targetPath: resolve(site, 'application.js'), outputPath: resolve(performanceOutputArgument),
-            inputPaths: { 'standard-component-inventory': inventoryPath },
+            inputPaths: await performanceInputs(inventoryPath),
             engines: [chromium, firefox, webkit],
             scenarios,
             conditions: { viewport: { width: 640, height: 480 }, warmup: 30, samples: 60, input_identity: 'strata-standard-components-and-reactive-web-v1' },
@@ -123,4 +123,20 @@ async function verifyTheme(browser, engine, theme, expected) {
     console.log(`Verified initial HTML, adoption, conditionals, native actions and keyed reorder: ${engine.name()} / ${theme}`);
     await page.close();
     return receipt;
+}
+
+/** Adds frozen caller inputs while retaining the compiled standard workload and collector defaults. */
+async function performanceInputs(inventoryPath) {
+    const inputs = { 'standard-component-inventory': inventoryPath };
+    if (inputManifestArgument === undefined) return inputs;
+    const manifestPath = resolve(inputManifestArgument);
+    const extra = JSON.parse(await readFile(manifestPath, 'utf8'));
+    assert.ok(extra !== null && typeof extra === 'object' && Array.isArray(extra) === false, 'Expected a fixture input path map');
+    inputs['fixture-input-manifest'] = manifestPath;
+    for (const [name, path] of Object.entries(extra)) {
+        assert.ok(Object.hasOwn(inputs, name) === false, 'Reserved fixture input name');
+        assert.ok(typeof path === 'string' && path.length !== 0, 'Expected a fixture input path');
+        Object.defineProperty(inputs, name, { value: resolve(dirname(manifestPath), path), enumerable: true });
+    }
+    return inputs;
 }

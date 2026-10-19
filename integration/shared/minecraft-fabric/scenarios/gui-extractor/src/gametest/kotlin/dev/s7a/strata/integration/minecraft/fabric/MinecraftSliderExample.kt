@@ -20,7 +20,7 @@ internal fun createSliderShowcaseScreenDefinition(): ScreenDefinition {
     val state = SliderState(initialValue = 0.65)
     return ScreenDefinition("Slider showcase") {
         Stack(
-            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             Slider("Volume", state)

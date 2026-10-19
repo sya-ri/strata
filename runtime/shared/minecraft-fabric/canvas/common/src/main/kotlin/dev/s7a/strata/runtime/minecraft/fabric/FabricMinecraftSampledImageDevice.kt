@@ -61,7 +61,6 @@ internal class FabricMinecraftSampledImageDevice(
      *
      * @param owner live screen owner returned by [openOwner].
      * @param images requested source images in deterministic display-list order.
-     * @param uploaded callback invoked after each successful new upload, never retained.
      * @return borrowed identity lookup whose [Borrow.close] must run after submission.
      * @throws Throwable when allocation, upload, fencing, or independently attempted cleanup fails.
      */
@@ -69,10 +68,6 @@ internal class FabricMinecraftSampledImageDevice(
     internal fun borrow(
         owner: Owner,
         images: List<DrawImage>,
-        hit: () -> Unit,
-        miss: () -> Unit,
-        uploaded: () -> Unit,
-        evicted: () -> Unit,
     ): Borrow =
         operation {
             requireOwner(owner)
@@ -85,17 +80,13 @@ internal class FabricMinecraftSampledImageDevice(
                 nextUse = Math.incrementExact(nextUse)
                 val owned = owner.images[image]
                 if (owned != null) {
-                    hit()
                     owned.lastUse = nextUse
                     owned.entry.lastUse = nextUse
-                } else {
-                    val shared = activeByImage[image]
-                    if (shared == null) miss() else hit()
                 }
             }
             requested.forEach { image ->
                 if (owner.images.containsKey(image).not()) {
-                    acquire(owner, image, protected, uploaded, evicted)
+                    acquire(owner, image, protected)
                 }
             }
             val available = IdentityHashMap<DrawImage, Entry>()
@@ -264,11 +255,9 @@ internal class FabricMinecraftSampledImageDevice(
         owner: Owner,
         image: DrawImage,
         protected: Set<DrawImage>,
-        uploaded: () -> Unit,
-        evicted: () -> Unit,
     ) {
         val bytes = imageBytes(image)
-        if (supportsImage(image).not() || OWNER_BYTES < bytes || fitOwner(owner, bytes, protected, evicted).not()) return
+        if (supportsImage(image).not() || OWNER_BYTES < bytes || fitOwner(owner, bytes, protected).not()) return
         val shared = activeByImage[image]
         if (shared != null) {
             addOwnerImage(owner, image, shared)
@@ -277,7 +266,6 @@ internal class FabricMinecraftSampledImageDevice(
         if (DEVICE_BYTES < Math.addExact(retainedBytes, bytes) || DEVICE_ENTRIES <= entries.size) return
         val entry = allocate(image, bytes)
         addOwnerImage(owner, image, entry)
-        uploaded()
     }
 
     private fun allocate(
@@ -328,7 +316,6 @@ internal class FabricMinecraftSampledImageDevice(
         owner: Owner,
         bytes: Long,
         protected: Set<DrawImage>,
-        evicted: () -> Unit,
     ): Boolean {
         while (OWNER_ENTRIES <= owner.images.size || OWNER_BYTES < Math.addExact(owner.bytes, bytes)) {
             val candidate =
@@ -338,7 +325,6 @@ internal class FabricMinecraftSampledImageDevice(
                     .minWithOrNull(compareBy<Map.Entry<DrawImage, Owned>>({ it.value.lastUse }, { it.value.entry.sequence }))
                     ?: return false
             removeOwnerImage(owner, candidate.key)
-            evicted()
         }
         return true
     }

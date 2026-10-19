@@ -57,18 +57,18 @@ internal fun createSocialScreenDefinition(
     return ScreenDefinition("Social Interactions") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
         ) {
             Stack(
-                modifier = Modifier.Empty.size(320, 176),
+                modifier = Modifier.size(320, 176),
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 Stack(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .padding(left = 4)
                             .size(236, 112)
                             .imageBackground(
@@ -79,59 +79,59 @@ internal fun createSocialScreenDefinition(
                 ) {}
             }
             Column(
-                modifier = Modifier.Empty.size(222, 234).align(Alignment.TopCenter),
+                modifier = Modifier.size(222, 234).align(Alignment.TopCenter),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(modifier = Modifier.Empty.padding(top = 12)) {
+                Column(modifier = Modifier.padding(top = 12)) {
                     Column(
-                        modifier = Modifier.Empty.size(222, 32),
+                        modifier = Modifier.size(222, 32),
                         spacing = 14,
                     ) {
                         Text(
                             "Social Interactions",
-                            modifier = Modifier.Empty.align(HorizontalAlignment.Center),
+                            modifier = Modifier.align(HorizontalAlignment.Center),
                         )
                         Text("$playerName - New World - 1 player")
                     }
-                    Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
-                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onActivate {})
-                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
-                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
+                    Row(modifier = Modifier.padding(left = 1, top = 1), spacing = 1) {
+                        Tab("All", selected = true, width = 73, modifier = Modifier.onActivate {})
+                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.onActivate {})
+                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.onActivate {})
                     }
                     Row(
-                        modifier = Modifier.Empty.padding(left = 5, top = 9),
+                        modifier = Modifier.padding(left = 5, top = 9),
                         spacing = 3,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
                         Image(
                             searchIcon,
                             size = IntSize(12, 12),
-                            modifier = Modifier.Empty.padding(top = 2),
+                            modifier = Modifier.padding(top = 2),
                         )
                         TextField(
                             search,
                             size = IntSize(200, 15),
                             textStyle = TextStyle.Normal,
-                            modifier = Modifier.Empty.initialFocus(),
+                            modifier = Modifier.initialFocus(),
                         )
                     }
                     Row(
                         modifier =
-                            Modifier.Empty
+                            Modifier
                                 .padding(left = 3, top = 3)
                                 .size(216, 32)
                                 .background(ArgbColor(0xFF4A4A4A.toInt())),
                         spacing = 4,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
-                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.Empty.padding(left = 4))
+                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.padding(left = 4))
                         Text(playerName)
                     }
                 }
                 Button(
                     "Done",
                     width = 200,
-                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onActivate {},
+                    modifier = Modifier.align(HorizontalAlignment.Center).onActivate {},
                 )
             }
         }

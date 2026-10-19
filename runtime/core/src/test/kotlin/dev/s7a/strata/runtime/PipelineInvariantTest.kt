@@ -19,7 +19,8 @@ internal class PipelineInvariantTest {
         val child = RetainedNode(childDescription, probe.create(childDescription), root)
         root.children.add(child)
         root.measured = true
-        root.measuredChildren = setOf(0)
+        root.childMeasurePass = Any()
+        child.parentMeasurePass = root.childMeasurePass
         root.dirty = DirtyMask.None
         child.measured = true
         child.placed = true

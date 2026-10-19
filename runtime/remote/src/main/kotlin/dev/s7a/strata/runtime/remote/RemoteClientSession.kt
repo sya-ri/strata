@@ -206,10 +206,11 @@ public class RemoteClientSession(
 
     /**
      * Flushes committed text edits before the adapter flushes its bounded outgoing transport.
+     * Callback failure or terminal state-store cutoff closes the session through the same guarded cleanup as updates.
      */
     public fun flushEdits() {
         checkActive()
-        states.flushEdits(actions)
+        guarded { states.flushEdits(actions) }
     }
 
     /**
@@ -279,10 +280,12 @@ public class RemoteClientSession(
             val next = change(before)
             if (next == before) return UiOperationResult.Accepted
             check(sequence < Long.MAX_VALUE) { "Client UI control sequence is exhausted." }
-            val request = next.copy(sequence = ++sequence)
-            desired = request
-            checkNotNull(outgoing)(RemoteMessage.ControlRequest(identity, request))
-            return UiOperationResult.Accepted
+            return guarded {
+                val request = next.copy(sequence = ++sequence)
+                desired = request
+                checkNotNull(outgoing)(RemoteMessage.ControlRequest(identity, request))
+                UiOperationResult.Accepted
+            }
         }
     }
 
@@ -292,12 +295,14 @@ public class RemoteClientSession(
         value: ProjectionValue,
     ): Long {
         checkActive()
-        states.flushEdits(actions)
-        require(0 < endpoint) { "Invalid remote event endpoint." }
-        check(nextSequence < Long.MAX_VALUE) { "Remote action sequence space is exhausted." }
-        val sequence = nextSequence++
-        checkNotNull(outgoing)(RemoteMessage.Action(identity, sequence, endpoint, type, value))
-        return sequence
+        return guarded {
+            states.flushEdits(actions)
+            require(0 < endpoint) { "Invalid remote event endpoint." }
+            check(nextSequence < Long.MAX_VALUE) { "Remote action sequence space is exhausted." }
+            val sequence = nextSequence++
+            checkNotNull(outgoing)(RemoteMessage.Action(identity, sequence, endpoint, type, value))
+            sequence
+        }
     }
 
     private fun requestSnapshot() {

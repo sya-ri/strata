@@ -7,6 +7,7 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
@@ -14,7 +15,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import net.kyori.adventure.text.Component
 import java.nio.file.Files
 import java.nio.file.Path
@@ -83,14 +84,14 @@ internal class VelocityAcceptanceSession(
                 .start()
                 .thenCompose { startPerformance() }
                 .thenCompose {
-                    VelocityUi.execute(plugin) {
+                    Strata.execute(plugin) {
                         checkOwner()
                         Files.createDirectories(directory)
                         val run = requireNotNull(System.getProperty("strata.velocity.run"))
                         Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=${player.uniqueId}\ntext=confirmed\nactivations=$activations\nbackendSwitch=confirmed\nownerThread=confirmed\nuiPresentations=confirmed\nuiEvents=confirmed\nperformanceDirectory=$performanceDirectory\n")
                     }
                 }.thenCompose {
-                    VelocityUi.open(plugin, player) { UiDefinition("Strata proxy complete") { Column { Text("Proxy acceptance passed.") } } }
+                    Strata.open(plugin, player) { UiDefinition("Strata proxy complete") { Column { Text("Proxy acceptance passed.") } } }
                 }.whenComplete { _, failure ->
                     if (failure != null) proxy.consoleCommandSource.sendMessage(Component.text("Strata proxy HUD verification failed: $failure"))
                 }
@@ -104,7 +105,7 @@ internal class VelocityAcceptanceSession(
         performance = verification
         performanceDirectory = verification.directory.toAbsolutePath().toString()
         return verification.start().thenCompose {
-            VelocityUi.execute(plugin) {
+            Strata.execute(plugin) {
                 checkOwner()
                 verification.close()
                 performance = null
@@ -118,13 +119,13 @@ internal class VelocityAcceptanceSession(
     ): UiDefinition {
         checkOwner()
         return UiDefinition(title) {
-            Column(Modifier.Empty.padding(8), spacing = 4) {
-                TextField(field, IntSize(160, 20))
+            Column(Modifier.padding(8), spacing = 4) {
+                TextField(field, IntSize(160, 20), textStyle = TextStyle.Inactive.copy(shadow = null))
                 Button(
                     "Apply",
                     160,
                     modifier =
-                        Modifier.Empty.onActivate {
+                        Modifier.onActivate {
                             checkOwner()
                             action()
                         },

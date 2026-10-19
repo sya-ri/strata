@@ -87,13 +87,24 @@ internal object MinecraftCanvasGameTest {
                 { context.onClient { fixture.close() } },
             )
         }
+        verifyPortableOwners(context, profile)
+        MinecraftOrderedCompositionGameTest.run(context, profile)
+        MinecraftCycleButtonSelectionGameTest.run(context, profile)
+        MinecraftDestinationPaletteGameTest.run(context, profile)
+        MinecraftHighContrastGameTest.run(context)
+    }
+
+    private fun verifyPortableOwners(
+        context: MinecraftCanvasTestContext,
+        profile: MinecraftUiProfile,
+    ) {
         MinecraftCanvasLifetimeGameTest.run(context, profile)
         MinecraftPortableLayerReuseGameTest.run(context, profile)
         MinecraftCanvasCapacityGameTest.run(context, profile)
         MinecraftCanvasConsumptionGameTest.run(context, profile)
         MinecraftCanvasGenerationGameTest.run(context, profile)
         MinecraftCanvasPointerGameTest.run(context, profile)
-        MinecraftCanvasFailureGameTest.run(context, profile)
+        MinecraftNativePerformancePacingGameTest.run(context) { MinecraftCanvasFailureGameTest.run(context, profile) }
     }
 
     private fun verify(
@@ -109,9 +120,9 @@ internal object MinecraftCanvasGameTest {
                 0 < fixture.renderCalls
         }
         // A tick count proves time passed, not that the first complete frame at the requested GUI scale was
-        // presented (issue 40). Fence on the runtime's committed host-frame counter so the screenshot reads a
+        // presented (issue 40). Fence on the test-owned framework completion event so the screenshot reads a
         // frame at or after the presentation the callback-scope signal observed.
-        val frameBaseline = MinecraftCanvasFrameFence.hostFrameCount(context, screen)
+        val frameBaseline = MinecraftCanvasFrameFence.completedFrames(context, screen)
         MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, frameBaseline)
         val path = context.takeScreenshot(name, viewport)
         val image = ImageIO.read(path.toFile())

@@ -44,12 +44,12 @@ internal class LayoutDslContractTest {
         assertEquals(Arrangement.Start, defaults.horizontalArrangement)
         assertEquals(VerticalAlignment.Top, defaults.verticalAlignment)
         assertEquals(ElementIdentity.Positional, defaults.identity)
-        assertSame(Modifier.Empty, defaults.modifier)
+        assertSame(Modifier, defaults.modifier)
 
         val first = buildComponentTree { Spacer() }
         val second = buildComponentTree { Spacer() }
         val key = ElementKey("flow")
-        val modifier = Modifier.Empty.padding(2)
+        val modifier = Modifier.padding(2)
         val configured =
             buildComponentTree {
                 FlowRow(
@@ -76,7 +76,7 @@ internal class LayoutDslContractTest {
 
     @Test
     fun flowRowScopeAppendsDedicatedAlignmentInsideExistingModifiers() {
-        val outer = Modifier.Empty.padding(2)
+        val outer = Modifier.padding(2)
         val root =
             buildComponentTree {
                 FlowRow {
@@ -111,7 +111,7 @@ internal class LayoutDslContractTest {
         val scope = requireNotNull(capturedScope)
         assertThrows(IllegalStateException::class.java) {
             with(scope) {
-                Modifier.Empty.weight(1f)
+                Modifier.weight(1f)
             }
         }
     }
@@ -135,7 +135,7 @@ internal class LayoutDslContractTest {
         assertSame(callbackFailure, propagated)
         val scope = requireNotNull(capturedScope)
         assertThrows(IllegalStateException::class.java) {
-            with(scope) { Modifier.Empty.align(VerticalAlignment.Bottom) }
+            with(scope) { Modifier.align(VerticalAlignment.Bottom) }
         }
         assertThrows(IllegalStateException::class.java) { scope.Spacer() }
     }
@@ -260,19 +260,19 @@ internal class LayoutDslContractTest {
         buildComponentTree { FlowRow { flowRowScope = this } }
 
         assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(rowScope)) { Modifier.Empty.weight(1f) }
+            with(requireNotNull(rowScope)) { Modifier.weight(1f) }
         }
         assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(columnScope)) { Modifier.Empty.weight(1f) }
+            with(requireNotNull(columnScope)) { Modifier.weight(1f) }
         }
         assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(stackScope)) { Modifier.Empty.align(Alignment.Center) }
+            with(requireNotNull(stackScope)) { Modifier.align(Alignment.Center) }
         }
         assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(gridScope)) { Modifier.Empty.align(Alignment.Center) }
+            with(requireNotNull(gridScope)) { Modifier.align(Alignment.Center) }
         }
         assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(flowRowScope)) { Modifier.Empty.align(VerticalAlignment.Center) }
+            with(requireNotNull(flowRowScope)) { Modifier.align(VerticalAlignment.Center) }
         }
     }
 }

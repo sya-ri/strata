@@ -5,6 +5,7 @@ import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSubscription
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -20,6 +21,27 @@ import java.lang.Thread.State as ThreadState
  * Verifies the subscription handle's terminal state machine and close ownership.
  */
 internal class StateSubscriptionTest {
+    @Test
+    fun closeReleasesItsCleanupCaptureBeforeInvocationOnSuccessAndFailure() {
+        for (expected in listOf(null, IllegalStateException("close"))) {
+            var closes = 0
+            lateinit var subscription: StateSubscription<Unit>
+            val action: () -> Unit = {
+                assertNull(cleanupAction(subscription))
+                closes++
+                expected?.let { throw it }
+            }
+            subscription = StateSubscription(StateSnapshot(StateRevision(0), Unit), action)
+            val close = subscription.retainCloseAction()
+            assertSame(action, cleanupAction(subscription))
+            assertSame(expected, runCatching(close).exceptionOrNull())
+            assertNull(cleanupAction(subscription))
+            assertSame(expected, runCatching(subscription::close).exceptionOrNull())
+            assertSame(expected, runCatching(close).exceptionOrNull())
+            assertEquals(1, closes)
+        }
+    }
+
     @Test
     fun retainedCloseActionSharesExactlyOnceOutcomeWithoutHoldingTheInitialSnapshot() {
         val expected = IllegalStateException("close")
@@ -120,6 +142,18 @@ internal class StateSubscriptionTest {
             executor.shutdownNow()
             executor.awaitTermination(2, TimeUnit.SECONDS)
         }
+    }
+
+    private fun cleanupAction(subscription: StateSubscription<*>): Any? {
+        val controller =
+            subscription.javaClass
+                .getDeclaredField("closeController")
+                .apply { isAccessible = true }
+                .get(subscription)
+        return controller.javaClass
+            .getDeclaredField("closeAction")
+            .apply { isAccessible = true }
+            .get(controller)
     }
 
     private fun awaitBlocked(thread: Thread): Boolean {

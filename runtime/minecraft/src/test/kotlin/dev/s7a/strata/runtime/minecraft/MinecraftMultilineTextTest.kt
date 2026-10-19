@@ -75,12 +75,12 @@ internal class MinecraftMultilineTextTest {
                 val policy = TextLayout.Multiline(TextWrap.None, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 UiTree().use { tree ->
                     val initial = UiText.Literal(value).withFont(first)
-                    tree.update(createMinecraftMultilineTextElement(initial, renderer, policy, TextStyle.ContainerLabel, Modifier.Empty, null))
+                    tree.update(createMinecraftMultilineTextElement(initial, renderer, policy, TextStyle.ContainerLabel, Modifier, null))
                     val initialSize = tree.measure(Constraints())
                     tree.layout()
                     val initialPixels = rasterizeHeadless(tree.paint(), IntSize(30, 20)).copyArgb()
                     val replacement = UiText.Literal(value).withFont(second)
-                    tree.update(createMinecraftMultilineTextElement(replacement, renderer, policy, TextStyle.ContainerLabel, Modifier.Empty, null))
+                    tree.update(createMinecraftMultilineTextElement(replacement, renderer, policy, TextStyle.ContainerLabel, Modifier, null))
                     val replacementSize = tree.measure(Constraints())
                     tree.layout()
                     assertTrue(initialSize.width < replacementSize.width)
@@ -136,7 +136,7 @@ internal class MinecraftMultilineTextTest {
             val single = renderer.create(UiText.Literal("A"), TextStyle.ContainerLabel)
             val singleCommands =
                 UiTree().use { tree ->
-                    tree.update(createMinecraftTextElement(single, Modifier.Empty, null))
+                    tree.update(createMinecraftTextElement(single, Modifier, null))
                     tree.measure(Constraints())
                     tree.layout()
                     tree.paint()
@@ -197,7 +197,7 @@ internal class MinecraftMultilineTextTest {
     @Test
     fun immutableDescriptionSupportsConcurrentTreesAndRepeatedSameInstanceUpdates() {
         legacyRenderer().use { renderer ->
-            val element = createMinecraftMultilineTextElement(UiText.Literal("AB C"), renderer, TextLayout.Multiline(), TextStyle.ContainerLabel, Modifier.Empty, null)
+            val element = createMinecraftMultilineTextElement(UiText.Literal("AB C"), renderer, TextLayout.Multiline(), TextStyle.ContainerLabel, Modifier, null)
             UiTree().use { first ->
                 UiTree().use { second ->
                     first.update(element)
@@ -408,7 +408,7 @@ internal class MinecraftMultilineTextTest {
             UiTree().use { tree ->
                 val text = UiText.Literal("ABC\nB")
                 val policy = TextLayout.Multiline(TextWrap.None, overflow = TextOverflow.Clip)
-                tree.update(createMinecraftMultilineTextElement(text, renderer, policy, TextStyle.ContainerLabel, Modifier.Empty, null))
+                tree.update(createMinecraftMultilineTextElement(text, renderer, policy, TextStyle.ContainerLabel, Modifier, null))
                 assertEquals(IntSize(1, 2), tree.measure(Constraints.fixed(1, 2)))
                 tree.layout()
                 val commands = tree.paint()
@@ -418,11 +418,11 @@ internal class MinecraftMultilineTextTest {
                 assertEquals(text, semantic.semantics.label)
                 assertNarrowClipPixels(commands)
                 val previous = commands
-                tree.update(createMinecraftMultilineTextElement(text, renderer, policy, TextStyle.ContainerLabel, Modifier.Empty, null))
+                tree.update(createMinecraftMultilineTextElement(text, renderer, policy, TextStyle.ContainerLabel, Modifier, null))
                 tree.measure(Constraints.fixed(1, 2))
                 tree.layout()
                 assertEquals(previous, tree.paint())
-                tree.update(createMinecraftMultilineTextElement(UiText.Literal("B"), renderer, policy, TextStyle.ContainerLabel, Modifier.Empty, null))
+                tree.update(createMinecraftMultilineTextElement(UiText.Literal("B"), renderer, policy, TextStyle.ContainerLabel, Modifier, null))
                 tree.measure(Constraints(maxWidth = 10, maxHeight = 20))
                 tree.layout()
                 assertEquals(
@@ -465,7 +465,7 @@ internal class MinecraftMultilineTextTest {
         constraints: Constraints,
     ): List<DrawCommand> =
         UiTree().use { tree ->
-            tree.update(createMinecraftMultilineTextElement(text, renderer, policy, TextStyle.ContainerLabel, Modifier.Empty, null))
+            tree.update(createMinecraftMultilineTextElement(text, renderer, policy, TextStyle.ContainerLabel, Modifier, null))
             tree.measure(constraints)
             tree.layout()
             tree.paint()

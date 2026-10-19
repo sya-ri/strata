@@ -23,7 +23,7 @@ public fun selectionViewportScreen(
     require(12 <= viewport.width)
     val listViewport = IntSize(viewport.width - 12, viewport.height)
     return UiDefinition("Selection viewport") {
-        Row(modifier = Modifier.Empty.size(viewport.width, viewport.height), spacing = 4) {
+        Row(modifier = Modifier.size(viewport.width, viewport.height), spacing = 4) {
             SelectionList(
                 items = items,
                 keyOf = { it },
@@ -31,9 +31,9 @@ public fun selectionViewportScreen(
                 viewportSize = listViewport,
                 rowHeight = 28,
             ) { item ->
-                Text(item, layout = TextLayout.Multiline(maxLines = 2), modifier = Modifier.Empty.size(listViewport.width, 28))
+                Text(item, layout = TextLayout.Multiline(maxLines = 2), modifier = Modifier.size(listViewport.width, 28))
             }
-            Scrollbar(state.listState.scrollState, modifier = Modifier.Empty.size(8, listViewport.height))
+            Scrollbar(state.listState.scrollState, modifier = Modifier.size(8, listViewport.height))
         }
     }
 }

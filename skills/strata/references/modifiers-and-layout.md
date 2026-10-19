@@ -3,6 +3,7 @@
 # Modifiers and layout scopes
 
 Modifiers are active retained behavior, not a passive settings bag.
+The `Modifier` companion object is the empty chain and the starting receiver for built-in and custom modifier extensions.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
 The 69 compiled overloads below form 44 top-level extension groups.
 
@@ -417,7 +418,7 @@ fun Modifier.atContentPosition(position: StateSource<DoubleOffset>, alignment: A
 Use an earlier, outer `fillMaxSize()` when the design surface should fit the complete viewport because modifier descriptions remain outermost-first:
 
 ```kotlin
-val modifier = Modifier.Empty
+val modifier = Modifier
     .fillMaxSize()
     .scaleToFit(contentSize = IntSize(320, 180))
 ```
@@ -653,7 +654,7 @@ Caller-owned generic option sequence, enum factory, formatting, and wraparound s
 
 ```kotlin
 class CycleButtonState<T : Any>(values: List<T>, initialValue: T)
-constructor(values: Collection<T>, initialValue: T, toString: (T) -> String) : this(values.toList(), initialValue)
+constructor(values: Collection<T>, initialValue: T, toString: (T) -> String) : this(values as? List<T> ?: values.toList(), initialValue)
 constructor(values: List<T>) : this(values, requireFirst(values))
 fun format(value: T): String
 fun next(): T

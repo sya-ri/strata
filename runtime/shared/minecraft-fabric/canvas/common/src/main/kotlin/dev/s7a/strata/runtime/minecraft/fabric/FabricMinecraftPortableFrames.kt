@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceOwnerId
@@ -40,9 +41,8 @@ internal class FabricMinecraftPortableFrames {
      * Prepares all portable images before invoking the borrowed ordered GUI submission.
      *
      * @param images immutable raster or exact GPU descriptions in their combined display-list order.
-     * @param rasterized render-thread counter callback invoked once before each rasterization attempt, never retained.
-     * @param uploaded render-thread counter callback invoked after each successful upload, never retained.
      * @param sampled optional synchronous factory for exact GPU output; the caller pins and marks its source before recording the pass.
+     * @param composed optional synchronous factory for a whole portable tile; every source remains pinned through ordered GUI consumption.
      * @param submit borrowed callback receiving every prepared texture and a marker it must invoke before each portable blit.
      * The callback must not retain either argument and may trigger reentrant screen release.
      * @throws Throwable when capacity, preparation, submission, or independently attempted cleanup fails.
@@ -50,9 +50,8 @@ internal class FabricMinecraftPortableFrames {
     @JvmSynthetic
     internal fun present(
         images: List<FabricMinecraftPortableImage>,
-        rasterized: () -> Unit,
-        uploaded: () -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
         submit: (List<FabricMinecraftPortableTexture>, () -> Unit) -> Unit,
     ) {
         if (images.isEmpty()) {
@@ -60,7 +59,7 @@ internal class FabricMinecraftPortableFrames {
             submit(emptyList()) {}
             return
         }
-        val prepared = prepare(images, rasterized, uploaded, sampled)
+        val prepared = prepare(images, sampled, composed)
         val resources = prepared.resources
         resources.beginUse(prepared.set)
         FabricMinecraftFailures.runWithCleanup(
@@ -84,9 +83,8 @@ internal class FabricMinecraftPortableFrames {
 
     private fun prepare(
         images: List<FabricMinecraftPortableImage>,
-        rasterized: () -> Unit,
-        uploaded: () -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
     ): Prepared {
         val previous = current
         reuseCurrent(images)?.let { return it }
@@ -98,14 +96,15 @@ internal class FabricMinecraftPortableFrames {
         var failure: Throwable? = null
         try {
             val rasterPixels = allocateRasterPixels(images, matches)
-            images.forEachIndexed { index, input ->
-                val source = matches?.get(index) ?: -1
-                if (previous != null && 0 <= source) {
-                    resources.reuse(set, previous.set, source)
-                    textures.add(previous.textures[source])
-                } else {
-                    textures.add(prepareTexture(input, rasterPixels, rasterized, sampled) { resource -> resources.add(set, resource) })
-                    uploaded()
+            HeadlessRasterScratch().use { scratch ->
+                images.forEachIndexed { index, input ->
+                    val source = matchedSource(matches, index)
+                    if (previous != null && 0 <= source) {
+                        resources.reuse(set, previous.set, source)
+                        textures.add(previous.textures[source])
+                    } else {
+                        textures.add(prepareTexture(input, rasterPixels, scratch, sampled, composed) { resource -> resources.add(set, resource) })
+                    }
                 }
             }
         } catch (caught: Throwable) {
@@ -132,30 +131,37 @@ internal class FabricMinecraftPortableFrames {
         return prepared
     }
 
+    private fun matchedSource(
+        matches: IntArray?,
+        index: Int,
+    ): Int = matches?.get(index) ?: -1
+
     private fun allocateRasterPixels(
         images: List<FabricMinecraftPortableImage>,
         matches: IntArray?,
     ): IntArray? {
         var area = 0
         images.forEachIndexed { index, input ->
-            if (input.sampling == null && (matches?.get(index) ?: -1) < 0) {
+            if (input.sampling == null && input.composition == null && matchedSource(matches, index) < 0) {
                 area = maxOf(area, Math.multiplyExact(input.physicalSize.width, input.physicalSize.height))
             }
         }
         return if (area == 0) null else IntArray(area)
     }
 
+    @Suppress("LongParameterList") // The factories borrow separately pinned source sets inside one generation's existing failure boundary.
     private fun prepareTexture(
         input: FabricMinecraftPortableImage,
         pixels: IntArray?,
-        rasterized: () -> Unit,
+        scratch: HeadlessRasterScratch?,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
         retain: (NativeGuiResource) -> Unit,
     ): FabricMinecraftPortableTexture {
+        input.composition?.let { return checkNotNull(composed) { "Ordered GPU composition requires pinned source textures." }(it, retain) }
         val sampling = input.sampling
         if (sampling != null) return checkNotNull(sampled) { "GPU sampling requires a pinned source factory." }(sampling, retain)
-        rasterized()
-        return FabricMinecraftPortableTexture.create(input, checkNotNull(pixels), retain)
+        return FabricMinecraftPortableTexture.create(input, checkNotNull(pixels), scratch, retain)
     }
 
     private fun reuseCurrent(images: List<FabricMinecraftPortableImage>): Prepared? {

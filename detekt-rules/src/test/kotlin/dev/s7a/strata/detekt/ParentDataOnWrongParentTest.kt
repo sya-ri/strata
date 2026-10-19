@@ -21,9 +21,9 @@ internal class ParentDataOnWrongParentTest {
                 fun UiScope.invalid(source: StateSource<Int>) {
                     Row {
                         val row = this
-                        Stack { Text("wrong weight", modifier = row.run { Modifier.Empty.weight(1f) }) }
-                        Column { Text("wrong alignment", modifier = row.run { Modifier.Empty.align(VerticalAlignment.Center) }) }
-                        Observe(source) { Text("wrong region", modifier = row.run { Modifier.Empty.weight(1f) }) }
+                        Stack { Text("wrong weight", modifier = row.run { Modifier.weight(1f) }) }
+                        Column { Text("wrong alignment", modifier = row.run { Modifier.align(VerticalAlignment.Center) }) }
+                        Observe(source) { Text("wrong region", modifier = row.run { Modifier.weight(1f) }) }
                     }
                 }
                 """.trimIndent(),
@@ -43,11 +43,11 @@ internal class ParentDataOnWrongParentTest {
                 import dev.s7a.strata.state.StateSource
                 fun UiScope.valid(source: StateSource<String>) {
                     Row {
-                        Text("direct", modifier = Modifier.Empty.weight(1f).align(VerticalAlignment.Center))
-                        Text(source, modifier = Modifier.Empty.weight(1f))
-                    Observe(source, modifier = Modifier.Empty.weight(1f)) { Text(it) }
+                        Text("direct", modifier = Modifier.weight(1f).align(VerticalAlignment.Center))
+                        Text(source, modifier = Modifier.weight(1f))
+                    Observe(source, modifier = Modifier.weight(1f)) { Text(it) }
                     val row = this
-                    Stack { row.Text("explicit outer child", modifier = row.run { Modifier.Empty.weight(1f) }) }
+                    Stack { row.Text("explicit outer child", modifier = row.run { Modifier.weight(1f) }) }
                     }
                 }
                 fun RowScope.helper(modifier: Modifier) { Text("review helper", modifier = modifier.weight(1f)) }

@@ -8,8 +8,9 @@ import dev.s7a.strata.resource.ResourceId
  */
 internal enum class RemoteProfileComponent(
     path: String,
+    version: Int = 1,
 ) {
-    Text("text"),
+    Text("text", 2),
     Button("button"),
     Tab("tab"),
     ProgressBar("progress_bar"),
@@ -20,8 +21,8 @@ internal enum class RemoteProfileComponent(
     Checkbox("checkbox"),
     CycleButton("cycle_button"),
     Slider("slider"),
-    TextField("text_field"),
-    TextArea("text_area"),
+    TextField("text_field", 2),
+    TextArea("text_area", 2),
     ScrollArea("scroll_area"),
     Scrollbar("scrollbar"),
     Tooltip("tooltip"),
@@ -31,5 +32,5 @@ internal enum class RemoteProfileComponent(
     NineSliceBackground("nine_slice_background"),
     ;
 
-    val type = ProjectionType(ResourceId("strata", "profile/$path"))
+    val type = ProjectionType(ResourceId("strata", "profile/$path"), version)
 }

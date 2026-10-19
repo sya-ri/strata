@@ -23,14 +23,14 @@ internal fun createScrollbarShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("Scrollbar showcase") {
         Row(
             spacing = 8,
-            modifier = Modifier.Empty.size(94, 48).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(94, 48).background(ArgbColor(0xFF000000.toInt())),
         ) {
-            ScrollArea(state = state, modifier = Modifier.Empty.size(80, 48)) {
-                Column(modifier = Modifier.Empty.size(80, 96)) {
+            ScrollArea(state = state, modifier = Modifier.size(80, 48)) {
+                Column(modifier = Modifier.size(80, 96)) {
                     repeat(6) { index -> Text("Row ${index + 1}") }
                 }
             }
-            Scrollbar(state = state, modifier = Modifier.Empty.size(6, 48))
+            Scrollbar(state = state, modifier = Modifier.size(6, 48))
         }
     }
 }

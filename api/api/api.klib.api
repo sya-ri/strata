@@ -47,19 +47,6 @@ final enum class dev.s7a.strata.component/PanZoomFit : kotlin/Enum<dev.s7a.strat
     final fun values(): kotlin/Array<dev.s7a.strata.component/PanZoomFit> // dev.s7a.strata.component/PanZoomFit.values|values#static(){}[0]
 }
 
-final enum class dev.s7a.strata.component/TextStyle : kotlin/Enum<dev.s7a.strata.component/TextStyle> { // dev.s7a.strata.component/TextStyle|null[0]
-    enum entry ContainerLabel // dev.s7a.strata.component/TextStyle.ContainerLabel|null[0]
-    enum entry Inactive // dev.s7a.strata.component/TextStyle.Inactive|null[0]
-    enum entry Normal // dev.s7a.strata.component/TextStyle.Normal|null[0]
-    enum entry TextField // dev.s7a.strata.component/TextStyle.TextField|null[0]
-
-    final val entries // dev.s7a.strata.component/TextStyle.entries|#static{}entries[0]
-        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.component/TextStyle> // dev.s7a.strata.component/TextStyle.entries.<get-entries>|<get-entries>#static(){}[0]
-
-    final fun valueOf(kotlin/String): dev.s7a.strata.component/TextStyle // dev.s7a.strata.component/TextStyle.valueOf|valueOf#static(kotlin.String){}[0]
-    final fun values(): kotlin/Array<dev.s7a.strata.component/TextStyle> // dev.s7a.strata.component/TextStyle.values|values#static(){}[0]
-}
-
 final enum class dev.s7a.strata.input/FocusEvent : kotlin/Enum<dev.s7a.strata.input/FocusEvent> { // dev.s7a.strata.input/FocusEvent|null[0]
     enum entry Gained // dev.s7a.strata.input/FocusEvent.Gained|null[0]
     enum entry Lost // dev.s7a.strata.input/FocusEvent.Lost|null[0]
@@ -165,27 +152,6 @@ final enum class dev.s7a.strata.node/ContentInvalidation : kotlin/Enum<dev.s7a.s
 
     final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentInvalidation // dev.s7a.strata.node/ContentInvalidation.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<dev.s7a.strata.node/ContentInvalidation> // dev.s7a.strata.node/ContentInvalidation.values|values#static(){}[0]
-}
-
-final enum class dev.s7a.strata.node/ContentKind : kotlin/Enum<dev.s7a.strata.node/ContentKind> { // dev.s7a.strata.node/ContentKind|null[0]
-    enum entry ObservedRegion // dev.s7a.strata.node/ContentKind.ObservedRegion|null[0]
-    enum entry StateComponent // dev.s7a.strata.node/ContentKind.StateComponent|null[0]
-
-    final val entries // dev.s7a.strata.node/ContentKind.entries|#static{}entries[0]
-        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.node/ContentKind> // dev.s7a.strata.node/ContentKind.entries.<get-entries>|<get-entries>#static(){}[0]
-
-    final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentKind // dev.s7a.strata.node/ContentKind.valueOf|valueOf#static(kotlin.String){}[0]
-    final fun values(): kotlin/Array<dev.s7a.strata.node/ContentKind> // dev.s7a.strata.node/ContentKind.values|values#static(){}[0]
-}
-
-final enum class dev.s7a.strata.node/ContentWork : kotlin/Enum<dev.s7a.strata.node/ContentWork> { // dev.s7a.strata.node/ContentWork|null[0]
-    enum entry RowEvaluation // dev.s7a.strata.node/ContentWork.RowEvaluation|null[0]
-
-    final val entries // dev.s7a.strata.node/ContentWork.entries|#static{}entries[0]
-        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.node/ContentWork> // dev.s7a.strata.node/ContentWork.entries.<get-entries>|<get-entries>#static(){}[0]
-
-    final fun valueOf(kotlin/String): dev.s7a.strata.node/ContentWork // dev.s7a.strata.node/ContentWork.valueOf|valueOf#static(kotlin.String){}[0]
-    final fun values(): kotlin/Array<dev.s7a.strata.node/ContentWork> // dev.s7a.strata.node/ContentWork.values|values#static(){}[0]
 }
 
 final enum class dev.s7a.strata.node/DirtyPhase : kotlin/Enum<dev.s7a.strata.node/DirtyPhase> { // dev.s7a.strata.node/DirtyPhase|null[0]
@@ -483,6 +449,22 @@ abstract interface dev.s7a.strata.layout/ParentDataScope { // dev.s7a.strata.lay
     abstract fun <#A1: kotlin/Any> childParentData(kotlin/Int, dev.s7a.strata.layout/ParentDataKey<#A1>): #A1? // dev.s7a.strata.layout/ParentDataScope.childParentData|childParentData(kotlin.Int;dev.s7a.strata.layout.ParentDataKey<0:0>){0§<kotlin.Any>}[0]
 }
 
+abstract interface dev.s7a.strata.modifier/Modifier { // dev.s7a.strata.modifier/Modifier|null[0]
+    abstract fun elements(): kotlin.collections/List<dev.s7a.strata.modifier/ModifierElement> // dev.s7a.strata.modifier/Modifier.elements|elements(){}[0]
+    open fun then(dev.s7a.strata.modifier/Modifier): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.Modifier){}[0]
+    open fun then(dev.s7a.strata.modifier/ModifierElement): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.ModifierElement){}[0]
+
+    final object Companion : dev.s7a.strata.modifier/Modifier { // dev.s7a.strata.modifier/Modifier.Companion|null[0]
+        final val Empty // dev.s7a.strata.modifier/Modifier.Companion.Empty|{}Empty[0]
+            final fun <get-Empty>(): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+
+        final fun elements(): kotlin.collections/List<dev.s7a.strata.modifier/ModifierElement> // dev.s7a.strata.modifier/Modifier.Companion.elements|elements(){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.modifier/Modifier.Companion.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.modifier/Modifier.Companion.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.modifier/Modifier.Companion.toString|toString(){}[0]
+    }
+}
+
 abstract interface dev.s7a.strata.modifier/ModifierElement { // dev.s7a.strata.modifier/ModifierElement|null[0]
     abstract val type // dev.s7a.strata.modifier/ModifierElement.type|{}type[0]
         abstract fun <get-type>(): dev.s7a.strata.modifier/ModifierNodeType<*, *> // dev.s7a.strata.modifier/ModifierElement.type.<get-type>|<get-type>(){}[0]
@@ -496,12 +478,6 @@ abstract interface dev.s7a.strata.node/ChildTransformNode { // dev.s7a.strata.no
 
 abstract interface dev.s7a.strata.node/ClipChildrenNode // dev.s7a.strata.node/ClipChildrenNode|null[0]
 
-abstract interface dev.s7a.strata.node/ContentWorkNode { // dev.s7a.strata.node/ContentWorkNode|null[0]
-    abstract var contentWorkObserver // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver|{}contentWorkObserver[0]
-        abstract fun <get-contentWorkObserver>(): kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>? // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<get-contentWorkObserver>|<get-contentWorkObserver>(){}[0]
-        abstract fun <set-contentWorkObserver>(kotlin/Function1<dev.s7a.strata.node/ContentWork, kotlin/Unit>?) // dev.s7a.strata.node/ContentWorkNode.contentWorkObserver.<set-contentWorkObserver>|<set-contentWorkObserver>(kotlin.Function1<dev.s7a.strata.node.ContentWork,kotlin.Unit>?){}[0]
-}
-
 abstract interface dev.s7a.strata.node/DeclarationProjectionNode { // dev.s7a.strata.node/DeclarationProjectionNode|null[0]
     abstract val declarationProjection // dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection|{}declarationProjection[0]
         abstract fun <get-declarationProjection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.node/DeclarationProjectionNode.declarationProjection.<get-declarationProjection>|<get-declarationProjection>(){}[0]
@@ -510,8 +486,6 @@ abstract interface dev.s7a.strata.node/DeclarationProjectionNode { // dev.s7a.st
 }
 
 abstract interface dev.s7a.strata.node/DeferredContentNode : dev.s7a.strata.node/DynamicChildrenNode { // dev.s7a.strata.node/DeferredContentNode|null[0]
-    abstract val contentKind // dev.s7a.strata.node/DeferredContentNode.contentKind|{}contentKind[0]
-        abstract fun <get-contentKind>(): dev.s7a.strata.node/ContentKind // dev.s7a.strata.node/DeferredContentNode.contentKind.<get-contentKind>|<get-contentKind>(){}[0]
     abstract val pendingContentReasons // dev.s7a.strata.node/DeferredContentNode.pendingContentReasons|{}pendingContentReasons[0]
         abstract fun <get-pendingContentReasons>(): kotlin.collections/Set<dev.s7a.strata.node/ContentInvalidation> // dev.s7a.strata.node/DeferredContentNode.pendingContentReasons.<get-pendingContentReasons>|<get-pendingContentReasons>(){}[0]
 }
@@ -970,6 +944,27 @@ sealed interface dev.s7a.strata.component/TextInputAppearance { // dev.s7a.strat
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/TextInputAppearance.Default.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.component/TextInputAppearance.Default.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.component/TextInputAppearance.Default.toString|toString(){}[0]
+    }
+}
+
+sealed interface dev.s7a.strata.component/TextShadow { // dev.s7a.strata.component/TextShadow|null[0]
+    final class Color : dev.s7a.strata.component/TextShadow { // dev.s7a.strata.component/TextShadow.Color|null[0]
+        constructor <init>(dev.s7a.strata.render/ArgbColor) // dev.s7a.strata.component/TextShadow.Color.<init>|<init>(dev.s7a.strata.render.ArgbColor){}[0]
+
+        final val color // dev.s7a.strata.component/TextShadow.Color.color|{}color[0]
+            final fun <get-color>(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.component/TextShadow.Color.color.<get-color>|<get-color>(){}[0]
+
+        final fun component1(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.component/TextShadow.Color.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.render/ArgbColor = ...): dev.s7a.strata.component/TextShadow.Color // dev.s7a.strata.component/TextShadow.Color.copy|copy(dev.s7a.strata.render.ArgbColor){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/TextShadow.Color.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.component/TextShadow.Color.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.component/TextShadow.Color.toString|toString(){}[0]
+    }
+
+    final object Automatic : dev.s7a.strata.component/TextShadow { // dev.s7a.strata.component/TextShadow.Automatic|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/TextShadow.Automatic.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.component/TextShadow.Automatic.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.component/TextShadow.Automatic.toString|toString(){}[0]
     }
 }
 
@@ -1976,6 +1971,36 @@ final class dev.s7a.strata.component/TextFieldState { // dev.s7a.strata.componen
     final fun observe(kotlin/Function1<kotlin/String, kotlin/Unit>): kotlin/AutoCloseable // dev.s7a.strata.component/TextFieldState.observe|observe(kotlin.Function1<kotlin.String,kotlin.Unit>){}[0]
 }
 
+final class dev.s7a.strata.component/TextStyle { // dev.s7a.strata.component/TextStyle|null[0]
+    constructor <init>(dev.s7a.strata.render/ArgbColor = ..., dev.s7a.strata.component/TextShadow? = ..., dev.s7a.strata.render/ArgbColor? = ...) // dev.s7a.strata.component/TextStyle.<init>|<init>(dev.s7a.strata.render.ArgbColor;dev.s7a.strata.component.TextShadow?;dev.s7a.strata.render.ArgbColor?){}[0]
+
+    final val color // dev.s7a.strata.component/TextStyle.color|{}color[0]
+        final fun <get-color>(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.component/TextStyle.color.<get-color>|<get-color>(){}[0]
+    final val disabledColor // dev.s7a.strata.component/TextStyle.disabledColor|{}disabledColor[0]
+        final fun <get-disabledColor>(): dev.s7a.strata.render/ArgbColor? // dev.s7a.strata.component/TextStyle.disabledColor.<get-disabledColor>|<get-disabledColor>(){}[0]
+    final val shadow // dev.s7a.strata.component/TextStyle.shadow|{}shadow[0]
+        final fun <get-shadow>(): dev.s7a.strata.component/TextShadow? // dev.s7a.strata.component/TextStyle.shadow.<get-shadow>|<get-shadow>(){}[0]
+
+    final fun component1(): dev.s7a.strata.render/ArgbColor // dev.s7a.strata.component/TextStyle.component1|component1(){}[0]
+    final fun component2(): dev.s7a.strata.component/TextShadow? // dev.s7a.strata.component/TextStyle.component2|component2(){}[0]
+    final fun component3(): dev.s7a.strata.render/ArgbColor? // dev.s7a.strata.component/TextStyle.component3|component3(){}[0]
+    final fun copy(dev.s7a.strata.render/ArgbColor = ..., dev.s7a.strata.component/TextShadow? = ..., dev.s7a.strata.render/ArgbColor? = ...): dev.s7a.strata.component/TextStyle // dev.s7a.strata.component/TextStyle.copy|copy(dev.s7a.strata.render.ArgbColor;dev.s7a.strata.component.TextShadow?;dev.s7a.strata.render.ArgbColor?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/TextStyle.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.component/TextStyle.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.component/TextStyle.toString|toString(){}[0]
+
+    final object Companion { // dev.s7a.strata.component/TextStyle.Companion|null[0]
+        final val ContainerLabel // dev.s7a.strata.component/TextStyle.Companion.ContainerLabel|{}ContainerLabel[0]
+            final fun <get-ContainerLabel>(): dev.s7a.strata.component/TextStyle // dev.s7a.strata.component/TextStyle.Companion.ContainerLabel.<get-ContainerLabel>|<get-ContainerLabel>(){}[0]
+        final val Inactive // dev.s7a.strata.component/TextStyle.Companion.Inactive|{}Inactive[0]
+            final fun <get-Inactive>(): dev.s7a.strata.component/TextStyle // dev.s7a.strata.component/TextStyle.Companion.Inactive.<get-Inactive>|<get-Inactive>(){}[0]
+        final val Normal // dev.s7a.strata.component/TextStyle.Companion.Normal|{}Normal[0]
+            final fun <get-Normal>(): dev.s7a.strata.component/TextStyle // dev.s7a.strata.component/TextStyle.Companion.Normal.<get-Normal>|<get-Normal>(){}[0]
+        final val TextField // dev.s7a.strata.component/TextStyle.Companion.TextField|{}TextField[0]
+            final fun <get-TextField>(): dev.s7a.strata.component/TextStyle // dev.s7a.strata.component/TextStyle.Companion.TextField.<get-TextField>|<get-TextField>(){}[0]
+    }
+}
+
 final class dev.s7a.strata.component/TiledImageCachePolicy { // dev.s7a.strata.component/TiledImageCachePolicy|null[0]
     constructor <init>(kotlin/Int = ..., kotlin/Long = ..., kotlin/Int = ...) // dev.s7a.strata.component/TiledImageCachePolicy.<init>|<init>(kotlin.Int;kotlin.Long;kotlin.Int){}[0]
 
@@ -2336,20 +2361,6 @@ final class dev.s7a.strata.input/KeyboardModifiers { // dev.s7a.strata.input/Key
     final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.input/KeyboardModifiers.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // dev.s7a.strata.input/KeyboardModifiers.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // dev.s7a.strata.input/KeyboardModifiers.toString|toString(){}[0]
-}
-
-final class dev.s7a.strata.modifier/Modifier { // dev.s7a.strata.modifier/Modifier|null[0]
-    final fun elements(): kotlin.collections/List<dev.s7a.strata.modifier/ModifierElement> // dev.s7a.strata.modifier/Modifier.elements|elements(){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.modifier/Modifier.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // dev.s7a.strata.modifier/Modifier.hashCode|hashCode(){}[0]
-    final fun then(dev.s7a.strata.modifier/Modifier): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.Modifier){}[0]
-    final fun then(dev.s7a.strata.modifier/ModifierElement): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.ModifierElement){}[0]
-    final fun toString(): kotlin/String // dev.s7a.strata.modifier/Modifier.toString|toString(){}[0]
-
-    final object Companion { // dev.s7a.strata.modifier/Modifier.Companion|null[0]
-        final val Empty // dev.s7a.strata.modifier/Modifier.Companion.Empty|{}Empty[0]
-            final fun <get-Empty>(): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
-    }
 }
 
 final class dev.s7a.strata.node/ChildTransform { // dev.s7a.strata.node/ChildTransform|null[0]
@@ -3022,5 +3033,7 @@ final fun <#A: kotlin/Any?> dev.s7a.strata.state/mutableStateOf(#A): dev.s7a.str
 final fun dev.s7a.strata.component/canvasSource(dev.s7a.strata.render/DrawImage): dev.s7a.strata.component/CanvasSource // dev.s7a.strata.component/canvasSource|canvasSource(dev.s7a.strata.render.DrawImage){}[0]
 final fun dev.s7a.strata.component/canvasSource(dev.s7a.strata.state/StateSource<dev.s7a.strata.render/DrawImage>): dev.s7a.strata.component/CanvasSource // dev.s7a.strata.component/canvasSource|canvasSource(dev.s7a.strata.state.StateSource<dev.s7a.strata.render.DrawImage>){}[0]
 final fun dev.s7a.strata.component/evaluateComponentTree(kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>): dev.s7a.strata.element/Element // dev.s7a.strata.component/evaluateComponentTree|evaluateComponentTree(kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
+final fun dev.s7a.strata.render/createDrawImage(dev.s7a.strata.geometry/IntSize, kotlin/Function2<kotlin/Int, kotlin/Int, kotlin/Int>): dev.s7a.strata.render/DrawImage // dev.s7a.strata.render/createDrawImage|createDrawImage(dev.s7a.strata.geometry.IntSize;kotlin.Function2<kotlin.Int,kotlin.Int,kotlin.Int>){}[0]
 final fun dev.s7a.strata.render/createDrawImage(dev.s7a.strata.geometry/IntSize, kotlin/IntArray): dev.s7a.strata.render/DrawImage // dev.s7a.strata.render/createDrawImage|createDrawImage(dev.s7a.strata.geometry.IntSize;kotlin.IntArray){}[0]
+final fun dev.s7a.strata.render/createOwnedDrawImage(dev.s7a.strata.geometry/IntSize, kotlin/IntArray): dev.s7a.strata.render/DrawImage // dev.s7a.strata.render/createOwnedDrawImage|createOwnedDrawImage(dev.s7a.strata.geometry.IntSize;kotlin.IntArray){}[0]
 final fun dev.s7a.strata.resource/parseUuid(kotlin/String): kotlin.uuid/Uuid // dev.s7a.strata.resource/parseUuid|parseUuid(kotlin.String){}[0]

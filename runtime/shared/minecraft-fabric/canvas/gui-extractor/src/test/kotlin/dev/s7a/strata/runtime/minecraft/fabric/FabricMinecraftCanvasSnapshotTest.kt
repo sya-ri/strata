@@ -9,7 +9,9 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-/** Verifies the native adapter's explicit same-lease snapshot normalization independently of GPU execution. */
+/**
+ * Verifies the native adapter's explicit same-lease snapshot normalization independently of GPU execution.
+ */
 internal class FabricMinecraftCanvasSnapshotTest {
     @Test
     fun nativeExtentBoundProtectsIntegerPixelCenterSampling() {

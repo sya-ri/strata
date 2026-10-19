@@ -7,6 +7,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
@@ -70,31 +71,55 @@ internal class MinecraftTextRun private constructor(
     @JvmSynthetic
     internal fun inkBounds(): MinecraftTextInkBounds? {
         if (paintPolicy.preparedTextBounds && hasPreparedTextBounds(0, 0).not()) return null
-        var result: MinecraftTextInkBounds? = null
-
-        fun include(
-            left: Double,
-            top: Double,
-            right: Double,
-            bottom: Double,
-        ) {
-            val next = MinecraftTextInkBounds(left, top, right, bottom)
-            result = result?.union(next) ?: next
-        }
-
-        fun includeSampled(bounds: FloatRect?) {
-            if (bounds != null) include(bounds.left.toDouble(), bounds.top.toDouble(), bounds.right.toDouble(), bounds.bottom.toDouble())
-        }
+        var present = false
+        var left = 0.0
+        var top = 0.0
+        var right = 0.0
+        var bottom = 0.0
         for (positioned in glyphs) {
             val x = positioned.x.toDouble()
-            include(x, 0.0, x + 8.0, 8.0)
-            if (positioned.shadow != null) include(x + 1.0, 1.0, x + 9.0, 9.0)
+            if (present) {
+                left = minOf(left, x)
+                top = minOf(top, 0.0)
+                right = maxOf(right, x + 8.0)
+                bottom = maxOf(bottom, 8.0)
+            } else {
+                left = x
+                top = 0.0
+                right = x + 8.0
+                bottom = 8.0
+                present = true
+            }
+            if (positioned.shadow != null) {
+                left = minOf(left, x + 1.0)
+                top = minOf(top, 1.0)
+                right = maxOf(right, x + 9.0)
+                bottom = maxOf(bottom, 9.0)
+            }
         }
         for (positioned in sampledGlyphs) {
-            includeSampled(sampledDestination(positioned, 0, 0, false))
-            if (positioned.shadow != null) includeSampled(sampledDestination(positioned, 0, 0, true))
+            var shadow = false
+            while (true) {
+                val bounds = sampledDestination(positioned, 0, 0, shadow)
+                if (bounds != null) {
+                    if (present) {
+                        left = minOf(left, bounds.left.toDouble())
+                        top = minOf(top, bounds.top.toDouble())
+                        right = maxOf(right, bounds.right.toDouble())
+                        bottom = maxOf(bottom, bounds.bottom.toDouble())
+                    } else {
+                        left = bounds.left.toDouble()
+                        top = bounds.top.toDouble()
+                        right = bounds.right.toDouble()
+                        bottom = bounds.bottom.toDouble()
+                        present = true
+                    }
+                }
+                if (shadow || positioned.shadow == null) break
+                shadow = true
+            }
         }
-        return result
+        return if (present) MinecraftTextInkBounds(left, top, right, bottom) else null
     }
 
     /**
@@ -208,6 +233,24 @@ internal class MinecraftTextRun private constructor(
         originY: Int,
         viewport: IntRect?,
     ) {
+        // Captured preset layers keep their blit path; custom styles borrow the same white mask with a tint.
+        fun draw(
+            image: DrawImage,
+            destination: IntRect,
+            tint: ArgbColor?,
+        ) {
+            if (tint == null) {
+                scope.blitImage(image, source, destination)
+            } else {
+                scope.sampledImage(
+                    image,
+                    FloatRect(source.left.toFloat(), source.top.toFloat(), source.right.toFloat(), source.bottom.toFloat()),
+                    FloatRect(destination.left.toFloat(), destination.top.toFloat(), destination.right.toFloat(), destination.bottom.toFloat()),
+                    SampledImageOrientation.Normal,
+                    tint,
+                )
+            }
+        }
         val glyphX = originX.toLong() + positioned.x
         val shadowLeft = glyphX + shadowOffset.x
         val shadowTop = originY.toLong() + shadowOffset.y
@@ -221,14 +264,14 @@ internal class MinecraftTextRun private constructor(
             val bottom = shadowTop + glyphSize.height
             if (viewport == null || Visibility.intersects(shadowLeft.toDouble(), shadowTop.toDouble(), right.toDouble(), bottom.toDouble(), viewport)) {
                 val destination = IntRect(Math.toIntExact(shadowLeft), Math.toIntExact(shadowTop), Math.toIntExact(right), Math.toIntExact(bottom))
-                scope.blitImage(shadow, source, destination)
+                draw(shadow, destination, positioned.shadowTint)
             }
         }
         val right = glyphX + glyphSize.width
         val bottom = originY.toLong() + glyphSize.height
         if (viewport == null || Visibility.intersects(glyphX.toDouble(), originY.toDouble(), right.toDouble(), bottom.toDouble(), viewport)) {
             val destination = IntRect(Math.toIntExact(glyphX), originY, Math.toIntExact(right), Math.toIntExact(bottom))
-            scope.blitImage(positioned.foreground, source, destination)
+            draw(positioned.foreground, destination, positioned.foregroundTint)
         }
     }
 
@@ -305,7 +348,6 @@ internal class MinecraftTextRun private constructor(
      * @param other run to compare.
      * @return true when an element update is an exact retained no-op.
      */
-    @Suppress("unused")
     @JvmSynthetic
     internal fun equivalentTo(other: MinecraftTextRun): Boolean = text == other.text && size == other.size && nativeWidth == other.nativeWidth && glyphs == other.glyphs && sampledGlyphs == other.sampledGlyphs && paintPolicy == other.paintPolicy
 
@@ -320,6 +362,8 @@ internal class MinecraftTextRun private constructor(
         val x: Int,
         val shadow: DrawImage?,
         val foreground: DrawImage,
+        val foregroundTint: ArgbColor? = null,
+        val shadowTint: ArgbColor? = null,
     )
 
     private data class PaintPolicy(
@@ -532,6 +576,20 @@ internal class MinecraftTextRun private constructor(
             }
 
         /**
+         * Creates custom compatibility text by tinting the captured white foreground without new pixel storage.
+         */
+        @JvmSynthetic
+        internal fun createTinted(
+            text: UiText,
+            foreground: ArgbColor,
+            shadow: ArgbColor?,
+            glyphAt: (Int) -> MinecraftGlyphSnapshot,
+        ): MinecraftTextRun =
+            create(text, glyphAt) { glyph ->
+                PositionedColors(if (shadow == null) null else glyph.normalForeground, glyph.normalForeground, foreground, shadow)
+            }
+
+        /**
          * Validates and snapshots one literal through a complete profile.
          *
          * @param text unresolved value supplied by the application.
@@ -565,7 +623,7 @@ internal class MinecraftTextRun private constructor(
                 } else {
                     val glyph = glyphAt(codePoint)
                     val selected = colors(glyph)
-                    positioned += PositionedGlyph(cursor, selected.shadow, selected.foreground)
+                    positioned += PositionedGlyph(cursor, selected.shadow, selected.foreground, selected.foregroundTint, selected.shadowTint)
                     vertical.addLegacy(if (selected.shadow == null) 8 else 9)
                     if (glyph.advance <= 0) forwardAdvances = false
                     cursor = Math.addExact(cursor, glyph.advance)
@@ -596,6 +654,8 @@ internal class MinecraftTextRun private constructor(
         private data class PositionedColors(
             val shadow: DrawImage?,
             val foreground: DrawImage,
+            val foregroundTint: ArgbColor? = null,
+            val shadowTint: ArgbColor? = null,
         )
     }
 }

@@ -63,7 +63,7 @@ internal class MinecraftUiHostTest {
                 evaluateComponentTree {
                     Spacer(
                         modifier =
-                            Modifier.Empty
+                            Modifier
                                 .size(4, 3)
                                 .initialFocus()
                                 .onKeyPress { event ->
@@ -107,7 +107,7 @@ internal class MinecraftUiHostTest {
                 evaluateComponentTree {
                     Spacer(
                         modifier =
-                            Modifier.Empty
+                            Modifier
                                 .size(4, 3)
                                 .initialFocus()
                                 .onFocusChanged({ value -> focus.add(value) })
@@ -392,7 +392,7 @@ internal class MinecraftUiHostTest {
                         runCatching { host.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) }.exceptionOrNull(),
                         runCatching { host.close() }.exceptionOrNull(),
                     )
-                evaluateComponentTree { Stack(modifier = Modifier.Empty.menuBackground()) {} }
+                evaluateComponentTree { Stack(modifier = Modifier.menuBackground()) {} }
             }
         host.attach()
         assertEquals(8, reentryFailures.size)

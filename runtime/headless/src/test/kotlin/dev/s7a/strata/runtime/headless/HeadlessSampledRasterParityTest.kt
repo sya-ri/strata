@@ -7,6 +7,7 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.floor
@@ -16,7 +17,50 @@ import kotlin.math.roundToInt
  * Compares constant-image and mapped-row sampling with independent per-pixel coverage and composition.
  * The reference never calls the optimized painter or shares its row mapping and constant-color shortcuts.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessSampledRasterParityTest {
+    @Test
+    fun whiteSourceOverOpaqueTintPreservesEveryChannelAndBothAlphaValues() {
+        val size = IntSize(1, 256)
+        val image = createDrawImage(size, IntArray(256) { alpha -> (alpha shl 24) or 0xFFFFFF })
+        val bounds = FloatRect(0f, 0f, 1f, 256f)
+        val clip = IntRect(0, 0, 1, 256)
+        for (alpha in 0..255) {
+            for (channel in 0..255) {
+                val tint = (alpha shl 24) or (channel shl 16) or ((channel * 37 and 255) shl 8) or (channel * 73 and 255)
+                val command = DrawCommand.SampledImage(image, bounds, bounds, ArgbColor(tint), 0f)
+                val background = IntArray(256) { tint or 0xFF000000.toInt() }
+                assertArrayEquals(background, reference(background, size, 1, command, clip))
+                val actual = background.copyOf()
+                SampledImageRasterizer.paint(actual, size, 1, command, clip)
+                assertArrayEquals(background, actual)
+            }
+        }
+    }
+
+    @Test
+    fun everyAlphaPairPreservesOrderedFloatComposition() {
+        val size = IntSize(256, 256)
+        val source = IntArray(size.width * size.height) { index -> ((index / 256) shl 24) or (index * 73471 and 0xFFFFFF) }
+        val background = IntArray(source.size) { index -> ((index % 256) shl 24) or (index * 1973 and 0xFFFFFF) }
+        val image = createDrawImage(size, source)
+        val bounds = FloatRect(0f, 0f, 256f, 256f)
+        val clip = IntRect(0, 0, 256, 256)
+        for (tint in listOf(-1, 0xFD7195B3.toInt(), 0x80A4C6E8.toInt(), 0x01020406)) {
+            val command = DrawCommand.SampledImage(image, bounds, bounds, ArgbColor(tint), 0f)
+            val actual = background.copyOf()
+            SampledImageRasterizer.paint(actual, size, 1, command, clip)
+            val expected = reference(background, size, 1, command, clip)
+            assertArrayEquals(expected, actual)
+            HeadlessRasterScratch().use { scratch ->
+                val reused = background.copyOf()
+                SampledImageRasterizer.paint(reused, size, 1, command, clip, scratch = scratch)
+                assertArrayEquals(expected, reused)
+            }
+        }
+        assertArrayEquals(source, image.copyArgb())
+    }
+
     @Test
     @Suppress("NestedBlockDepth", "CyclomaticComplexMethod") // Keep the finite geometry/color matrix in one parity assertion.
     fun fractionalSamplingPreservesEveryCoveredPixel() {
@@ -130,6 +174,51 @@ internal class HeadlessSampledRasterParityTest {
             }
         }
         assertArrayEquals(input, image.copyArgb())
+    }
+
+    @Test
+    @Suppress("NestedBlockDepth") // Compare the independent oracle across destination admission and alpha boundaries.
+    fun destinationPaletteAdmissionPreservesUniformEarlyChangedAndPatternedPixels() {
+        val size = IntSize(96, 64)
+        val rectangle = FloatRect(0f, 0f, size.width.toFloat(), size.height.toFloat())
+        val destination = FloatRect(-0.125f, -0.25f, size.width + 0.375f, size.height + 0.25f)
+        val clip = IntRect(0, 0, size.width, size.height)
+        val area = size.width * size.height
+        val alphaBytes = listOf(0, 1, 2, 63, 64, 65, 126, 127, 128, 129, 190, 191, 192, 253, 254, 255)
+        for (alphas in listOf(1, 16, 256)) {
+            val input =
+                IntArray(area) { index ->
+                    val alpha =
+                        if (alphas == 1) {
+                            128
+                        } else if (alphas == 16) {
+                            alphaBytes[index % alphaBytes.size]
+                        } else {
+                            index and 255
+                        }
+                    (alpha shl 24) or (index * 73471 and 0xFFFFFF)
+                }
+            val image = createDrawImage(size, input)
+            val backgrounds =
+                listOf(0, 0x001337AA, 0x804A6789.toInt(), 0xFF234567.toInt()).map { color -> IntArray(area) { color } } +
+                    listOf(IntArray(area) { index -> ((index * 37 and 255) shl 24) or (index * 1973 and 0xFFFFFF) }) +
+                    listOf(1, 16, 31, 32, 33, 64).map { prefix -> IntArray(area) { if (it < prefix) 0xFF234567.toInt() else 0x80123456.toInt() } }
+            for (tint in listOf(-1, 0xFFBFD7EF.toInt(), 0x80A4C6E8.toInt(), 0x01020406)) {
+                val boundary = 128f / 255f * ((tint ushr 24).toFloat() / 255f)
+                for (cutoff in listOf(0f, Math.nextDown(boundary), boundary, Math.nextUp(boundary), 1f)) {
+                    val command = DrawCommand.SampledImage(image, rectangle, destination, ArgbColor(tint), cutoff)
+                    for (background in backgrounds) {
+                        val expected = reference(background, size, 1, command, clip)
+                        HeadlessRasterScratch().use { scratch ->
+                            val actual = background.copyOf()
+                            SampledImageRasterizer.paint(actual, size, 1, command, clip, scratch = scratch)
+                            assertArrayEquals(expected, actual, "$alphas/$tint/$cutoff")
+                        }
+                    }
+                }
+            }
+            assertArrayEquals(input, image.copyArgb())
+        }
     }
 
     private fun reference(

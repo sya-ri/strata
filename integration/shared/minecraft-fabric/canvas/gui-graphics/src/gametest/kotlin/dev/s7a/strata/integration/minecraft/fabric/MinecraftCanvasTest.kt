@@ -89,6 +89,10 @@ private fun withMinecraftCanvasContext(
                 return previous
             }
 
+            override fun movePointer(position: IntOffset) {
+                context.movePointer(position)
+            }
+
             override fun pressPointer(
                 screen: Screen,
                 position: IntOffset,
@@ -162,4 +166,21 @@ internal fun runMinecraftUiSessionTest(
     output: Path,
 ) {
     withMinecraftCanvasContext(context, output, MinecraftUiSessionGameTest::run)
+}
+
+/**
+ * Compares standard bound Slot tooltips with the independent vanilla container-screen oracle.
+ *
+ * The caller owns server inventory replacement and restoration; this boundary owns viewport and native screenshots.
+ */
+internal fun runMinecraftSlotTooltipTest(
+    context: MinecraftLoadedTestContext,
+    profile: MinecraftUiProfile,
+    output: Path,
+    inventoryIndex: Int,
+    replaceFixture: (MinecraftSlotTooltipFixture) -> Unit,
+) {
+    withMinecraftCanvasContext(context, output) { adapter ->
+        MinecraftSlotTooltipGameTest.run(adapter, profile, inventoryIndex, replaceFixture)
+    }
 }

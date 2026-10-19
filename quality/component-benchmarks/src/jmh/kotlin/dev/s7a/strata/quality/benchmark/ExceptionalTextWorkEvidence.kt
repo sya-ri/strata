@@ -1,9 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
-import dev.s7a.strata.performance.PerformanceJson
-import dev.s7a.strata.performance.WorkExpectation
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -40,7 +37,6 @@ public object ExceptionalTextWorkEvidence {
             state.monitorWork()
             val initial = state.idle()
             check(state.idle() === initial)
-            WorkExpectation(exact = mapOf(UiRenderMetric.FrameSuccess.name to 2L, UiRenderMetric.ContentEvaluation.name to 0L, UiRenderMetric.Measure.name to 0L, UiRenderMetric.Layout.name to 0L, UiRenderMetric.Paint.name to 0L)).verify(PerformanceJson.work(state.diagnostics))
             val previous = state.value
             val updated = state.update()
             check(state.value != previous)
@@ -49,7 +45,6 @@ public object ExceptionalTextWorkEvidence {
                     .single { it.semantics.role == SemanticsRole.TextField }
                     .semantics.label == UiText.Literal(state.value),
             )
-            WorkExpectation(minimum = mapOf(UiRenderMetric.Paint.name to 1L, UiRenderMetric.Semantics.name to 1L)).verify(PerformanceJson.work(state.diagnostics))
             val before = rasterizeHeadless(initial.drawCommands, initial.size).copyArgb()
             val after = rasterizeHeadless(updated.drawCommands, updated.size).copyArgb()
             check(before.contentEquals(after)) { "Equal metric changes altered exceptional editor pixels" }

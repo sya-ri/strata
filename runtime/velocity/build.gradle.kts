@@ -6,8 +6,14 @@ dependencies {
     api(project(":runtime:remote"))
     compileOnly(libs.velocity.api)
     testImplementation(libs.velocity.api)
+    testImplementation(project(":performance-testkit"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.withType<Test>().configureEach {
+    // The untimed drain fixture captures the actual JDK scheduled Runnable instead of copying the worker loop.
+    jvmArgs("--add-opens=java.base/java.util.concurrent=ALL-UNNAMED")
 }
 
 tasks.processResources {
@@ -45,7 +51,7 @@ val verifyPluginJar = tasks.register("verifyPluginJar") {
                 "velocity-plugin.json",
                 "dev/s7a/strata/runtime/velocity/StrataVelocityPlugin.class",
                 "dev/s7a/strata/runtime/velocity/VelocityScreens.class",
-                "dev/s7a/strata/velocity/VelocityUi.class",
+                "dev/s7a/strata/velocity/Strata.class",
                 "dev/s7a/strata/velocity/event/StrataUiOpenedEvent.class",
                 "dev/s7a/strata/ui/UiDefinition.class",
                 "dev/s7a/strata/runtime/remote/RemoteConnection.class",

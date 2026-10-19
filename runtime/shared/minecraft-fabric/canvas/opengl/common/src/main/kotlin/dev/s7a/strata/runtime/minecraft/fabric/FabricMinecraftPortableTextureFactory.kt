@@ -55,7 +55,7 @@ private class FabricPortableNativeStorage : NativeGuiResource {
      * Non-owning registration view, constructed without allocating a native texture on the render thread.
      */
     @get:JvmSynthetic
-    internal val texture: AbstractTexture = FabricPortableBorrowedTexture(::textureId)
+    internal val texture: AbstractTexture = FabricBorrowedTexture(::textureId)
 
     /**
      * Allocates and uploads after ownership transfer while preserving the caller's OpenGL bindings.

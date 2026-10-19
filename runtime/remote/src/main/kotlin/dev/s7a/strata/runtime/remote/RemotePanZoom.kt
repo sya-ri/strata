@@ -57,7 +57,7 @@ internal class RemotePanZoom {
             fields.finish()
             Navigation(properties, button, step)
         }, { properties, context -> prepare(properties.transform, context) }) { properties, context ->
-            Modifier.Empty.panZoom(get(properties.transform, context.states), properties.button, properties.step)
+            Modifier.panZoom(get(properties.transform, context.states), properties.button, properties.step)
         }
     }
 

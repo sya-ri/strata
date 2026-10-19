@@ -62,7 +62,7 @@ internal fun reactiveScreen(
             Observe(loading) { active -> if (active) Text("Loading...") }
             VirtualList(items = history, keyOf = { it }, state = historyState, viewportSize = IntSize(160, 60), rowHeight = 12) { Text(it) }
             TextArea(draft, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel)
-            Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled) { onSend() })
+            Button(sendLabel, enabled = enabled, modifier = Modifier.onActivate(enabled) { onSend() })
         }
     }
 }

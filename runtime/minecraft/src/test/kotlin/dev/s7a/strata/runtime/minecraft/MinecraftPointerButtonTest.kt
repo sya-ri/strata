@@ -58,7 +58,7 @@ internal class MinecraftPointerButtonTest {
         var presses = 0
         val host =
             host {
-                evaluateComponentTree { Button("A", modifier = Modifier.Empty.onPress { presses += 1 }) }
+                evaluateComponentTree { Button("A", modifier = Modifier.onPress { presses += 1 }) }
             }
         host.attach()
 
@@ -126,7 +126,7 @@ internal class MinecraftPointerButtonTest {
     @Test
     fun nonPrimaryReleaseAndScrollAreIgnoredWhilePrimaryIsConsumed() {
         var presses = 0
-        val host = host { evaluateComponentTree { Button("A", modifier = Modifier.Empty.onPress { presses += 1 }) } }
+        val host = host { evaluateComponentTree { Button("A", modifier = Modifier.onPress { presses += 1 }) } }
         host.attach()
         host.frame(IntSize(150, 20))
 
@@ -334,7 +334,7 @@ internal class MinecraftPointerButtonTest {
     @Test
     fun primaryCallbackFailureRemainsTheExactTerminalFailure() {
         val primary = IllegalArgumentException("button callback")
-        val host = host { evaluateComponentTree { Button("A", modifier = Modifier.Empty.onPress { throw primary }) } }
+        val host = host { evaluateComponentTree { Button("A", modifier = Modifier.onPress { throw primary }) } }
         host.attach()
         host.frame(IntSize(150, 20))
         val failure =
@@ -353,8 +353,8 @@ internal class MinecraftPointerButtonTest {
             host {
                 evaluateComponentTree {
                     Stack {
-                        Button("A", modifier = Modifier.Empty.onPress { lowerPresses += 1 })
-                        Button("B", modifier = Modifier.Empty.onPress { upperPresses += 1 })
+                        Button("A", modifier = Modifier.onPress { lowerPresses += 1 })
+                        Button("B", modifier = Modifier.onPress { upperPresses += 1 })
                     }
                 }
             }
@@ -382,7 +382,7 @@ internal class MinecraftPointerButtonTest {
             host {
                 evaluateComponentTree {
                     Stack {
-                        Button("A", modifier = Modifier.Empty.onPress { lowerPresses += 1 })
+                        Button("A", modifier = Modifier.onPress { lowerPresses += 1 })
                         Button("B", enabled = false)
                     }
                 }

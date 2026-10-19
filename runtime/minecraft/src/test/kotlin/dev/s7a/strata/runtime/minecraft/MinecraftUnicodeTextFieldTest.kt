@@ -89,7 +89,7 @@ internal class MinecraftUnicodeTextFieldTest {
     @Test
     fun scalarEditingPreservesPairsAndMovesThroughCombiningMarksIndependently() {
         val state = TextFieldState("", maxLength = 16)
-        val host = host(state, Modifier.Empty.initialFocus())
+        val host = host(state, Modifier.initialFocus())
         try {
             host.attach()
             host.frame(fieldSize)
@@ -123,7 +123,7 @@ internal class MinecraftUnicodeTextFieldTest {
     @Test
     fun supplementaryInputFitsAtomicallyWithinTheUtf16Maximum() {
         val state = TextFieldState("", maxLength = 3)
-        val host = host(state, Modifier.Empty.initialFocus())
+        val host = host(state, Modifier.initialFocus())
         try {
             host.attach()
             host.frame(fieldSize)
@@ -148,7 +148,7 @@ internal class MinecraftUnicodeTextFieldTest {
     @Test
     fun externalWritesKeepTheRetainedCursorOnAScalarBoundary() {
         val state = TextFieldState("A")
-        val host = host(state, Modifier.Empty.initialFocus())
+        val host = host(state, Modifier.initialFocus())
         try {
             host.attach()
             host.frame(fieldSize)
@@ -163,7 +163,7 @@ internal class MinecraftUnicodeTextFieldTest {
     @Test
     fun inlinePreeditUsesTheSuppliedCaretAndFocusedBlockWithoutCommittingText() {
         val state = TextFieldState("A")
-        val host = host(state, Modifier.Empty.initialFocus())
+        val host = host(state, Modifier.initialFocus())
         try {
             host.attach()
             host.frame(fieldSize)
@@ -200,7 +200,7 @@ internal class MinecraftUnicodeTextFieldTest {
     @Test
     fun unicodePreeditRejectsMalformedOffsetsAndCommitsOnlyCharacterEvents() {
         val state = TextFieldState("", maxLength = 8)
-        val host = host(state, Modifier.Empty.initialFocus())
+        val host = host(state, Modifier.initialFocus())
         try {
             host.attach()
             host.frame(fieldSize)
@@ -224,7 +224,7 @@ internal class MinecraftUnicodeTextFieldTest {
             createMinecraftUiHost(
                 ScreenDefinition("editable focus") {
                     Column {
-                        TextField(firstState, modifier = Modifier.Empty.initialFocus())
+                        TextField(firstState, modifier = Modifier.initialFocus())
                         TextField(secondState)
                     }
                 },
@@ -279,7 +279,7 @@ internal class MinecraftUnicodeTextFieldTest {
             val content =
                 MinecraftProfileImplementation.createEvaluator(
                     profile,
-                    { TextField(state, enabled = enabled, modifier = Modifier.Empty.initialFocus()) },
+                    { TextField(state, enabled = enabled, modifier = Modifier.initialFocus()) },
                     textRenderer = renderer,
                 )
             tree.update(content())
@@ -603,7 +603,7 @@ internal class MinecraftUnicodeTextFieldTest {
             )
         return createMinecraftUiHost(
             ScreenDefinition("resource font field") {
-                TextField(state, size, ResourceId("example", "compact"), modifier = Modifier.Empty.initialFocus())
+                TextField(state, size, ResourceId("example", "compact"), modifier = Modifier.initialFocus())
             },
             MinecraftProfileFixture.create(fontSnapshot = snapshot),
             MinecraftFontBackendFactory { backend },

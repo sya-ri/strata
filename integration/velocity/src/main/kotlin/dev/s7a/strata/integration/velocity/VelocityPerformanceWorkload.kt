@@ -28,7 +28,7 @@ internal enum class VelocityPerformanceWorkload(
         val representatives: Map<String, String> =
             mapOf(
                 "host-api" to "com.velocitypowered.api.proxy.ProxyServer",
-                "velocity-api" to "dev.s7a.strata.velocity.VelocityUi",
+                "velocity-api" to "dev.s7a.strata.velocity.Strata",
                 "velocity-runtime" to "dev.s7a.strata.runtime.velocity.VelocityScreens",
                 "api" to "dev.s7a.strata.ui.UiDefinition",
                 "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",

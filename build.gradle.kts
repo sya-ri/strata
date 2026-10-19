@@ -20,9 +20,15 @@ import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.AbstractRunTask
+import net.fabricmc.loom.task.prod.ServerProductionRunTask
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import net.fabricmc.loom.task.RemapJarTask
 import org.gradle.api.JavaVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.Task
+import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
@@ -30,6 +36,9 @@ import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.api.tasks.GradleBuild
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
@@ -37,6 +46,7 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.engine.plugins.DokkaVersioningPluginParameters
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
@@ -46,6 +56,8 @@ import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import java.util.zip.ZipFile
 
 plugins {
@@ -65,7 +77,16 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = "0.2.2"
+version = "0.3.0"
+
+plugins.withType<YarnPlugin> {
+    extensions.configure<YarnRootExtension> {
+        // The test runner's transitive ranges predate these upstream security fixes.
+        resolution("diff", libs.versions.npm.diff.get())
+        resolution("serialize-javascript", libs.versions.npm.serialize.javascript.get())
+    }
+}
+
 private val sourceRevision = providers.gradleProperty("strata.sourceRevision").getOrElse("master")
 check(sourceRevision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
     "strata.sourceRevision must be master, a release tag, or a full lowercase Git commit."
@@ -94,12 +115,14 @@ private data class MinecraftFabricTarget(
     val javaVersion: Int,
     val remapped: Boolean,
     val canvasFamily: CanvasFamily,
+    val nativePacingFamily: NativePacingFamily,
     val sourceLinkPaths: List<String>,
+    val hudApi: HudApi = HudApi.Callback,
     val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.StreamCodec,
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
     val canvasTestExtraction: CanvasTestExtraction =
         when (canvasFamily) {
-            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> CanvasTestExtraction.Flush
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> CanvasTestExtraction.Flush
             CanvasFamily.Blaze3dTextureViews -> CanvasTestExtraction.Buffered
             CanvasFamily.Blaze3dSamplers -> CanvasTestExtraction.BufferedPointer
             CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> CanvasTestExtraction.GuiExtractor
@@ -120,20 +143,50 @@ private data class MinecraftFabricTarget(
         (listOf("common") + canvasFamily.sourceRoots).map { suffix -> "runtime/shared/minecraft-fabric/canvas/$suffix" }
     val inputSourcePaths: List<String> = listOf("runtime/shared/minecraft-fabric/input/${if (canvasFamily == CanvasFamily.RenderPearl) "sdl" else "glfw"}")
     val uiInputSourcePath: String = "runtime/shared/minecraft-fabric/input/${if (uiFamily == UiFamily.ExtractHud) "gui-holder" else "screen-field"}"
+    val hudSourcePath: String =
+        "runtime/shared/minecraft-fabric/hud/" +
+            when (hudApi) {
+                HudApi.Callback -> "callback-gui-graphics"
+                HudApi.Layer -> "layer-delta-tracker"
+                HudApi.Registry -> if (uiFamily == UiFamily.Delta) "registry-delta-tracker" else "registry-extractor"
+            }
+    val serverSourcePaths: List<String> =
+        listOf("runtime/shared/minecraft-fabric/server/common") +
+            if (remoteNetworkFamily == RemoteNetworkFamily.StreamCodec) emptyList() else listOf("runtime/shared/minecraft-fabric/server/buffer-networking")
+    val networkingDirectionSourcePath: List<String> = if (remoteNetworkFamily == RemoteNetworkFamily.StreamCodec) listOf("runtime/shared/minecraft-fabric/transport/${if (remapped) "typed-directions" else "named-directions"}") else emptyList()
     val allSourceLinkPaths: List<String> =
-        (sourceLinkPaths + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${uiFamily.sourceRoot}" + "runtime/shared/minecraft-fabric/transport/${remoteNetworkFamily.sourceRoot}").distinct()
+        (sourceLinkPaths + networkingDirectionSourcePath + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + serverSourcePaths + hudSourcePath + "runtime/shared/minecraft-fabric/transport/${remoteNetworkFamily.sourceRoot}").distinct()
+    /** Independent vanilla carried-item context selected by the verified native framebuffer API. */
+    val tooltipReferenceSourcePath: String =
+        when (canvasFamily) {
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics"
+            CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/stratum-gui-graphics"
+            CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor"
+        }
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
+            "integration/shared/minecraft-fabric/canvas/pacing/common",
+            tooltipReferenceSourcePath,
+            "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
             "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
             when (canvasFamily) {
-                CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
+                CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
                 CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers, CanvasFamily.Blaze3dGuiExtractor -> "integration/shared/minecraft-fabric/canvas/consumption/buffer-source"
                 CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/consumption/vertex-buffer"
             },
         )
+
+    /** Fixture-only limiter APIs verified from exact mapped clients; no runtime version dispatch. */
+    enum class NativePacingFamily(val sourceRoot: String) {
+        Legacy("legacy"), Tracker("tracker"), Reason("reason"), GameStateGetter("game-state-getter"), GameStateAccessor("game-state-accessor"),
+    }
+    /** Official HUD API generations, selected explicitly by each target. */
+    enum class HudApi {
+        Callback, Layer, Registry,
+    }
 
     /** Native HUD extraction signatures verified from the exact client archives. */
     enum class UiFamily(val sourceRoot: String) {
@@ -142,14 +195,15 @@ private data class MinecraftFabricTarget(
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
     enum class CanvasFamily(val testSource: String, vararg val sourceRoots: String) {
-        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        OpenGlBuffers("opengl/common", "opengl/common", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dDirectTextures("blaze3d/direct-textures", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dTextureViews("blaze3d/texture-views", "blaze3d/common", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dSamplers("blaze3d/texture-views", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dGuiExtractor("blaze3d/texture-views", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
-        Blaze3dBindGroups("blaze3d/bind-groups", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
-        RenderPearl("renderpearl", "renderpearl", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlBuffers("opengl/common", "opengl/common", "opengl/reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        OpenGlNonReloadableTextures("opengl/common", "opengl/common", "opengl/non-reloadable-textures", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        Blaze3dDirectTextures("blaze3d/direct-textures", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        Blaze3dTextureViews("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dSamplers("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dGuiExtractor("blaze3d/texture-views", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/texture-format-storage", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
+        Blaze3dBindGroups("blaze3d/bind-groups", "portable-storage", "sampled-storage", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "drawing/texture-view-sampling", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        RenderPearl("renderpearl", "portable-storage", "sampled-storage", "renderpearl", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
     }
 
     /** Verified test-only native GUI constructor and traversal contracts, independent of the GPU driver family. */
@@ -161,15 +215,16 @@ private data class MinecraftFabricTarget(
         GuiExtractor("gui-extractor"),
     }
 
-    /** Native custom-payload families verified against their exact mapped client archives. */
+    /** Publication support exposed by the Paper distribution table. */
     enum class PaperDistribution(val description: String) {
         Available("✅"),
         Unavailable("❌"),
     }
 
+    /** Native packet families; compatible buffer APIs share one compiled transport implementation. */
     enum class RemoteNetworkFamily(val sourceRoot: String) {
         IdentifierBuffer("identifier-buffer"),
-        CustomPayload("custom-payload"),
+        CustomPayload("identifier-buffer"),
         StreamCodec("stream-codec"),
     }
 }
@@ -180,18 +235,20 @@ val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
 val minecraftJava21Version = libs.versions.java.minecraft121.get().toInt()
 private val legacyScrollTargets = setOf(libs.versions.minecraft120.get(), libs.versions.minecraft1201.get())
 private val fabricLoaderVersion = libs.versions.fabric.loader.get()
+private val fabricLanguageKotlinVersion = libs.versions.fabric.language.kotlin.get()
 private val fabricMixinDependency = libs.fabric.mixin
 private val canvasMixinDependency = libs.fabric.mixin
 private val canvasMixinExtrasDependency = libs.mixin.extras
 val guiGraphicsRuntimeSourceLinks =
     listOf(
-        "runtime/shared/minecraft-fabric/input/gui-graphics", "runtime/shared/minecraft-fabric/rendering/gui-graphics", "runtime/shared/minecraft-fabric/resources/gui-graphics", "runtime/shared/minecraft-fabric/screen/gui-graphics",
+        "runtime/shared/minecraft-fabric/input/gui-graphics", "runtime/shared/minecraft-fabric/rendering/gui-graphics", "runtime/shared/minecraft-fabric/screen/gui-graphics",
         "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
     )
 private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
             version = libs.versions.minecraft120.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -199,13 +256,26 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-stb",
+                    "runtime/shared/minecraft-fabric/resources/atlas-images",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/primitive-callbacks",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.1",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -213,12 +283,25 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-stb",
+                    "runtime/shared/minecraft-fabric/resources/atlas-images",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/primitive-callbacks",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/input/primitive-callbacks",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.1",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1202.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -226,14 +309,27 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-stb-overlays",
+                    "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.2",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.4",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1203.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
@@ -242,14 +338,27 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-stb-overlays",
+                    "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.3",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.4",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1204.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -257,69 +366,138 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-stb-overlays",
+                    "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.4",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1205.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
+                    "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.5",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1206.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
+                    "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-constructor",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
                     "runtime/minecraft-fabric-1.20.6",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft121.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
+                    "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/minecraft-fabric-1.21",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1211.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
+                    "runtime/shared/minecraft-fabric/resources/fixed-nine-slice",
+                    "runtime/shared/minecraft-fabric/rendering/gui-graphics-blit",
+                    "runtime/shared/minecraft-fabric/resources/abgr-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/minecraft-fabric-1.21.1",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
-                    "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
@@ -327,7 +505,20 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-exception",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-factory",
                     "runtime/minecraft-fabric-1.21.2",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -335,13 +526,26 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1213.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-filters",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-1.21.3",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -349,32 +553,64 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
+            hudApi = MinecraftFabricTarget.HudApi.Layer,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
-            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
+            canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlNonReloadableTextures,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/optional-skin-result",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-1.21.4",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
+            hudApi = MinecraftFabricTarget.HudApi.Layer,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dDirectTextures,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-interleaved-shadows",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/rendering/pose-sampled-image",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/optional-skin-result",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/rendering/pose-gui-graphics",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-1.21.5",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -382,13 +618,26 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/optional-skin-result",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
                     "runtime/minecraft-fabric-1.21.6",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -396,13 +645,26 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/optional-skin-result",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
                     "runtime/minecraft-fabric-1.21.7",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -410,46 +672,89 @@ private val minecraftFabricTargets =
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-prepared-text",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin-reference",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/resources/optional-skin-result",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-skin",
                     "runtime/minecraft-fabric-1.21.8",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
                     "runtime/minecraft-fabric-1.21.9",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
+                    "runtime/shared/minecraft-fabric/resources/resource-location-synthetic",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/client-initialization",
                     "runtime/minecraft-fabric-1.21.10",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dSamplers,
             javaVersion = minecraftJava21Version,
             remapped = true,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-baked-metrics",
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/viewport-initialization",
                     "runtime/minecraft-fabric-1.21.11",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
                     "runtime/shared/minecraft-fabric/resources/identifier",
@@ -457,6 +762,8 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateGetter,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractGui,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dGuiExtractor,
@@ -464,7 +771,15 @@ private val minecraftFabricTargets =
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
+                    "runtime/shared/minecraft-fabric/screen/screen-field",
+                    "runtime/shared/minecraft-fabric/screen/viewport-initialization",
                     "runtime/minecraft-fabric-26.1",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
                     "runtime/shared/minecraft-fabric/input/glfw-observation", "runtime/shared/minecraft-fabric/lifecycle/glfw-observation", "runtime/shared/minecraft-fabric/resources/glfw-observation",
                     "runtime/shared/minecraft-fabric/resources/identifier",
                     "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
@@ -473,13 +788,22 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft262.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dBindGroups,
             javaVersion = minecraftJavaVersion,
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-fractional-unihex",
+                    "runtime/shared/minecraft-fabric/screen/gui-holder",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-26.2",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
                     "runtime/shared/minecraft-fabric/input/glfw-observation", "runtime/shared/minecraft-fabric/lifecycle/glfw-observation", "runtime/shared/minecraft-fabric/resources/glfw-observation",
                     "runtime/shared/minecraft-fabric/resources/identifier",
                     "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
@@ -488,13 +812,22 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft263.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.RenderPearl,
             javaVersion = minecraftJavaVersion,
             remapped = false,
             sourceLinkPaths =
                 listOf(
+                    "runtime/shared/minecraft-fabric/resources/configurable-nine-slice",
+                    "runtime/shared/minecraft-fabric/resources/font-free-type-saturating-metrics",
+                    "runtime/shared/minecraft-fabric/screen/gui-holder",
+                    "runtime/shared/minecraft-fabric/resources/argb-pixels",
+                    "runtime/shared/minecraft-fabric/resources/asset-skin",
+                    "runtime/shared/minecraft-fabric/resources/gui-sprite-metadata",
                     "runtime/minecraft-fabric-26.3",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
                     "runtime/shared/minecraft-fabric/resources/identifier",
                     "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
                     "runtime/shared/minecraft-fabric/canvas/gui-extractor", "runtime/shared/minecraft-fabric/input/gui-extractor", "runtime/shared/minecraft-fabric/rendering/gui-extractor", "runtime/shared/minecraft-fabric/resources/gui-extractor", "runtime/shared/minecraft-fabric/screen/gui-extractor",
@@ -673,8 +1006,8 @@ val compatibilityMarkdown = providers.provider {
         appendLine()
         appendLine("# Minecraft compatibility")
         appendLine()
-        appendLine("Choose the Strata runtime that matches the Minecraft version of your client.")
-        appendLine("Install exactly one versioned runtime together with Fabric Language Kotlin; each runtime includes the common Strata libraries.")
+        appendLine("Choose the Strata runtime that matches the Minecraft version of your client or Fabric server.")
+        appendLine("Install exactly one versioned runtime together with Fabric API and Fabric Language Kotlin; each runtime includes the common Strata libraries.")
         appendLine("The table is generated from the build's target matrix and describes supported artifacts and Java requirements.")
         appendLine()
         appendLine("| Minecraft | Fabric runtime artifact | Required Java | Paper distribution |")
@@ -690,7 +1023,7 @@ val compatibilityMarkdown = providers.provider {
         appendLine()
         appendLine("See [adapter development](../development/minecraft-versions.md) for native boundaries and [verification](../development/build.md) for the executable checks.")
         appendLine("This table does not record a test run or replace release acceptance evidence.")
-        appendLine("All listed clients compile the native Strata remote transport without requiring Fabric API.")
+        appendLine("All listed runtimes require Fabric API and support both Fabric clients and logical servers.")
         appendLine("Paper acceptance uses an exact Minecraft version from the [official distribution inventory](https://fill.papermc.io/v3/projects/paper); distribution availability alone is not a successful test receipt.")
         appendLine("See [Paper screens](../guides/paper.md) and [Velocity screens](../guides/velocity.md) for installation, and [remote protocol](remote-protocol.md) for connection and extension contracts.")
     }
@@ -744,14 +1077,16 @@ val sharedSourceMarkdown = providers.provider {
                 "FabricNativeCanvasDriver",
                 "MinecraftCanvasContext",
                 "FabricNativeCanvasTextureFactory",
+                "FabricBorrowedTexture",
                 "FabricNativeCanvasTargetFactory",
+                "FabricMinecraftCompositionTextureAllocation",
             ),
-            "GUI drawing" to listOf("FabricNativeCanvasDrawing"),
+            "GUI drawing" to listOf("FabricNativeCanvasDrawing", "FabricMinecraftExactSampledImageDrawing"),
             "GUI consumption and discard" to listOf("FabricMinecraftCanvasGuiConsumption", "FabricMinecraftCanvasRenderStateAccess"),
-            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin"),
+            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin", "FabricMinecraftPortableTextureOwnership", "FabricMinecraftPortableTextureStorage"),
         ),
         "input" to linkedMapOf(
-            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),
+            "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftInventoryNative", "FabricMinecraftKeyBindingBridge"),
             "Focused keyboard and text input" to listOf("FabricMinecraftFocusedInputMapping"),
             "Native keyboard and pointer mapping" to listOf("FabricMinecraftKeyMapping", "FabricMinecraftPointerMapping"),
             "Mouse routing" to listOf("FabricUiMouseMixin"),
@@ -965,24 +1300,37 @@ private val ciMinecraftTargets = minecraftFabricTargets.filter { target -> targe
 private val requestedTaskNames = gradle.startParameter.taskNames
 private val normalizedRequestedTaskNames =
     requestedTaskNames.map { taskName -> taskName.takeIf { it.startsWith(':') } ?: ":$taskName" }
+private val standardMinecraftBenchmarkRequested = ":benchmarkMinecraft" in normalizedRequestedTaskNames
 private val quickMinecraftBenchmarkRequested = ":benchmarkMinecraftQuick" in normalizedRequestedTaskNames
+private val nativeMinecraftBenchmarkRequested = standardMinecraftBenchmarkRequested || quickMinecraftBenchmarkRequested
 private val quickPerformance = providers.gradleProperty("strata.performance.quick").map(String::toBooleanStrict).getOrElse(quickMinecraftBenchmarkRequested)
-val benchmarkMinecraftQuick = tasks.register("benchmarkMinecraftQuick") {
-    group = "verification"
-    description = "Collects one quick native component workload on one exact Minecraft version, without a full acceptance matrix."
-    if (quickMinecraftBenchmarkRequested) {
-        require(
-            normalizedRequestedTaskNames.none { taskName ->
-                taskName == ":check" || taskName.substringAfterLast(':') in minecraftClientTaskNames
-            },
-        ) { "Run quick performance collection separately from correctness clients" }
-        require(quickPerformance) { "benchmarkMinecraftQuick requires the quick profile" }
+
+/**
+ * Dispatches a native measurement profile to one production client without narrowing correctness clients.
+ */
+private fun registerMinecraftBenchmark(name: String, quick: Boolean): TaskProvider<Task> {
+    val target = if (":$name" in normalizedRequestedTaskNames) {
+        require(normalizedRequestedTaskNames.size == 1) { "Run native performance collection as a standalone task" }
+        require(quickPerformance == quick) { "$name requires strata.performance.quick=$quick" }
         require(providers.gradleProperty("strata.performance.nativeOutput").isPresent) { "Set strata.performance.nativeOutput to a fresh directory" }
-        require(ciMinecraftVersions.size <= 1) { "Choose one Minecraft version for a quick run" }
-        val target = if (ciMinecraftVersions.isEmpty()) minecraftFabricTargets.last() else minecraftFabricTargets.single { it.version == ciMinecraftVersions.single() }
-        dependsOn("${target.integrationProjectPath}:runProductionClientGameTest")
+        require(ciMinecraftVersions.size <= 1) { "Choose one Minecraft version for a native run" }
+        if (ciMinecraftVersions.isEmpty()) minecraftFabricTargets.last() else minecraftFabricTargets.single { it.version == ciMinecraftVersions.single() }
+    } else {
+        null
+    }
+    return tasks.register(name) {
+        group = "verification"
+        description = if (quick) {
+            "Collects one quick native component workload on one exact Minecraft version, without a full acceptance matrix."
+        } else {
+            "Collects standard native workloads on one exact Minecraft version, preserving all GUI scales and sample counts."
+        }
+        if (target != null) dependsOn("${target.integrationProjectPath}:runProductionClientGameTest")
     }
 }
+
+val benchmarkMinecraft = registerMinecraftBenchmark("benchmarkMinecraft", quick = false)
+val benchmarkMinecraftQuick = registerMinecraftBenchmark("benchmarkMinecraftQuick", quick = true)
 private val selectsEveryMinecraftClient =
     requestedTaskNames.any { taskName -> taskName == "check" || taskName in minecraftClientTaskNames }
 private val selectsFontParityClients = requestedTaskNames.any { taskName -> taskName.substringAfterLast(':') == "verifyOfflineFontParity" }
@@ -999,7 +1347,7 @@ private val selectedMinecraftExecutionTargets =
             minecraftFabricTargets.filter { target ->
                 target in ciMinecraftTargets || (selectsFontParityClients && target.version in fontParityMinecraftVersions)
             }
-        quickMinecraftBenchmarkRequested -> listOf(minecraftFabricTargets.last())
+        nativeMinecraftBenchmarkRequested -> listOf(minecraftFabricTargets.last())
         selectsEveryMinecraftClient -> minecraftFabricTargets
         else ->
             minecraftFabricTargets.filter { target ->
@@ -1076,6 +1424,292 @@ private val minecraftRemapExecutionService =
 
 if (completeIdeaModelActive) {
     apply(plugin = "idea")
+    // Keep typed inventory on the root plugin classpath; applied scripts cannot resolve the Kotlin plugin model.
+    /** Reads Git's selected revision and tracked membership without consulting generated IDEA metadata. */
+    fun gitOutput(vararg arguments: String): String =
+        providers.exec {
+            workingDir(rootDir)
+            commandLine("git", *arguments)
+        }.standardOutput.asText.get()
+
+    /** Hashes current bytes; declaration evidence cannot be restored from the build cache. */
+    fun File.sha256(): String {
+        val bytes = if (isDirectory) {
+            val files = walkTopDown().filter { it.isFile }.sortedBy { it.relativeTo(this).invariantSeparatorsPath }.associate { it.relativeTo(this).invariantSeparatorsPath to it.sha256() }
+            JsonOutput.toJson(files).toByteArray(Charsets.UTF_8)
+        } else {
+            readBytes()
+        }
+        return MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+    }
+
+    val repositoryRoot = rootDir.canonicalFile.toPath()
+
+    /** Returns a canonical repository path, rejecting linked roots outside the selected checkout. */
+    fun File.repositoryPath(): String {
+        val root = repositoryRoot
+        val path = canonicalFile.toPath()
+        require(path.startsWith(root) && path != root) { "Declaration path must be inside the repository: $this" }
+        return root.relativize(path).toString().replace(File.separatorChar, '/')
+    }
+
+    /** Captures current directory membership and bytes without reusing acceptance evidence. */
+    fun File.declarationFiles(): Map<String, String> =
+        if (isDirectory) walkTopDown().filter { it.isFile }.map { it.repositoryPath() to it.sha256() }.sortedBy { it.first }.toMap() else emptyMap()
+
+    /** Identifies absent declared output directories whose producing tasks actually reported NO_SOURCE. */
+    fun unproducedSourceOutputs(): Set<File> =
+        rootProject.allprojects.flatMap { dependency ->
+            val declared = dependency.extensions.findByType<SourceSetContainer>()?.flatMap { it.output.files }.orEmpty().map { it.canonicalFile }.toSet()
+            dependency.tasks.filter { it.state.noSource }.flatMap { it.outputs.files.files }.map { it.canonicalFile }
+                .filter { it in declared && it.exists().not() }
+        }.toSet()
+
+    /** Finds authored auxiliary JVM compilations without introducing fixture names or KMP aliases. */
+    fun Project.workingAuxiliarySourceSets(): List<SourceSet> {
+        if (extensions.findByType<KotlinMultiplatformExtension>() != null) return emptyList()
+        val kotlin = extensions.findByType<KotlinJvmProjectExtension>()
+        return extensions.findByType<SourceSetContainer>()?.filter { sourceSet ->
+            val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty()
+            sourceSet.name !in setOf("main", "test", "jmh") && (sourceSet.java.files + inputs.flatMap { it.kotlin.files }).any { it.extension in setOf("kt", "java") }
+        }.orEmpty()
+    }
+
+    /**
+     * Resolves actual compiler/runtime edges while omitting owner outputs and absent source-set outputs from NO_SOURCE tasks.
+     * Missing required libraries still fail their byte inventory instead of disappearing from analysis.
+     */
+    fun Project.declarationDependencies(selected: List<SourceSet>): Map<String, List<Map<String, String>>> {
+        val owner = this
+        val sourceSets = extensions.getByType<SourceSetContainer>()
+        val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
+        val unproducedOutputs = unproducedSourceOutputs()
+        val artifacts = selected.flatMap { sourceSet ->
+            listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
+                owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
+            }
+        }.distinctBy { it.file.canonicalFile }
+        val dependencies = selected.flatMap { sourceSet ->
+            listOf(sourceSet.compileClasspathConfigurationName to sourceSet.compileClasspath, sourceSet.runtimeClasspathConfigurationName to sourceSet.runtimeClasspath)
+        }.associate { (configurationName, classpath) ->
+            val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs - unproducedOutputs
+            val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
+            val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
+            val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->
+                val component = artifact.id.componentIdentifier
+                when (component) {
+                    is ProjectComponentIdentifier -> {
+                        val dependency = rootProject.project(component.projectPath)
+                        mapOf("kind" to "Module", "identity" to dependency.extensions.getByType<IdeaModel>().module.name, "project" to component.projectPath)
+                    }
+                    is ModuleComponentIdentifier -> mapOf(
+                        "kind" to "Library",
+                        "identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}",
+                        "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'),
+                        "sha256" to artifact.file.sha256(),
+                    )
+                    else -> mapOf("kind" to "Library", "identity" to component.displayName, "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to artifact.file.sha256())
+                }
+            }.distinct() + (requiredFiles - resolvedFiles).sortedBy { it.path }.map { file ->
+                mapOf("kind" to "Library", "identity" to "file:${file.canonicalPath}", "path" to file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to file.sha256())
+            }
+            configurationName to identities
+        }
+        return dependencies
+    }
+
+    tasks.register("qodanaDeclarationInventory") {
+        group = "verification"
+        description = "Recreates revision-bound JVM compiler root, SDK and dependency expectations from Gradle declarations."
+        notCompatibleWithConfigurationCache("Reads the complete configured project and resolution model.")
+        outputs.file(layout.buildDirectory.file("qodana/declarations.json"))
+        outputs.upToDateWhen { false }
+        dependsOn(provider {
+            allprojects.filter { it.plugins.hasPlugin("me.champeau.jmh") }.map { it.tasks.named("jmhClasses") } +
+                allprojects.flatMap { owner -> owner.extensions.findByType<SourceSetContainer>()?.map { it.output }.orEmpty() }
+        })
+        mustRunAfter(provider { allprojects.flatMap { it.tasks.matching { task -> task.name == "ideaModule" }.toList() } })
+        doLast {
+            val changedTrackedSources = gitOutput("diff", "--name-status", "--no-renames", "HEAD")
+            require(changedTrackedSources.isBlank()) {
+                "Declaration acceptance requires the selected revision's clean tracked sources. Changed tracked paths:\n$changedTrackedSources"
+            }
+            val tracked = gitOutput("ls-files", "-z").split('\u0000').filter(String::isNotEmpty).sorted().associateWith { file(it).sha256() }
+            val absentOutputs = unproducedSourceOutputs()
+            val projects = allprojects.sortedBy { it.path }.map { owner ->
+                val idea = owner.extensions.findByType<IdeaModel>()?.module
+                val sourceSets = owner.extensions.findByType<SourceSetContainer>()
+                val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
+                val multiplatform = owner.extensions.findByType<KotlinMultiplatformExtension>()
+                val platformCompilations = multiplatform?.targets?.flatMap { it.compilations }.orEmpty()
+                val roots = sourceSets?.flatMap { sourceSet ->
+                    val matching = platformCompilations.filter { it.name == sourceSet.name || it.defaultSourceSet.name == sourceSet.name }
+                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() + matching.flatMap { it.allKotlinSourceSets }
+                    val test = sourceSet.name != "main" && matching.none { it.name == "main" }
+                    listOf(
+                        Triple(if (test) "TestSource" else "Source", sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }, sourceSet.java.files + inputs.flatMap { it.kotlin.files }),
+                        Triple(if (test) "TestResource" else "Resource", sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }, sourceSet.resources.files + inputs.flatMap { it.resources.files }),
+                    ).flatMap { (kind, directories, compilerInputs) ->
+                        val selectedInputs = compilerInputs.map { it.canonicalFile.toPath() }.distinct()
+                        directories.map { directory ->
+                            val directoryPath = directory.canonicalFile.toPath()
+                            val generated = directoryPath.startsWith(owner.layout.buildDirectory.get().asFile.canonicalFile.toPath())
+                            val files = directory.declarationFiles()
+                            require(generated || tracked.keys.containsAll(files.keys)) { "Authored compiler roots must belong to the selected revision: ${owner.path}: $directory" }
+                            require((generated && files.keys.any { it in tracked }).not()) { "Authored compiler inputs must not be hidden under build: $directory" }
+                            val selected = selectedInputs.filter { it.startsWith(directoryPath) }.map { it.toFile().repositoryPath() }.sorted()
+                            mapOf("kind" to kind, "path" to directory.repositoryPath(), "exists" to directory.isDirectory, "generated" to generated, "files" to files, "inputs" to selected, "sourceSets" to listOf(sourceSet.name))
+                        }
+                    }
+                }.orEmpty().distinct()
+                val outputs = sourceSets?.flatMap { sourceSet ->
+                    val production = sourceSet.name == "main" || platformCompilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name }
+                    sourceSet.output.files.sortedBy { it.repositoryPath() }.map { directory ->
+                        mapOf("sourceSet" to sourceSet.name, "production" to production, "classes" to sourceSet.output.classesDirs.files.any { it.canonicalFile == directory.canonicalFile },
+                            "path" to directory.repositoryPath(), "exists" to directory.isDirectory, "files" to directory.declarationFiles())
+                    }
+                }.orEmpty()
+                val main = kotlin?.target?.compilations?.findByName("main")
+                    ?: multiplatform?.targets?.findByName("jvm")?.compilations?.findByName("main")
+                val compiler = main?.compileTaskProvider?.name?.let { owner.tasks.named<KotlinJvmCompile>(it).get() }
+                val configuredApi = kotlin?.explicitApi ?: multiplatform?.explicitApi
+                val explicitApi = compiler?.compilerOptions?.freeCompilerArgs?.get()?.lastOrNull { it.startsWith("-Xexplicit-api=") }?.substringAfter('=')
+                    ?: when (configuredApi) {
+                        ExplicitApiMode.Strict -> "strict"
+                        ExplicitApiMode.Warning -> "warning"
+                        ExplicitApiMode.Disabled -> "disable"
+                        null -> null
+                    }
+                require(explicitApi == null || explicitApi in setOf("strict", "warning", "disable")) { "Unsupported explicit API compiler mode: $explicitApi" }
+                val friends = owner.tasks.withType<KotlinJvmCompile>().flatMap { it.friendPaths.files }.map { it.canonicalFile }.distinct().sortedBy { it.path }.map { input ->
+                    require(input.exists() || input in absentOutputs) { "Missing required Kotlin friend input: ${owner.path}: $input" }
+                    mapOf("path" to input.canonicalPath.replace(File.separatorChar, '/'), "exists" to input.exists(), "sha256" to input.takeIf { it.exists() }?.sha256())
+                }
+                mapOf(
+                    "project" to owner.path,
+                    "module" to idea?.name,
+                    "directory" to owner.projectDir.takeUnless { it.canonicalFile == rootDir.canonicalFile }?.repositoryPath(),
+                    "iml" to idea?.outputFile?.repositoryPath(),
+                    "native" to (owner.path in minecraftTargetByProjectPath),
+                    "roots" to roots.map { entry ->
+                        val production = roots.firstOrNull { it["path"] == entry["path"] && it["kind"] in setOf("Source", "Resource") }
+                        val selected = production ?: entry
+                        val sameKind = roots.filter { it["path"] == entry["path"] && it["kind"].toString().removePrefix("Test") == selected["kind"].toString().removePrefix("Test") }
+                        selected + mapOf(
+                            "inputs" to sameKind.flatMap { it["inputs"] as List<*> }.distinct().sortedBy { it.toString() },
+                            "sourceSets" to sameKind.flatMap { it["sourceSets"] as List<*> }.distinct().sortedBy { it.toString() },
+                        )
+                    }.distinct(),
+                    "outputs" to outputs,
+                    "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends) },
+                    "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
+                    "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
+                )
+            }
+            val owners = allprojects.filter { it.plugins.hasPlugin("me.champeau.jmh") }.sortedBy { it.path }.map { owner ->
+                val sourceSets = owner.extensions.getByType<SourceSetContainer>()
+                val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
+                val idea = owner.extensions.getByType<IdeaModel>().module
+                val jmh = sourceSets.getByName("jmh")
+                val java = owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion.get().asInt()
+                val compiler = owner.extensions.getByType<JavaToolchainService>().launcherFor {
+                    languageVersion.set(owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion)
+                }.get().metadata
+                val roots = (listOf("main", "test", "jmh") + owner.workingAuxiliarySourceSets().map { it.name }).flatMap { sourceSetName ->
+                    val sourceSet = sourceSets.getByName(sourceSetName)
+                    val kotlinSets = kotlin?.target?.compilations?.findByName(sourceSetName)?.allKotlinSourceSets.orEmpty()
+                    val inputs = if (sourceSetName == "main") kotlinSets else kotlinSets - kotlin?.target?.compilations?.findByName("main")?.allKotlinSourceSets.orEmpty()
+                    val sourceRoots = sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }
+                    val resourceRoots = sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }
+                    val test = sourceSetName != "main"
+                    listOf((if (test) "TestSource" else "Source") to sourceRoots, (if (test) "TestResource" else "Resource") to resourceRoots).flatMap { (kind, directories) ->
+                        directories.sortedBy { it.repositoryPath() }.map { directory ->
+                            val generated = directory.canonicalFile.toPath().startsWith(owner.layout.buildDirectory.get().asFile.canonicalFile.toPath())
+                            // Authored declarations under build must fail rather than disappear inside IDEA's default exclusion.
+                            require(generated.not() || directory.walkTopDown().none { it.isFile && it.extension in setOf("kt", "java") }) {
+                                "JMH declarations must not hide authored compiler inputs under build: $directory"
+                            }
+                            val files = directory.declarationFiles()
+                            require(tracked.keys.containsAll(files.keys)) { "Authored JMH model roots must belong to the selected revision: ${owner.path}: $directory" }
+                            mapOf(
+                                "sourceSet" to sourceSetName,
+                                "kind" to kind,
+                                "path" to directory.repositoryPath(),
+                                "exists" to directory.isDirectory,
+                                "generated" to generated,
+                                "files" to files,
+                            )
+                        }
+                    }
+                }.let { declarations ->
+                    declarations.map { entry ->
+                        declarations.firstOrNull { it["path"] == entry["path"] && it["kind"] in setOf("Source", "Resource") } ?: entry
+                    }
+                }.distinctBy { it["kind"] to it["path"] }
+                val dependencies = owner.declarationDependencies(listOf(jmh))
+                mapOf(
+                    "project" to owner.path,
+                    "directory" to owner.projectDir.repositoryPath(),
+                    "module" to idea.name,
+                    "iml" to idea.outputFile.repositoryPath(),
+                    "java" to java,
+                    "toolchain" to mapOf("vendor" to compiler.vendor, "runtimeVersion" to compiler.javaRuntimeVersion, "installation" to compiler.installationPath.asFile.canonicalPath.replace(File.separatorChar, '/')),
+                    "roots" to roots,
+                    "compilations" to kotlin?.target?.compilations?.map { compilation ->
+                        mapOf("name" to compilation.name, "sourceSets" to compilation.allKotlinSourceSets.map { it.name }.sorted(), "associatedWith" to compilation.associatedCompilations.map { it.name }.sorted())
+                    }.orEmpty(),
+                    "classpaths" to mapOf("compile" to jmh.compileClasspathConfigurationName, "runtime" to jmh.runtimeClasspathConfigurationName),
+                    "dependencies" to dependencies,
+                )
+            }
+            val auxiliary = allprojects.sortedBy { it.path }.flatMap { owner ->
+                val idea = owner.extensions.findByType<IdeaModel>()?.module
+                val sourceSets = owner.extensions.findByType<SourceSetContainer>()
+                val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
+                val mainKotlin = kotlin?.target?.compilations?.findByName("main")?.allKotlinSourceSets.orEmpty()
+                val main = sourceSets?.findByName("main")
+                val mainSources = main?.java?.srcDirs.orEmpty() + mainKotlin.flatMap { it.kotlin.srcDirs }
+                val mainResources = main?.resources?.srcDirs.orEmpty() + mainKotlin.flatMap { it.resources.srcDirs }
+                owner.workingAuxiliarySourceSets().sortedBy { it.name }.map { sourceSet ->
+                    val module = requireNotNull(idea)
+                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() - mainKotlin
+                    val roots = listOf(
+                        "TestSource" to (sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }),
+                        "TestResource" to (sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }),
+                    ).flatMap { (kind, directories) -> directories.sortedBy { it.repositoryPath() }.mapNotNull { directory ->
+                        val relative = directory.repositoryPath()
+                        val generated = directory.canonicalFile.toPath().startsWith(owner.layout.buildDirectory.get().asFile.canonicalFile.toPath())
+                        val authored = tracked.keys.any { it.startsWith("$relative/") }
+                        require((generated && authored).not()) { "Auxiliary compiler inputs must not be hidden under build: $directory" }
+                        if (generated) return@mapNotNull null
+                        val files = directory.declarationFiles()
+                        require(tracked.keys.containsAll(files.keys)) { "Authored auxiliary roots must belong to the selected revision: ${owner.path}: $directory" }
+                        val production = directory in if (kind == "TestSource") mainSources else mainResources
+                        mapOf("sourceSet" to sourceSet.name, "kind" to (if (production) kind.removePrefix("Test") else kind), "path" to relative, "exists" to directory.isDirectory, "generated" to false, "files" to files)
+                    } }.distinctBy { it["kind"] to it["path"] }
+                    val outputs = sourceSet.output.classesDirs.files.sortedBy { it.repositoryPath() }.map { directory ->
+                        val files = directory.declarationFiles()
+                        mapOf("path" to directory.repositoryPath(), "exists" to directory.isDirectory, "files" to files)
+                    }
+                    require(outputs.any { (it["files"] as Map<*, *>).isNotEmpty() }) { "Working auxiliary compilation produced no classes or metadata: ${owner.path}:${sourceSet.name}" }
+                    mapOf("project" to owner.path, "sourceSet" to sourceSet.name, "directory" to owner.projectDir.repositoryPath(), "module" to module.name,
+                        "java" to owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion.get().asInt(),
+                        "iml" to module.outputFile.repositoryPath(), "roots" to roots, "outputs" to outputs,
+                        "classpaths" to mapOf("compile" to sourceSet.compileClasspathConfigurationName, "runtime" to sourceSet.runtimeClasspathConfigurationName),
+                        "dependencies" to owner.declarationDependencies(listOf(sourceSet)))
+                }
+            }
+            require(owners.isNotEmpty()) { "The complete model must discover configured working JMH owners." }
+            val inventory = mapOf("revision" to gitOutput("rev-parse", "HEAD").trim(), "tracked" to tracked, "projects" to projects, "owners" to owners, "auxiliary" to auxiliary, "taskGraph" to gradle.taskGraph.allTasks.map { it.path })
+            val output = layout.buildDirectory.file("qodana/declarations.json").get().asFile
+            output.parentFile.mkdirs()
+            output.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(inventory)) + "\n")
+            logger.lifecycle("Inventoried ${owners.size} declared JMH owners independently of generated IDEA and Qodana metadata.")
+        }
+    }
+
+    apply(from = rootProject.file("gradle/qodana-idea-model.gradle.kts"))
+
 }
 
 allprojects {
@@ -1109,12 +1743,24 @@ subprojects {
                 jvm()
             }
             js {
+                compilerOptions {
+                    freeCompilerArgs.add("-Xklib-relative-path-base=${rootDir.absolutePath}")
+                }
                 browser {
                     testTask {
-                        useKarma { useChromeHeadless() }
+                        useKarma {
+                            useChromeHeadless()
+                            useConfigDirectory(rootProject.file("gradle/karma.config.d"))
+                        }
                     }
                 }
-                if (hasJvmTarget) nodejs()
+                if (hasJvmTarget) {
+                    nodejs {
+                        testTask {
+                            useMocha { timeout = "30s" }
+                        }
+                    }
+                }
             }
             compilerOptions {
                 allWarningsAsErrors.set(true)
@@ -1136,7 +1782,6 @@ subprojects {
             tasks.named<Jar>("jvmJar") { archiveAppendix.set("") }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "jvmTest" }.configureEach {
-                    java.srcDir("src/test/java")
                     resources.srcDir("src/test/resources")
                 }
             }
@@ -1258,22 +1903,46 @@ subprojects {
     apply(plugin = "dev.detekt")
     apply(plugin = "org.jmailen.kotlinter")
     minecraftFabricTargets.firstOrNull { target -> path == target.runtimeProjectPath }?.let { target ->
+        // Loom must establish the target's mapping mode before these shared inputs can resolve it.
+        afterEvaluate {
+            listOf(":runtime:remote", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:headless").forEach { dependency ->
+                dependencies.add("compileOnly", project(dependency))
+            }
+            listOf(":api", ":runtime:core", ":runtime:remote", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl").forEach { dependency ->
+                dependencies.add("include", project(dependency))
+            }
+            listOf(":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:headless").forEach { dependency ->
+                dependencies.add("testImplementation", project(dependency))
+            }
+            dependencies.add("runtimeOnly", rootProject.libs.fabric.language.kotlin)
+            dependencies.add("testRuntimeOnly", rootProject.libs.fabric.loader)
+            dependencies.add("testImplementation", rootProject.libs.junit.jupiter)
+            dependencies.add("testRuntimeOnly", rootProject.libs.junit.platform.launcher)
+            extensions.configure<LoomGradleExtensionAPI> {
+                mods.register("strata") { sourceSet(project.extensions.getByType<SourceSetContainer>().named("main").get()) }
+            }
+        }
         dependencies.add("compileOnly", canvasMixinDependency)
         dependencies.add("compileOnly", canvasMixinExtrasDependency)
-        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${target.uiFamily.sourceRoot}").map { sourcePath -> rootProject.file("$sourcePath/src/main") }
+        val runtimeRoots = target.allSourceLinkPaths.map { sourcePath -> rootProject.file("$sourcePath/src/main") }.filter { sourceRoot -> sourceRoot != layout.projectDirectory.dir("src/main").asFile }
+        val testRoots = target.allSourceLinkPaths.map { sourcePath -> rootProject.file("$sourcePath/src/test") }
+            .filter { sourceRoot -> sourceRoot.isDirectory && sourceRoot != layout.projectDirectory.dir("src/test").asFile }
+        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + target.serverSourcePaths + target.hudSourcePath).map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
-                java.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("resources") })
             }
         }
         extensions.configure<KotlinJvmProjectExtension> {
             sourceSets.named("main") {
-                kotlin.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+                kotlin.srcDirs(runtimeRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+            }
+            sourceSets.named("test") {
+                kotlin.srcDirs(testRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
             }
         }
         extensions.configure<DetektExtension> {
-            source.from(nativeRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+            source.from((runtimeRoots + testRoots).map { sourceRoot -> sourceRoot.resolve("kotlin") })
         }
     }
     minecraftFabricTargets.firstOrNull { target -> path == target.integrationProjectPath }?.let { target ->
@@ -1285,7 +1954,6 @@ subprojects {
         }
         extensions.configure<SourceSetContainer> {
             matching { it.name == "gametest" }.configureEach {
-                java.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("java") })
                 resources.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("resources") })
                 if (target.remapped) {
                     val gameTestCompileClasspath = compileClasspath
@@ -1445,11 +2113,6 @@ subprojects {
             "config/detekt/detekt.yml"
         }
         config.setFrom(rootProject.file(configFile))
-        minecraftTargetByProjectPath[this@subprojects.path]?.let { target ->
-            if (this@subprojects.path == target.runtimeProjectPath) {
-                source.from(layout.projectDirectory.dir("src/font/kotlin"))
-            }
-        }
     }
 
     val publishableModule = path in publishableProjectPaths
@@ -1463,6 +2126,25 @@ subprojects {
         // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
+            tasks.register<ServerProductionRunTask>("runProductionServerUiTest") {
+                group = "verification"
+                description = "Starts an isolated production Fabric server for paired public UI acceptance."
+                mods.from(project(target.runtimeProjectPath).tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar"))
+                runDir.set(layout.dir(providers.gradleProperty("strata.fabric.serverDirectory").map(::File)))
+                jvmArgs.add(providers.gradleProperty("strata.fabric.run").map { "-Dstrata.fabric.run=$it" })
+                jvmArgs.add(providers.gradleProperty("strata.fabric.serverReceipt").map { "-Dstrata.fabric.receipt=$it" })
+                jvmArgs.add(providers.gradleProperty("strata.fabric.serverStop").map { "-Dstrata.fabric.stop=$it" })
+                val settingsDirectory = providers.gradleProperty("strata.fabric.serverSettings").map(::File)
+                inputs.dir(settingsDirectory)
+                outputs.upToDateWhen { false }
+                doFirst {
+                    val destination = runDir.get().asFile
+                    destination.mkdirs()
+                    listOf("eula.txt", "server.properties").forEach { name ->
+                        settingsDirectory.get().resolve(name).copyTo(destination.resolve(name), overwrite = true)
+                    }
+                }
+            }
             tasks.withType<LibraryClientProductionRunTask>().configureEach {
                 dependsOn(":performance-testkit:jvmJar")
                 verificationLibraries.from(
@@ -1483,8 +2165,6 @@ subprojects {
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
                     dependencies.add(implementationConfigurationName, project(":performance-testkit"))
-                    java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
-                    java.srcDir(remoteVerificationFamily.resolve("java"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
                 }
             }
@@ -1523,6 +2203,21 @@ subprojects {
                 }
             }
             extensions.configure<DetektExtension> {
+                source.from(
+                    providers.provider {
+                        val selectedGameTestRoots = this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.findByName("gametest")?.kotlin?.srcDirs.orEmpty()
+                        listOf(
+                            "integration/shared/minecraft-fabric/runner/standalone-world-presets/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/canvas/terminal/gui-holder/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/gui-holder/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/component-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/registry-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/lookup-enchantments/src/gametest/kotlin",
+                            "integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin",
+                        ).map(rootProject::file).filter(selectedGameTestRoots::contains)
+                    },
+                )
                 source.from(profileCacheTests)
                 source.from(nativeComponentCases)
                 if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) source.from(nativeShowcase)
@@ -1533,6 +2228,21 @@ subprojects {
                 val nativeOutput = rootProject.file(output).absoluteFile
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.quick", quickPerformance) }
                 tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.quick=$quickPerformance") }
+                providers.gradleProperty("strata.performance.sampledImages").orNull?.let { selected ->
+                    val sampled = selected.toBooleanStrict()
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.sampledImages", sampled) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.sampledImages=$sampled") }
+                }
+                providers.gradleProperty("strata.performance.gpuQueries").orNull?.let { selected ->
+                    val enabled = selected.toBooleanStrict()
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.gpuQueries", enabled) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
+                }
+                providers.gradleProperty("strata.performance.inactivity").orNull?.let { selected ->
+                    require(selected in setOf("minimized", "afk")) { "strata.performance.inactivity must be minimized or afk." }
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.inactivity", selected) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
+                }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
@@ -1642,6 +2352,32 @@ subprojects {
         }
     }
 
+    // Export configured auxiliary JVM inputs through the existing TEST analysis view.
+    plugins.withId("java") {
+        if (completeIdeaModelActive && extensions.findByType<KotlinMultiplatformExtension>() == null) {
+            afterEvaluate {
+                val sourceSets = extensions.getByType<SourceSetContainer>()
+                val auxiliary = sourceSets.filter { it.name !in setOf("main", "test") }
+                val kotlin = extensions.findByType<KotlinJvmProjectExtension>()
+                val mainInputs = kotlin?.target?.compilations?.findByName("main")?.allKotlinSourceSets.orEmpty()
+                val mainSources = sourceSets.getByName("main").java.srcDirs + mainInputs.flatMap { it.kotlin.srcDirs }
+                val mainResources = sourceSets.getByName("main").resources.srcDirs + mainInputs.flatMap { it.resources.srcDirs }
+                extensions.configure<IdeaModel> {
+                    module {
+                        val inputs = auxiliary.flatMap { sourceSet -> kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() - mainInputs }
+                        testSources.from((auxiliary.flatMap { it.java.srcDirs } + inputs.flatMap { it.kotlin.srcDirs }).filter { sourceDirs.contains(it).not() && mainSources.contains(it).not() })
+                        testResources.from((auxiliary.flatMap { it.resources.srcDirs } + inputs.flatMap { it.resources.srcDirs }).filter { resourceDirs.contains(it).not() && mainResources.contains(it).not() })
+                        val testPlus = requireNotNull(scopes["TEST"]?.get("plus"))
+                        auxiliary.flatMap { listOf(it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName) }.forEach { name ->
+                            val configuration = configurations.getByName(name)
+                            if (testPlus.contains(configuration).not()) testPlus.add(configuration)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     tasks.withType<JavaCompile>().configureEach {
         options.release.set(javaVersion)
         options.isWarnings = true
@@ -1665,6 +2401,146 @@ subprojects {
             val mixinVersion = mixin.versionConstraint.requiredVersion
             val mixinGroup = mixin.module.group
             val toolchainManifest = FabricToolchainManifest(loaderVersion, mixinVersion, mixinGroup)
+            val languageKotlinVersion = fabricLanguageKotlinVersion
+            // Register after the original module script establishes Loom's mapping mode and archive tasks.
+            afterEvaluate {
+                val archiveTask = tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar")
+                val apiVersion =
+                    checkNotNull(
+                        configurations.getByName(if (target.remapped) "modImplementation" else "implementation")
+                            .dependencies.single { it.group == "net.fabricmc.fabric-api" && it.name == "fabric-api" }.version,
+                    )
+                tasks.named<ProcessResources>("processResources") {
+                    val properties = mapOf(
+                        "version" to project.version,
+                        "fabricApi" to ">=$apiVersion",
+                        "fabricLoader" to loaderVersion,
+                        "minecraft" to target.version,
+                        "fabricLanguageKotlin" to languageKotlinVersion,
+                        "java" to target.javaVersion.toString(),
+                    )
+                    inputs.properties(properties)
+                    filesMatching("fabric.mod.json") { expand(properties) }
+                }
+                val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
+                    group = "verification"
+                    description = if (target.remapped) "Verifies the exact remapped Fabric mod metadata and nested common-runtime jars." else "Verifies the exact Fabric mod metadata and nested common-runtime jars."
+                    dependsOn(archiveTask)
+                    inputs.file(archiveTask.flatMap { task -> task.archiveFile })
+                    inputs.property("fabricLoaderVersion", loaderVersion)
+                    inputs.property("fabricApiVersion", apiVersion)
+                    inputs.property("minecraftVersion", target.version)
+                    inputs.property("fabricLanguageKotlinVersion", languageKotlinVersion)
+                    inputs.property("javaVersion", target.javaVersion.toString())
+                    doLast {
+                        val artifact = archiveTask.get().archiveFile.get().asFile
+                        ZipFile(artifact).use { archive ->
+                            val entryNames = archive.entries().asSequence().map { entry -> entry.name }.toList()
+                            val nestedNames =
+                                entryNames
+                                    .filter { name -> name.startsWith("META-INF/jars/") && name.endsWith(".jar") }
+                                    .map { name -> name.substringAfterLast('/') }
+                                    .sorted()
+                            val expectedNestedNames =
+                                listOf(
+                                    "api-${project.version}.jar",
+                                    "core-${project.version}.jar",
+                                    "remote-${project.version}.jar",
+                                    "headless-${project.version}.jar",
+                                    "minecraft-${project.version}.jar",
+                                    "minecraft-fonts-lwjgl-${project.version}.jar",
+                                ).sorted()
+                            check(nestedNames == expectedNestedNames) {
+                                "Fabric artifact must contain each common runtime jar exactly once: $nestedNames"
+                            }
+
+                            val metadataEntries = entryNames.filter { name -> name == "fabric.mod.json" }
+                            check(metadataEntries.size == 1) {
+                                "Fabric artifact must contain exactly one top-level fabric.mod.json: $metadataEntries"
+                            }
+                            val metadata =
+                                archive.getInputStream(archive.getEntry(metadataEntries.single())).bufferedReader().use { reader ->
+                                    JsonSlurper().parse(reader) as Map<*, *>
+                                }
+                            check(metadata["schemaVersion"] == 1) {
+                                "Fabric metadata must use schema version 1."
+                            }
+                            check(metadata["id"] == "strata") {
+                                "Fabric metadata must use the reserved module id."
+                            }
+                            check(metadata["version"] == project.version.toString()) {
+                                "Fabric metadata must contain the expanded project version."
+                            }
+                            check(metadata["environment"] == "*") {
+                                "Fabric metadata must support both environments."
+                            }
+                            if (target.canvasFamily == MinecraftFabricTarget.CanvasFamily.RenderPearl) {
+                                check(metadata["accessWidener"] == "strata-sampled-gui.accesswidener" && "strata-sampled-gui.accesswidener" in entryNames) {
+                                    "Exact GUI sampling requires its packaged host access contract."
+                                }
+                            }
+                            check(metadata["name"] == "Strata") {
+                                "Fabric metadata must use the stable project name."
+                            }
+                            check(metadata["description"] == "A declarative Minecraft UI library for Fabric clients and servers.") {
+                                "Fabric metadata must contain the shared project description."
+                            }
+                            check(metadata["authors"] == listOf("sya-ri")) {
+                                "Fabric metadata must contain the project author."
+                            }
+                            check(
+                                metadata["contact"] ==
+                                    mapOf(
+                                        "homepage" to "https://gh.s7a.dev/strata/",
+                                        "sources" to "https://github.com/sya-ri/strata",
+                                        "issues" to "https://github.com/sya-ri/strata/issues",
+                                    ),
+                            ) {
+                                "Fabric metadata contact links must match the canonical project links."
+                            }
+                            check(metadata["license"] == "MIT") {
+                                "Fabric metadata must declare the MIT license."
+                            }
+                            check(
+                                metadata["entrypoints"] ==
+                                    mapOf(
+                                        "main" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabric"),
+                                        "client" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"),
+                                    ),
+                            ) {
+                                "Fabric metadata must install the shared server and client entrypoints."
+                            }
+                            check("META-INF/LICENSE-strata" in entryNames) {
+                                "Fabric artifact must contain the project license."
+                            }
+                            val nestedMetadata =
+                                (metadata["jars"] as? List<*>)
+                                    ?.map { entry ->
+                                        val item = entry as? Map<*, *> ?: error("Fabric nested-jar metadata entries must be objects: $entry")
+                                        item["file"] as? String ?: error("Fabric nested-jar metadata entries must contain a file path: $entry")
+                                    }
+                                    ?.sorted()
+                            val expectedNestedMetadata = expectedNestedNames.map { name -> "META-INF/jars/$name" }.sorted()
+                            check(nestedMetadata == expectedNestedMetadata) {
+                                "Fabric metadata must reference each common runtime jar exactly once: $nestedMetadata"
+                            }
+                            check(
+                                metadata["depends"] ==
+                                    mapOf(
+                                        "fabric-api" to ">=$apiVersion",
+                                        "fabricloader" to ">=${loaderVersion}",
+                                        "minecraft" to target.version,
+                                        "fabric-language-kotlin" to ">=${languageKotlinVersion}",
+                                        "java" to ">=${target.javaVersion.toString()}",
+                                    ),
+                            ) {
+                                "Fabric metadata dependencies must match the version catalog: ${metadata["depends"]}"
+                            }
+                        }
+                    }
+                }
+                tasks.named("check") { dependsOn(verifyFabricModArtifact) }
+            }
             tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach {
                 val artifact = tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar")
                 inputs.file(artifact.flatMap { task -> task.archiveFile })
@@ -1676,34 +2552,14 @@ subprojects {
                 }
             }
             val remoteNetworkingRuntime = rootProject.file("runtime/shared/minecraft-fabric/transport/${target.remoteNetworkFamily.sourceRoot}/src/main")
-            extensions.configure<KotlinJvmProjectExtension> {
-                sourceSets.named("main") { kotlin.srcDir(remoteNetworkingRuntime.resolve("kotlin")) }
-            }
             extensions.configure<SourceSetContainer> {
                 named("main") {
                     resources.srcDir(rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/resources"))
                     resources.srcDir(remoteNetworkingRuntime.resolve("resources"))
-                    java.srcDir(remoteNetworkingRuntime.resolve("java"))
                 }
-            }
-            extensions.configure<DetektExtension> {
-                source.from(remoteNetworkingRuntime.resolve("kotlin"))
-                source.from(
-                    rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftProfileLifecycle.kt"),
-                    rootProject.file("runtime/shared/minecraft-fabric/transport/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt"),
-                    rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions.kt"),
-                    rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput.kt"),
-                    rootProject.file("runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/mixin"),
-                )
             }
         }
         extensions.configure<KotlinJvmProjectExtension> {
-            if (minecraftTargetByProjectPath[project.path]?.runtimeProjectPath == project.path) {
-                // Why: exact font capabilities must not leak through another target's shared main source roots.
-                sourceSets.named("main") {
-                    kotlin.srcDir(layout.projectDirectory.dir("src/font/kotlin"))
-                }
-            }
             @OptIn(ExperimentalAbiValidation::class)
             abiValidation {
                 binariesSource.set(MAVEN_PUBLICATIONS)
@@ -1790,40 +2646,16 @@ subprojects {
                     ?: listOf(path.removePrefix(":").replace(":", "/"))
             dokkaSourceSets.named("main") {
                 for (sourcePath in sourcePaths) {
-                    for (language in listOf("kotlin", "java")) {
-                        val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
-                        if (sourceDirectory.isDirectory) {
-                            sourceLink {
-                                localDirectory.set(sourceDirectory)
-                                remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language")
-                                remoteLineSuffix.set("#L")
-                            }
+                    val sourceDirectory = rootProject.file("$sourcePath/src/main/kotlin")
+                    if (sourceDirectory.isDirectory) {
+                        sourceLink {
+                            localDirectory.set(sourceDirectory)
+                            remoteUrl("https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/kotlin")
+                            remoteLineSuffix.set("#L")
                         }
                     }
                 }
             }
-
-            val verifyDokkaSourceLinks =
-                tasks.register("verifyDokkaSourceLinks") {
-                    group = "verification"
-                    description = "Verifies that every existing Kotlin and Java source root uses the configured Dokka revision."
-                    inputs.property("sourceRevision", sourceRevision)
-                    doLast {
-                        sourcePaths.forEach { sourcePath ->
-                            listOf("kotlin", "java").forEach { language ->
-                                val sourceDirectory = rootProject.file("$sourcePath/src/main/$language")
-                                if (sourceDirectory.isDirectory) {
-                                    val expectedUrl =
-                                        "https://github.com/sya-ri/strata/tree/$sourceRevision/$sourcePath/src/main/$language"
-                                    check(expectedUrl.contains("/tree/$sourceRevision/")) {
-                                        "Dokka source link is not pinned to $sourceRevision: $expectedUrl"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            tasks.named("check").configure { dependsOn(verifyDokkaSourceLinks) }
         }
 
         tasks.withType<GenerateModuleMetadata>().configureEach {

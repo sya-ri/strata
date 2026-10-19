@@ -1,11 +1,37 @@
 name: JVM checks
 'on':
   pull_request: {}
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      paired_manifest:
+        description: Manifest path inside the paired_inputs metadata ZIP
+        type: string
+        default: ''
+      paired_inputs:
+        description: Encoded metadata from paired-jvm.py --pack-inputs; no Git input refs
+        type: string
+        default: ''
+      minecraft_versions:
+        description: Optional comma-separated exact targets for loaded full client verification
+        type: string
+        default: ''
+      minecraft_backend:
+        description: Explicit loaded client backend; default preserves full CI
+        type: choice
+        default: default
+        options:
+        - default
+        - opengl
+        - vulkan
+      subject_ref:
+        description: Full immutable public commit SHA required for selected client verification
+        type: string
+        default: ''
 permissions:
   contents: read
+  actions: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}${{ inputs.paired_inputs != '' && format('-paired-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 jobs:
   plan:
@@ -17,36 +43,204 @@ jobs:
       docs_full: ${{ steps.plan.outputs.docs_full }}
       workflow: ${{ steps.plan.outputs.workflow }}
       qodana: ${{ steps.plan.outputs.qodana }}
-      all_minecraft: ${{ steps.plan.outputs.all_minecraft }}
-      minecraft: ${{ steps.plan.outputs.minecraft }}
+      all_minecraft: ${{ steps.ownership.outputs.all_minecraft || steps.plan.outputs.all_minecraft }}
+      minecraft: ${{ steps.ownership.outputs.minecraft || steps.plan.outputs.minecraft }}
+      subject_ref: ${{ steps.plan.outputs.subject_ref }}
+      client_backend: ${{ steps.plan.outputs.client_backend }}
+      client_matrix: ${{ steps.plan.outputs.client_matrix }}
+      paired_manifest: ${{ steps.paired.outputs.paired_manifest }}
+      paired_data_ref: ${{ steps.paired.outputs.paired_data_ref }}
+      paired_manifest_sha256: ${{ steps.paired.outputs.paired_manifest_sha256 }}
+      preflight: ${{ steps.plan.outputs.preflight }}
     steps:
     - uses: actions/checkout@v7
       with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 0
         persist-credentials: false
-    - uses: ./.github/actions/setup-strata-java
-    - uses: gradle/actions/setup-gradle@v6
+    - name: Check selected client admission
+      shell: bash
+      env:
+        VERSIONS: ${{ inputs.minecraft_versions }}
+        BACKEND: ${{ inputs.minecraft_backend }}
+        SUBJECT: ${{ inputs.subject_ref }}
+        MANIFEST: ${{ inputs.paired_manifest }}
+        PAIRED_INPUTS: ${{ inputs.paired_inputs != '' }}
+      run: |-
+        if [[ -n "$VERSIONS$SUBJECT" || ( -n "$BACKEND" && "$BACKEND" != default ) ]]; then
+          [[ -z "$MANIFEST" && "$PAIRED_INPUTS" != true ]] || { echo 'Select paired measurement or loaded client verification separately.' >&2; exit 1; }
+          [[ "$SUBJECT" =~ ^[0-9a-f]{40}$ ]] || { echo 'subject_ref must be a full lowercase immutable commit SHA.' >&2; exit 1; }
+          [[ -n "$VERSIONS" && ( "$BACKEND" == opengl || "$BACKEND" == vulkan ) ]] || { echo 'Select exact Minecraft versions and an explicit backend.' >&2; exit 1; }
+        fi
+    - name: Check out immutable client subject
+      if: inputs.subject_ref != ''
+      uses: actions/checkout@v7
       with:
-        gradle-home-cache-excludes: caches/fabric-loom
+        ref: ${{ inputs.subject_ref }}
+        path: subject
+        persist-credentials: false
+    - name: Select opt-in paired JVM measurement
+      if: inputs.subject_ref == ''
+      id: paired
+      shell: bash
+      env:
+        MANIFEST: ${{ inputs.paired_manifest }}
+        PAIRED_INPUTS: ${{ inputs.paired_inputs != '' }}
+        EVENT: ${{ github.event_name }}
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+        GH_TOKEN: ${{ github.token }}
+      run: |-
+        args=(--select)
+        if [[ "$EVENT" == workflow_dispatch && ( -n "$MANIFEST" || "$PAIRED_INPUTS" == true ) ]]; then
+          [[ -n "$MANIFEST" && "$PAIRED_INPUTS" == true ]] || { echo 'Supply both paired_manifest and paired_inputs.' >&2; exit 1; }
+        fi
+        if [[ -n "$MANIFEST" ]]; then
+          args+=(--manifest "$MANIFEST")
+        fi
+        if [[ "$EVENT" == pull_request ]]; then
+          args+=(--base "$BASE" --head "$HEAD")
+        fi
+        selected=$(python3 -B gradle/performance/paired-jvm.py "${args[@]}")
+        if [[ -n "$selected" && "$PAIRED_INPUTS" != true ]]; then
+          echo 'Commit-carried performance inputs are no longer admitted by CI; use paired_inputs.' >&2
+          exit 1
+        fi
+    - name: Preserve exact dispatch input bytes
+      if: inputs.paired_inputs != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: paired-inputs-${{ github.run_id }}-${{ github.run_attempt }}
+        path: build/performance-ci/dispatch-inputs.zip
+        if-no-files-found: error
     - name: Select changed inputs
       run: |-
         args=(--full)
+        if [[ -n "$SUBJECT" ]]; then
+          args=(--minecraft-versions "$VERSIONS" --minecraft-backend "$BACKEND" --subject-ref "$SUBJECT")
+        fi
         if [[ "$EVENT" == pull_request ]]; then
           args=(--base "$BASE" --head "$HEAD")
-          if git diff --no-renames --name-only "$BASE...$HEAD" | grep -Eq '^(runtime|integration)/(shared/|minecraft-fabric-)'; then
-            GITHUB_OUTPUT='' python3 gradle/plan-ci.py "${args[@]}" > /dev/null
-            if jq --exit-status '.common | not' build/github-actions/ci-plan.json > /dev/null; then
-              bash ./gradlew :writeCiSourceModel
-              args+=(--model build/github-actions/source-model.json)
-            fi
-          fi
+        elif [[ "$EVENT" == workflow_dispatch && -n "$MANIFEST" ]]; then
+          args=(--paired-manifest "$MANIFEST")
         fi
         python3 gradle/plan-ci.py "${args[@]}"
       id: plan
       env:
+        MANIFEST: ${{ inputs.paired_manifest }}
         EVENT: ${{ github.event_name }}
         BASE: ${{ github.event.pull_request.base.sha }}
         HEAD: ${{ github.event.pull_request.head.sha }}
+        VERSIONS: ${{ inputs.minecraft_versions }}
+        BACKEND: ${{ inputs.minecraft_backend }}
+        SUBJECT: ${{ inputs.subject_ref }}
+        GH_TOKEN: ${{ github.token }}
+    - uses: ./.github/actions/setup-strata-java
+      if: steps.plan.outputs.source_model == 'true'
+    - uses: gradle/actions/setup-gradle@v6
+      if: steps.plan.outputs.source_model == 'true'
+      with:
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Resolve native source ownership
+      if: steps.plan.outputs.source_model == 'true'
+      id: ownership
+      run: |-
+        bash ./gradlew :writeCiSourceModel
+        python3 gradle/plan-ci.py --base "$BASE" --head "$HEAD" --model build/github-actions/source-model.json
+      env:
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+  paired-jvm:
+    name: Complete paired runtime measurement
+    needs: plan
+    if: needs.plan.outputs.paired_manifest != ''
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+    - name: Check out explicit driver revision
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Preserve attempt admission
+      shell: pwsh
+      env:
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        MANIFEST: ${{ needs.plan.outputs.paired_manifest }}
+        DATA_REF: ${{ needs.plan.outputs.paired_data_ref }}
+        MANIFEST_SHA256: ${{ needs.plan.outputs.paired_manifest_sha256 }}
+      run: |
+        New-Item -ItemType Directory -Force -Path build/performance-ci > $null
+        $actualHead = (git rev-parse HEAD).Trim()
+        if ($LASTEXITCODE -ne 0 -or $actualHead -ne $env:EXPECTED_HEAD) { throw 'Paired checkout differs from the selected driver revision' }
+        @{run=$env:GITHUB_RUN_ID; attempt=$env:GITHUB_RUN_ATTEMPT; head=$actualHead; event_sha=$env:GITHUB_SHA; manifest=$env:MANIFEST; data_ref=$env:DATA_REF; manifest_sha256=$env:MANIFEST_SHA256; status='pending'; runner=$env:RUNNER_NAME} | ConvertTo-Json | Set-Content build/performance-ci/bootstrap.json
+    - name: Install the catalog-backed fixed Java profile
+      id: java
+      uses: ./.github/actions/setup-strata-java
+      with:
+        paired: 'true'
+    - name: Set up Gradle intermediates
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Verify owned invocation failure and terminal cleanup
+      shell: pwsh
+      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - name: Collect and compare the complete frozen pair
+      shell: pwsh
+      env:
+        MANIFEST: ${{ needs.plan.outputs.paired_manifest }}
+        DATA_REF: ${{ needs.plan.outputs.paired_data_ref }}
+        MANIFEST_SHA256: ${{ needs.plan.outputs.paired_manifest_sha256 }}
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
+        GH_TOKEN: ${{ github.token }}
+      run: python -B gradle/performance/paired-jvm.py --manifest "$env:MANIFEST" --data-ref "$env:DATA_REF" --manifest-sha256 "$env:MANIFEST_SHA256" --expected-head "$env:EXPECTED_HEAD" --output "build/performance-ci/paired-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - name: Upload complete attempt evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: paired-jvm-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          build/performance-ci/*.zip
+          build/performance-ci/bootstrap.json
+        if-no-files-found: error
+  preflight-qualification:
+    name: Qualified compiled fixture controls
+    needs: plan
+    if: needs.plan.outputs.preflight == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+      id: java
+      with:
+        paired: 'true'
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Verify real resource refusal and terminal cleanup
+      shell: pwsh
+      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/qualified-boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - name: Qualify the real whole control and timing boundary
+      shell: pwsh
+      env:
+        STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
+      run: python -B gradle/performance/verify-qualified-preflight.py --output "build/performance-ci/qualified-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: qualified-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+        path: build/performance-ci/*.zip
+        if-no-files-found: error
   web-demos:
     name: Web runtime and demos
     runs-on: ubuntu-latest
@@ -71,6 +265,13 @@ jobs:
         bash ./gradlew "${tasks[@]}" -Pstrata.webDemoInstallSystemDependencies=true
       env:
         DOCS_FULL: ${{ needs.plan.outputs.docs_full }}
+    - name: Upload core Web test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: core-web-test-results
+        path: runtime/core/build/test-results/
+        if-no-files-found: warn
     - name: Upload fresh demo screenshots
       uses: actions/upload-artifact@v7
       with:
@@ -89,7 +290,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Check GitHub Actions workflows
-      uses: docker://rhysd/actionlint:1.7.12
+      run: bash .github/check-workflows.sh
     - name: Set up Java
       uses: ./.github/actions/setup-strata-java
     - name: Set up Gradle for release fixtures
@@ -138,7 +339,7 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
-      run: .\gradlew.bat :integration:web:check '-Pstrata.webOnly=true'
+      run: .\gradlew.bat :integration:web:check
     - name: Upload browser evidence
       if: always()
       uses: actions/upload-artifact@v7
@@ -163,16 +364,40 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Check JVM modules and generate coverage once
-      run: bash ./gradlew :check :quality:benchmarks:check :quality:component-benchmarks:check :performance-testkit:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
+      run: bash ./gradlew :check :quality:benchmarks:check :quality:component-benchmarks:check :quality:remote-benchmarks:check :performance-testkit:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
         :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
         :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
         -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
+    - name: Upload core JVM test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: core-jvm-test-results
+        path: runtime/core/build/test-results/
+        if-no-files-found: warn
+    - name: Verify scoped JVM collection without fixture registration
+      run: python3 -B gradle/verify-jvm-fixture-collection.py
+    - name: Upload scoped collection evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: scoped-jvm-fixture
+        path: build/fixture-tests/jvm-collection
+        if-no-files-found: error
     - name: Upload coverage reports
       uses: actions/upload-artifact@v7
       with:
         name: kover-reports
         path: build/reports/kover
         if-no-files-found: error
+    - name: Upload compiler ABI dumps
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: compiler-abi-dumps
+        path: '**/build/kotlin/abi/'
+        if-no-files-found: ignore
+        retention-days: 7
     needs: plan
     if: needs.plan.outputs.common == 'true'
   minecraft-matrix:
@@ -190,6 +415,12 @@ jobs:
       id: matrix
       shell: bash
       run: |-
+        if [[ -n "$CLIENT_MATRIX" ]]; then
+          mkdir -p build/github-actions
+          printf '%s\n' "$CLIENT_MATRIX" > build/github-actions/minecraft-matrix.json
+          echo "matrix=$CLIENT_MATRIX" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
         export STRATA_MC_VERSIONS=all
         if [[ "$ALL_MINECRAFT" != true ]]; then
           STRATA_MC_VERSIONS=$(jq -r 'join(",")' <<< "$SELECTED_VERSIONS")
@@ -200,6 +431,7 @@ jobs:
         SELECTED_VERSIONS: ${{ needs.plan.outputs.minecraft }}
         ALL_MINECRAFT: ${{ needs.plan.outputs.all_minecraft }}
         STRATA_CI_DOCS: ${{ needs.plan.outputs.docs_full }}
+        CLIENT_MATRIX: ${{ needs.plan.outputs.client_matrix }}
     needs: plan
     if: needs.plan.outputs.all_minecraft == 'true' || needs.plan.outputs.minecraft != '[]' || needs.plan.outputs.docs_full == 'true'
   minecraft:
@@ -208,6 +440,7 @@ jobs:
     - plan
     - minecraft-matrix
     runs-on: ubuntu-latest
+    timeout-minutes: ${{ needs.plan.outputs.subject_ref != '' && 90 || 360 }}
     env:
       SDL_VIDEO_FORCE_EGL: '1'
     strategy:
@@ -217,7 +450,25 @@ jobs:
     - name: Check out source
       uses: actions/checkout@v7
       with:
+        ref: ${{ needs.plan.outputs.subject_ref }}
         fetch-depth: 1
+        persist-credentials: false
+    - name: Assert immutable client source
+      if: needs.plan.outputs.subject_ref != ''
+      shell: bash
+      env:
+        SUBJECT: ${{ needs.plan.outputs.subject_ref }}
+        DRIVER: ${{ github.sha }}
+        ARGUMENTS: ${{ matrix.gradle_arguments }}
+      run: |-
+        [[ "$(git rev-parse HEAD)" == "$SUBJECT" ]]
+        [[ -z "$(git status --porcelain --untracked-files=no)" ]]
+        mkdir -p build/github-actions
+        {
+          printf 'driver=%s\nsubject=%s\narguments=%s\n' "$DRIVER" "$SUBJECT" "$ARGUMENTS"
+          git show --no-patch --format='commit=%H%ntree=%T' HEAD
+          git archive --format=tar HEAD | sha256sum
+        } | tee build/github-actions/client-source.txt
     - name: Set up Java
       uses: ./.github/actions/setup-strata-java
     - name: Set up Gradle
@@ -242,17 +493,48 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
+    - name: Install software Vulkan support
+      if: needs.plan.outputs.client_backend == 'vulkan'
+      run: sudo apt-get install --yes --no-install-recommends mesa-vulkan-drivers libvulkan1 vulkan-tools
+    - name: Record actual Vulkan device and limits
+      if: needs.plan.outputs.client_backend == 'vulkan'
+      run: xvfb-run -a vulkaninfo > build/github-actions/vulkaninfo.txt
     - name: Run ${{ matrix.name }}
+      shell: bash
       run: |-
         args=()
         if [[ "$COMMON_CHECKS" == true ]]; then
           project=":runtime:minecraft-fabric-$MINECRAFT_VERSION"
           if grep -Fxq "$project" gradle/kover-jvm-projects.txt; then args+=(-x "$project:test"); fi
         fi
-        bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true
+        mkdir -p build/github-actions
+        bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true 2>&1 | tee build/github-actions/minecraft-gradle.log
       env:
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}
         MINECRAFT_VERSION: ${{ matrix.version }}
+    - name: Verify dedicated Fabric server UI
+      if: needs.plan.outputs.subject_ref == ''
+      run: python3 integration/fabric/run_acceptance.py "$MINECRAFT_VERSION" --development-only
+      env:
+        MINECRAFT_VERSION: ${{ matrix.version }}
+    - name: Upload dedicated Fabric server evidence
+      if: always() && needs.plan.outputs.subject_ref == ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: fabric-server-evidence-${{ matrix.id }}
+        path: build/fabric-acceptance/${{ matrix.version }}/
+        if-no-files-found: ignore
+        retention-days: 7
+    - name: Record checked archive identities
+      if: always() && needs.plan.outputs.subject_ref != ''
+      shell: bash
+      env:
+        SUBJECT: ${{ needs.plan.outputs.subject_ref }}
+      run: |-
+        mkdir -p build/github-actions
+        find api runtime integration performance-testkit -path '*/build/libs/*.jar' -type f -print0 | sort -z | xargs -0 -r sha256sum > build/github-actions/client-archives.sha256
+        [[ "$(git rev-parse HEAD)" == "$SUBJECT" ]]
+        git diff --exit-code HEAD
     - name: Upload native showcase comparison
       if: success() && matrix.documentation
       uses: actions/upload-artifact@v7
@@ -263,12 +545,16 @@ jobs:
           integration/docs/build/component-showcase/check
         if-no-files-found: error
         retention-days: 7
-    - name: Upload loaded-client failure evidence
-      if: failure()
+    - name: Upload loaded-client evidence for ${{ matrix.id }}
+      if: success() || failure()
       uses: actions/upload-artifact@v7
       with:
-        name: minecraft-failure-evidence-${{ matrix.id }}
+        name: minecraft-loaded-client-evidence-${{ matrix.id }}
         path: |
+          build/github-actions/
+          **/build/libs/*.jar
+          **/build/test-results/
+          **/build/*-offline*/
           integration/*/build/minecraft-verification/
           integration/*/build/minecraft-production-verification/
           integration/*/build/minecraft-*parity*/
@@ -348,16 +634,23 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
+    - name: Select documentation asset owner
+      id: assets
+      run: bash gradle/plan-minecraft-ci.sh
     - uses: ./.github/actions/setup-strata-java
     - uses: gradle/actions/setup-gradle@v6
       with:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Check reader documentation
-      run: bash ./gradlew :integration:docs:checkDocumentationLinks :integration:docs:checkStrataSkill
+      run: bash ./gradlew :integration:docs:checkDocumentationLinks :integration:docs:checkStrataSkill -Pstrata.minecraftVersions="$MINECRAFT_VERSION"
+      env:
+        MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
   result:
     name: CI result
     needs:
     - plan
+    - paired-jvm
+    - preflight-qualification
     - web-demos
     - workflow-checks
     - web
@@ -379,6 +672,8 @@ jobs:
         common, web, docs, full_docs, workflow = (p[key] == 'true' for key in ('common', 'web', 'docs', 'docs_full', 'workflow'))
         minecraft = p['all_minecraft'] == 'true' or json.loads(p['minecraft']) != [] or full_docs
         expected = {'checks': common, 'web-demos': web, 'web': web, 'workflow-checks': workflow or common, 'minecraft-matrix': minecraft, 'minecraft': minecraft, 'documentation': full_docs, 'docs': docs and not full_docs}
+        expected['paired-jvm'] = p.get('paired_manifest', '') != ''
+        expected['preflight-qualification'] = p.get('preflight', 'false') == 'true'
         for job, selected in expected.items():
             required = 'success' if selected else 'skipped'
             assert jobs[job]['result'] == required, f"{job}: expected {required}, got {jobs[job]['result']}"

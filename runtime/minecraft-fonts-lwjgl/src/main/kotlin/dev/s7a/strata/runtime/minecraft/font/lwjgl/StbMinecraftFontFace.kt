@@ -1,11 +1,12 @@
 package dev.s7a.strata.runtime.minecraft.font.lwjgl
 
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.render.createOwnedDrawImage
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.lwjgl.stb.STBTTFontinfo
 import org.lwjgl.stb.STBTruetype
 import org.lwjgl.system.MemoryStack
@@ -65,6 +66,7 @@ internal class StbMinecraftFontFace(
         }
     }
 
+    @OptIn(InternalStrataRuntimeApi::class)
     override fun glyph(codePoint: Int): MinecraftFontGlyph? {
         val info = checkNotNull(font) { "Font face is closed." }
         val index = STBTruetype.stbtt_FindGlyphIndex(info, codePoint)
@@ -92,7 +94,7 @@ internal class StbMinecraftFontFace(
                 val bitmap = MemoryUtil.memAlloc(Math.multiplyExact(width, height))
                 try {
                     STBTruetype.stbtt_MakeGlyphBitmapSubpixel(info, bitmap, width, height, width, pointScale, pointScale, shiftX, shiftY, index)
-                    createDrawImage(IntSize(width, height), IntArray(bitmap.remaining()) { (bitmap[it].toInt() and 0xff) * 0x01010101 })
+                    createOwnedDrawImage(IntSize(width, height), IntArray(bitmap.remaining()) { (bitmap[it].toInt() and 0xff) * 0x01010101 })
                 } finally {
                     MemoryUtil.memFree(bitmap)
                 }

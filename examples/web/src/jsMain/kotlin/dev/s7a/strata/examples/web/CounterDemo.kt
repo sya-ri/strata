@@ -15,13 +15,13 @@ internal fun counterDemo(): UiDefinition {
     val count = mutableStateOf(0)
     return UiDefinition("Counter") {
         Column(spacing = 16) {
-            Text("Count: ${count.value}", modifier = Modifier.Empty.width(304))
+            Text("Count: ${count.value}", modifier = Modifier.width(304))
             Row(spacing = 8) {
                 actionButton("Decrease", enabled = 0 < count.value) { count.value -= 1 }
                 actionButton("Increase", enabled = count.value < 10) { count.value += 1 }
                 actionButton("Reset") { count.value = 0 }
             }
-            Text("Range: 0 to 10", modifier = Modifier.Empty.width(304))
+            Text("Range: 0 to 10", modifier = Modifier.width(304))
         }
     }
 }

@@ -150,7 +150,7 @@ internal class LayoutAlignmentIntegrationTest {
                             probe = rowProbe,
                             width = 3,
                             height = 3,
-                            modifier = Modifier.Empty.align(VerticalAlignment.Top).align(VerticalAlignment.Bottom),
+                            modifier = Modifier.align(VerticalAlignment.Top).align(VerticalAlignment.Bottom),
                         ),
                     )
                 }
@@ -173,7 +173,7 @@ internal class LayoutAlignmentIntegrationTest {
                             probe = columnProbe,
                             width = 3,
                             height = 3,
-                            modifier = Modifier.Empty.align(HorizontalAlignment.Start).align(HorizontalAlignment.End),
+                            modifier = Modifier.align(HorizontalAlignment.Start).align(HorizontalAlignment.End),
                         ),
                     )
                 }
@@ -196,7 +196,7 @@ internal class LayoutAlignmentIntegrationTest {
                             probe = boxProbe,
                             width = 3,
                             height = 3,
-                            modifier = Modifier.Empty.align(Alignment.TopStart).align(Alignment.BottomEnd),
+                            modifier = Modifier.align(Alignment.TopStart).align(Alignment.BottomEnd),
                         ),
                     )
                 }
@@ -219,9 +219,9 @@ internal class LayoutAlignmentIntegrationTest {
                 Stack(contentAlignment = contentAlignment) {
                     val modifier =
                         if (childAlignment == null) {
-                            Modifier.Empty
+                            Modifier
                         } else {
-                            Modifier.Empty.align(childAlignment)
+                            Modifier.align(childAlignment)
                         }
                     element(ExternalElement(probe = probe, width = 3, height = 3, modifier = modifier))
                 }
@@ -244,9 +244,9 @@ internal class LayoutAlignmentIntegrationTest {
                 FlowRow(horizontalSpacing = 1, verticalSpacing = 2, verticalAlignment = alignment) {
                     val modifier =
                         if (childAlignment == null) {
-                            Modifier.Empty
+                            Modifier
                         } else {
-                            Modifier.Empty.align(VerticalAlignment.Top).align(childAlignment)
+                            Modifier.align(VerticalAlignment.Top).align(childAlignment)
                         }
                     element(ExternalElement(width = 3, height = 3, modifier = modifier))
                     element(ExternalElement(width = 4, height = 10))
@@ -272,9 +272,9 @@ internal class LayoutAlignmentIntegrationTest {
                 Row(verticalAlignment = alignment) {
                     val modifier =
                         if (childAlignment == null) {
-                            Modifier.Empty
+                            Modifier
                         } else {
-                            Modifier.Empty.align(childAlignment)
+                            Modifier.align(childAlignment)
                         }
                     element(ExternalElement(probe = probe, width = 3, height = 3, modifier = modifier))
                 }
@@ -298,9 +298,9 @@ internal class LayoutAlignmentIntegrationTest {
                 Column(horizontalAlignment = alignment) {
                     val modifier =
                         if (childAlignment == null) {
-                            Modifier.Empty
+                            Modifier
                         } else {
-                            Modifier.Empty.align(childAlignment)
+                            Modifier.align(childAlignment)
                         }
                     element(ExternalElement(probe = probe, width = 3, height = 3, modifier = modifier))
                 }

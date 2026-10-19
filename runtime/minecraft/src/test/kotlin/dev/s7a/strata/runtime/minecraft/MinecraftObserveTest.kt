@@ -66,7 +66,7 @@ internal class MinecraftObserveTest {
             ScreenDefinition("observed") {
                 definitions += 1
                 Observe(source) { prefix ->
-                    Column(modifier = Modifier.Empty.size(80, 60)) {
+                    Column(modifier = Modifier.size(80, 60)) {
                         Text(prefix)
                         Text(source)
                         Text(unresolved)
@@ -107,8 +107,8 @@ internal class MinecraftObserveTest {
         MinecraftTextAreaFixture().use { fixture ->
             val definition =
                 ScreenDefinition("editor") {
-                    Observe(source) { normal ->
-                        element(fixture.description(state, size, style = if (normal) TextStyle.Normal else TextStyle.TextField))
+                    Observe(source) { shadowless ->
+                        element(fixture.description(state, size, style = if (shadowless) TextStyle.Inactive.copy(shadow = null) else TextStyle.TextField))
                     }
                 }
             createMinecraftUiHost(definition, MinecraftProfileFixture.create()).use { host ->

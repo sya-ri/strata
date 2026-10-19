@@ -54,7 +54,7 @@ internal class TiledImageTileLayerElement(
 ) : Element(
         identity = ElementIdentity.Positional,
         type = TYPE,
-        modifier = Modifier.Empty,
+        modifier = Modifier,
     ) {
     /**
      * Retained source binding, frame cutoff, view planning, and sampled-image command producer.

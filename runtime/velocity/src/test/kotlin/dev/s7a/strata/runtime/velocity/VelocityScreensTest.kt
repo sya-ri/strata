@@ -38,7 +38,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiPresentation
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import dev.s7a.strata.velocity.event.StrataClientReadyEvent
 import dev.s7a.strata.velocity.event.StrataUiClosedEvent
 import dev.s7a.strata.velocity.event.StrataUiOpenedEvent
@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -69,14 +70,14 @@ internal class VelocityScreensTest {
         Harness().use { fixture ->
             fixture.negotiate()
             assertTrue(fixture.events.poll(5, TimeUnit.SECONDS) is StrataClientReadyEvent)
-            val handle = VelocityUi.open(fixture.owner, fixture.player) { UiDefinition(presentation = UiPresentation.Hud) { Spacer() } }.get(5, TimeUnit.SECONDS)
+            val handle = Strata.open(fixture.owner, fixture.player) { UiDefinition(presentation = UiPresentation.Hud) { Spacer() } }.get(5, TimeUnit.SECONDS)
             val snapshot = fixture.nextMessage() as RemoteMessage.Snapshot
             assertTrue(fixture.events.isEmpty())
             fixture.acknowledge(snapshot)
             val opened = fixture.events.poll(5, TimeUnit.SECONDS) as StrataUiOpenedEvent
             assertEquals(handle, opened.session)
             assertEquals(UiPresentation.Hud, opened.presentation)
-            VelocityUi.execute(fixture.owner) { opened.session.close() }.get(5, TimeUnit.SECONDS)
+            Strata.execute(fixture.owner) { opened.session.close() }.get(5, TimeUnit.SECONDS)
             val closed = fixture.events.poll(5, TimeUnit.SECONDS) as StrataUiClosedEvent
             assertEquals(opened.identity, closed.identity)
             assertEquals(opened.ownerPlugin, closed.ownerPlugin)
@@ -110,6 +111,47 @@ internal class VelocityScreensTest {
     }
 
     @Test
+    fun sparseAndBoundedCommandBurstsPreserveOrderFailuresAndCancellation() {
+        Harness().use { fixture ->
+            listOf(0, 1, 7, 8, 63, 64, 65).forEach { count ->
+                val entered = CountDownLatch(1)
+                val proceed = CountDownLatch(1)
+                val calls = mutableListOf<Int>()
+                val failure = IllegalStateException("command")
+                val blocker =
+                    VelocityScreens.execute(fixture.owner) {
+                        entered.countDown()
+                        check(proceed.await(5, TimeUnit.SECONDS))
+                    }
+                check(entered.await(5, TimeUnit.SECONDS))
+                val requests =
+                    try {
+                        List(count) { index ->
+                            VelocityScreens.execute(fixture.owner) {
+                                calls.add(index)
+                                if (index == 1) throw failure
+                            }
+                        }.also { if (2 < it.size) assertTrue(it[2].cancel(false)) }
+                    } finally {
+                        proceed.countDown()
+                    }
+                blocker.get(5, TimeUnit.SECONDS)
+                requests.forEachIndexed { index, request ->
+                    when (index) {
+                        1 -> assertSame(failure, assertThrows(ExecutionException::class.java) { request.get(5, TimeUnit.SECONDS) }.cause)
+                        2 -> assertTrue(request.isCancelled)
+                        else -> request.get(5, TimeUnit.SECONDS)
+                    }
+                }
+                VelocityScreens
+                    .execute(fixture.owner) {
+                        assertEquals((0 until count).filter { it != 2 }, calls)
+                    }.get(5, TimeUnit.SECONDS)
+            }
+        }
+    }
+
+    @Test
     fun constructsStateAndRunsActionsOnOneOwnedThread() {
         Harness().use { fixture ->
             fixture.negotiate()
@@ -122,7 +164,7 @@ internal class VelocityScreensTest {
                         val field = TextFieldState("before")
                         ScreenDefinition("Proxy") {
                             Spacer(
-                                Modifier.Empty.onActivate {
+                                Modifier.onActivate {
                                     assertEquals(createdOn.get(), Thread.currentThread())
                                     field.value = "after"
                                     calls.incrementAndGet()
@@ -151,7 +193,7 @@ internal class VelocityScreensTest {
             val handle =
                 VelocityScreens
                     .open(fixture.owner, fixture.player) {
-                        ScreenDefinition("Before switch") { Spacer(Modifier.Empty.onActivate { calls.incrementAndGet() }) }
+                        ScreenDefinition("Before switch") { Spacer(Modifier.onActivate { calls.incrementAndGet() }) }
                     }.get(5, TimeUnit.SECONDS)
             val snapshot = fixture.nextMessage() as RemoteMessage.Snapshot
             fixture.dropOutgoingFrame()
@@ -167,7 +209,7 @@ internal class VelocityScreensTest {
             assertNotEquals(previous, fixture.negotiate(discover = false))
             VelocityScreens
                 .open(fixture.owner, fixture.player) {
-                    ScreenDefinition("After switch") { Spacer(Modifier.Empty.onActivate { calls.incrementAndGet() }) }
+                    ScreenDefinition("After switch") { Spacer(Modifier.onActivate { calls.incrementAndGet() }) }
                 }.get(5, TimeUnit.SECONDS)
             fixture.activate(fixture.nextMessage() as RemoteMessage.Snapshot)
             assertTrue(fixture.nextMessage() is RemoteMessage.Acknowledgement)
@@ -210,11 +252,19 @@ internal class VelocityScreensTest {
         }
     }
 
+    @Test
+    fun commandAfterEmptyObservationWaitsForTheNextOwnedTick() {
+        VelocityDrainFixture(VelocityDrainWorkload.Idle, instrumentProbes = true).use { fixture ->
+            val observed = fixture.onOwner { fixture.lateArrival() }
+            assertEquals(listOf(0L, 1L, 7L, 8L), observed)
+        }
+    }
+
     /**
      * Owns one native-channel double and drains real worker output through the client codec.
      */
     @Suppress("StringLiteralComparison") // Dispatches Java reflection method names at the test-double boundary.
-    private class Harness : AutoCloseable {
+    internal class Harness : AutoCloseable {
         val owner = Any()
         val outgoing = LinkedBlockingQueue<ByteArray>()
         val backendMessages = LinkedBlockingQueue<ByteArray>()
@@ -230,6 +280,9 @@ internal class VelocityScreensTest {
             }
         val backend: ServerConnection = replacementBackend()
 
+        /**
+         * Creates one independently authenticated backend route for switch controls.
+         */
         fun replacementBackend(): ServerConnection =
             proxy(ServerConnection::class.java) { name, arguments ->
                 when (name) {
@@ -278,8 +331,14 @@ internal class VelocityScreensTest {
             plugin.initialize(ProxyInitializeEvent())
         }
 
+        /**
+         * Routes a current client packet through the actual plugin message adapter.
+         */
         fun send(bytes: ByteArray): PluginMessageEvent = PluginMessageEvent(player, backend, VelocityScreenService.CHANNEL, bytes).also { plugin.message(it) }
 
+        /**
+         * Completes actual discovery and greeting exchange on the coordinator-owned test client.
+         */
         fun negotiate(discover: Boolean = true): RemoteAddress {
             if (discover) assertFalse(send(RemotePacket.encode(RemotePacket.Discovery)).result.isAllowed)
             client.close()
@@ -297,6 +356,9 @@ internal class VelocityScreensTest {
             error("Proxy negotiation did not complete.")
         }
 
+        /**
+         * Retires one client sequence without sending it, simulating a lost transition packet.
+         */
         fun dropOutgoingFrame() {
             sequence++
         }
@@ -306,6 +368,9 @@ internal class VelocityScreensTest {
                 send(RemotePacket.encode(RemotePacket.Frame(checkNotNull(address), sequence++, it)))
             }
 
+        /**
+         * Decodes the next complete worker message on the test client owner, failing on missing output.
+         */
         fun nextMessage(): RemoteMessage {
             while (true) {
                 val packet = RemotePacket.decode(checkNotNull(outgoing.poll(5, TimeUnit.SECONDS)) { "Missing proxy output." }) as RemotePacket.Frame
@@ -313,12 +378,18 @@ internal class VelocityScreensTest {
             }
         }
 
+        /**
+         * Acknowledges the snapshot control sequence through the actual client codec.
+         */
         @OptIn(InternalStrataRuntimeApi::class)
         fun acknowledge(snapshot: RemoteMessage.Snapshot) {
             client.send(RemoteMessage.ControlApplied(snapshot.session, checkNotNull(snapshot.control).sequence))
             client.flush()
         }
 
+        /**
+         * Sends the snapshot pointer action with its authenticated current binding.
+         */
         fun activate(snapshot: RemoteMessage.Snapshot) {
             val press =
                 snapshot.tree.nodes.values

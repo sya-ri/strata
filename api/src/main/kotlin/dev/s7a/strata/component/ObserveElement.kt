@@ -11,7 +11,6 @@ import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ContentInvalidation
-import dev.s7a.strata.node.ContentKind
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
@@ -61,7 +60,6 @@ internal class ObserveElement(
         private var children: List<Element> = emptyList()
         override val pendingContentReasons: MutableSet<ContentInvalidation> = mutableSetOf(ContentInvalidation.Initial)
         override val parentDataChild: Int? = if (initial.transparent) 0 else null
-        override val contentKind: ContentKind = if (initial.transparent) ContentKind.StateComponent else ContentKind.ObservedRegion
 
         override fun commitObservedValues(values: List<Any?>) {
             if (this.values != values) {

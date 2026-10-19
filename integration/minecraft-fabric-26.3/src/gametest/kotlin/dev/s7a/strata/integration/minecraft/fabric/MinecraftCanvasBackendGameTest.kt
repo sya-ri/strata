@@ -50,6 +50,7 @@ internal object MinecraftCanvasBackendGameTest {
                 FailableFunction<Minecraft, MinecraftUiProfile, RuntimeException> { extractMinecraftUiProfile() },
             )
         runMinecraftCanvasTest(context, profile, output)
+        MinecraftOrderedCompositionNativeProbe.run(context, profile, output.resolve("ordered-composition"))
         context.worldBuilder().setUseConsistentSettings(true).create().use {
             InventorySlotSynchronizationGameTest.runCanvasOrdering(context, profile, output)
         }

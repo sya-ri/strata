@@ -23,7 +23,7 @@ HUD visibility uses category, then native screen kind, then the definition defau
 The adapter owns version-specific HUD, mouse, and native gameplay hooks; the public runtime has no Fabric API dependency.
 `RuntimeUiInput` bounds held state by the adapter's mapping set and releases it on input-session, policy, editing, focus, and terminal boundaries.
 
-Remote controls are ordered by the owning Paper, Folia, or Velocity session and confirmed after the client applies native presentation.
+Remote controls are ordered by the owning Fabric, Paper, Folia, or Velocity session and confirmed after the client applies native presentation.
 See the [remote protocol](../reference/remote-protocol.md) for application versus declaration acknowledgements and connection-wide budgets.
 
 ## Retained observed regions
@@ -54,7 +54,7 @@ Actual reconciled child differences determine pipeline invalidation.
 Transparent direct-source regions retain modifiers on the real primitive, forwarding parent data through ParentDataDelegateNode rather than moving focus or action ownership to a wrapper.
 An observed region owns a fresh content scope per evaluation and at most one logical child, retaining input nodes through ordinary type and key matching.
 
-RuntimeUiDiagnosticsOwner delegates optional bounded [render monitoring](render-monitoring.md) through the same session boundary.
+Performance collection stays outside the production session; see [measurement boundaries](render-monitoring.md).
 Collection remains absent by default; enabled collectors count actual callback execution and retain only detached interval evidence after terminal failure.
 
 ## Runtime adapter bridge

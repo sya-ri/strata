@@ -10,4 +10,4 @@ import net.minecraft.client.renderer.texture.AbstractTexture
  * The returned wrapper retains only the target and throws no cleanup errors because it owns no native storage.
  */
 @JvmSynthetic
-internal fun createFabricNativeCanvasTexture(target: RenderTarget): AbstractTexture = FabricCanvasBorrowedTexture(target)
+internal fun createFabricNativeCanvasTexture(target: RenderTarget): AbstractTexture = FabricBorrowedTexture { target.colorTextureId }

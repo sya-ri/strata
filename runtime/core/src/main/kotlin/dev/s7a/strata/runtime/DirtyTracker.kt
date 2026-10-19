@@ -2,16 +2,11 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Expands downstream local phases and propagates measurement work to ancestors.
  */
-@OptIn(InternalStrataRuntimeApi::class)
-internal class DirtyTracker(
-    private val monitoring: RenderMonitoring = RenderMonitoring(),
-) {
+internal class DirtyTracker {
     private var currentRevision: Long = 0L
 
     /**
@@ -42,16 +37,21 @@ internal class DirtyTracker(
         mask: DirtyMask,
     ) {
         if (mask != DirtyMask.None) {
-            monitoring.record(UiRenderMetric.LocalInvalidation, retained)
             advanceRevision()
         }
         val expanded = expand(mask)
         retained.dirty += expanded
+        if (DirtyPhase.Paint in expanded) {
+            var current: RetainedEntry? = retained
+            while (current != null) {
+                current.paintSubtreeDirty = true
+                current = current.parent
+            }
+        }
         if (DirtyPhase.Measure in mask) {
             val ancestorMask = DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
             var ancestor = retained.parent
             while (ancestor != null) {
-                monitoring.record(UiRenderMetric.AncestorInvalidation, ancestor)
                 ancestor.dirty += ancestorMask
                 ancestor = ancestor.parent
             }
@@ -65,11 +65,12 @@ internal class DirtyTracker(
      */
     fun structural(retained: RetainedEntry) {
         structureRevision += 1L
-        monitoring.record(UiRenderMetric.StructureInvalidation, retained)
         advanceRevision()
         var current: RetainedEntry? = retained
         while (current != null) {
             current.dirty += DirtyMask.All
+            current.paintSubtreeDirty = true
+            current.paintSnapshot = null
             current = current.parent
         }
     }

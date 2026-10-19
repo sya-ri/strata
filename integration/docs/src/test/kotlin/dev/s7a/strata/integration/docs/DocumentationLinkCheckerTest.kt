@@ -117,7 +117,7 @@ internal class DocumentationLinkCheckerTest {
     @Test
     fun checksEveryRootDocumentForMissingLinks() {
         val project = createRepository()
-        listOf("AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md").forEach { name ->
+        listOf("AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md", "DEPRECATION.md").forEach { name ->
             val document = project.resolve(name)
             Files.writeString(document, "[Missing](docs/missing.md)")
 
@@ -238,7 +238,7 @@ internal class DocumentationLinkCheckerTest {
         Files.createDirectories(project.resolve("docs/releases"))
         Files.createDirectories(project.resolve("skills"))
         Files.writeString(project.resolve("README.md"), "[Guide](docs/font-resources.md#settings)")
-        listOf("AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md").forEach { name -> Files.writeString(project.resolve(name), "# Project") }
+        listOf("AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md", "DEPRECATION.md").forEach { name -> Files.writeString(project.resolve(name), "# Project") }
         Files.writeString(project.resolve("docs/font-resources.md"), "# Settings")
         return project
     }

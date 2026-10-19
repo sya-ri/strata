@@ -1,11 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 /**
- * Native presentation counters borrowed from each adapter's existing instrumentation.
+ * Current presentation identities and actual completed framework frames, observed entirely by the test fixture.
  */
-internal data class ReactiveNativeWork(
-    val hostFrames: Long,
-    val preparations: Long,
-    val rasterizations: Long,
-    val uploads: Long,
-)
+internal typealias ReactiveNativeWork = MinecraftPresentationObservation.Snapshot

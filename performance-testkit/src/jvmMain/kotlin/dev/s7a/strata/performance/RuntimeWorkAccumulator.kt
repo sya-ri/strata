@@ -29,6 +29,11 @@ public class RuntimeWorkAccumulator(
     public fun capture() {
         check(closed.not() && failed.not()) { "Runtime work interval is closed or failed" }
         failed = true
+        if (monitor.available.not()) {
+            samples = Math.addExact(samples, 1L)
+            failed = false
+            return
+        }
         val snapshot = monitor.snapshot()
         val current = snapshot.getAsJsonObject("counts").entrySet().associate { (key, value) -> key to value.asLong }
         check(samples == 0L || counts.keys == current.keys) { "Runtime diagnostic metric inventory changed" }
@@ -51,7 +56,9 @@ public class RuntimeWorkAccumulator(
      */
     public fun snapshot(): JsonObject {
         check(closed.not() && failed.not() && 0 < samples) { "Runtime work interval has no complete evidence" }
+        if (monitor.available.not()) return monitor.snapshot().apply { addProperty("diagnostic_samples", samples) }
         return JsonObject().apply {
+            addProperty("available", true)
             add("counts", JsonObject().apply { counts.forEach { (key, value) -> addProperty(key, value) } })
             addProperty("active_subscriptions", subscriptions)
             addProperty("maximum_active_subscriptions", maximumSubscriptions)

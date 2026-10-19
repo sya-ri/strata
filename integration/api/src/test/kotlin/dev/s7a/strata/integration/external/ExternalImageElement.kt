@@ -28,7 +28,7 @@ public class ExternalImageElement public constructor(
     private val destination: IntRect,
     key: ElementKey<*>? = null,
     private val nodeId: ExternalNodeId = ExternalNodeId.Root,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,

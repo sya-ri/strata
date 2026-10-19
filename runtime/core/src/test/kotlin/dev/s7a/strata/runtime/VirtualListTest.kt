@@ -48,7 +48,7 @@ internal class VirtualListTest {
                         constructed.add(item)
                         Spacer(
                             modifier =
-                                Modifier.Empty.size(80, 10).onPointerEvent { event, position ->
+                                Modifier.size(80, 10).onPointerEvent { event, position ->
                                     if (event is PointerEvent.Move) {
                                         hits.add(item to position)
                                         InputResult.Consumed
@@ -172,7 +172,7 @@ internal class VirtualListTest {
         var leading = 0
         var trailing = 0
         val modifier =
-            Modifier.Empty
+            Modifier
                 .onLeadingItemsRequested { leading += it.suggestedCount }
                 .onTrailingItemsRequested { trailing += it.suggestedCount }
         val root =
@@ -251,7 +251,7 @@ internal class VirtualListTest {
         val items = (0 until 10).toMutableList()
         var suggestedCount = 0
         val modifier =
-            Modifier.Empty.onLeadingItemsRequested { request ->
+            Modifier.onLeadingItemsRequested { request ->
                 suggestedCount = request.suggestedCount
                 items.addAll(0, (-request.suggestedCount until 0).toList())
                 state.refresh()
@@ -293,7 +293,7 @@ internal class VirtualListTest {
         val items = (0 until 10).toMutableList()
         var suggestedCount = 0
         val modifier =
-            Modifier.Empty.onTrailingItemsRequested { request ->
+            Modifier.onTrailingItemsRequested { request ->
                 suggestedCount = request.suggestedCount
                 val start = items.size
                 items.addAll(start until start + request.suggestedCount)

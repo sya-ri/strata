@@ -1,8 +1,6 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.node.StateObserverNode
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
-import dev.s7a.strata.runtime.diagnostics.UiRenderOperation
 import dev.s7a.strata.runtime.platform.IdentityMap
 import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -18,7 +16,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Checks identity ownership and detached diagnostic collection contracts on JVM and JavaScript.
+ * Checks identity ownership and independent subscription cleanup on JVM and JavaScript.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PortableRegistryTest {
@@ -51,7 +49,7 @@ internal class PortableRegistryTest {
         ObservedSourceRegistry().use { registry ->
             registry.synchronize(first)
             registry.synchronize(second)
-            assertEquals(2, registry.activeSubscriptions)
+            assertEquals(0, firstSource.releases + secondSource.releases)
             assertEquals(listOf(1), first.values)
             assertEquals(listOf(2), second.values)
             firstSource.publish(3, 1)
@@ -62,7 +60,6 @@ internal class PortableRegistryTest {
             assertEquals(listOf(3), first.values)
             assertEquals(listOf(4), second.values)
             registry.remove(first)
-            assertEquals(1, registry.activeSubscriptions)
             assertEquals(1, firstSource.releases)
             assertEquals(0, secondSource.releases)
             secondSource.publish(5, 2)
@@ -90,21 +87,6 @@ internal class PortableRegistryTest {
         registry.clear()
         assertEquals(emptyList(), registry.values)
         assertEquals(setOf("first", "second"), values.toSet())
-    }
-
-    @Test
-    fun diagnosticMapsRemainDetachedAfterCountersReset() {
-        val counts = RenderWorkCounts()
-        counts.record(UiRenderMetric.FrameAttempt, UiRenderOperation.Frame)
-        val totals = counts.totals()
-        val operations = counts.operations()
-        val frame = operations.getValue(UiRenderOperation.Frame)
-        counts.clear()
-        assertEquals(1L, totals[UiRenderMetric.FrameAttempt])
-        assertEquals(1L, frame[UiRenderMetric.FrameAttempt])
-        assertEquals(0L, counts.totals()[UiRenderMetric.FrameAttempt])
-        assertEquals(totals.toMap(), totals)
-        assertEquals(totals.toMap().hashCode(), totals.hashCode())
     }
 
     /**

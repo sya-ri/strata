@@ -406,7 +406,7 @@ internal class MinecraftUiProfileTest {
                         host =
                             createMinecraftUiHost(
                                 ScreenDefinition(UiText.Literal("reuse")) {
-                                    Stack(modifier = Modifier.Empty.menuBackground()) {}
+                                    Stack(modifier = Modifier.menuBackground()) {}
                                 },
                                 profile,
                             )

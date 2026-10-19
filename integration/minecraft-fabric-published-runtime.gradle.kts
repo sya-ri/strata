@@ -79,8 +79,8 @@ tasks.register<Sync>("verifyPublishedRuntimeCoordinate") {
             check(metadata["version"] == project.version.toString()) {
                 "Published runtime metadata must match the requested Strata version."
             }
-            check(metadata["name"] == "Strata" && metadata["environment"] == "client" && metadata["license"] == "MIT") {
-                "Published runtime must retain the shared client-only project metadata."
+            check(metadata["name"] == "Strata" && metadata["environment"] == "*" && metadata["license"] == "MIT") {
+                "Published runtime must retain the shared metadata for both physical environments."
             }
             val contact = metadata["contact"] as? Map<*, *> ?: error("Published runtime must declare project contact metadata.")
             check(contact["homepage"] == "https://gh.s7a.dev/strata/") {
@@ -89,14 +89,18 @@ tasks.register<Sync>("verifyPublishedRuntimeCoordinate") {
             check(
                 metadata["entrypoints"] ==
                     mapOf(
+                        "main" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabric"),
                         "client" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"),
                     ),
             ) {
-                "Published runtime must install the shared Strata client entrypoint."
+                "Published runtime must install the shared Strata server and client entrypoints."
             }
             val dependencies = metadata["depends"] as? Map<*, *> ?: error("Published runtime must declare Fabric dependencies.")
             check(dependencies["minecraft"] == minecraftVersion) {
                 "Published runtime must target exactly Minecraft $minecraftVersion."
+            }
+            check((dependencies["fabric-api"] as? String).isNullOrBlank().not()) {
+                "Published runtime must require Fabric API."
             }
 
             val nestedJars =

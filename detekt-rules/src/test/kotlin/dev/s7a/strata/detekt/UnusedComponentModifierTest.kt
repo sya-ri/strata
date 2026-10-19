@@ -16,7 +16,7 @@ internal class UnusedComponentModifierTest {
                 """
                 import dev.s7a.strata.component.UiScope
                 import dev.s7a.strata.modifier.Modifier as Decoration
-                fun UiScope.panel(decoration: Decoration = Decoration.Empty) { println("panel") }
+                fun UiScope.panel(decoration: Decoration = Decoration) { println("panel") }
                 fun UiScope.shadow(modifier: Decoration) {
                     run { val modifier = "unrelated"; println(modifier) }
                 }
@@ -35,7 +35,7 @@ internal class UnusedComponentModifierTest {
                 import dev.s7a.strata.component.RowScope
                 import dev.s7a.strata.modifier.Modifier
                 fun root(modifier: Modifier) {}
-                fun UiScope.panel(modifier: Modifier = Modifier.Empty) { root(modifier) }
+                fun UiScope.panel(modifier: Modifier = Modifier) { root(modifier) }
                 fun RowScope.cell(modifier: Modifier) { root(modifier) }
                 fun integration(modifier: Modifier) {}
                 class OtherModifier

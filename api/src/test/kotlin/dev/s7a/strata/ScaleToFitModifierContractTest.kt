@@ -37,14 +37,14 @@ internal class ScaleToFitModifierContractTest {
     @Test
     fun factoryRejectsEmptyContentAxesAndAppendsOneStableDescription() {
         assertThrows(IllegalArgumentException::class.java) {
-            Modifier.Empty.scaleToFit(IntSize(0, 1))
+            Modifier.scaleToFit(IntSize(0, 1))
         }
         assertThrows(IllegalArgumentException::class.java) {
-            Modifier.Empty.scaleToFit(IntSize(1, 0))
+            Modifier.scaleToFit(IntSize(1, 0))
         }
 
-        val first = Modifier.Empty.scaleToFit(IntSize(100, 50))
-        val second = Modifier.Empty.scaleToFit(IntSize(100, 50), Alignment.BottomEnd, allowUpscaling = true)
+        val first = Modifier.scaleToFit(IntSize(100, 50))
+        val second = Modifier.scaleToFit(IntSize(100, 50), Alignment.BottomEnd, allowUpscaling = true)
         assertEquals(1, first.elements().size)
         assertEquals(1, second.elements().size)
         assertSame(first.elements().single().type, second.elements().single().type)
@@ -53,23 +53,23 @@ internal class ScaleToFitModifierContractTest {
     @Test
     fun updateBridgeSeparatesMeasureLayoutAndEqualChanges() {
         assertUpdateMask(
-            first = Modifier.Empty.scaleToFit(IntSize(100, 50)),
-            second = Modifier.Empty.scaleToFit(IntSize(120, 50)),
+            first = Modifier.scaleToFit(IntSize(100, 50)),
+            second = Modifier.scaleToFit(IntSize(120, 50)),
             expected = DirtyMask.of(DirtyPhase.Measure),
         )
         assertUpdateMask(
-            first = Modifier.Empty.scaleToFit(IntSize(100, 50)),
-            second = Modifier.Empty.scaleToFit(IntSize(100, 50), contentAlignment = Alignment.TopStart),
+            first = Modifier.scaleToFit(IntSize(100, 50)),
+            second = Modifier.scaleToFit(IntSize(100, 50), contentAlignment = Alignment.TopStart),
             expected = DirtyMask.of(DirtyPhase.Layout),
         )
         assertUpdateMask(
-            first = Modifier.Empty.scaleToFit(IntSize(100, 50)),
-            second = Modifier.Empty.scaleToFit(IntSize(100, 50), allowUpscaling = true),
+            first = Modifier.scaleToFit(IntSize(100, 50)),
+            second = Modifier.scaleToFit(IntSize(100, 50), allowUpscaling = true),
             expected = DirtyMask.of(DirtyPhase.Layout),
         )
         assertUpdateMask(
-            first = Modifier.Empty.scaleToFit(IntSize(100, 50)),
-            second = Modifier.Empty.scaleToFit(IntSize(100, 50)),
+            first = Modifier.scaleToFit(IntSize(100, 50)),
+            second = Modifier.scaleToFit(IntSize(100, 50)),
             expected = DirtyMask.None,
         )
     }

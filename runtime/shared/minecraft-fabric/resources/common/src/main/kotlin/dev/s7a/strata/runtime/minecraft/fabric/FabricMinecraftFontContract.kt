@@ -73,7 +73,7 @@ private class MinecraftFontContractValidator(
 
     private fun visitReference(provider: JsonObject) {
         val id = JsonBoundary.parseIdentifier(JsonBoundary.requiredString(provider, "id"), "font reference")
-        visit(minecraftResourceLocation(id.getNamespace(), "font/${id.getPath()}.json"))
+        visit(minecraftResourceLocation(id.namespace, "font/${id.path}.json"))
     }
 
     private fun visitSpace(provider: JsonObject) {

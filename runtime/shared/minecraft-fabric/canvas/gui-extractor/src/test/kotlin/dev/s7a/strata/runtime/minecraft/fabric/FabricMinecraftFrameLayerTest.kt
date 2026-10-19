@@ -18,7 +18,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Verifies pure direct-image eligibility, barriers, clips, and tight fallback localization. */
+/**
+ * Verifies pure direct-image eligibility, barriers, clips, and tight fallback localization.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftFrameLayerTest {
     @Test
@@ -90,7 +92,6 @@ internal class FabricMinecraftFrameLayerTest {
                     val actual = partitionFabricMinecraftFrame(commands, viewport, scale).single() as FabricMinecraftFrameLayer.Portable
                     assertEquals(expected.bounds, actual.bounds)
                     assertEquals(expected.commands, actual.commands)
-                    assertEquals(0, actual.ineligibleSampledImages)
                     assertArrayEquals(rasterizeHeadless(listOf(first, last), viewport, scale).copyArgb(), rasterizeHeadless(commands, viewport, scale).copyArgb())
                 }
                 val separated = partitionFabricMinecraftFrame(listOf(first, direct.copy(destination = destination), last), viewport, scale)
@@ -192,7 +193,6 @@ internal class FabricMinecraftFrameLayerTest {
         assertEquals(IntRect(1, 2, 8, 9), sampled.clip)
         assertEquals(IntRect(1, 2, 6, 7), sampled.visibleBounds)
         val portableLayer = layers[2] as FabricMinecraftFrameLayer.Portable
-        assertEquals(1, portableLayer.ineligibleSampledImages)
         val portableSampled = portableLayer.commands.filterIsInstance<DrawCommand.SampledImage>().single()
         assertSame(image, portableSampled.image)
         assertEquals(unsupported.source, portableSampled.source)
@@ -232,15 +232,7 @@ internal class FabricMinecraftFrameLayerTest {
                     if (sampled == null) continue
                     assertSame(command, sampled.command)
                     val nativeClip = checkNotNull(sampled.clip)
-                    for (physicalY in 0 until viewport.height * scale) {
-                        for (physicalX in 0 until viewport.width * scale) {
-                            val centerX = (physicalX + 0.5) / scale
-                            val centerY = (physicalY + 0.5) / scale
-                            val original = clip.left <= centerX && centerX < clip.right && clip.top <= centerY && centerY < clip.bottom
-                            val native = nativeClip.left <= centerX && centerX < nativeClip.right && nativeClip.top <= centerY && centerY < nativeClip.bottom
-                            assertEquals(original, native, "Clip $clip at scale $scale changed physical pixel ($physicalX, $physicalY)")
-                        }
-                    }
+                    assertClipCoverage(clip, nativeClip, viewport, scale)
                 }
             }
         }
@@ -339,4 +331,21 @@ internal class FabricMinecraftFrameLayerTest {
     }
 
     private data object TestPlatform : PlatformDrawCommand
+
+    private fun assertClipCoverage(
+        clip: FloatRect,
+        nativeClip: IntRect,
+        viewport: IntSize,
+        scale: Int,
+    ) {
+        for (physicalY in 0 until viewport.height * scale) {
+            for (physicalX in 0 until viewport.width * scale) {
+                val centerX = (physicalX + 0.5) / scale
+                val centerY = (physicalY + 0.5) / scale
+                val original = clip.left <= centerX && centerX < clip.right && clip.top <= centerY && centerY < clip.bottom
+                val native = nativeClip.left <= centerX && centerX < nativeClip.right && nativeClip.top <= centerY && centerY < nativeClip.bottom
+                assertEquals(original, native, "Clip $clip at scale $scale changed physical pixel ($physicalX, $physicalY)")
+            }
+        }
+    }
 }

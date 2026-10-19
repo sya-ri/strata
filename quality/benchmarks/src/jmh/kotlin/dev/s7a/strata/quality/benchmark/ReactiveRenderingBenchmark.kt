@@ -31,6 +31,19 @@ import org.openjdk.jmh.annotations.TearDown
 @OptIn(InternalStrataRuntimeApi::class)
 public open class ReactiveRenderingBenchmark {
     /**
+     * Exposes the original deterministic gate to shared fixture selection.
+     */
+    public companion object {
+        /**
+         * Verifies every original reactive workload before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            ReactiveWorkEvidence.main(emptyArray())
+        }
+    }
+
+    /**
      * Publishes one scenario input and returns a completed retained frame.
      */
     @Benchmark
@@ -80,11 +93,11 @@ public open class ReactiveRenderingBenchmark {
                     evaluateComponentTree {
                         Column {
                             when (scenario) {
-                                ReactiveWorkload.Static, ReactiveWorkload.Single -> Observe(source) { Spacer(modifier = Modifier.Empty.size(it % 2 + 1, 1)) }
-                                ReactiveWorkload.MapEqual, ReactiveWorkload.MapChanged -> Observe(mapped) { Spacer(modifier = Modifier.Empty.size(it + 1, 1)) }
-                                ReactiveWorkload.Nested -> Observe(source) { parent -> Observe(source) { child -> Spacer(modifier = Modifier.Empty.size((parent + child) % 3 + 1, 1)) } }
-                                ReactiveWorkload.Independent128 -> independent.forEach { value -> Observe(value) { Spacer(modifier = Modifier.Empty.size(it % 2 + 1, 1)) } }
-                                ReactiveWorkload.FanOut128 -> repeat(128) { Observe(mapped) { value -> Spacer(modifier = Modifier.Empty.size(value + 1, 1)) } }
+                                ReactiveWorkload.Static, ReactiveWorkload.Single -> Observe(source) { Spacer(modifier = Modifier.size(it % 2 + 1, 1)) }
+                                ReactiveWorkload.MapEqual, ReactiveWorkload.MapChanged -> Observe(mapped) { Spacer(modifier = Modifier.size(it + 1, 1)) }
+                                ReactiveWorkload.Nested -> Observe(source) { parent -> Observe(source) { child -> Spacer(modifier = Modifier.size((parent + child) % 3 + 1, 1)) } }
+                                ReactiveWorkload.Independent128 -> independent.forEach { value -> Observe(value) { Spacer(modifier = Modifier.size(it % 2 + 1, 1)) } }
+                                ReactiveWorkload.FanOut128 -> repeat(128) { Observe(mapped) { value -> Spacer(modifier = Modifier.size(value + 1, 1)) } }
                                 ReactiveWorkload.ListAppend, ReactiveWorkload.ListPrepend -> VirtualList(items, keyOf = { it }, state = navigation, viewportSize = IntSize(160, 60), rowHeight = 12) { Spacer() }
                             }
                         }
@@ -99,6 +112,11 @@ public open class ReactiveRenderingBenchmark {
          * Measures source publication plus one frame; diagnostic intervals span 64 invocations.
          */
         public fun nextFrame(): RuntimeUiFrame = monitor?.sample(::publishFrame) ?: publishFrame()
+
+        /**
+         * Reads the actual settled frame without publishing a source revision.
+         */
+        public fun cleanFrame(): RuntimeUiFrame = session.frame(constraints)
 
         private fun publishFrame(): RuntimeUiFrame {
             revision += 1

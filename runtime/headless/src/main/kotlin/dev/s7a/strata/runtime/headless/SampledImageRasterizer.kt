@@ -3,7 +3,9 @@ package dev.s7a.strata.runtime.headless
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Arrays
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -15,6 +17,7 @@ import kotlin.math.roundToInt
  * The object retains no images or raster state and may be called concurrently with independent destination arrays.
  * The caller exclusively owns the mutable destination for the duration of [paint].
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal object SampledImageRasterizer {
     /**
      * Paints one validated command using final-density pixel centers and continuous tint multiplication.
@@ -28,7 +31,7 @@ internal object SampledImageRasterizer {
      * The caller guarantees that clip coordinates relative to [origin] fit in [physicalSize].
      * Clipping preserves the source mapping from the original destination and the method retains no arguments.
      */
-    @Suppress("CyclomaticComplexMethod") // Keep exact scalar reuse inside the pixel traversal without per-texel dispatch.
+    @Suppress("CyclomaticComplexMethod", "LongMethod") // Keep exact scalar and span reuse in one ordered traversal without per-texel dispatch.
     fun paint(
         pixels: IntArray,
         physicalSize: IntSize,
@@ -36,6 +39,7 @@ internal object SampledImageRasterizer {
         command: DrawCommand.SampledImage,
         clip: IntRect,
         origin: IntOffset = IntOffset.Zero,
+        scratch: HeadlessRasterScratch? = null,
     ) {
         val destination = command.destination
         val left = maxOf(firstPixel(destination.left, scale), clip.left)
@@ -47,7 +51,9 @@ internal object SampledImageRasterizer {
 
         val mapColumns = 4 <= bottom - top && 4096L <= (right - left).toLong() * (bottom - top)
         val constantImage = command.image.size.width == 1 && command.image.size.height == 1
-        val color = SampledColor(command.tint.value, command.alphaCutoff, mapColumns && constantImage.not())
+        val tables = mapColumns && constantImage.not()
+        val weights = if (tables) scratch?.weights(command.tint.value) else null
+        val color = SampledColor(command.tint.value, command.alphaCutoff, tables, weights)
         if (constantImage) {
             color.paintConstant(pixels, physicalSize.width, left - origin.x, top - origin.y, right - origin.x, bottom - origin.y, command.image.argbAt(0, 0))
             return
@@ -66,6 +72,7 @@ internal object SampledImageRasterizer {
         val rows =
             if (mapColumns && command.source.height * 2 <= bottom - top) RowReuse(physicalSize.width, left - origin.x, right - origin.x) else null
         val opaqueTint = command.tint.value ushr 24 == 255
+        val magnified = sourceXs != null && command.source.width * 4 <= right - left
         // Transparent black over transparent black is already a valid zero result for any tint or cutoff.
         for (y in top until bottom) {
             val sourceY =
@@ -79,25 +86,67 @@ internal object SampledImageRasterizer {
                     command.image.size.height,
                 )
             if (rows?.prepare(pixels, y - origin.y, sourceY) == true) continue
-            var opaqueRow = opaqueTint
-            var index = (y - origin.y) * physicalSize.width + left - origin.x
-            for (x in left until right) {
-                val sourceX =
-                    sourceXs?.get(x - left) ?: sampleX(x, scale, command)
-                val source = command.image.argbAt(sourceX, sourceY)
-                if (rows != null && source ushr 24 != 255) opaqueRow = false
-                val destinationColor = pixels[index]
-                // Keep repeated texels in the traversal; table construction and Float composition stay off this path.
-                if (source != previousSource || destinationColor != previousDestination) {
-                    previousSource = source
-                    previousDestination = destinationColor
-                    previousResult = color.blend(source, destinationColor)
+            if (magnified) {
+                val start = (y - origin.y) * physicalSize.width + left - origin.x
+                val opaqueRow = paintMagnifiedRow(pixels, start, sourceXs, sourceY, command.image, color, opaqueTint)
+                rows?.finish(opaqueRow)
+            } else {
+                var opaqueRow = opaqueTint
+                var index = (y - origin.y) * physicalSize.width + left - origin.x
+                for (x in left until right) {
+                    val sourceX =
+                        sourceXs?.get(x - left) ?: sampleX(x, scale, command)
+                    val source = command.image.argbAt(sourceX, sourceY)
+                    if (rows != null && source ushr 24 != 255) opaqueRow = false
+                    if (source ushr 24 == 0) {
+                        index += 1
+                        continue
+                    }
+                    val destinationColor = pixels[index]
+                    // Keep repeated texels in the traversal; table construction and Float composition stay off this path.
+                    if (source != previousSource || destinationColor != previousDestination) {
+                        previousSource = source
+                        previousDestination = destinationColor
+                        previousResult = color.blend(source, destinationColor)
+                    }
+                    pixels[index] = previousResult
+                    index += 1
                 }
-                pixels[index] = previousResult
-                index += 1
+                rows?.finish(opaqueRow)
             }
-            rows?.finish(opaqueRow)
         }
+    }
+
+    // Consecutive output columns with one selected texel borrow one source value.
+    // Opaque source-over is destination-independent; translucent spans still blend each actual destination.
+    @Suppress("LongParameterList")
+    private fun paintMagnifiedRow(
+        pixels: IntArray,
+        start: Int,
+        columns: IntArray,
+        sourceY: Int,
+        image: DrawImage,
+        color: SampledColor,
+        opaqueTint: Boolean,
+    ): Boolean {
+        var offset = 0
+        var opaqueRow = opaqueTint
+        while (offset < columns.size) {
+            val sourceX = columns[offset]
+            var end = offset + 1
+            while (end < columns.size && columns[end] == sourceX) end += 1
+            val source = image.argbAt(sourceX, sourceY)
+            if (opaqueTint && source ushr 24 == 255) {
+                pixels.fill(color.blend(source, 0), start + offset, start + end)
+            } else {
+                opaqueRow = false
+                if (source ushr 24 != 0) {
+                    for (index in start + offset until start + end) pixels[index] = color.blend(source, pixels[index])
+                }
+            }
+            offset = end
+        }
+        return opaqueRow
     }
 
     private fun sampleX(
@@ -178,6 +227,7 @@ internal object SampledImageRasterizer {
         private val tint: Int,
         private val cutoff: Float,
         private val useChannelTables: Boolean,
+        private val weights: SampledSourceWeights?,
     ) {
         private val identityTint = tint == 0xFFFFFFFF.toInt()
         private val alpha = normalized(tint ushr 24)
@@ -190,9 +240,11 @@ internal object SampledImageRasterizer {
         private var opaquePalette: IntArray? = null
         private var blendTablesAllowed = useChannelTables
         private var blendTables: Array<IntArray?>? = null
-        private var blendRowCount = 0
+
+        // Negative values count qualifying blends until admission; nonnegative values count owned alpha rows.
+        private var blendRowCount = -32
+
         private var paletteDestination = 0
-        private var paletteDestinationKnown = false
 
         // A whole one-texel image always clamps to (0, 0), including fractional sources and flips.
         // Pass the clipped scalar span without allocating a rectangle for each command.
@@ -206,7 +258,7 @@ internal object SampledImageRasterizer {
             bottom: Int,
             source: Int,
         ) {
-            val sourceAlpha = normalized(source ushr 24) * alpha
+            val sourceAlpha = weights?.alpha(source ushr 24) ?: (normalized(source ushr 24) * alpha)
             if (sourceAlpha < cutoff || sourceAlpha == 0f) return
             if (sourceAlpha == 1f) {
                 val result = blend(source, 0)
@@ -238,6 +290,7 @@ internal object SampledImageRasterizer {
             val sourceAlphaByte = source ushr 24
             if (sourceAlphaByte == 0 || alpha == 0f) return destination
             if (sourceAlphaByte == 255 && alpha == 1f) return opaque(source)
+            if ((source and 0xFFFFFF) == 0xFFFFFF && destination == (tint or 0xFF000000.toInt())) return destination
             if (source == previousSource && destination == previousDestination) return previousResult
             return translucent(source, destination)
         }
@@ -247,24 +300,29 @@ internal object SampledImageRasterizer {
             source: Int,
             destination: Int,
         ): Int {
-            val sourceAlpha = normalized(source ushr 24) * alpha
+            val sourceAlpha = weights?.alpha(source ushr 24) ?: (normalized(source ushr 24) * alpha)
             if (sourceAlpha < cutoff || sourceAlpha == 0f) return destination
-            val destinationWeight = normalized(destination ushr 24) * (1f - sourceAlpha)
+            val inverse = weights?.inverse(source ushr 24) ?: (1f - sourceAlpha)
+            val destinationWeight = normalized(destination ushr 24) * inverse
             val outputAlpha = sourceAlpha + destinationWeight
             val alphaByte = quantize(outputAlpha)
             if (alphaByte == 0) return remember(source, destination, 0)
             if (blendTablesAllowed) {
-                if (paletteDestinationKnown && destination != paletteDestination) {
+                if (blendRowCount == -32) {
+                    paletteDestination = destination
+                    blendRowCount += 1
+                } else if (destination != paletteDestination) {
                     blendTablesAllowed = false
                     blendTables = null
-                } else {
-                    paletteDestination = destination
-                    paletteDestinationKnown = true
+                } else if (blendRowCount < 0) {
+                    blendRowCount += 1
                 }
             }
-            val outputRed = channel(source, destination, 16, sourceAlpha, destinationWeight, outputAlpha)
-            val outputGreen = channel(source, destination, 8, sourceAlpha, destinationWeight, outputAlpha)
-            val outputBlue = channel(source, destination, 0, sourceAlpha, destinationWeight, outputAlpha)
+            val sourceRow = weights?.row(source ushr 24)
+            val destinationRow = blendRow(source ushr 24)
+            val outputRed = channel(source, destination, 16, sourceAlpha, destinationWeight, outputAlpha, sourceRow, destinationRow)
+            val outputGreen = channel(source, destination, 8, sourceAlpha, destinationWeight, outputAlpha, sourceRow, destinationRow)
+            val outputBlue = channel(source, destination, 0, sourceAlpha, destinationWeight, outputAlpha, sourceRow, destinationRow)
             return remember(source, destination, (alphaByte shl 24) or (outputRed shl 16) or (outputGreen shl 8) or outputBlue)
         }
 
@@ -309,6 +367,22 @@ internal object SampledImageRasterizer {
             return result
         }
 
+        // A table belongs to this command and one complete destination ARGB. Any unequal destination
+        // permanently drops these rows. Admission and alpha-row selection occur once per blend, before RGB work.
+        private fun blendRow(sourceAlphaByte: Int): IntArray? {
+            if (blendTablesAllowed.not() || blendRowCount < 0) return null
+            val rows = blendTables ?: arrayOfNulls<IntArray>(256).also { blendTables = it }
+            return rows[sourceAlphaByte] ?: if (blendRowCount < 16) {
+                IntArray(768) { -1 }.also { table ->
+                    rows[sourceAlphaByte] = table
+                    blendRowCount += 1
+                }
+            } else {
+                null
+            }
+        }
+
+        @Suppress("LongParameterList") // Both borrowed rows are selected once for all three ordered channel calculations.
         private fun channel(
             source: Int,
             destination: Int,
@@ -316,39 +390,33 @@ internal object SampledImageRasterizer {
             sourceAlpha: Float,
             destinationWeight: Float,
             outputAlpha: Float,
+            sourceRow: FloatArray?,
+            row: IntArray?,
         ): Int {
-            // A table belongs to this command and one complete destination ARGB. Any unequal destination
-            // permanently drops these rows, so heterogeneous output never requires clearing a large table per pixel.
-            val rows =
-                if (blendTablesAllowed) {
-                    blendTables ?: arrayOfNulls<IntArray>(256).also { blendTables = it }
-                } else {
-                    null
-                }
-            val sourceAlphaByte = source ushr 24
-            val row =
-                rows?.let {
-                    it[sourceAlphaByte] ?: if (blendRowCount < 16) {
-                        IntArray(768) { -1 }.also { table ->
-                            it[sourceAlphaByte] = table
-                            blendRowCount += 1
-                        }
-                    } else {
-                        null
-                    }
-                }
             val index = (2 - shift / 8) * 256 + (source ushr shift and 255)
-            val cached = row?.get(index)
-            if (cached != null && 0 <= cached) return cached
+            if (row != null) {
+                val cached = row[index]
+                if (0 <= cached) return cached
+            }
+            val contribution =
+                if (sourceRow != null) sourceRow[index] else contribution(source, shift, sourceAlpha)
+            val result = quantize((contribution + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
+            if (row != null) row[index] = result
+            return result
+        }
+
+        private fun contribution(
+            source: Int,
+            shift: Int,
+            sourceAlpha: Float,
+        ): Float {
             val channelTint =
                 when (shift) {
                     16 -> red
                     8 -> green
                     else -> blue
                 }
-            val result = quantize((normalized(source ushr shift) * channelTint * sourceAlpha + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
-            if (row != null) row[index] = result
-            return result
+            return normalized(source ushr shift) * channelTint * sourceAlpha
         }
 
         private fun normalized(channel: Int): Float = (channel and 0xFF).toFloat() / 255f

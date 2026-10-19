@@ -3,10 +3,19 @@
 # ReturnCount is disabled because early returns make validation and lifecycle failure paths more direct.
 # MaxLineLength is disabled because code and documentation break at semantic boundaries instead of a fixed column.
 style:
+  # Mixin loads these private classes and supplies callback signatures through native injection contracts.
+  UnusedPrivateClass:
+    ignoreAnnotated:
+      - "Mixin"
+  UnusedParameter:
+    ignoreAnnotated:
+      - "Inject"
+      - "WrapWithCondition"
   ForbiddenMethodCall:
     active: true
     includes:
       - "**/src/jmh/**"
+      - "**/quality/benchmarks/src/fixture/**"
       - "**/integration/server-performance/**"
       - "**/integration/paper/src/main/**"
       - "**/integration/velocity/src/main/**"

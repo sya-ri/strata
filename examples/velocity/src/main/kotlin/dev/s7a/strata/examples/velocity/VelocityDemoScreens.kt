@@ -17,20 +17,20 @@ import dev.s7a.strata.ui.UiDefinition
  */
 public object VelocityDemoScreens {
     /**
-     * Creates independent state inside the factory passed to VelocityUi.open.
+     * Creates independent state inside the factory passed to Strata.open.
      */
     public fun counter(): UiDefinition {
         val name = TextFieldState("Player", 32)
         val clicks = mutableStateOf(0)
         val greeting = mutableStateOf("This screen is owned by the proxy.")
         return UiDefinition("Velocity screen") {
-            Column(Modifier.Empty.padding(8), spacing = 4) {
+            Column(Modifier.padding(8), spacing = 4) {
                 Text(greeting.value)
                 TextField(name, IntSize(180, 20))
                 Button(
                     "Count: ${clicks.value}",
                     modifier =
-                        Modifier.Empty.onActivate {
+                        Modifier.onActivate {
                             clicks.value += 1
                             greeting.value = "Hello, ${name.value}."
                         },

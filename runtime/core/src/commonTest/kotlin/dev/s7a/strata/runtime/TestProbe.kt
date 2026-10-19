@@ -120,7 +120,7 @@ internal class TestProbe(
      */
     fun root(
         children: List<Element>,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ): ProbeElement = element(ProbeId("root"), children = children, modifier = modifier)
 
     /**
@@ -142,7 +142,7 @@ internal class TestProbe(
         key: ProbeId? = null,
         sharedNode: ProbeNode? = null,
         children: List<Element> = emptyList(),
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
         measureDirty: Boolean = false,
         onAttach: (() -> Unit)? = null,
         onDetach: (() -> Unit)? = null,

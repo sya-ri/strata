@@ -241,7 +241,7 @@ internal class FabricMinecraftInputMappingTest {
         var navigationCalls = 0
         lateinit var focus: FabricMinecraftTextInputFocus
         val lifecycle =
-            FabricScreenLifecycleTransaction.create(
+            FabricScreenLifecycleTransaction(
                 {},
                 {},
                 {
@@ -290,7 +290,7 @@ internal class FabricMinecraftInputMappingTest {
 
     private fun editableFocusIntervals(): Pair<RuntimeTextInputFocus, RuntimeTextInputFocus> =
         createRuntimeUiSession {
-            evaluateComponentTree { Spacer(modifier = Modifier.Empty.size(1, 1).then(EditableFocusElement)) }
+            evaluateComponentTree { Spacer(modifier = Modifier.size(1, 1).then(EditableFocusElement)) }
         }.use { session ->
             session.attach()
             session.frame(Constraints.fixed(1, 1))

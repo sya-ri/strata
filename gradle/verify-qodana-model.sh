@@ -421,6 +421,11 @@ else
   exit 1
 fi
 
+canonical_compiler_ownership=false
+if portable_jq -e '.projects | all(.[]; has("native"))' "$project_root/build/qodana/declarations.json" >/dev/null; then
+  canonical_compiler_ownership=true
+fi
+
 expected_target_source_roots="$inventory_directory/qodana-expected-target-source-roots.tsv"
 : > "$expected_target_source_roots"
 
@@ -506,12 +511,13 @@ record_expected_target_source_roots() {
   fi
 
   parsed_iml_sources=$(mktemp "$inventory_directory/qodana-iml-sources.XXXXXX")
-  if "$qodana_python" - "$iml" > "$parsed_iml_sources" <<'PY'
+  if "$qodana_python" - "$iml" "$canonical_compiler_ownership" > "$parsed_iml_sources" <<'PY'
 import pathlib
 import sys
 import xml.etree.ElementTree as ET
 
 iml = pathlib.Path(sys.argv[1])
+canonical_ownership = sys.argv[2] == "true"
 
 
 def fail(message):
@@ -577,17 +583,17 @@ content_elements = [
     child for child in manager_components[0] if child.tag == "content"
 ]
 
-if len(content_elements) != 1:
+if not content_elements or (not canonical_ownership and len(content_elements) != 1):
     fail(
         "expected exactly one direct unqualified content element under "
         f"NewModuleRootManager but found {len(content_elements)}"
     )
 
 source_folders = [
-    child for child in content_elements[0] if child.tag == "sourceFolder"
+    child for content in content_elements for child in content if child.tag == "sourceFolder"
 ]
 allowed_relevant_elements = {
-    id(content_elements[0]),
+    *(id(content) for content in content_elements),
     *(id(source_folder) for source_folder in source_folders),
 }
 for element_name, element in relevant_elements:
@@ -617,6 +623,19 @@ if content_attribute_names != {"url"}:
 content_url = validated_url("content", content_elements[0])
 if content_url != "file://$MODULE_DIR$/":
     fail(f"content URL must be file://$MODULE_DIR$/: {content_url}")
+
+content_urls = []
+for content in content_elements:
+    if set(content.attrib) != {"url"}:
+        fail("content must contain only its exact url attribute")
+    url = validated_url("content", content)
+    content_urls.append(url)
+    if content is not content_elements[0]:
+        folders = list(content)
+        if len(folders) != 1 or folders[0].tag != "sourceFolder" or validated_url("sourceFolder", folders[0]) != url:
+            fail("additional content must own exactly its canonical compiler root")
+if len(content_urls) != len(set(content_urls)):
+    fail("duplicate content roots are not allowed")
 
 for source_folder in source_folders:
     source_attribute_names = set(source_folder.attrib)
@@ -658,6 +677,17 @@ PY
 
     relative_path=''
     case "$source_url" in
+      'file://$PROJECT_DIR$/'*)
+        repository_relative_path=${source_url#'file://$PROJECT_DIR$/'}
+        resolved_path=$(realpath -m -- "$project_root/$repository_relative_path")
+        if path_is_child_of "$resolved_path" "$project_root" && \
+          [[ "$(canonical_repository_relative_path "$repository_relative_path")" == "$(canonical_repository_relative_path "$(relative_path_from_parent "$resolved_path" "$project_root")")" ]]; then
+          relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
+        else
+          echo "The generated IDEA module contains a non-canonical repository source URL: $iml: $source_url" >&2
+          exit 1
+        fi
+        ;;
       'file://$MODULE_DIR$')
         resolved_path=$module_directory
         ;;
@@ -784,9 +814,35 @@ record_expected_target_source_roots \
   'examples/paper' \
   'examples-paper.iml'
 
+# Required compiler declarations remain checked for every variant even when IDEA indexes a shared root once.
+declared_target_source_roots=$expected_target_source_roots
+if $canonical_compiler_ownership; then
+  declared_target_source_roots="$inventory_directory/qodana-declared-target-source-roots.tsv"
+  "$qodana_python" - "$project_root/build/qodana/declarations.json" > "$declared_target_source_roots" <<'PY'
+import json
+import pathlib
+import sys
+
+inventory = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+for owner in inventory["projects"]:
+    project = owner["project"]
+    if project.startswith(":runtime:minecraft-fabric-"):
+        label, version = "runtime", project[len(":runtime:minecraft-fabric-"):]
+    elif project.startswith(":integration:minecraft-fabric-"):
+        label, version = "integration", project[len(":integration:minecraft-fabric-"):]
+    elif project in {":integration:docs", ":runtime:minecraft-fonts-lwjgl", ":examples:paper"}:
+        label, version = {":integration:docs": "docs", ":runtime:minecraft-fonts-lwjgl": "font-backend", ":examples:paper": "paper-example"}[project], "-"
+    else:
+        continue
+    for source in owner["roots"]:
+        if source["exists"] and not source["generated"]:
+            print("\t".join((label, version, source["kind"], "file://$PROJECT_DIR$/" + source["path"])))
+PY
+fi
+
 docs_showcase_source_path='file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin'
 required_docs_showcase_source=$'docs\t-\tSource\t'"$docs_showcase_source_path"
-docs_showcase_source_count=$(grep -Fxc "$required_docs_showcase_source" "$expected_target_source_roots" || true)
+docs_showcase_source_count=$(grep -Fxc "$required_docs_showcase_source" "$declared_target_source_roots" || true)
 docs_target_source_count=0
 while IFS=$'\t' read -r expected_owner _ _ expected_path; do
   if [[ "$expected_owner" != 'docs' || "$expected_path" != 'file://$PROJECT_DIR$/'* ]]; then
@@ -795,14 +851,13 @@ while IFS=$'\t' read -r expected_owner _ _ expected_path; do
   classify_target_source_path "${expected_path#'file://$PROJECT_DIR$/'}"
   $target_source_uses_target_namespace || continue
   ((docs_target_source_count += 1))
-done < "$expected_target_source_roots"
+done < "$declared_target_source_roots"
 if [[ "$docs_showcase_source_count" -ne 1 || "$docs_target_source_count" -ne 1 ]]; then
   echo "The generated documentation IDEA module must link exactly one showcase Source and no other target source root: source=$docs_showcase_source_count total=$docs_target_source_count" >&2
   exit 1
 fi
 
 for version in "${expected_versions[@]}"; do
-  runtime_font_source="file://\$PROJECT_DIR\$/runtime/minecraft-fabric-$version/src/font/kotlin"
   runtime_font_source_count=0
   integration_test_source_count=0
   integration_component_source_count=0
@@ -811,7 +866,7 @@ for version in "${expected_versions[@]}"; do
     if [[ "$expected_owner" == 'runtime' && \
       "$expected_version" == "$version" && \
       "$expected_type" == 'Source' && \
-      "$expected_path" == "$runtime_font_source" ]]; then
+      "$expected_path" == 'file://$PROJECT_DIR$/runtime/shared/minecraft-fabric/resources/font-'*'/src/main/kotlin' ]]; then
       ((runtime_font_source_count += 1))
     elif [[ "$expected_owner" == 'integration' && \
       "$expected_version" == "$version" && \
@@ -826,9 +881,9 @@ for version in "${expected_versions[@]}"; do
         ((integration_component_source_count += 1))
       fi
     fi
-  done < "$expected_target_source_roots"
+  done < "$declared_target_source_roots"
   if [[ "$runtime_font_source_count" -ne 1 ]]; then
-    echo "The generated runtime IDEA module must contain exactly one owned font Source: version=$version count=$runtime_font_source_count" >&2
+    echo "The generated runtime IDEA module must contain exactly one selected font Source: version=$version count=$runtime_font_source_count" >&2
     exit 1
   elif [[ "$integration_test_source_count" -eq 0 ]]; then
     echo "The generated integration IDEA module must contain at least one TestSource: version=$version" >&2
@@ -847,7 +902,7 @@ while IFS=$'\t' read -r expected_owner expected_version expected_type expected_p
   elif [[ "$expected_owner" == 'font-backend' && "$expected_type" == 'TestSource' ]]; then
     ((font_backend_test_source_count += 1))
   fi
-done < "$expected_target_source_roots"
+done < "$declared_target_source_roots"
 if [[ "$font_backend_source_count" -eq 0 || "$font_backend_test_source_count" -eq 0 ]]; then
   echo "The generated CPU font backend IDEA module must contain at least one Source and TestSource: source=$font_backend_source_count testSource=$font_backend_test_source_count" >&2
   exit 1
@@ -857,15 +912,15 @@ font_backend_parity_source_path='file://$PROJECT_DIR$/integration/shared/font-pa
 font_backend_parity_resource_path='file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources'
 required_font_backend_parity_source=$'font-backend\t-\tTestSource\t'"$font_backend_parity_source_path"
 required_font_backend_parity_resource=$'font-backend\t-\tTestResource\t'"$font_backend_parity_resource_path"
-required_font_backend_parity_source_count=$(grep -Fxc "$required_font_backend_parity_source" "$expected_target_source_roots" || true)
-required_font_backend_parity_resource_count=$(grep -Fxc "$required_font_backend_parity_resource" "$expected_target_source_roots" || true)
+required_font_backend_parity_source_count=$(grep -Fxc "$required_font_backend_parity_source" "$declared_target_source_roots" || true)
+required_font_backend_parity_resource_count=$(grep -Fxc "$required_font_backend_parity_resource" "$declared_target_source_roots" || true)
 font_backend_parity_root_count=0
 while IFS=$'\t' read -r expected_owner expected_version expected_type expected_path; do
   if [[ "$expected_owner" == 'font-backend' && \
     ( "$expected_path" == "$font_backend_parity_source_path" || "$expected_path" == "$font_backend_parity_resource_path" ) ]]; then
     ((font_backend_parity_root_count += 1))
   fi
-done < "$expected_target_source_roots"
+done < "$declared_target_source_roots"
 if [[ "$required_font_backend_parity_source_count" -eq 1 && \
   "$required_font_backend_parity_resource_count" -eq 1 && \
   "$font_backend_parity_root_count" -eq 2 ]]; then
@@ -954,11 +1009,6 @@ while IFS=$'\t' read -r module_name source_type source_url; do
     exit 1
   }
   classify_target_source_path "$repository_relative_path"
-  # The benchmark owner's own source remains outside native-target parity; foreign links do not.
-  if [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' && \
-    "$module_name" =~ ^(component-benchmarks|quality-component-benchmarks|strata\.quality\.component-benchmarks)$ ]]; then
-    target_source_allowed_owners=''
-  fi
   if $target_source_uses_target_namespace && [[ -z "$target_source_allowed_owners" ]]; then
     echo "Qodana project modules contain an unapproved target-namespace source root: $source_url" >&2
     exit 1
@@ -984,7 +1034,20 @@ target_source_mismatches=$(
     --arg docsPattern "$docs_pattern" \
     --arg fontPattern "$font_backend_pattern" \
     --rawfile expectedTargetSources "$expected_target_source_roots" \
-    --rawfile actualSources "$model_source_roots" '
+    --rawfile actualSources "$model_source_roots" \
+    --slurpfile declarations "$project_root/build/qodana/declarations.json" '
+      def declaredJmhSource($source):
+        any($declarations[0].owners[];
+          .module == $source.module
+          and any(.roots[];
+            .exists and .generated == false
+            and .kind == $source.type
+            and ("file://$PROJECT_DIR$/" + .path) == $source.path
+          )
+        );
+      def rootCounts:
+        group_by([.owner, .version, .type, .path])
+        | map(.[0] + {count: length});
       def expectedTargetSources:
         $expectedTargetSources
         | split("\n")
@@ -1035,7 +1098,11 @@ target_source_mismatches=$(
             actualSources[]
             | . as $source
             | ({name: $source.module} | targetIdentity($runtimePattern; $integrationPattern; $docsPattern; $fontPattern)) as $identity
-            | select($identity.owner != "unexpected-module" or ($source.classifiedOwners | length) != 0)
+            # Keep native consumers exact; the final declaration verifier checks every JMH owner.
+            | select(
+                $identity.owner != "unexpected-module"
+                or (($source.classifiedOwners | length) != 0 and (declaredJmhSource($source) | not))
+              )
             | {
                 owner: $identity.owner,
                 version: $identity.version,
@@ -1048,7 +1115,10 @@ target_source_mismatches=$(
       | if $actual == $expected then
           []
         else
-          [{expected: $expected, actual: $actual}]
+          [{
+            missing: (($expected | rootCounts) - ($actual | rootCounts)),
+            unexpected: (($actual | rootCounts) - ($expected | rootCounts))
+          }]
         end
     ' "$model"
 )
@@ -1058,3 +1128,5 @@ else
   echo "Qodana project modules do not exactly match their existing owned and declared linked target source roots: $target_source_mismatches" >&2
   exit 1
 fi
+
+"$qodana_python" "$script_root/verify-qodana-declarations.py" "$project_root" "$model" "$qodana_container_project_root" "$(dirname "$input_model")/Java.json"

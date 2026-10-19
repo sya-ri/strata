@@ -8,7 +8,6 @@ import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -68,38 +67,24 @@ internal class SkillForwardTest {
             assertNotNull(focus)
             host.dispatchTextInput(TextInputEvent.Preedit("A", 1, listOf("A"), 0))
             host.frame(IntSize(160, 160))
-            host.startRenderMonitoring().use { monitor ->
-                clock.publish(721L)
-                host.frame(IntSize(160, 160))
-                val changed = monitor.snapshot()
-                assertEquals(1L, changed.counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, changed.counts[UiRenderMetric.ObserveEvaluation])
-                assertEquals(0L, changed.counts[UiRenderMetric.RowEvaluation])
-                assertSame(focus, host.textInputFocus)
-                assertEquals("draft", draft.value)
-                monitor.checkpoint()
-                clock.publish(721L + 1_440L)
-                host.frame(IntSize(160, 160))
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
-                monitor.checkpoint()
-                sending.publish(true)
-                host.frame(IntSize(160, 160))
-                assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RowEvaluation])
-                assertSame(focus, host.textInputFocus)
-                host.dispatchTextInput(TextInputEvent.Character('B'.code))
-                assertEquals("draftB", draft.value)
-                host.dispatchPointer(PointerEvent.Scroll(IntOffset(8, 36), 0.0, 6.0))
-                val beforePrepend = host.frame(IntSize(160, 160))
-                monitor.checkpoint()
-                history.publish(listOf(AcceptedMessage(-1, "New")) + initial)
-                val afterPrepend = host.frame(IntSize(160, 160))
-                val beforeRows = beforePrepend.semantics.filter { it.bounds.top in 32 until 92 }
-                val afterRows = afterPrepend.semantics.filter { it.bounds.top in 32 until 92 }
-                assertEquals(beforeRows, afterRows)
-                assertTrue(monitor.snapshot().counts.getValue(UiRenderMetric.RowEvaluation) <= 7L)
-                assertTrue(monitor.snapshot().nodes.size < 100)
-            }
+            clock.publish(721L)
+            host.frame(IntSize(160, 160))
+            assertSame(focus, host.textInputFocus)
+            assertEquals("draft", draft.value)
+            clock.publish(721L + 1_440L)
+            host.frame(IntSize(160, 160))
+            sending.publish(true)
+            host.frame(IntSize(160, 160))
+            assertSame(focus, host.textInputFocus)
+            host.dispatchTextInput(TextInputEvent.Character('B'.code))
+            assertEquals("draftB", draft.value)
+            host.dispatchPointer(PointerEvent.Scroll(IntOffset(8, 36), 0.0, 6.0))
+            val beforePrepend = host.frame(IntSize(160, 160))
+            history.publish(listOf(AcceptedMessage(-1, "New")) + initial)
+            val afterPrepend = host.frame(IntSize(160, 160))
+            val beforeRows = beforePrepend.semantics.filter { it.bounds.top in 32 until 92 }
+            val afterRows = afterPrepend.semantics.filter { it.bounds.top in 32 until 92 }
+            assertEquals(beforeRows, afterRows)
         }
     }
 }

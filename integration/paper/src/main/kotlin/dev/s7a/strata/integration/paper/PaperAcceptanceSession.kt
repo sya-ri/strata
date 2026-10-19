@@ -9,6 +9,7 @@ import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
+import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.examples.paper.DemoRemoteExtensions
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
@@ -171,23 +172,23 @@ internal class PaperAcceptanceSession(
     private fun controls(): ScreenDefinition =
         ScreenDefinition("Strata verification controls") {
             Column(
-                Modifier.Empty
+                Modifier
                     .size(176, 120)
                     .background(ArgbColor(0xFF202020.toInt()))
                     .padding(8),
                 spacing = 4,
             ) {
                 TextField(field, IntSize(160, 20))
-                Button("Apply", 160, modifier = Modifier.Empty.onActivate { applied++ })
+                Button("Apply", 160, modifier = Modifier.onActivate { applied++ })
                 element(DemoRemoteExtensions.marker(ArgbColor(0xFFFF0000.toInt()), DemoRemoteExtensions.activation { activated++ }))
-                Text("Updates: ${updates.value}")
+                Text("Updates: ${updates.value}", style = TextStyle.Inactive.copy(shadow = null))
             }
         }
 
     private fun inventory(): ScreenDefinition =
         ScreenDefinition("Strata verification inventory") {
             Column(
-                Modifier.Empty
+                Modifier
                     .size(176, 80)
                     .background(ArgbColor(0xFF202020.toInt()))
                     .padding(8),

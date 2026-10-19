@@ -23,7 +23,7 @@ import dev.s7a.strata.state.StateSource
  */
 public fun <V1> UiScope.Observe(
     state1: StateSource<V1>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1) -> Unit,
 ) {
@@ -42,7 +42,7 @@ public fun <V1> UiScope.Observe(
 public fun <V1, V2> UiScope.Observe(
     state1: StateSource<V1>,
     state2: StateSource<V2>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2) -> Unit,
 ) {
@@ -62,7 +62,7 @@ public fun <V1, V2, V3> UiScope.Observe(
     state1: StateSource<V1>,
     state2: StateSource<V2>,
     state3: StateSource<V3>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3) -> Unit,
 ) {
@@ -83,7 +83,7 @@ public fun <V1, V2, V3, V4> UiScope.Observe(
     state2: StateSource<V2>,
     state3: StateSource<V3>,
     state4: StateSource<V4>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4) -> Unit,
 ) {
@@ -105,7 +105,7 @@ public fun <V1, V2, V3, V4, V5> UiScope.Observe(
     state3: StateSource<V3>,
     state4: StateSource<V4>,
     state5: StateSource<V5>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5) -> Unit,
 ) {
@@ -128,7 +128,7 @@ public fun <V1, V2, V3, V4, V5, V6> UiScope.Observe(
     state4: StateSource<V4>,
     state5: StateSource<V5>,
     state6: StateSource<V6>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6) -> Unit,
 ) {
@@ -152,7 +152,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7> UiScope.Observe(
     state5: StateSource<V5>,
     state6: StateSource<V6>,
     state7: StateSource<V7>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7) -> Unit,
 ) {
@@ -177,7 +177,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8> UiScope.Observe(
     state6: StateSource<V6>,
     state7: StateSource<V7>,
     state8: StateSource<V8>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8) -> Unit,
 ) {
@@ -203,7 +203,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9> UiScope.Observe(
     state7: StateSource<V7>,
     state8: StateSource<V8>,
     state9: StateSource<V9>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9) -> Unit,
 ) {
@@ -230,7 +230,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> UiScope.Observe(
     state8: StateSource<V8>,
     state9: StateSource<V9>,
     state10: StateSource<V10>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10) -> Unit,
 ) {
@@ -258,7 +258,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11> UiScope.Observe(
     state9: StateSource<V9>,
     state10: StateSource<V10>,
     state11: StateSource<V11>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11) -> Unit,
 ) {
@@ -287,7 +287,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12> UiScope.Observe(
     state10: StateSource<V10>,
     state11: StateSource<V11>,
     state12: StateSource<V12>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12) -> Unit,
 ) {
@@ -317,7 +317,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13> UiScope.Obse
     state11: StateSource<V11>,
     state12: StateSource<V12>,
     state13: StateSource<V13>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13) -> Unit,
 ) {
@@ -348,7 +348,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> UiScope
     state12: StateSource<V12>,
     state13: StateSource<V13>,
     state14: StateSource<V14>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14) -> Unit,
 ) {
@@ -380,7 +380,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15> Ui
     state13: StateSource<V13>,
     state14: StateSource<V14>,
     state15: StateSource<V15>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15) -> Unit,
 ) {
@@ -413,7 +413,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
     state14: StateSource<V14>,
     state15: StateSource<V15>,
     state16: StateSource<V16>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16) -> Unit,
 ) {
@@ -447,7 +447,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
     state15: StateSource<V15>,
     state16: StateSource<V16>,
     state17: StateSource<V17>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17) -> Unit,
 ) {
@@ -482,7 +482,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
     state16: StateSource<V16>,
     state17: StateSource<V17>,
     state18: StateSource<V18>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18) -> Unit,
 ) {
@@ -518,7 +518,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
     state17: StateSource<V17>,
     state18: StateSource<V18>,
     state19: StateSource<V19>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19) -> Unit,
 ) {
@@ -555,7 +555,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
     state18: StateSource<V18>,
     state19: StateSource<V19>,
     state20: StateSource<V20>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20) -> Unit,
 ) {
@@ -593,7 +593,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
     state19: StateSource<V19>,
     state20: StateSource<V20>,
     state21: StateSource<V21>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21) -> Unit,
 ) {
@@ -632,7 +632,7 @@ public fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V1
     state20: StateSource<V20>,
     state21: StateSource<V21>,
     state22: StateSource<V22>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22) -> Unit,
 ) {

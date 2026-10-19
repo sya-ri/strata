@@ -58,6 +58,24 @@ No font objects or rendering implementation are needed in application declaratio
 See [Font resources](../guides/fonts.md) for profile snapshots, offline resource loading, and native backend configuration.
 The older profile builder that accepts a finite printable-ASCII glyph table remains available for compatibility; that table alone cannot render arbitrary Unicode or custom fonts.
 
+## Foreground and shadow
+
+`TextStyle` is an immutable value shared by `Text`, `TextField`, and `TextArea`.
+Keep `TextStyle.Normal`, `Inactive`, `ContainerLabel`, or `TextField` for the standard Minecraft palettes, or use `copy` to change one part.
+For example, `Text("Search guidance", style = TextStyle.Inactive.copy(shadow = null))` draws muted gray glyphs without offset shadow pixels or a background overlay.
+The [compiled style example](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyTextStyleScreen.kt) includes single-line and multiline text and independently styled editors.
+
+Set `color` to a straight `ArgbColor`, including alpha.
+Set `shadow` to null to omit shadow drawing, leave `TextShadow.Automatic` to darken the effective foreground's RGB channels by a factor of four while preserving alpha, or select `TextShadow.Color(ArgbColor(...))` for a fixed shadow tint.
+The renderer retains its ordinary glyph shadow offset.
+An optional `disabledColor` replaces the foreground only when an editor is disabled; null uses `color` in both states.
+The shadow policy applies in both states, so `TextStyle.TextField.copy(shadow = null)` disables both enabled and disabled shadows.
+Style changes do not select fonts or change logical text metrics, clipping, or semantic labels.
+
+Both Web themes use these text colors and a one-CSS-pixel shadow offset.
+The Native theme uses a dark default root background so the standard white foreground remains readable; it retains browser fonts and native controls.
+This color contract does not imply matching browser and Minecraft font pixels or geometry.
+
 ## Input appearance
 
 Use `TextInputAppearance.Custom` on standard TextField or TextArea for a light or colored editor.
@@ -142,17 +160,17 @@ internal fun multilineTextScreen(
 ): UiDefinition =
     UiDefinition("Multiline text") {
         Column(spacing = 6) {
-            Text(UiText.Literal("日本語\n한국어 🙂"), TextLayout.Multiline(), modifier = Modifier.Empty.width(240))
+            Text(UiText.Literal("日本語\n한국어 🙂"), TextLayout.Multiline(), modifier = Modifier.width(240))
             Text("Message composition", TextLayout.SingleLine, font)
             Row(spacing = 4) {
                 TextArea(message, TextAreaViewport.Lines(width = 240, lines = 4), font)
-                Scrollbar(message.scrollState, modifier = Modifier.Empty.height(44))
+                Scrollbar(message.scrollState, modifier = Modifier.height(44))
             }
             Text(UiText.Literal("Notes\nメモ"), TextLayout.Multiline(maxLines = 2, overflow = TextOverflow.Ellipsis), font)
             Text("Independent scrolling", TextLayout.SingleLine)
             Row(spacing = 4) {
                 TextArea(notes, TextAreaViewport.Size(IntSize(240, 96)), wrap = TextWrap.None, lineSpacing = 1)
-                Scrollbar(notes.scrollState, modifier = Modifier.Empty.height(96))
+                Scrollbar(notes.scrollState, modifier = Modifier.height(96))
             }
         }
     }

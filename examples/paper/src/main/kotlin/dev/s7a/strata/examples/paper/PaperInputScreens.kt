@@ -34,7 +34,7 @@ public object PaperInputScreens {
                     text,
                     IntSize(180, 20),
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .initialFocus()
                             .onKeyPress(InputResult.Consumed, KeyboardInputFilter(setOf(KeyCode.Enter))) {
                                 notice.value = "Submitted: ${text.value}"

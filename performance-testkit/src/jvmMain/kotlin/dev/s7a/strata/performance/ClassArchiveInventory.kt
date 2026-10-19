@@ -1,11 +1,12 @@
 package dev.s7a.strata.performance
 
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 /**
- * Bounded canonical archive entry inventory shared by provenance and its verification.
+ * Bounded canonical class inventory for archives and unaliased local directories.
  */
 internal object ClassArchiveInventory {
     /**
@@ -15,8 +16,9 @@ internal object ClassArchiveInventory {
         archivePath: Path,
         maximumEntries: Int,
         maximumEntryBytes: Long,
-    ): List<String> =
-        ZipFile(archivePath.toFile()).use { archive ->
+    ): List<String> {
+        if (Files.isDirectory(archivePath)) return directoryEntries(archivePath, maximumEntries, maximumEntryBytes)
+        return ZipFile(archivePath.toFile()).use { archive ->
             val entries = mutableListOf<String>()
             val seen = mutableSetOf<String>()
             val archiveEntries = archive.entries()
@@ -31,6 +33,36 @@ internal object ClassArchiveInventory {
             require(entries.isNotEmpty()) { "The Strata module contains no class entries: $archivePath" }
             entries.sortedWith(::compareUtf8)
         }
+    }
+
+    private fun directoryEntries(
+        path: Path,
+        maximumEntries: Int,
+        maximumEntryBytes: Long,
+    ): List<String> {
+        val root = path.toAbsolutePath()
+        require(root == root.normalize()) { "Noncanonical class directory: $path" }
+        require(root.toRealPath() == root) { "Aliased class directory: $path" }
+        val entries = mutableListOf<String>()
+        Files.walk(root).use { paths ->
+            paths.forEach { entry ->
+                require(Files.isSymbolicLink(entry).not()) { "Symbolic link in class directory: $entry" }
+                if (Files.isDirectory(entry).not()) {
+                    require(Files.isRegularFile(entry)) { "Non-file in class directory: $entry" }
+                    val name = root.relativize(entry).joinToString("/")
+                    if (name.endsWith(".class")) {
+                        val size = Files.size(entry)
+                        require(0 < size) { "Empty classpath resource: $name" }
+                        validateClassEntry(ZipEntry(name).apply { this.size = size }, maximumEntryBytes)
+                        require(entries.size < maximumEntries) { "The class tree exceeds the metadata entry limit" }
+                        entries += name
+                    }
+                }
+            }
+        }
+        require(entries.isNotEmpty()) { "The Strata module contains no class entries: $path" }
+        return entries.sortedWith(::compareUtf8)
+    }
 
     private fun validateClassEntry(
         entry: ZipEntry,

@@ -21,7 +21,6 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.semantics.SemanticsScope
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -39,7 +38,6 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param modifier active behavior applied to the component.
  * @param key optional stable identity among direct siblings.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 private class MinecraftPointerButtonElement private constructor(
     @get:JvmSynthetic
     internal val normalSprite: MinecraftButtonSpriteSnapshot,
@@ -160,7 +158,6 @@ private class MinecraftPointerButtonElement private constructor(
          * @param current next immutable button description.
          * @return dirty phases required for the retained update.
          */
-        @Suppress("unused")
         @JvmSynthetic
         internal fun updateFrom(current: MinecraftPointerButtonElement): DirtyMask {
             val spriteChanged =

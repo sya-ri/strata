@@ -23,18 +23,18 @@ internal class ModifierContractTest {
     fun compositionIsOrderedImmutableAndValueBased() {
         val first = TestModifierElement(1)
         val second = TestModifierElement(2)
-        val chain = Modifier.Empty.then(first).then(Modifier.Empty.then(second))
-        val equal = Modifier.Empty.then(TestModifierElement(1)).then(TestModifierElement(2))
+        val chain = Modifier.then(first).then(Modifier.then(second))
+        val equal = Modifier.then(TestModifierElement(1)).then(TestModifierElement(2))
 
         assertEquals(listOf(first, second), chain.elements())
         assertEquals(chain, equal)
         assertEquals(chain.hashCode(), equal.hashCode())
         assertEquals(chain.toString(), equal.toString())
-        assertEquals(Modifier.Empty, Modifier.Empty.then(Modifier.Empty))
-        assertSame(chain, Modifier.Empty.then(chain))
-        val repeated = Modifier.Empty.then(TestModifierElement(4)).then(TestModifierElement(5))
+        assertEquals(Modifier, Modifier.then(Modifier))
+        assertSame(chain, Modifier.then(chain))
+        val repeated = Modifier.then(TestModifierElement(4)).then(TestModifierElement(5))
         assertEquals(listOf(TestModifierElement(4), TestModifierElement(5)), repeated.elements())
-        assertEquals(repeated, Modifier.Empty.then(TestModifierElement(4)).then(TestModifierElement(5)))
+        assertEquals(repeated, Modifier.then(TestModifierElement(4)).then(TestModifierElement(5)))
     }
 
     @Test

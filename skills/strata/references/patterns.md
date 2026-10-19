@@ -54,7 +54,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
     return UiDefinition("Storage") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 240)
                     .menuBackground()
                     .padding(12),
@@ -67,7 +67,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
             Row(spacing = 4) {
                 ScrollArea(
                     state = scroll,
-                    modifier = Modifier.Empty.size(260, 54),
+                    modifier = Modifier.size(260, 54),
                 ) {
                     Column(spacing = 3) {
                         Text("Oak chest")
@@ -77,7 +77,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 }
                 Scrollbar(
                     state = scroll,
-                    modifier = Modifier.Empty.height(54),
+                    modifier = Modifier.height(54),
                 )
             }
             VirtualList(
@@ -90,7 +90,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 canLoadLeading = true,
                 canLoadTrailing = true,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .onLeadingItemsRequested { request: ListLoadRequest ->
                             val loaded = List(request.suggestedCount) { "Leading ${nextLeadingKey++}" }
                             items.addAll(0, loaded)
@@ -107,12 +107,12 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 Button(
                     "Jump first",
                     width = 72,
-                    modifier = Modifier.Empty.onActivate { listState.jumpToIndex(0) },
+                    modifier = Modifier.onActivate { listState.jumpToIndex(0) },
                 )
                 Button(
                     "Jump oak",
                     width = 72,
-                    modifier = Modifier.Empty.onActivate { listState.jumpToKey("Oak chest") },
+                    modifier = Modifier.onActivate { listState.jumpToKey("Oak chest") },
                 )
             }
             Grid(columns = 9, horizontalSpacing = 0, verticalSpacing = 0) {
@@ -120,7 +120,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
             }
             Button(
                 "Done",
-                modifier = Modifier.Empty.onActivate { onDone() },
+                modifier = Modifier.onActivate { onDone() },
             )
         }
     }
@@ -215,7 +215,7 @@ internal fun reactiveScreen(
             Observe(loading) { active -> if (active) Text("Loading...") }
             VirtualList(items = history, keyOf = { it }, state = historyState, viewportSize = IntSize(160, 60), rowHeight = 12) { Text(it) }
             TextArea(draft, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel)
-            Button(sendLabel, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled) { onSend() })
+            Button(sendLabel, enabled = enabled, modifier = Modifier.onActivate(enabled) { onSend() })
         }
     }
 }
@@ -260,7 +260,7 @@ Cached foreground callbacks still contribute commands to composition.
 A lower-layer change can require rasterizing and uploading an unchanged translucent foreground; geometry changes can also invalidate ancestor overlays.
 Strata does not promise per-component damage rectangles or skip fully occluded updates.
 Limit full-area translucent layers around frequent updates, or measure their complete composition at the intended resolution and rate.
-Use native rasterization/upload counts and final pixels alongside UI counters; see [render monitoring](https://github.com/sya-ri/strata/blob/master/docs/development/render-monitoring.md).
+Use test-owned callback probes, actual texture identity, external timing and final pixels; production runtimes contain no measurement hooks. See [measurement boundaries](https://github.com/sya-ri/strata/blob/master/docs/development/render-monitoring.md).
 Diagnostics belong in the runtime test harness, outside application UI source.
 
 ## State, scrolling, resources, and bindings
@@ -300,7 +300,7 @@ See [text and editing](https://github.com/sya-ri/strata/blob/master/docs/guides/
 ## Optional CPU backend for offline tools
 
 Ordinary Fabric screens already receive the font backend; keep runtime imports out of UI definitions.
-Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.2.2` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
+Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.3.0` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries; incompatible native generations must run in separate processes.
 Each host owns and closes its backend and bounded caches; snapshots are immutable and shareable.
 Follow [Font resources](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md) for setup and limits, including [numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings).

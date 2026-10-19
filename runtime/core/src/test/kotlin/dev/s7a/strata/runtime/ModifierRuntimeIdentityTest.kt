@@ -44,7 +44,7 @@ internal class ModifierRuntimeIdentityTest {
                     componentProbe.element(secondTag, secondKey),
                     componentProbe.element(firstTag, firstKey),
                 ),
-                modifier = Modifier.Empty.then(first),
+                modifier = Modifier.then(first),
             ),
         )
         assertSame(firstNode, componentProbe.nodeForTag(firstTag))
@@ -68,7 +68,7 @@ internal class ModifierRuntimeIdentityTest {
                     componentProbe.element(secondTag, secondKey),
                     componentProbe.element(firstTag, firstKey),
                 ),
-                modifier = Modifier.Empty,
+                modifier = Modifier,
             ),
         )
         assertSame(rootNode, componentProbe.nodeForTag(TestProbe.ProbeId("root")))
@@ -91,7 +91,7 @@ internal class ModifierRuntimeIdentityTest {
         tree.update(
             componentProbe.root(
                 listOf(
-                    componentProbe.element(firstTag, firstKey, modifier = Modifier.Empty.then(first)),
+                    componentProbe.element(firstTag, firstKey, modifier = Modifier.then(first)),
                     componentProbe.element(secondTag, secondKey),
                 ),
             ),
@@ -102,7 +102,7 @@ internal class ModifierRuntimeIdentityTest {
         tree.update(
             componentProbe.root(
                 listOf(
-                    componentProbe.element(secondTag, secondKey, modifier = Modifier.Empty.then(second)),
+                    componentProbe.element(secondTag, secondKey, modifier = Modifier.then(second)),
                     componentProbe.element(firstTag, firstKey, modifier = modifierFixture.chain(first, second)),
                 ),
             ),
@@ -196,7 +196,7 @@ internal class ModifierRuntimeIdentityTest {
         tree.measure(constraints)
         tree.layout()
         val initialMeasures = componentProbe.measureCalls
-        tree.update(componentProbe.root(listOf(child), modifier = Modifier.Empty.then(first)))
+        tree.update(componentProbe.root(listOf(child), modifier = Modifier.then(first)))
         tree.measure(constraints)
         assertTrue(initialMeasures < componentProbe.measureCalls)
         val afterInsertion = componentProbe.measureCalls
@@ -246,7 +246,7 @@ internal class ModifierRuntimeIdentityTest {
                 rootTag,
                 parentKey,
                 childKey,
-                Modifier.Empty.then(second),
+                Modifier.then(second),
                 childMeasureDirty = true,
                 counts,
             ),
@@ -299,7 +299,7 @@ internal class ModifierRuntimeIdentityTest {
         val modifierProbe = ModifierTestFixture.Probe()
         val tree = UiTree()
         val valid = modifierFixture.modifier(modifierProbe, 30, ModifierTestFixture.Kind.First)
-        tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(valid)))
+        tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(valid)))
         tree.measure(Constraints.fixed(10, 10))
         tree.layout()
         val oldPaint = tree.paint()
@@ -314,14 +314,14 @@ internal class ModifierRuntimeIdentityTest {
                 invalid = true,
             )
         assertThrows(IllegalArgumentException::class.java) {
-            tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(invalid)))
+            tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(invalid)))
         }
         assertEquals(TreeState.Active, tree.state)
         assertEquals(oldEvents, modifierProbe.events)
         assertSame(oldNode, modifierProbe.nodes.getValue(30))
         assertEquals(oldPaint, tree.paint())
 
-        tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(valid)))
+        tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(valid)))
         assertEquals(oldEvents, modifierProbe.events)
         tree.close()
     }

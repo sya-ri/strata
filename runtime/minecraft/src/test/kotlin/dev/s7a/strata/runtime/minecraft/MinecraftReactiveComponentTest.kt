@@ -19,7 +19,6 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.onActivate
-import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.map
@@ -37,7 +36,7 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftReactiveComponentTest {
     @Test
-    fun progressChangesPaintWithoutMeasuringOrLayingOutAncestors() {
+    fun progressChangesPaintAndPreservesAncestorGeometry() {
         val progress = ReactiveTestSource(0.25)
         val definition =
             ScreenDefinition("progress") {
@@ -46,16 +45,10 @@ internal class MinecraftReactiveComponentTest {
         createMinecraftUiHost(definition, MinecraftProfileFixture.create()).use { host ->
             host.attach()
             val before = host.frame(IntSize(80, 40))
-            host.startRenderMonitoring().use { monitor ->
-                progress.publish(0.75)
-                val after = host.frame(IntSize(80, 40))
-                assertNotEquals(before.drawCommands, after.drawCommands)
-                val snapshot = monitor.snapshot()
-                assertEquals(1L, snapshot.counts[UiRenderMetric.StateComponentEvaluation])
-                assertEquals(0L, snapshot.counts[UiRenderMetric.Measure])
-                assertEquals(0L, snapshot.counts[UiRenderMetric.Layout])
-                assertEquals(1L, snapshot.counts[UiRenderMetric.Paint])
-            }
+            progress.publish(0.75)
+            val after = host.frame(IntSize(80, 40))
+            assertNotEquals(before.drawCommands, after.drawCommands)
+            assertEquals(before.semantics.map { it.bounds }, after.semantics.map { it.bounds })
         }
     }
 
@@ -74,24 +67,11 @@ internal class MinecraftReactiveComponentTest {
         ).use { host ->
             host.attach()
             val before = host.frame(IntSize(100, 20))
-            host.startRenderMonitoring().use { monitor ->
-                length.publish(2)
-                assertSame(before, host.frame(IntSize(100, 20)))
-                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.StateComponentEvaluation])
-                monitor.checkpoint()
-                length.publish(3)
-                val after = host.frame(IntSize(100, 20))
-                assertNotEquals(before.semantics.last().bounds, after.semantics.last().bounds)
-                val parent = monitor.findNodes(ElementKey("parent")).single()
-                assertEquals(
-                    1L,
-                    monitor
-                        .snapshot()
-                        .nodes
-                        .single { it.id == parent }
-                        .counts[UiRenderMetric.Measure],
-                )
-            }
+            length.publish(2)
+            assertSame(before, host.frame(IntSize(100, 20)))
+            length.publish(3)
+            val after = host.frame(IntSize(100, 20))
+            assertNotEquals(before.semantics.last().bounds, after.semantics.last().bounds)
         }
     }
 
@@ -103,7 +83,7 @@ internal class MinecraftReactiveComponentTest {
         var sent = 0
         createMinecraftUiHost(
             ScreenDefinition("button") {
-                Button(label, enabled = enabled, modifier = Modifier.Empty.onActivate(enabled) { sent += 1 }.initialFocus())
+                Button(label, enabled = enabled, modifier = Modifier.onActivate(enabled) { sent += 1 }.initialFocus())
             },
             MinecraftProfileFixture.create(),
         ).use { host ->
@@ -147,7 +127,7 @@ internal class MinecraftReactiveComponentTest {
                         editor,
                         TextAreaViewport.Size(IntSize(80, 30)),
                         enabled,
-                        modifier = Modifier.Empty.initialFocus(),
+                        modifier = Modifier.initialFocus(),
                         key = ElementKey("editor"),
                     )
                 }
@@ -160,19 +140,15 @@ internal class MinecraftReactiveComponentTest {
             assertNotNull(focus)
             host.dispatchTextInput(TextInputEvent.Preedit("A", 1, listOf("A"), 0))
             val before = host.frame(IntSize(100, 60))
-            host.startRenderMonitoring().use { monitor ->
-                val ids = monitor.findNodes(ElementKey("editor"))
-                clock.publish("12:01")
-                enabled.publish(true)
-                val after = host.frame(IntSize(100, 60))
-                assertSame(focus, host.textInputFocus)
-                assertEquals(ids, monitor.findNodes(ElementKey("editor")))
-                assertEquals(before.semantics.last().semantics, after.semantics.last().semantics)
-                assertEquals("draft", editor.value)
-                host.dispatchTextInput(TextInputEvent.Character('B'.code))
-                host.frame(IntSize(100, 60))
-                assertEquals("draftB", editor.value)
-            }
+            clock.publish("12:01")
+            enabled.publish(true)
+            val after = host.frame(IntSize(100, 60))
+            assertSame(focus, host.textInputFocus)
+            assertEquals(before.semantics.last().semantics, after.semantics.last().semantics)
+            assertEquals("draft", editor.value)
+            host.dispatchTextInput(TextInputEvent.Character('B'.code))
+            host.frame(IntSize(100, 60))
+            assertEquals("draftB", editor.value)
         }
     }
 
@@ -182,8 +158,8 @@ internal class MinecraftReactiveComponentTest {
         createMinecraftUiHost(
             ScreenDefinition("weighted") {
                 Row {
-                    Text(label, layout = TextLayout.Multiline(), modifier = Modifier.Empty.weight(1f))
-                    Text("B", layout = TextLayout.Multiline(), modifier = Modifier.Empty.weight(1f))
+                    Text(label, layout = TextLayout.Multiline(), modifier = Modifier.weight(1f))
+                    Text("B", layout = TextLayout.Multiline(), modifier = Modifier.weight(1f))
                 }
             },
             MinecraftProfileFixture.create(),

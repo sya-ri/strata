@@ -43,17 +43,17 @@ internal fun createTiledImageShowcaseScreenDefinition(
     val source = createTiledImageShowcaseSource()
     return ScreenDefinition("Tiled image showcase") {
         Stack(
-            modifier = Modifier.Empty.size(112, 88).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(112, 88).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             TiledImage(
                 source = source,
                 state = navigation,
                 size = IntSize(96, 72),
-                modifier = Modifier.Empty.panZoom(navigation),
+                modifier = Modifier.panZoom(navigation),
             ) {
                 Spacer(
-                    Modifier.Empty
+                    Modifier
                         .size(7, 7)
                         .background(ArgbColor(0xFFFFFFFF.toInt()))
                         .atContentPosition(markerPositions),

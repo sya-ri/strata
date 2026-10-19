@@ -136,7 +136,6 @@ fabricApi {
 
 extensions.configure<SourceSetContainer> {
     named("gametest") {
-        java.srcDir("src/gametest26/java")
         resources.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/resources"))
         resources.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/resources"))
     }
@@ -144,6 +143,11 @@ extensions.configure<SourceSetContainer> {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/gui-holder/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/terminal/gui-holder/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/canvas-scope/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))
         kotlin.exclude("**/PaperDemoPlugin.kt", "**/PaperDemoScreens.kt")
@@ -221,7 +225,7 @@ tasks.named<ProcessResources>("processGametestResources") {
         into("assets/strata_font_test/font")
     }
     val gameTestEntrypoint = "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftCanvasTerminalClientGameTest"
-    val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.canvas.terminal.tests.mixins.json", "strata.remote.tests.mixins.json")
+    val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.canvas.terminal.tests.mixins.json")
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft262)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-2")
@@ -330,6 +334,8 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
         jvmArgs.add("-Dstrata.paper.address=$it")
     }
     providers.gradleProperty("strata.paper.run").orNull?.let { jvmArgs.add("-Dstrata.paper.run=$it") }
+    providers.gradleProperty("strata.fabric.address").orNull?.let { jvmArgs.add("-Dstrata.fabric.address=$it") }
+    providers.gradleProperty("strata.fabric.run").orNull?.let { jvmArgs.add("-Dstrata.fabric.run=$it") }
     jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList<String>()))
     val verificationOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
@@ -389,6 +395,8 @@ tasks.named<JavaExec>("runClientGameTest") {
         systemProperty("strata.paper.address", it)
     }
     providers.gradleProperty("strata.paper.run").orNull?.let { systemProperty("strata.paper.run", it) }
+    providers.gradleProperty("strata.fabric.address").orNull?.let { systemProperty("strata.fabric.address", it) }
+    providers.gradleProperty("strata.fabric.run").orNull?.let { systemProperty("strata.fabric.run", it) }
     val parityOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
             when (scope) {

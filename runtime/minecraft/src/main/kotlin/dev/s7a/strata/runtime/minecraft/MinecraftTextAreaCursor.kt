@@ -109,8 +109,26 @@ internal class MinecraftTextAreaCursor(
         x: Int,
         preserveColumn: Boolean = false,
     ) {
+        moveToBoundary(layout, index, layout.lines[index].offsetAt(x), preserveColumn)
+    }
+
+    /**
+     * Applies an already resolved scalar boundary with the same soft-wrap affinity as keyboard placement.
+     * Pointer callers reuse their composed-line lookup before clearing or mapping composition.
+     *
+     * @param layout immutable layout used to resolve [next].
+     * @param index selected visual line in [layout].
+     * @param next original scalar boundary returned by that line.
+     * @param preserveColumn retains a vertical navigation sequence's preferred x coordinate.
+     */
+    @JvmSynthetic
+    internal fun moveToBoundary(
+        layout: MinecraftTextLayout,
+        index: Int,
+        next: Int,
+        preserveColumn: Boolean = false,
+    ) {
         val line = layout.lines[index]
-        val next = line.offsetAt(x)
         val affinity =
             if (next == line.end && next == line.nextStart && index < layout.lines.lastIndex) MinecraftTextCaretAffinity.Upstream else MinecraftTextCaretAffinity.Downstream
         move(layout.content.value, next, preserveColumn, affinity)
