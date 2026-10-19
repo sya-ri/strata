@@ -118,9 +118,9 @@ API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common a
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
-The generated model co-locates common and JVM declarations without KMP source-set relationships, so `UnusedSymbol` can miss real calls across `expect`/`actual` declarations and typealiases.
-The configuration lists only the affected bridge files for that inspection; other inspections and the zero failure threshold remain enabled.
-Before extending that list, verify real callers and remove unused operations from every target; remove the exceptions when the analysis model can resolve those relationships.
+Canonical Kotlin source roots have one physical owner, while compiled variants remain on the relevant JVM classpaths.
+Each Kotlin owner's facet preserves its compiler module name, JVM target, friend paths, and explicit API mode.
+`UnusedSymbol` and `RedundantVisibilityModifier` remain enabled without path exclusions; Mixin annotations identify framework entry points.
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.
 The latter preserves mapped binaries without optional source remapping.
@@ -151,6 +151,7 @@ Disable an inspection only with an actionable rationale in the checked-in config
 ## Controller regression checks
 
 `Workflow checks` runs actionlint, shell syntax checks, Python behavior tests, and Java/CI/Qodana model fixtures without starting Minecraft.
+Declare external production files consumed by TestKit fixtures as inputs of `build-logic:test` so source changes invalidate cached fixture results.
 The linter step downloads official actionlint and ShellCheck release binaries, verifies their checksums, and installs the hash-checked Pyflakes wheel in a temporary environment.
 Tool versions belong in the version catalog; review the pinned ShellCheck and Pyflakes digests in `.github/check-workflows.sh` when changing their versions.
 Explicit executable paths and valid/invalid workflow, shell, and Python fixtures keep both script integrations enabled without Docker Hub credentials.
