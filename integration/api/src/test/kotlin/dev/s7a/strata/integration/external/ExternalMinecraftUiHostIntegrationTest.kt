@@ -9,6 +9,7 @@ import dev.s7a.strata.component.Slot
 import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
@@ -26,6 +27,9 @@ import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.integration.consumer.createApiOnlyCanvasDefinition
 import dev.s7a.strata.integration.consumer.createApiOnlyTiledImageDefinition
+import dev.s7a.strata.integration.consumer.multilineTextScreen
+import dev.s7a.strata.integration.consumer.textStyleScreen
+import dev.s7a.strata.integration.consumer.unicodeTextScreen
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.menuBackground
@@ -33,8 +37,15 @@ import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
+import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
+import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
@@ -54,6 +65,49 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ExternalMinecraftUiHostIntegrationTest {
+    @Test
+    fun compiledTextExamplesExposeTheirCallerOwnedEditorValues() {
+        val field = TextFieldState("Search")
+        val notes = TextAreaState("Notes")
+        val font = ResourceId("minecraft", "default")
+        val fonts = MinecraftFontSnapshot.load(emptyList(), MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, packFormat = 0))
+        var closedBackends = 0
+        val backend =
+            MinecraftFontBackendFactory {
+                object : MinecraftFontBackend {
+                    override fun decodePng(bytes: ByteArray): Nothing = error("Missing-glyph semantics require no PNG decoder.")
+
+                    override fun openTrueType(
+                        bytes: ByteArray,
+                        settings: MinecraftTrueTypeSettings,
+                    ): Nothing = error("Missing-glyph semantics require no TrueType face.")
+
+                    override fun close() {
+                        closedBackends += 1
+                    }
+                }
+            }
+        val examples =
+            listOf(
+                unicodeTextScreen(field, font) to listOf("Search"),
+                multilineTextScreen(TextAreaState("Message"), notes, font) to listOf("Message", "Notes"),
+                textStyleScreen(field, notes) to listOf("Search", "Notes"),
+            )
+        examples.forEach { (definition, values) ->
+            val host = createMinecraftUiHost(definition, profile(fonts), fontBackend = backend)
+            try {
+                host.attach()
+                val frame = host.frame(IntSize(640, 480))
+                val editors = frame.semantics.filter { it.semantics.role in setOf(SemanticsRole.TextField, SemanticsRole.TextArea) }
+                val editorValues = editors.map { if (it.semantics.role == SemanticsRole.TextField) it.semantics.label else it.semantics.value }
+                assertEquals(values.map(UiText::Literal), editorValues)
+            } finally {
+                host.close()
+            }
+        }
+        assertEquals(3, closedBackends)
+    }
+
     @Test
     fun apiOnlyCanvasCompilesWithGenericPointerCaptureAndRendersItsCpuImage() {
         val image = createDrawImage(IntSize(2, 1), intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt()))
@@ -346,7 +400,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         }
     }
 
-    private fun profile() =
+    private fun profile(fonts: MinecraftFontSnapshot? = null) =
         createMinecraftUiProfile {
             menuBackground(image(IntSize(16, 16)))
             containerBackground(image(IntSize(256, 256)))
@@ -373,8 +427,12 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             tooltipFrame(image(IntSize(100, 100)))
             textFieldNormal(image(IntSize(200, 20)))
             textFieldHighlighted(image(IntSize(200, 20)))
-            for (codePoint in 0x21..0x7E) {
-                printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
+            if (fonts == null) {
+                for (codePoint in 0x21..0x7E) {
+                    printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
+                }
+            } else {
+                fonts(fonts)
             }
             val button = image(IntSize(200, 20))
             buttonNormal(button, 1, NineSliceCenterMode.Tiled)
