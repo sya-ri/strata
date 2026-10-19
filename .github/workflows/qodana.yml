@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [combined, separate, single-old, single-new]
+        mode: [combined, separate, single-old, single-new, gradle-combined, gradle-separate]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-strata-java
@@ -20,8 +20,10 @@ jobs:
       - name: Prepare independent compiled variants
         run: |
           python3 -B gradle/probe-shared-kotlin-analysis.py prepare
-          ./gradlew -p build/shared-kotlin-analysis :old:verifyFixture :new:verifyFixture :old:writeClasspaths :new:writeClasspaths --no-daemon --console=plain
-          python3 -B gradle/probe-shared-kotlin-analysis.py export "${{ matrix.mode }}"
+          ./gradlew -p qodana-shared-analysis-fixture :old:verifyFixture :new:verifyFixture :old:writeClasspaths :new:writeClasspaths --no-daemon --console=plain
+      - name: Export the selected project roots
+        id: fixture
+        run: python3 -B gradle/probe-shared-kotlin-analysis.py export "${{ matrix.mode }}" >> "$GITHUB_OUTPUT"
       - name: Analyze the diagnostic fixture
         continue-on-error: true
         uses: JetBrains/qodana-action@v2026.2
@@ -32,7 +34,8 @@ jobs:
           pr-mode: false
           args: >-
             --linter=qodana-jvm-community --within-docker=false
-            --config=build/shared-kotlin-analysis/${{ matrix.mode }}.yaml
+            --project-dir=${{ github.workspace }}/${{ steps.fixture.outputs.project-dir }}
+            --config=${{ github.workspace }}/qodana-shared-analysis-fixture/${{ matrix.mode }}.yaml
             --property=intellij.platform.shared.source.support=true
             --property=batch.inspections.inspect.all.code.insight.contexts=true
       - name: Verify real analysis and genuine unused controls
@@ -45,5 +48,5 @@ jobs:
           name: qodana-kotlin-probe-${{ matrix.mode }}
           path: |
             ${{ runner.temp }}/probe-results
-            build/shared-kotlin-analysis
+            qodana-shared-analysis-fixture
           include-hidden-files: true

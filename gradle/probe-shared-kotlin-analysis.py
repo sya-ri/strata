@@ -3,13 +3,14 @@
 import csv
 import json
 import pathlib
+import shutil
 import sys
 import tomllib
 import xml.etree.ElementTree as ET
 
 
 repository = pathlib.Path(__file__).resolve().parent.parent
-fixture = repository / "build/shared-kotlin-analysis"
+fixture = repository / "qodana-shared-analysis-fixture"
 catalog = tomllib.loads((repository / "gradle/libs.versions.toml").read_text(encoding="utf-8"))["versions"]
 
 
@@ -62,6 +63,17 @@ subprojects {
         write(f"{name}/src/main/kotlin/fixture/Value.kt", "@file:JvmSynthetic\npackage fixture\ninternal fun versionValue(): Int = " + str(value) + "\n" +
               ("private fun unusedCanary(): Int = 0\n" if name == "old" else ""))
         write(f"{name}/src/main/kotlin/fixture/Host.kt", "package fixture\npublic fun main(): Unit { check(entry() == " + str(value + 3) + ") }\n")
+        write(f"standalone-{name}/settings.gradle.kts", f'rootProject.name = "fixture-{name}"\n')
+        write(f"standalone-{name}/build.gradle.kts", f'''
+plugins {{ kotlin("jvm") version "{catalog['kotlin']}" }}
+repositories {{ mavenCentral() }}
+kotlin {{
+    jvmToolchain({catalog['java-baseline']})
+    explicitApi()
+    compilerOptions {{ moduleName.set("fixture-{name}") }}
+    sourceSets.named("main") {{ kotlin.setSrcDirs(listOf(file("../{name}/src/main/kotlin"), file("../shared"))) }}
+}}
+''')
 
 
 def export(mode):
@@ -87,7 +99,7 @@ def export(mode):
         for option, value in (("moduleName", "fixture-" + name), ("jvmTarget", catalog["java-baseline"]), ("explicitApi", "strict")):
             ET.SubElement(arguments, "option", name=option, value=value)
         write(name + "/fixture-" + name + ".iml", ET.tostring(module, encoding="unicode"))
-    groups = {"combined": [("old", "new")], "separate": [("old",), ("new",)], "single-old": [("old",)], "single-new": [("new",)]}[mode]
+    groups = {"combined": [("old", "new")], "separate": [("old",), ("new",)], "single-old": [("old",)], "single-new": [("new",)]}.get(mode, [("old", "new")])
     roots = []
     for index, names in enumerate(groups):
         relative = f"views/{mode}-{index}/.idea"
@@ -100,9 +112,23 @@ def export(mode):
         misc = ET.Element("project", version="4")
         ET.SubElement(misc, "component", name="ProjectRootManager", version="2", languageLevel="JDK_" + catalog["java-baseline"], **{"project-jdk-name": "jbr-" + catalog["java-minecraft"], "project-jdk-type": "JavaSDK"})
         write(relative + "/misc.xml", ET.tostring(misc, encoding="unicode"))
-        roots.append("  - " + (fixture / relative).relative_to(repository).as_posix())
+        project.append(misc[0])
+        write(f"views/{mode}-{index}/view.ipr", ET.tostring(project, encoding="unicode"))
+        roots.append((fixture / f"views/{mode}-{index}/view.ipr").as_posix())
+    project_directory = fixture
+    if mode == "gradle-combined":
+        roots = [fixture.as_posix()]
+    elif mode == "gradle-separate":
+        roots = [(fixture / ("standalone-" + name)).as_posix() for name in ("old", "new")]
+    elif mode == "separate":
+        pass
+    else:
+        shutil.copytree(fixture / f"views/{mode}-0/.idea", fixture / ".idea", dirs_exist_ok=True)
+        roots = [".idea"]
+    project_directory.mkdir(parents=True, exist_ok=True)
     linter = next(line for line in (repository / "qodana.yaml").read_text(encoding="utf-8").splitlines() if line.startswith("linter:"))
-    write(mode + ".yaml", 'version: "1.0"\n' + linter + '\nrootJavaProjects:\n' + "\n".join(roots) + '\nprofile:\n  base:\n    name: qodana.recommended\n  inspections:\n    - inspection: UnusedSymbol\n      enabled: true\nfailThreshold: 0\n')
+    write(mode + ".yaml", 'version: "1.0"\n' + linter + '\nrootJavaProjects:\n' + "\n".join("  - " + root for root in roots) + '\nprofile:\n  base:\n    name: qodana.recommended\n  inspections:\n    - inspection: UnusedSymbol\n      enabled: true\nfailThreshold: 0\n')
+    print("project-dir=" + project_directory.relative_to(repository).as_posix())
 
 
 def inspect(mode, results):
