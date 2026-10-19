@@ -191,7 +191,9 @@ internal object InventorySlotSynchronizationGameTest {
         onServer(context, server, playerId) { player -> player.closeContainer() }
     }
 
-    /** Verifies native pick-item release and creative drag filling against authoritative server stacks. */
+    /**
+     * Verifies native pick-item release and creative drag filling against authoritative server stacks.
+     */
     private fun runCreativePickScenario(
         context: ClientGameTestContext,
         server: MinecraftServer,
@@ -616,7 +618,9 @@ internal object InventorySlotSynchronizationGameTest {
         }
     }
 
-    /** Sends one native pick click or a drag crossing two independently bound slots. */
+    /**
+     * Sends one native pick click or a drag crossing two independently bound slots.
+     */
     private fun sendPickInput(
         context: ClientGameTestContext,
         drag: Boolean,

@@ -78,6 +78,7 @@ Receipts record consumed asset/source identities, logical paths, viewports, GUI 
 Unrelated asset-index entries do not invalidate unchanged consumed identities.
 
 The inventory example additionally requires `docs/evidence/minecraft-26.3-inventory.png` and its receipt.
+Its original source is compiled with the native Slot verification suite and remains an explicit documentation input without joining the documentation compiler.
 Generation checks dimensions, game version, PNG hash, and the current example's LF-normalized source hash before copying it; refreshing that evidence requires the native task below.
 Text previews use GUI scale 2; other showcase images use scale 1.
 Animated examples store time zero; native comparison accepts an exact supported animation phase.

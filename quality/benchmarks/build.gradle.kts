@@ -71,7 +71,7 @@ tasks.register<JavaExec>("jmhPortableTiles") {
     }
 }
 
-val verifyHistoricalWorkloads by tasks.registering(JavaExec::class) {
+val verifyHistoricalWorkloads = tasks.register<JavaExec>("verifyHistoricalWorkloads") {
     group = "verification"
     description = "Checks the complete generated historical JMH matrix with the shared inventory gate."
     dependsOn(historicalGenerated, historicalGenerator)

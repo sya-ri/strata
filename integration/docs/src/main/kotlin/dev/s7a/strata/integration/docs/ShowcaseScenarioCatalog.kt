@@ -439,7 +439,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.SynchronizedInventory,
                 SourceReference(
-                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt",
+                    "integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftInventoryExample.kt",
                     "inventory-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 240), 1),

@@ -47,7 +47,7 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
                 }
             }
             val selected = providers.gradleProperty("fixture.runtimes").get().split(',')
-            (selected + "support").forEach { dependencies.add(jmhRuntimeClasspath.name, project(":${'$'}it")) }
+            (selected + "support").forEach { dependencies.add(jmhRuntimeClasspath.name, dependencies.project(":${'$'}it")) }
             tasks.register<JavaExec>("verifyProjection") {
                 dependsOn("classes", jmhRuntimeClasspath)
                 classpath = sourceSets["main"].runtimeClasspath + jmhRuntimeClasspath

@@ -63,113 +63,107 @@ private fun withMinecraftCanvasContext(
                 Triple(minecraft.window.screenWidth, minecraft.window.screenHeight, minecraft.options.guiScale().get())
             },
         )
-    val adapter =
-        object : MinecraftCanvasTestContext {
-            override val outputDirectory: Path = output
-
-            override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient(FailableFunction<Minecraft, T, RuntimeException> { action() })
-
-            override fun setScreen(screen: Screen?) {
-                MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), screen)
-            }
-
-            override fun currentScreen(): Screen? = MinecraftClientScreenAccess.currentScreen(Minecraft.getInstance())
-
-            override fun hasOverlay(): Boolean = MinecraftClientScreenAccess.hasOverlay(Minecraft.getInstance())
-
-            override fun exchangeHudHidden(hidden: Boolean): Boolean = MinecraftClientScreenAccess.exchangeHudHidden(Minecraft.getInstance(), hidden)
-
-            override fun movePointer(position: IntOffset) {
-                val physical =
-                    onClient {
-                        val window = Minecraft.getInstance().window
-                        Pair(
-                            position.x.toDouble() * window.screenWidth / window.guiScaledWidth,
-                            position.y.toDouble() * window.screenHeight / window.guiScaledHeight,
-                        )
-                    }
-                context.input.setCursorPos(physical.first, physical.second)
-            }
-
-            override fun pressPointer(
-                screen: Screen,
-                position: IntOffset,
-            ): Boolean = screen.mouseClicked(position.canvasMouseEvent(), false)
-
-            override fun dragPointer(
-                screen: Screen,
-                position: IntOffset,
-                delta: IntOffset,
-            ): Boolean = screen.mouseDragged(position.canvasMouseEvent(), delta.x.toDouble(), delta.y.toDouble())
-
-            override fun releasePointer(
-                screen: Screen,
-                position: IntOffset,
-            ): Boolean = screen.mouseReleased(position.canvasMouseEvent())
-
-            override fun setWindowFocused(focused: Boolean) {
-                val window = Minecraft.getInstance().window
-                MinecraftCanvasWindowTestScope.invoke(window, window.handle(), focused)
-            }
-
-            override fun configureViewport(
-                size: IntSize,
-                guiScale: Int,
-            ) {
-                resizeMinecraftTestWindow(context, size)
-                onClient {
-                    val minecraft = Minecraft.getInstance()
-                    minecraft.options.guiScale().set(guiScale)
-                    minecraft.resizeGui()
-                }
-            }
-
-            override fun waitFor(condition: () -> Boolean) {
-                context.waitFor(Predicate<Minecraft> { condition() })
-            }
-
-            override fun waitFor(
-                timeoutTicks: Int,
-                condition: () -> Boolean,
-            ) {
-                context.waitFor(Predicate<Minecraft> { condition() }, timeoutTicks)
-            }
-
-            override fun waitTicks(ticks: Int) {
-                context.waitTicks(ticks)
-            }
-
-            override fun takeScreenshot(
-                name: String,
-                size: IntSize,
-            ): Path =
-                context.takeScreenshot(
-                    TestScreenshotOptions
-                        .of(name)
-                        .disableCounterPrefix()
-                        .withSize(size.width, size.height)
-                        .withDestinationDir(output),
-                )
-        }
-    var failure: Throwable? = null
-    try {
+    val adapter = createMinecraftCanvasTestContext(context, output)
+    AutoCloseable { adapter.configureViewport(IntSize(previous.first, previous.second), previous.third) }.use {
         action(adapter)
-    } catch (caught: Throwable) {
-        failure = caught
-        throw caught
-    } finally {
-        try {
-            adapter.configureViewport(IntSize(previous.first, previous.second), previous.third)
-        } catch (cleanup: Throwable) {
-            val primary = failure
-            if (primary == null) {
-                throw cleanup
-            } else if (primary !== cleanup) {
-                primary.addSuppressed(cleanup)
-            }
-        }
     }
 }
+
+/**
+ * Creates a scheduling and native-input adapter without changing the viewport or acquiring native resources.
+ * The caller owns [output] and any screens installed through the borrowed [context].
+ */
+internal fun createMinecraftCanvasTestContext(
+    context: ClientGameTestContext,
+    output: Path,
+): MinecraftCanvasTestContext =
+    object : MinecraftCanvasTestContext {
+        override val outputDirectory: Path = output
+
+        override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient(FailableFunction<Minecraft, T, RuntimeException> { action() })
+
+        override fun setScreen(screen: Screen?) {
+            MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), screen)
+        }
+
+        override fun currentScreen(): Screen? = MinecraftClientScreenAccess.currentScreen(Minecraft.getInstance())
+
+        override fun hasOverlay(): Boolean = MinecraftClientScreenAccess.hasOverlay(Minecraft.getInstance())
+
+        override fun exchangeHudHidden(hidden: Boolean): Boolean = MinecraftClientScreenAccess.exchangeHudHidden(Minecraft.getInstance(), hidden)
+
+        override fun movePointer(position: IntOffset) {
+            val physical =
+                onClient {
+                    val window = Minecraft.getInstance().window
+                    Pair(
+                        position.x.toDouble() * window.screenWidth / window.guiScaledWidth,
+                        position.y.toDouble() * window.screenHeight / window.guiScaledHeight,
+                    )
+                }
+            context.input.setCursorPos(physical.first, physical.second)
+        }
+
+        override fun pressPointer(
+            screen: Screen,
+            position: IntOffset,
+        ): Boolean = screen.mouseClicked(position.canvasMouseEvent(), false)
+
+        override fun dragPointer(
+            screen: Screen,
+            position: IntOffset,
+            delta: IntOffset,
+        ): Boolean = screen.mouseDragged(position.canvasMouseEvent(), delta.x.toDouble(), delta.y.toDouble())
+
+        override fun releasePointer(
+            screen: Screen,
+            position: IntOffset,
+        ): Boolean = screen.mouseReleased(position.canvasMouseEvent())
+
+        override fun setWindowFocused(focused: Boolean) {
+            val window = Minecraft.getInstance().window
+            MinecraftCanvasWindowTestScope.invoke(window, window.handle(), focused)
+        }
+
+        override fun configureViewport(
+            size: IntSize,
+            guiScale: Int,
+        ) {
+            resizeMinecraftTestWindow(context, size)
+            onClient {
+                val minecraft = Minecraft.getInstance()
+                minecraft.options.guiScale().set(guiScale)
+                minecraft.resizeGui()
+            }
+        }
+
+        override fun waitFor(condition: () -> Boolean) {
+            context.waitFor(Predicate<Minecraft> { condition() })
+        }
+
+        override fun waitFor(
+            timeoutTicks: Int,
+            condition: () -> Boolean,
+        ) {
+            context.waitFor(Predicate<Minecraft> { condition() }, timeoutTicks)
+        }
+
+        override fun waitTicks(ticks: Int) {
+            context.waitTicks(ticks)
+        }
+
+        override fun takeScreenshot(
+            name: String,
+            size: IntSize,
+        ): Path =
+            context.takeScreenshot(
+                TestScreenshotOptions
+                    .of(name)
+                    .disableCounterPrefix()
+                    .withSize(size.width, size.height)
+                    .withDestinationDir(output),
+            )
+    }
 
 private fun IntOffset.canvasMouseEvent(): MouseButtonEvent = MouseButtonEvent(x.toDouble(), y.toDouble(), MouseButtonInfo(PRIMARY_MOUSE_BUTTON, NO_MODIFIERS))
 

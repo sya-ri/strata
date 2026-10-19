@@ -8,7 +8,9 @@ import net.minecraft.server.MinecraftServer
  * The handle borrows [server] while open, waits for runner-specific client readiness through [awaitReady], and disconnects and removes runner-owned resources from [close].
  */
 internal interface MinecraftLoadedTestWorld : AutoCloseable {
-    /** Integrated server borrowed until [close] returns. */
+    /**
+     * Integrated server borrowed until [close] returns.
+     */
     val server: MinecraftServer
 
     /**
@@ -27,6 +29,8 @@ internal interface MinecraftLoadedTestWorld : AutoCloseable {
      */
     fun awaitReady()
 
-    /** Disconnects the client, stops the integrated server, and releases runner-owned world resources. */
+    /**
+     * Disconnects the client, stops the integrated server, and releases runner-owned world resources.
+     */
     override fun close()
 }

@@ -383,7 +383,8 @@ internal class ShowcaseScenarioContractTest {
         }
         ShowcaseScenarioCatalog.screens.forEach { scenario ->
             assertEquals(1, scenario.scale)
-            assertTrue(scenario.source.relativePath.startsWith("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/"))
+            val sourceRoot = if (scenario.screen == DocumentedScreen.SynchronizedInventory) "screen/gui-extractor" else "scenarios/gui-extractor"
+            assertTrue(scenario.source.relativePath.startsWith("integration/shared/minecraft-fabric/$sourceRoot/src/gametest/kotlin/"))
         }
     }
 

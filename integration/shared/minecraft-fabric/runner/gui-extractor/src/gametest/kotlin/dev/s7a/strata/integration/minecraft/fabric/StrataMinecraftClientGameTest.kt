@@ -148,7 +148,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             return
         }
         verifyProfileCache(context, output)
-        verifyKeyboardActivationAndScreenTransition(context, profile)
+        MinecraftKeyboardTransitionGameTest(createMinecraftCanvasTestContext(context, output), profile).run()
         assertNativeTextInputFocus(context, profile)
         verifyContinuousInput(context, profile, output)
         verifyReactiveRendering(context, profile, output)
@@ -427,122 +427,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         )
 
     @OptIn(InternalStrataRuntimeApi::class)
-    private fun verifyKeyboardActivationAndScreenTransition(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-    ) {
-        val firstActivations = AtomicInteger()
-        val secondActivations = AtomicInteger()
-        val replacementActivations = AtomicInteger()
-        val screens =
-            context.computeOnClient(
-                FailableFunction<Minecraft, Pair<FabricMinecraftScreen, FabricMinecraftScreen>, RuntimeException> {
-                    val replacement =
-                        createMinecraftScreen(
-                            ScreenDefinition("Keyboard replacement") {
-                                Column {
-                                    StrataButton(
-                                        "Replacement",
-                                        modifier = Modifier.initialFocus().onActivate { replacementActivations.incrementAndGet() },
-                                    )
-                                }
-                            },
-                            profile,
-                            parent = null,
-                        )
-                    val initial =
-                        try {
-                            createMinecraftScreen(
-                                ScreenDefinition("Keyboard activation") {
-                                    Column {
-                                        StrataButton(
-                                            "First",
-                                            modifier =
-                                                Modifier.onActivate {
-                                                    if (firstActivations.incrementAndGet() == 2) {
-                                                        MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), replacement)
-                                                    }
-                                                },
-                                        )
-                                        StrataButton(
-                                            "Second",
-                                            modifier = Modifier.onActivate { secondActivations.incrementAndGet() },
-                                        )
-                                    }
-                                },
-                                profile,
-                                parent = null,
-                            )
-                        } catch (failure: Throwable) {
-                            replacement.close()
-                            throw failure
-                        }
-                    initial to replacement
-                },
-            )
-        val initial = screens.first
-        val replacement = screens.second
-        val outcome =
-            runCatching {
-                context.runOnClient(
-                    FailableConsumer<Minecraft, RuntimeException> { minecraft -> MinecraftClientScreenAccess.setScreen(minecraft, initial) },
-                )
-                context.waitFor(
-                    Predicate<Minecraft> { minecraft ->
-                        MinecraftClientScreenAccess.currentScreen(minecraft) === initial && readRenderWork(minecraft).inputs != null
-                    },
-                )
-                context.runOnClient(
-                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                        check(pressMinecraftTab(initial)) { "Native Tab must be consumed by Strata focus traversal." }
-                        check(pressMinecraftEnter(initial)) { "Native Enter must be consumed by the first Strata activation target." }
-                        check(firstActivations.get() == 1 && secondActivations.get() == 0)
-                        check(pressMinecraftTab(initial)) { "Native Tab must advance to the second Strata activation target." }
-                        check(pressMinecraftSpace(initial)) { "Native Space must be consumed by the second Strata activation target." }
-                        check(firstActivations.get() == 1 && secondActivations.get() == 1)
-                        check(pressMinecraftTab(initial, reverse = true)) { "Native Shift+Tab must reverse Strata focus traversal." }
-                        check(pressMinecraftEnter(initial)) { "Native Enter must remain consumed while its callback replaces the screen." }
-                        check(MinecraftClientScreenAccess.currentScreen(minecraft) === replacement) {
-                            "The Strata activation callback did not install its replacement screen."
-                        }
-                        check(firstActivations.get() == 2 && secondActivations.get() == 1)
-                    },
-                )
-                context.waitFor(
-                    Predicate<Minecraft> { minecraft ->
-                        MinecraftClientScreenAccess.currentScreen(minecraft) === replacement && readRenderWork(minecraft).inputs != null
-                    },
-                )
-                context.runOnClient(
-                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                        check(pressMinecraftSpace(replacement)) { "The replacement screen's initial focus did not consume native Space." }
-                        check(MinecraftClientScreenAccess.currentScreen(minecraft) === replacement)
-                        check(replacementActivations.get() == 1) { "The replacement screen did not acquire initial focus." }
-                        check(firstActivations.get() == 2 && secondActivations.get() == 1) {
-                            "The detached screen retained focus or activation callbacks after replacement."
-                        }
-                    },
-                )
-            }
-        val cleanup =
-            runCatching {
-                context.runOnClient(
-                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                        val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                        if (current === initial || current === replacement) MinecraftClientScreenAccess.setScreen(minecraft, null)
-                        initial.close()
-                        replacement.close()
-                    },
-                )
-            }
-        outcome.exceptionOrNull()?.let { failure ->
-            cleanup.exceptionOrNull()?.let { cleanupFailure -> if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure) }
-            throw failure
-        }
-        cleanup.getOrThrow()
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
     @Suppress("LongMethod")
     private fun assertNativeTextInputFocus(
         context: ClientGameTestContext,
@@ -752,7 +636,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
                             renderHeadless(
                                 profile,
-                                createPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
+                                createPlayerHeadShowcaseScreenDefinition(PlayerSkinSource.Pixels(skin)),
                                 playerHeadViewport,
                             )
                         },
@@ -762,7 +646,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
                 context.setScreen {
                     createMinecraftScreen(
-                        createPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
+                        createPlayerHeadShowcaseScreenDefinition(PlayerSkinSource.Pixels(skin)),
                         profile,
                         parent = null,
                     )
