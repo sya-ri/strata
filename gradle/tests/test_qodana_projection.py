@@ -50,7 +50,7 @@ class QodanaProjectionTest(unittest.TestCase):
                 file.write_bytes(b"deterministic identity; working compilation is covered by TestKit")
                 outputs.append(dict(path=path, sourceSet="main" if production else "test", production=production, classes=classes, exists=True, files=self.files(path)))
             main_output = self.root / outputs[0]["path"]
-            compiler = dict(moduleName="fixture-" + name, jvmTarget="17", friends=[dict(path=main_output.as_posix(), exists=True, sha256=DECLARATIONS.sha256(main_output))])
+            compiler = dict(moduleName="fixture-" + name, jvmTarget="17", explicitApi="strict" if name == "alpha" else None, friends=[dict(path=main_output.as_posix(), exists=True, sha256=DECLARATIONS.sha256(main_output))])
             owner = dict(project=":" + name, module=name, directory=name, iml=f"{name}/{name}.iml", roots=roots, outputs=outputs, native=True, compiler=compiler)
             self.inventory["projects"].append(owner)
             document = ET.Element("module", type="JAVA_MODULE", version="4")
@@ -78,6 +78,8 @@ class QodanaProjectionTest(unittest.TestCase):
             arguments = ET.SubElement(configuration, "compilerArguments")
             ET.SubElement(arguments, "option", name="moduleName", value=compiler["moduleName"])
             ET.SubElement(arguments, "option", name="jvmTarget", value="17")
+            if compiler["explicitApi"]:
+                ET.SubElement(arguments, "option", name="explicitApi", value=compiler["explicitApi"])
             friends = {main_output.as_posix()}
             if name == "beta":
                 friends.update((self.root / output["path"]).as_posix() for output in outputs if output["classes"])
@@ -164,7 +166,7 @@ class QodanaProjectionTest(unittest.TestCase):
                 self.model = original
 
     def test_generated_forgeries_are_rejected(self):
-        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "missing-binary", "wrong-scope", "duplicate-binary", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager"):
+        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "missing-binary", "wrong-scope", "duplicate-binary", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager", "explicit-api", "missing-explicit-api"):
             with self.subTest(mutation=mutation):
                 name = "beta" if mutation in {"missing-binary", "wrong-scope", "duplicate-binary"} else "alpha"
                 path = self.root / name / (name + ".iml")
@@ -188,6 +190,8 @@ class QodanaProjectionTest(unittest.TestCase):
                 elif mutation == "missing-friend": document.find(".//array").clear()
                 elif mutation == "hidden-source": ET.SubElement(content, "excludeFolder", url=content.attrib["url"])
                 elif mutation == "duplicate-manager": document.append(copy.deepcopy(manager))
+                elif mutation == "explicit-api": document.find(".//option[@name='explicitApi']").set("value", "warning")
+                elif mutation == "missing-explicit-api": document.find(".//compilerArguments").remove(document.find(".//option[@name='explicitApi']"))
                 self.write_iml(name, document)
                 with self.assertRaises((ValueError, KeyError)):
                     self.validate()
@@ -203,7 +207,7 @@ class QodanaProjectionTest(unittest.TestCase):
                 path.write_bytes(original)
 
     def test_changed_compiler_membership_and_declarations_are_rejected(self):
-        for mutation in ("undeclared-input", "duplicate-input", "untracked-source", "duplicate-root", "duplicate-output", "missing-output", "missing-output-record", "missing-resource-record", "output-kinds", "wrong-native"):
+        for mutation in ("undeclared-input", "duplicate-input", "untracked-source", "duplicate-root", "duplicate-output", "missing-output", "missing-output-record", "missing-resource-record", "output-kinds", "wrong-native", "explicit-api-mode", "missing-explicit-api-mode"):
             with self.subTest(mutation=mutation):
                 original = copy.deepcopy(self.inventory)
                 owner = self.inventory["projects"][1]
@@ -217,6 +221,8 @@ class QodanaProjectionTest(unittest.TestCase):
                 elif mutation == "missing-resource-record": owner["outputs"].pop()
                 elif mutation == "output-kinds": owner["outputs"][0]["production"] = "true"
                 elif mutation == "wrong-native": owner["native"] = "true"
+                elif mutation == "explicit-api-mode": owner["compiler"]["explicitApi"] = "unsupported"
+                elif mutation == "missing-explicit-api-mode": owner["compiler"].pop("explicitApi")
                 with self.assertRaises(ValueError): self.validate()
                 self.inventory = original
 

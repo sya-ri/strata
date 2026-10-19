@@ -103,6 +103,7 @@ tasks.register("qodanaKotlinModel") {
                 val arguments = configuration.element("compilerArguments")
                 arguments.element("option", mapOf("name" to "moduleName", "value" to compiler["moduleName"] as String))
                 arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))
+                (compiler["explicitApi"] as String?)?.let { arguments.element("option", mapOf("name" to "explicitApi", "value" to it)) }
                 val friends = (compiler["friends"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == true }.map { it["path"] as String } +
                     fallback.filter { it["classes"] == true }.map { rootProject.file(it["path"] as String).canonicalPath.replace(File.separatorChar, '/') }
                 if (friends.isNotEmpty()) {

@@ -59,6 +59,7 @@ internal class QodanaJmhModelFunctionalTest {
             import org.gradle.jvm.toolchain.JavaLanguageVersion
             import org.gradle.jvm.toolchain.JavaToolchainService
             import org.gradle.plugins.ide.idea.model.IdeaModel
+            import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
             import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
             import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
             plugins {
@@ -93,7 +94,10 @@ internal class QodanaJmhModelFunctionalTest {
             "support-kotlin/build.gradle.kts",
             """
             import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
-            tasks.named<KotlinJvmCompile>("compileKotlin") { compilerOptions.moduleName.set("fixture-support") }
+            tasks.named<KotlinJvmCompile>("compileKotlin") {
+                compilerOptions.moduleName.set("fixture-support")
+                compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
+            }
             """.trimIndent(),
         )
         write("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt", "package fixture\npublic fun kotlinValue(): Int = 5\n")
@@ -117,6 +121,7 @@ internal class QodanaJmhModelFunctionalTest {
             kotlin {
                 jvm()
                 jvmToolchain(17)
+                explicitApi()
                 sourceSets.named("commonTest") {
                     kotlin.srcDir(rootProject.file("shared-inputs/kotlin"))
                     resources.srcDir(rootProject.file("shared-inputs/resources"))
@@ -182,6 +187,7 @@ internal class QodanaJmhModelFunctionalTest {
         assertTrue(Files.isRegularFile(directory.resolve("support-kotlin/build/classes/kotlin/main/META-INF/fixture-support.kotlin_module")))
         assertEquals("fixture-support", compilerOptions["moduleName"])
         assertEquals("17", compilerOptions["jvmTarget"])
+        assertEquals("strict", compilerOptions["explicitApi"])
         val parsed = JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()) as Map<*, *>
         val inventoried = parsed["owners"] as List<*>
         assertEquals(owners.map { ":$it" }.toSet(), inventoried.map { (it as Map<*, *>)["project"] }.toSet())
@@ -224,6 +230,9 @@ internal class QodanaJmhModelFunctionalTest {
         val supportCompiler = support["compiler"] as Map<*, *>
         assertEquals("fixture-support", supportCompiler["moduleName"])
         assertEquals("17", supportCompiler["jvmTarget"])
+        assertEquals("strict", supportCompiler["explicitApi"])
+        val sharedCompiler = projects.single { it["project"] == ":shared-kmp" }["compiler"] as Map<*, *>
+        assertEquals("strict", sharedCompiler["explicitApi"])
         val supportRoots = (support["roots"] as List<*>).map { it as Map<*, *> }
         val supportInputs = supportRoots.single { it["path"] == "support-kotlin/src/main/kotlin" }["inputs"] as List<*>
         assertEquals(setOf("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt"), supportInputs.toSet())

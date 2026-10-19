@@ -231,6 +231,8 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                     fail(f"missing, duplicate or incorrectly scoped compiled variant: {name}: {path}")
         compiler = owner["compiler"]
         if compiler:
+            if "explicitApi" not in compiler or compiler["explicitApi"] not in (None, "strict", "warning", "disable"):
+                fail(f"missing or invalid explicit API compiler mode: {name}")
             document = ET.parse(iml).getroot()
             configurations = document.findall("./component[@name='FacetManager']/facet[@type='kotlin-language']/configuration")
             if len(configurations) != 1:
@@ -239,7 +241,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             arguments = configuration.find("compilerArguments")
             options = arguments.findall("option") if arguments is not None else []
             values = {item.attrib["name"]: item.attrib.get("value") for item in options}
-            if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != compiler["jvmTarget"] or configuration.attrib != {"version": "3", "platform": "JVM " + compiler["jvmTarget"], "useProjectSettings": "false"}:
+            if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != compiler["jvmTarget"] or values.get("explicitApi") != compiler["explicitApi"] or configuration.attrib != {"version": "3", "platform": "JVM " + compiler["jvmTarget"], "useProjectSettings": "false"}:
                 fail(f"incorrect Kotlin compiler identity: {name}")
             friends = set()
             for friend in compiler["friends"]:

@@ -46,6 +46,7 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaExtension
 import org.jetbrains.dokka.gradle.engine.plugins.DokkaVersioningPluginParameters
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
@@ -1539,7 +1540,8 @@ if (completeIdeaModelActive) {
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
                 val sourceSets = owner.extensions.findByType<SourceSetContainer>()
                 val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
-                val platformCompilations = owner.extensions.findByType<KotlinMultiplatformExtension>()?.targets?.flatMap { it.compilations }.orEmpty()
+                val multiplatform = owner.extensions.findByType<KotlinMultiplatformExtension>()
+                val platformCompilations = multiplatform?.targets?.flatMap { it.compilations }.orEmpty()
                 val roots = sourceSets?.flatMap { sourceSet ->
                     val matching = platformCompilations.filter { it.name == sourceSet.name || it.defaultSourceSet.name == sourceSet.name }
                     val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() + matching.flatMap { it.allKotlinSourceSets }
@@ -1568,8 +1570,17 @@ if (completeIdeaModelActive) {
                     }
                 }.orEmpty()
                 val main = kotlin?.target?.compilations?.findByName("main")
-                    ?: owner.extensions.findByType<KotlinMultiplatformExtension>()?.targets?.findByName("jvm")?.compilations?.findByName("main")
+                    ?: multiplatform?.targets?.findByName("jvm")?.compilations?.findByName("main")
                 val compiler = main?.compileTaskProvider?.name?.let { owner.tasks.named<KotlinJvmCompile>(it).get() }
+                val configuredApi = kotlin?.explicitApi ?: multiplatform?.explicitApi
+                val explicitApi = compiler?.compilerOptions?.freeCompilerArgs?.get()?.lastOrNull { it.startsWith("-Xexplicit-api=") }?.substringAfter('=')
+                    ?: when (configuredApi) {
+                        ExplicitApiMode.Strict -> "strict"
+                        ExplicitApiMode.Warning -> "warning"
+                        ExplicitApiMode.Disabled -> "disable"
+                        null -> null
+                    }
+                require(explicitApi == null || explicitApi in setOf("strict", "warning", "disable")) { "Unsupported explicit API compiler mode: $explicitApi" }
                 val friends = owner.tasks.withType<KotlinJvmCompile>().flatMap { it.friendPaths.files }.map { it.canonicalFile }.distinct().sortedBy { it.path }.map { input ->
                     require(input.exists() || input in absentOutputs) { "Missing required Kotlin friend input: ${owner.path}: $input" }
                     mapOf("path" to input.canonicalPath.replace(File.separatorChar, '/'), "exists" to input.exists(), "sha256" to input.takeIf { it.exists() }?.sha256())
@@ -1590,7 +1601,7 @@ if (completeIdeaModelActive) {
                         )
                     }.distinct(),
                     "outputs" to outputs,
-                    "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "friends" to friends) },
+                    "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends) },
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
                     "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
                 )
