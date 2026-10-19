@@ -57,7 +57,7 @@ jobs:
             qodana-shared-analysis-fixture
           include-hidden-files: true
   actual-context:
-    if: inputs.context != '' && inputs.context != 'fixture-copy'
+    if: inputs.context != '' && inputs.context != 'fixture-copy' && inputs.context != 'fixture-sdk'
     runs-on: ubuntu-latest
     env:
       STRATA_PROBE_CONTEXT: ${{ inputs.context }}
@@ -120,4 +120,47 @@ jobs:
             ${{ runner.temp }}/context-results
             build/qodana
             .idea
+          include-hidden-files: true
+  sdk-context:
+    if: inputs.context == 'fixture-sdk'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [inherited, actual]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-strata-java
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+      - name: Compile and execute SDK-specific Kotlin controls
+        run: |
+          python3 -B gradle/probe-qodana-sdks.py prepare
+          ./gradlew -p qodana-sdk-analysis-fixture :old:verifyFixture :new:verifyFixture :old:writeClasspaths :new:writeClasspaths --no-daemon --console=plain
+          python3 -B gradle/probe-qodana-sdks.py export "${{ matrix.mode }}"
+      - name: Inspect the actual SDK bindings
+        continue-on-error: true
+        uses: JetBrains/qodana-action@v2026.2
+        with:
+          cache-dir: ${{ runner.temp }}/sdk-cache
+          results-dir: ${{ runner.temp }}/sdk-results
+          use-caches: false
+          pr-mode: false
+          args: >-
+            --linter=qodana-jvm-community --within-docker=false
+            --project-dir=${{ github.workspace }}/qodana-sdk-analysis-fixture
+            --config=${{ github.workspace }}/qodana-sdk-analysis-fixture/probe.yaml
+            --property=idea.config.path=${{ github.workspace }}/qodana-sdk-analysis-fixture/ide-config
+      - name: Check real SDK APIs and unused canaries
+        if: always()
+        run: python3 -B gradle/probe-qodana-sdks.py inspect "${{ matrix.mode }}" "${{ runner.temp }}/sdk-results"
+      - name: Retain SDK control evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: qodana-sdk-control-${{ matrix.mode }}
+          path: |
+            ${{ runner.temp }}/sdk-results
+            qodana-sdk-analysis-fixture
           include-hidden-files: true
