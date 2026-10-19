@@ -208,7 +208,8 @@ def verify_source_ownership(root, inventory, model, container_root=""):
         exclusions += [url_path(root, directory, item["path"], source=False) for content in imported_contents for item in content.get("excludeFolders", [])]
         if any(excluded == path or excluded in path.parents for excluded in exclusions for _, path in expected):
             fail(f"exclusion hides a canonical compiler root: {name}")
-        lost = any(source["exists"] and not source["generated"] and canonical[repository_path(root, source["path"])][0] != name for source in owner["roots"])
+        displaced_kinds = {source["kind"].startswith("Test") for source in owner["roots"]
+                           if source["exists"] and not source["generated"] and canonical[repository_path(root, source["path"])][0] != name}
         outputs = owner["outputs"]
         if len({item["path"] for item in outputs}) != len(outputs):
             fail(f"duplicate owned compiler output: {name}")
@@ -224,12 +225,17 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             path = repository_path(root, output["path"])
             if output["exists"] != path.is_dir() or output["files"] != files_at(path):
                 fail(f"owned compiler outputs are missing or changed: {name}: {path}")
-            if lost and output["files"]:
+            if (not output["production"]) in displaced_kinds and output["files"]:
                 fallback.append(output)
                 libraries = [entry for entry in manager.findall("orderEntry[@type='module-library']") if any(url_path(root, directory, item.attrib["url"], container_root, False) == path for item in entry.findall("./library/CLASSES/root"))]
                 imported_libraries = [entry for entry in imported.get("orderEntries", []) if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == path]
                 if len(libraries) != 1 or len(imported_libraries) != 1 or libraries[0].attrib.get("scope", "COMPILE") != ("COMPILE" if output["production"] else "TEST"):
                     fail(f"missing, duplicate or incorrectly scoped compiled variant: {name}: {path}")
+                expected_sources = {repository_path(root, source["path"]) for source in owner["roots"]
+                                    if source["exists"] and not source["generated"] and source["kind"] == ("Source" if output["production"] else "TestSource")}
+                attached_sources = [url_path(root, directory, source.attrib["url"], container_root) for source in libraries[0].findall("./library/SOURCES/root")]
+                if len(attached_sources) != len(expected_sources) or set(attached_sources) != expected_sources:
+                    fail(f"compiled variant source attachments differ from compiler inputs: {name}: {path}")
         compiler = owner["compiler"]
         if compiler:
             if "explicitApi" not in compiler or compiler["explicitApi"] not in (None, "strict", "warning", "disable"):

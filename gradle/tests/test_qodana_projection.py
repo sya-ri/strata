@@ -67,10 +67,17 @@ class QodanaProjectionTest(unittest.TestCase):
             libraries = []
             if name == "beta":
                 for output in outputs:
+                    if not output["production"]:
+                        continue
                     entry = ET.SubElement(manager, "orderEntry", type="module-library")
                     if not output["production"]:
                         entry.set("scope", "TEST")
-                    ET.SubElement(ET.SubElement(ET.SubElement(entry, "library"), "CLASSES"), "root", url="file://$PROJECT_DIR$/" + output["path"] + "/")
+                    library = ET.SubElement(entry, "library")
+                    ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url="file://$PROJECT_DIR$/" + output["path"] + "/")
+                    sources = ET.SubElement(library, "SOURCES")
+                    for source in roots:
+                        if source["kind"] == "Source":
+                            ET.SubElement(sources, "root", url="file://$PROJECT_DIR$/" + source["path"])
                     libraries.append(dict(type="Library", name=(self.root / output["path"]).as_posix()))
             facets = ET.SubElement(document, "component", name="FacetManager")
             facet = ET.SubElement(facets, "facet", type="kotlin-language", name="Kotlin")
@@ -82,7 +89,7 @@ class QodanaProjectionTest(unittest.TestCase):
                 ET.SubElement(arguments, "option", name="explicitApi", value=compiler["explicitApi"])
             friends = {main_output.as_posix()}
             if name == "beta":
-                friends.update((self.root / output["path"]).as_posix() for output in outputs if output["classes"])
+                friends.update((self.root / output["path"]).as_posix() for output in outputs if output["classes"] and output["production"])
             array = ET.SubElement(ET.SubElement(arguments, "option", name="friendPaths"), "array")
             for friend in sorted(friends):
                 ET.SubElement(array, "option", value=friend)
@@ -120,6 +127,28 @@ class QodanaProjectionTest(unittest.TestCase):
     def test_complete_source_owner_and_exact_compiled_variant_pass(self):
         canonical = self.validate()
         self.assertEqual({("alpha", "Source"), ("alpha", "Resource")}, set(canonical.values()))
+
+    def test_displaced_test_inputs_do_not_add_a_shadowing_production_library(self):
+        owner = self.inventory["projects"][1]
+        owner["roots"] = [dict(owner["roots"][0], kind="TestSource", sourceSets=["test"])]
+        document = ET.parse(self.root / owner["iml"]).getroot()
+        manager = document.find("component")
+        for entry in manager.findall("orderEntry"):
+            manager.remove(entry)
+        library = ET.SubElement(ET.SubElement(manager, "orderEntry", type="module-library", scope="TEST"), "library")
+        output = next(output for output in owner["outputs"] if output["sourceSet"] == "test")
+        url = "file://$PROJECT_DIR$/" + output["path"]
+        ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url=url)
+        ET.SubElement(ET.SubElement(library, "SOURCES"), "root", url="file://$PROJECT_DIR$/shared/kotlin")
+        array = document.find(".//array")
+        ET.SubElement(array, "option", value=(self.root / output["path"]).as_posix())
+        self.write_iml("beta", document)
+        self.model["modules"][1]["orderEntries"] = [dict(type="Library", name=(self.root / output["path"]).as_posix())]
+        self.validate()
+        library.find("CLASSES").clear()
+        self.write_iml("beta", document)
+        with self.assertRaisesRegex(ValueError, "compiled variant"):
+            self.validate()
 
     def test_complete_compiler_membership_precedes_partial_physical_ownership(self):
         self.inventory["projects"][1]["native"] = False
@@ -166,9 +195,9 @@ class QodanaProjectionTest(unittest.TestCase):
                 self.model = original
 
     def test_generated_forgeries_are_rejected(self):
-        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "missing-binary", "wrong-scope", "duplicate-binary", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager", "explicit-api", "missing-explicit-api"):
+        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "missing-binary", "wrong-scope", "duplicate-binary", "missing-library-source", "foreign-library-source", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager", "explicit-api", "missing-explicit-api"):
             with self.subTest(mutation=mutation):
-                name = "beta" if mutation in {"missing-binary", "wrong-scope", "duplicate-binary"} else "alpha"
+                name = "beta" if mutation in {"missing-binary", "wrong-scope", "duplicate-binary", "missing-library-source", "foreign-library-source"} else "alpha"
                 path = self.root / name / (name + ".iml")
                 original = path.read_bytes()
                 document = ET.fromstring(original)
@@ -185,6 +214,8 @@ class QodanaProjectionTest(unittest.TestCase):
                 elif mutation == "missing-binary": manager.remove(entry)
                 elif mutation == "wrong-scope": entry.set("scope", "TEST")
                 elif mutation == "duplicate-binary": manager.append(copy.deepcopy(entry))
+                elif mutation == "missing-library-source": entry.find("./library/SOURCES").clear()
+                elif mutation == "foreign-library-source": entry.find("./library/SOURCES/root").set("url", "file://$PROJECT_DIR$/shared/resources")
                 elif mutation == "module-name": document.find(".//option[@name='moduleName']").set("value", "foreign-module")
                 elif mutation == "extra-friend": ET.SubElement(document.find(".//array"), "option", value=(self.root / "beta/build/classes/kotlin/main").as_posix())
                 elif mutation == "missing-friend": document.find(".//array").clear()

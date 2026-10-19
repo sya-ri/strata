@@ -70,10 +70,11 @@ tasks.register("qodanaKotlinModel") {
                 val kind = if (source.resource) "type" to if (source.test) "java-test-resource" else "java-resource" else "isTestSource" to source.test.toString()
                 content.element("sourceFolder", mapOf("url" to url, kind))
             }
-            val lostRoots = roots.any { it.module == module && canonical.getValue(it.path).module != module }
+            val displacedKinds = roots.filter { it.module == module && canonical.getValue(it.path).module != module }.map { it.test }.toSet()
             val outputs = (owner["outputs"] as List<*>).map { it as Map<*, *> }
-            val fallback = if (lostRoots) outputs.filter { it["exists"] == true && (it["files"] as Map<*, *>).isNotEmpty() } else emptyList()
-            val displacedOutputs = if (lostRoots) outputs.map { rootProject.file(it["path"] as String).toPath().toAbsolutePath().normalize() }.toSet() else emptySet()
+            val fallbackOutputs = outputs.filter { (it["production"] != true) in displacedKinds }
+            val fallback = fallbackOutputs.filter { it["exists"] == true && (it["files"] as Map<*, *>).isNotEmpty() }
+            val displacedOutputs = fallbackOutputs.map { rootProject.file(it["path"] as String).toPath().toAbsolutePath().normalize() }.toSet()
             // JMH exports main outputs under TEST; displaced production inputs need their actual COMPILE visibility.
             // NO-SOURCE Java and resource tasks do not create every declared output directory.
             manager.children("orderEntry").filter { it.getAttribute("type") == "module-library" }.forEach { entry ->
@@ -94,7 +95,10 @@ tasks.register("qodanaKotlinModel") {
                 val library = entry.element("library")
                 library.element("CLASSES").element("root", mapOf("url" to "file://${rootProject.file(compiled["path"] as String).canonicalPath.replace(File.separatorChar, '/')}"))
                 library.element("JAVADOC")
-                library.element("SOURCES")
+                val sources = library.element("SOURCES")
+                roots.filter { it.module == module && it.resource.not() && it.test == (compiled["production"] != true) }.distinctBy { it.path }.sortedBy { it.path }.forEach { source ->
+                    sources.element("root", mapOf("url" to "file://${rootProject.file(source.path).canonicalPath.replace(File.separatorChar, '/')}"))
+                }
             }
             val compiler = owner["compiler"] as Map<*, *>?
             if (compiler != null) {

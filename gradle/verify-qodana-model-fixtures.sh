@@ -1097,6 +1097,16 @@ fixture_runtime_iml="$fixture_project/runtime/minecraft-fabric-1.2/runtime-minec
 fixture_iml_backup="$fixture_root/runtime-minecraft-fabric-1.2.iml"
 cp -- "$fixture_runtime_iml" "$fixture_iml_backup"
 
+# Native source URLs must work when emitted canonically instead of through IDEA macros.
+owned_source="$(portable_jq -r '.modules[] | select(.name == "runtime-minecraft-fabric-1.2") | .contentEntries[].sourceFolders[] | select(.type == "Source") | .path' "$fixture_root/Modules.json" | head -n 1)"
+owned_relative=${owned_source#'file://$PROJECT_DIR$/'}
+owned_absolute="$fixture_project_file_path/$owned_relative"
+sed -i 's#file://\$MODULE_DIR\$/src/main/kotlin#file://'"$owned_absolute"'#' "$fixture_runtime_iml"
+grep -Fq "file://$owned_absolute" "$fixture_runtime_iml"
+bash "$repository_root/gradle/verify-qodana-model.sh" \
+  "$fixture_root/Modules.json" "$fixture_project" "$qodana_container_project_root" > "$fixture_root/absolute-owned-source.log"
+cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
+
 set_absolute_iml_link() {
   local absolute_path=$1
   cp -- "$fixture_iml_backup" "$fixture_runtime_iml"

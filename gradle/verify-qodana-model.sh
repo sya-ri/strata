@@ -314,6 +314,12 @@ resolve_iml_posix_absolute_source_path() {
     exit 1
   else
     resolved_path=$(realpath -m -- "$absolute_path")
+    if paths_equal "$absolute_path" "$resolved_path"; then
+      :
+    else
+      echo "The generated IDEA module contains a non-canonical absolute source URL: $source_url" >&2
+      exit 1
+    fi
   fi
 }
 
@@ -703,7 +709,8 @@ PY
           echo "The generated IDEA module contains a platform-incompatible source URL: $iml: $source_url" >&2
           exit 1
         fi
-        resolved_path=$(realpath -m -- "$absolute_path")
+        resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+        relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file://[A-Za-z]:/*)
         absolute_path=${source_url#file://}
@@ -713,11 +720,13 @@ PY
           echo "The generated IDEA module contains a platform-incompatible source URL: $iml: $source_url" >&2
           exit 1
         fi
-        resolved_path=$(realpath -m -- "$absolute_path")
+        resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+        relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file:///*)
         absolute_path=${source_url#file://}
         resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+        relative_path=$(realpath --relative-to="$module_directory" -- "$resolved_path")
         ;;
       *)
         echo "The generated IDEA module contains an unsupported source URL: $iml: $source_url" >&2
