@@ -1,5 +1,6 @@
 """Check job selection and conservative handling of changed source ownership."""
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import sys
 import tempfile
 import textwrap
 import unittest
+from contextlib import redirect_stdout
 from unittest.mock import patch
 
 import test_paired_browser as browser_fixtures
@@ -55,7 +57,7 @@ class PlanCiTest(unittest.TestCase):
 
     def test_explicit_manual_inputs_keep_complete_jvm_browser_and_source_contracts(self):
         expected = {"common": False, "web": False, "docs": False, "docs_full": False, "workflow": False,
-                    "qodana": False, "all_minecraft": False, "preflight": True, "minecraft": []}
+                    "qodana": False, "all_minecraft": False, "preflight": True, "minecraft": [], "source_model": False}
         for schema in ("jvm", "browser", "source"):
             with self.subTest(schema=schema):
                 fixture, value = self.paired_fixture(schema)
@@ -73,6 +75,7 @@ class PlanCiTest(unittest.TestCase):
             with self.subTest(event=event):
                 completed, result = self.cli_plan(fixture.root, *arguments, event=event)
                 self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertFalse(result.pop("source_model"))
                 self.assertEqual(planner.plan([], full=True), result)
 
     def test_paired_mode_rejects_empty_nonmanual_and_conflicting_requests(self):
@@ -154,6 +157,32 @@ class PlanCiTest(unittest.TestCase):
         result = planner.plan([], full=True)
         self.assertEqual([], result.pop("minecraft"))
         self.assertTrue(all(result.values()))
+
+    def test_source_model_setup_is_limited_to_unresolved_native_changes(self):
+        native = "runtime/shared/minecraft-fabric/input/Changed.kt"
+        cases = [([native], None, (True, True, False)),
+                 (["integration/minecraft-fabric-26.3/Changed.kt"], None, (True, True, False)),
+                 ([native, "api/Changed.kt"], None, (False, True, True)),
+                 (["api/Changed.kt"], None, (False, True, True)),
+                 (["docs/development/ci.md"], None, (False, False, False)),
+                 (["tools/web/package.json"], None, (False, False, False)),
+                 (["unknown-input"], None, (False, True, True)),
+                 ([native], {}, (False, True, False)),
+                 ([native], {"26.3": ["runtime/shared/minecraft-fabric/input"]}, (False, False, False))]
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "plan.json"
+            model_file = Path(temporary) / "model.json"
+            for paths, model, expected in cases:
+                with self.subTest(paths=paths, model=model):
+                    arguments = ["plan-ci.py", "--base", "a" * 40, "--head", "b" * 40, "--output", str(output)]
+                    if model is not None:
+                        model_file.write_text(json.dumps(model))
+                        arguments += ["--model", str(model_file)]
+                    with patch.object(sys, "argv", arguments), patch.dict(os.environ, {"GITHUB_OUTPUT": ""}), \
+                            patch.object(planner.subprocess, "check_output", return_value="\0".join(paths).encode()), redirect_stdout(io.StringIO()):
+                        planner.main()
+                    result = json.loads(output.read_text())
+                    self.assertEqual(expected, tuple(result[key] for key in ("source_model", "all_minecraft", "common")))
 
     def test_selected_clients_bind_the_subject_and_declared_backend_contract(self):
         subject = "a" * 40

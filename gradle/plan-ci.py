@@ -133,6 +133,7 @@ def main():
         parser.error(str(error))
     if args.paired_manifest is not None:
         result["preflight"] = True
+    result["source_model"] = args.base is not None and args.model is None and result["all_minecraft"] and not result["common"]
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     if os.environ.get("GITHUB_OUTPUT"):

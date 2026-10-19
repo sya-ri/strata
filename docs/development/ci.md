@@ -63,6 +63,7 @@ Ordinary client launches and personal settings are unaffected; frame fences and 
 Heavy checks run on pull requests, with a manual full run available through `workflow_dispatch` with an empty `paired_manifest` input.
 Merging a PR does not repeat JVM or Qodana verification.
 The always-running planner and `CI result` job distinguish planned skips from failures, cancellation, and unexpected skipped checks.
+Planning prepares Java and Gradle only when native-only changes need the configured shared-source ownership model; other inputs are selected with Python alone.
 
 | Changed input | Selected work |
 | --- | --- |
