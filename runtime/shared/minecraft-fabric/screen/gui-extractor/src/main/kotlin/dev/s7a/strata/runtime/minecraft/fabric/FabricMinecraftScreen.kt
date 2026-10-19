@@ -357,7 +357,7 @@ public class FabricMinecraftScreen private constructor(
     override fun keyPressed(event: MinecraftKeyEvent): Boolean {
         return FabricUiInput.key(this, InputConstants.getKey(event), true) {
             requireClientThread()
-            if (inventory.handleKeyPressed(event)) return@key true
+            if (inventory.handleKeyPressed(event.hasControlDown()) { mapping -> mapping.matches(event) }) return@key true
             val mapped = mapMinecraftKeyPress(event) ?: return@key false
             if (mapped.key == KeyCode.Escape) {
                 return@key dispatchInherited { super.keyPressed(event) }
