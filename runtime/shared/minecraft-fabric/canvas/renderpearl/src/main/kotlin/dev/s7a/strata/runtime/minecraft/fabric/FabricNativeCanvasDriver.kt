@@ -47,14 +47,9 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         depth: Boolean,
     ): NativeCanvasTarget {
         RenderSystem.assertOnRenderThread()
-        requireFabricMinecraftCanvasExtent(physicalSize)
-        val target = OffscreenTarget(depth)
-        try {
+        return createFabricNativeCanvasTarget(physicalSize, { OffscreenTarget(depth) }) { target ->
             target.createBuffers(physicalSize.width, physicalSize.height)
-        } catch (failure: Throwable) {
-            FabricNativeCanvasPartialTarget.fail(target, physicalSize, failure)
         }
-        return FabricNativeCanvasTarget.create(target)
     }
 
     @JvmSynthetic

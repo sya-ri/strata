@@ -31,7 +31,6 @@ import java.util.OptionalInt
  * Native failures propagate to the device so leased inputs and owned targets remain fenced before cleanup.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-@Suppress("TooGenericExceptionCaught")
 internal object FabricNativeCanvasDriver : NativeCanvasDriver {
     private val topLeftPipeline = pipeline(MinecraftCanvasTextureOrigin.TopLeft)
     private val bottomLeftPipeline = pipeline(MinecraftCanvasTextureOrigin.BottomLeft)
@@ -42,15 +41,10 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         depth: Boolean,
     ): NativeCanvasTarget {
         RenderSystem.assertOnRenderThread()
-        requireFabricMinecraftCanvasExtent(physicalSize)
-        val target = OffscreenTarget(depth)
-        try {
+        return createFabricNativeCanvasTarget(physicalSize, { OffscreenTarget(depth) }) { target ->
             target.createBuffers(physicalSize.width, physicalSize.height)
             target.setFilterMode(FilterMode.NEAREST)
-        } catch (failure: Throwable) {
-            FabricNativeCanvasPartialTarget.fail(target, physicalSize, failure)
         }
-        return FabricNativeCanvasTarget.create(target)
     }
 
     @JvmSynthetic

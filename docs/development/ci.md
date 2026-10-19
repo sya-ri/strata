@@ -91,7 +91,7 @@ Common checks and Kover share one Gradle invocation so JVM tests run once.
 API/core JavaScript tests and Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
-Independent Minecraft jobs read Gradle dependency caches but do not each save another large copy; the documentation and Qodana jobs retain full-model cache writers.
+Independent Minecraft jobs may restore Gradle dependency caches from other jobs, including the full-model writers on the default branch, but do not each save another large copy; the documentation and Qodana jobs retain full-model cache writers.
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
 Acceptance evidence is generated for the selected revision.
