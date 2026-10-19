@@ -198,9 +198,6 @@ internal class QodanaJmhModelFunctionalTest {
             val roots = owner["roots"] as List<*>
             val existing = roots.map { it as Map<*, *> }.filter { it["exists"] == true }
             assertEquals(setOf("$name/src/main/kotlin", "$name/authored/java", "$name/authored/kotlin", "$name/authored/resources", "shared-inputs/kotlin", "shared-inputs/resources"), existing.map { it["path"] }.toSet())
-            val iml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(owner["iml"] as String).toFile())
-            val folders = iml.getElementsByTagName("sourceFolder")
-            assertEquals(if (name == "bench-one") 5 else 4, folders.length)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:compileJmhKotlin")?.outcome)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:compileJmhJava")?.outcome)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:processJmhResources")?.outcome)
@@ -214,14 +211,13 @@ internal class QodanaJmhModelFunctionalTest {
         }
         val projects = (parsed["projects"] as List<*>).map { it as Map<*, *> }
         assertLibraryOutputRoots(projects)
-        assertUniqueSourceOwnership(projects)
+        assertDeclaredSourceContexts(projects)
         val variantOne = projects.single { it["project"] == ":variant-one" }
         val variantTwo = projects.single { it["project"] == ":variant-two" }
         val oneModel = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(variantOne["iml"] as String).toFile())
         val twoModel = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(variantTwo["iml"] as String).toFile())
         assertEquals(2, oneModel.getElementsByTagName("sourceFolder").length)
-        assertEquals(0, twoModel.getElementsByTagName("sourceFolder").length)
-        assertTrue(Files.readString(directory.resolve(variantTwo["iml"] as String)).contains("variant-two/build/classes/kotlin/main\""))
+        assertEquals(2, twoModel.getElementsByTagName("sourceFolder").length)
         val compiledVariant = directory.resolve("variant-two/build/classes/kotlin/main")
         URLClassLoader(arrayOf(compiledVariant.toUri().toURL()), javaClass.classLoader).use { loader ->
             assertEquals(19, loader.loadClass("fixture.NativeScreenKt").getMethod("nativeScreenValue").invoke(null))
@@ -325,28 +321,39 @@ internal class QodanaJmhModelFunctionalTest {
         assertTrue(Files.exists(directory.resolve("build/qodana/declarations.json")).not())
     }
 
-    /** Verifies physical containment and unique global ownership, including roots outside a module directory. */
-    private fun assertUniqueSourceOwnership(projects: List<Map<*, *>>) {
-        val owners = mutableMapOf<Path, String>()
+    /** Verifies complete compiler contexts and physical containment, including shared roots outside module directories. */
+    private fun assertDeclaredSourceContexts(projects: List<Map<*, *>>) {
         projects.forEach { project ->
             val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(project["iml"] as String).toFile())
             val folders = model.getElementsByTagName("sourceFolder")
             val moduleDirectory = directory.resolve(project["iml"] as String).parent
 
             fun path(url: String): Path = Path.of(url.removePrefix("file://").replace("\$PROJECT_DIR\$", directory.toString()).replace("\$MODULE_DIR\$", moduleDirectory.toString())).normalize()
-            (0 until folders.length).forEach { index ->
-                val folder = folders.item(index) as Element
-                val source = path(folder.getAttribute("url"))
-                assertEquals("file://${source.toRealPath().toString().replace('\\', '/')}", folder.getAttribute("url"), "Source roots must use resolved IDEA URLs.")
-                val content = path((folder.parentNode as Element).getAttribute("url"))
-                assertTrue(source.startsWith(content), "Compiler source $source must belong to its direct content root $content.")
-                assertEquals(null, owners.put(source, project["module"] as String), "Compiler roots must have exactly one IDEA owner.")
-            }
+            val observed =
+                (0 until folders.length).map { index ->
+                    val folder = folders.item(index) as Element
+                    val source = path(folder.getAttribute("url"))
+                    assertEquals("file://${source.toRealPath().toString().replace('\\', '/')}", folder.getAttribute("url"), "Source roots must use resolved IDEA URLs.")
+                    val content = path((folder.parentNode as Element).getAttribute("url"))
+                    assertTrue(source.startsWith(content), "Compiler source $source must belong to its direct content root $content.")
+                    val kind =
+                        when (folder.getAttribute("type")) {
+                            "java-resource" -> "Resource"
+                            "java-test-resource" -> "TestResource"
+                            else -> if (folder.getAttribute("isTestSource") == "true") "TestSource" else "Source"
+                        }
+                    source to kind
+                }
+            val expected =
+                (project["roots"] as List<*>)
+                    .map { it as Map<*, *> }
+                    .filter { it["exists"] == true && it["generated"] == false }
+                    .map { directory.resolve(it["path"] as String).normalize() to it["kind"] as String }
+            assertEquals(expected.toSet(), observed.toSet(), "Every real compiler context must retain its declared roots.")
+            assertEquals(observed.size, observed.toSet().size, "A compiler context must not repeat a root.")
         }
         val benchmark = directory.resolve("bench-two/resolved-bench-two.iml")
         val contents = Files.readString(benchmark)
-        assertTrue(contents.contains("bench-two/build/classes/kotlin/jmh\""))
-        assertTrue(contents.contains("bench-two/build/resources/jmh\""))
         assertTrue(contents.contains("name=\"friendPaths\""))
     }
 

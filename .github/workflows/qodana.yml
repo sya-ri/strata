@@ -109,7 +109,10 @@ jobs:
         results-dir: ${{ runner.temp }}/qodana/results
         use-caches: false
         pr-mode: false
-        args: --linter=qodana-jvm-community --within-docker=false
+        args: >-
+          --linter=qodana-jvm-community --within-docker=false
+          --property=intellij.platform.shared.source.support=true
+          --property=batch.inspections.inspect.all.code.insight.contexts=true
     - name: Verify complete Gradle IDE model
       if: always()
       run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" "$GITHUB_WORKSPACE"

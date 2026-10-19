@@ -1,4 +1,4 @@
-"""Exercise canonical source ownership against malformed IDEA and imported analysis models."""
+"""Exercise shared compiler contexts against malformed IDEA and imported analysis models."""
 
 import copy
 import importlib.util
@@ -57,44 +57,30 @@ class QodanaProjectionTest(unittest.TestCase):
             manager = ET.SubElement(document, "component", name="NewModuleRootManager")
             ET.SubElement(manager, "content", url="file://$MODULE_DIR$/")
             contents = [dict(path=f"file://$PROJECT_DIR$/{name}/", sourceFolders=[])]
-            if name == "alpha":
-                for source in roots:
-                    url = "file://$PROJECT_DIR$/" + source["path"]
-                    content = ET.SubElement(manager, "content", url=url)
-                    attributes = {"url": url, "type": "java-resource"} if source["kind"] == "Resource" else {"url": url, "isTestSource": "false"}
-                    ET.SubElement(content, "sourceFolder", **attributes)
+            for source in roots:
+                url = "file://$PROJECT_DIR$/" + source["path"]
+                content = manager.find("content") if source["path"].startswith(name + "/") else ET.SubElement(manager, "content", url=url)
+                attributes = {"url": url, "type": "java-resource"} if source["kind"] == "Resource" else {"url": url, "isTestSource": "false"}
+                ET.SubElement(content, "sourceFolder", **attributes)
+                if source["path"].startswith(name + "/"):
+                    contents[0]["sourceFolders"].append(dict(type=source["kind"], path=url))
+                else:
                     contents.append(dict(path=url, sourceFolders=[dict(type=source["kind"], path=url)]))
-            libraries = []
-            if name == "beta":
-                for output in outputs:
-                    if not output["production"]:
-                        continue
-                    entry = ET.SubElement(manager, "orderEntry", type="module-library")
-                    if not output["production"]:
-                        entry.set("scope", "TEST")
-                    library = ET.SubElement(entry, "library")
-                    ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url="file://$PROJECT_DIR$/" + output["path"] + "/")
-                    ET.SubElement(library, "SOURCES")
-                    libraries.append(dict(type="Library", name=(self.root / output["path"]).as_posix()))
             facets = ET.SubElement(document, "component", name="FacetManager")
             facet = ET.SubElement(facets, "facet", type="kotlin-language", name="Kotlin")
             configuration = ET.SubElement(facet, "configuration", version="3", platform="JVM 17", useProjectSettings="false")
-            if name == "beta":
-                ET.SubElement(ET.SubElement(configuration, "additionalVisibleModuleNames"), "friend").text = "alpha"
             arguments = ET.SubElement(configuration, "compilerArguments")
             ET.SubElement(arguments, "option", name="moduleName", value=compiler["moduleName"])
             ET.SubElement(arguments, "option", name="jvmTarget", value="17")
             if compiler["explicitApi"]:
                 ET.SubElement(arguments, "option", name="explicitApi", value=compiler["explicitApi"])
             friends = {main_output.as_posix()}
-            if name == "beta":
-                friends.update((self.root / output["path"]).as_posix() for output in outputs if output["classes"] and output["production"])
             array = ET.SubElement(ET.SubElement(arguments, "option", name="friendPaths"), "array")
             for friend in sorted(friends):
                 ET.SubElement(array, "option", value=friend)
             self.write_iml(name, document)
             ET.SubElement(modules, "module", fileurl="file://$PROJECT_DIR$/" + owner["iml"])
-            self.model["modules"].append(dict(name=name, contentEntries=contents, orderEntries=libraries))
+            self.model["modules"].append(dict(name=name, contentEntries=contents, orderEntries=[]))
         idea = self.root / ".idea"
         idea.mkdir()
         (idea / "modules.xml").write_text(ET.tostring(project, encoding="unicode"), encoding="utf-8")
@@ -123,56 +109,40 @@ class QodanaProjectionTest(unittest.TestCase):
         expected = hashlib.sha256(json.dumps(declared, separators=(",", ":")).encode("utf-8")).hexdigest()
         self.assertEqual(expected, DECLARATIONS.sha256(path))
 
-    def test_complete_source_owner_and_exact_compiled_variant_pass(self):
-        canonical = self.validate()
-        self.assertEqual({("alpha", "Source"), ("alpha", "Resource")}, set(canonical.values()))
+    def test_each_declared_compiler_retains_the_shared_source_and_resource_contexts(self):
+        owners = self.validate()
+        self.assertEqual({("alpha", "Source"), ("beta", "Source")}, owners[self.root / "shared/kotlin"])
+        self.assertEqual({("alpha", "Resource"), ("beta", "Resource")}, owners[self.root / "shared/resources"])
 
-    def test_displaced_test_inputs_do_not_add_a_shadowing_production_library(self):
+    def test_shared_input_kind_remains_specific_to_each_compiler_context(self):
         owner = self.inventory["projects"][1]
-        owner["roots"] = [dict(owner["roots"][0], kind="TestSource", sourceSets=["test"])]
+        owner["roots"][0].update(kind="TestSource", sourceSets=["test"])
         document = ET.parse(self.root / owner["iml"]).getroot()
-        manager = document.find("component")
-        for entry in manager.findall("orderEntry"):
-            manager.remove(entry)
-        library = ET.SubElement(ET.SubElement(manager, "orderEntry", type="module-library", scope="TEST"), "library")
-        output = next(output for output in owner["outputs"] if output["sourceSet"] == "test")
-        url = "file://$PROJECT_DIR$/" + output["path"]
-        ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url=url)
-        ET.SubElement(library, "SOURCES")
-        array = document.find(".//array")
-        ET.SubElement(array, "option", value=(self.root / output["path"]).as_posix())
+        folder = next(folder for folder in document.findall("./component/content/sourceFolder") if folder.attrib["url"].endswith("shared/kotlin"))
+        folder.set("isTestSource", "true")
         self.write_iml("beta", document)
-        self.model["modules"][1]["orderEntries"] = [dict(type="Library", name=(self.root / output["path"]).as_posix())]
-        self.validate()
-        library.find("CLASSES").clear()
-        self.write_iml("beta", document)
-        with self.assertRaisesRegex(ValueError, "compiled variant"):
+        source = self.model["modules"][1]["contentEntries"][1]["sourceFolders"][0]
+        source["type"] = "TestSource"
+        owners = self.validate()
+        self.assertEqual({("alpha", "Source"), ("beta", "TestSource")}, owners[self.root / "shared/kotlin"])
+        source["type"] = "Source"
+        with self.assertRaisesRegex(ValueError, "wrong-kind"):
             self.validate()
 
-    def test_complete_compiler_membership_precedes_partial_physical_ownership(self):
+    def test_physical_containment_does_not_displace_a_shared_compiler_context(self):
         owner = self.inventory["projects"][1]
         owner["native"] = False
         owner["roots"][1]["inputs"] = []
         self.validate()
 
-    def test_qodana_binary_names_may_omit_the_scheme_but_retain_an_exact_ide_macro(self):
-        original = copy.deepcopy(self.model)
-        for prefix in ("$PROJECT_DIR$/beta/", "$MODULE_DIR$/"):
-            with self.subTest(prefix=prefix):
-                self.model = copy.deepcopy(original)
-                for entry in self.model["modules"][1]["orderEntries"]:
-                    relative = pathlib.Path(entry["name"]).relative_to(self.root / "beta").as_posix()
-                    entry["name"] = prefix + relative + "/"
-                self.validate()
-                self.model = copy.deepcopy(original)
-
     def test_imported_forgeries_are_rejected(self):
-        for mutation in ("missing-source", "duplicate-source", "wrong-kind", "outside-content", "missing-content", "duplicate-content", "broader-content", "pattern", "exclusion", "missing-module", "duplicate-module", "missing-binary", "duplicate-binary", "wrong-binary", "bare-source", "unknown-macro", "relative-binary", "aliased-binary"):
+        for mutation in ("missing-source", "missing-shared-context", "duplicate-source", "wrong-kind", "outside-content", "missing-content", "duplicate-content", "broader-content", "pattern", "exclusion", "missing-module", "duplicate-module", "bare-source"):
             with self.subTest(mutation=mutation):
                 original = copy.deepcopy(self.model)
                 alpha, beta = self.model["modules"]
                 content = alpha["contentEntries"][1]
                 if mutation == "missing-source": content["sourceFolders"] = []
+                elif mutation == "missing-shared-context": beta["contentEntries"][1]["sourceFolders"] = []
                 elif mutation == "duplicate-source": content["sourceFolders"] *= 2
                 elif mutation == "wrong-kind": content["sourceFolders"][0]["type"] = "TestSource"
                 elif mutation == "outside-content": alpha["contentEntries"][0]["sourceFolders"] = content.pop("sourceFolders")
@@ -183,41 +153,28 @@ class QodanaProjectionTest(unittest.TestCase):
                 elif mutation == "exclusion": content["excludeFolders"] = [dict(path=content["path"])]
                 elif mutation == "missing-module": self.model["modules"].pop()
                 elif mutation == "duplicate-module": self.model["modules"].append(copy.deepcopy(beta))
-                elif mutation == "missing-binary": beta["orderEntries"].pop()
-                elif mutation == "duplicate-binary": beta["orderEntries"] *= 2
-                elif mutation == "wrong-binary": beta["orderEntries"][0]["name"] = self.model["modules"][0]["name"]
                 elif mutation == "bare-source": content["sourceFolders"][0]["path"] = "$PROJECT_DIR$/shared/kotlin"
-                elif mutation == "unknown-macro": beta["orderEntries"][0]["name"] = "$OTHER_DIR$/beta/build/classes/kotlin/main/"
-                elif mutation == "relative-binary": beta["orderEntries"][0]["name"] = "beta/build/classes/kotlin/main/"
-                elif mutation == "aliased-binary": beta["orderEntries"][0]["name"] = "$PROJECT_DIR$/beta/../beta/build/classes/kotlin/main/"
                 with self.assertRaises((ValueError, KeyError)):
                     self.validate()
                 self.model = original
 
     def test_generated_forgeries_are_rejected(self):
-        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "missing-binary", "wrong-scope", "duplicate-binary", "missing-source-friend", "foreign-source-friend", "duplicate-source-friend", "reverse-source-friend", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager", "explicit-api", "missing-explicit-api"):
+        for mutation in ("duplicate-content", "nested-content", "qualified-content", "outside-content", "duplicate-source", "qualified-source", "undeclared-source-friend", "module-name", "extra-friend", "missing-friend", "hidden-source", "duplicate-manager", "explicit-api", "missing-explicit-api"):
             with self.subTest(mutation=mutation):
-                name = "beta" if mutation in {"missing-binary", "wrong-scope", "duplicate-binary", "missing-source-friend", "foreign-source-friend", "duplicate-source-friend"} else "alpha"
+                name = "alpha"
                 path = self.root / name / (name + ".iml")
                 original = path.read_bytes()
                 document = ET.fromstring(original)
                 manager = document.find("component")
                 content = manager.findall("content")[-1]
                 folder = content.find("sourceFolder")
-                entry = manager.find("orderEntry")
                 if mutation == "duplicate-content": manager.append(copy.deepcopy(content))
                 elif mutation == "nested-content": ET.SubElement(content, "content", url=content.attrib["url"])
                 elif mutation == "qualified-content": content.tag = "{forged}content"
                 elif mutation == "outside-content": content.remove(folder); manager.find("content").append(folder)
                 elif mutation == "duplicate-source": content.append(copy.deepcopy(folder))
                 elif mutation == "qualified-source": folder.tag = "{forged}sourceFolder"
-                elif mutation == "missing-binary": manager.remove(entry)
-                elif mutation == "wrong-scope": entry.set("scope", "TEST")
-                elif mutation == "duplicate-binary": manager.append(copy.deepcopy(entry))
-                elif mutation == "missing-source-friend": document.find(".//additionalVisibleModuleNames").clear()
-                elif mutation == "foreign-source-friend": document.find(".//additionalVisibleModuleNames/friend").text = "beta"
-                elif mutation == "duplicate-source-friend": document.find(".//additionalVisibleModuleNames").append(copy.deepcopy(document.find(".//additionalVisibleModuleNames/friend")))
-                elif mutation == "reverse-source-friend": ET.SubElement(ET.SubElement(document.find(".//configuration"), "additionalVisibleModuleNames"), "friend").text = "beta"
+                elif mutation == "undeclared-source-friend": ET.SubElement(ET.SubElement(document.find(".//configuration"), "additionalVisibleModuleNames"), "friend").text = "beta"
                 elif mutation == "module-name": document.find(".//option[@name='moduleName']").set("value", "foreign-module")
                 elif mutation == "extra-friend": ET.SubElement(document.find(".//array"), "option", value=(self.root / "beta/build/classes/kotlin/main").as_posix())
                 elif mutation == "missing-friend": document.find(".//array").clear()

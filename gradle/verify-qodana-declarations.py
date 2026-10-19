@@ -129,7 +129,7 @@ def iml_kind(folder):
 
 
 def verify_source_ownership(root, inventory, model, container_root=""):
-    """Independently verify canonical source ownership, containment and each compiled variant's bytes."""
+    """Verify exact source membership in every declared compiler context and its compiled bytes."""
     declarations = [owner for owner in inventory["projects"] if owner.get("iml")]
     projects = {owner["module"]: owner for owner in declarations}
     modules = {module["name"]: module for module in model["modules"]}
@@ -143,7 +143,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             membership[path] = {file.relative_to(root).as_posix(): sha256(file) for file in path.rglob("*") if file.is_file()} if path.is_dir() else {}
         return membership[path]
 
-    candidates = collections.defaultdict(list)
+    source_owners = collections.defaultdict(set)
     for name, owner in projects.items():
         if type(owner["native"]) is not bool:
             fail(f"invalid platform ownership: {name}")
@@ -164,12 +164,9 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                 kind = source["kind"]
                 if kind not in {"Source", "TestSource", "Resource", "TestResource"}:
                     fail(f"unsupported compiler root kind: {kind}")
-                physical = not owner["native"] and owner["directory"] and source["path"].startswith(owner["directory"] + "/")
-                priority = (kind.endswith("Resource"), -len(inputs), kind.startswith("Test"), not physical, owner["project"])
-                candidates[path].append((priority, name, kind))
+                source_owners[path].add((name, kind))
         if len(paths) != len(set(paths)):
             fail(f"duplicate declared compiler root: {name}")
-    canonical = {path: min(values)[1:] for path, values in candidates.items()}
     entries = ET.parse(root / ".idea/modules.xml").getroot().findall("./component[@name='ProjectModuleManager']/modules/module")
     actual_imls = [url_path(root, root, entry.attrib["fileurl"], container_root, False) for entry in entries]
     expected_imls = {repository_path(root, owner["iml"]) for owner in declarations}
@@ -179,7 +176,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
         directory = repository_path(root, owner["directory"]) if owner["directory"] else root
         iml = repository_path(root, owner["iml"])
         manager, folders = read_iml(iml, multiple_contents=True)
-        expected = collections.Counter((kind, path) for path, (module, kind) in canonical.items() if module == name)
+        expected = collections.Counter((kind, path) for path, owners in source_owners.items() for module, kind in owners if module == name)
         contents = manager.findall("content")
         expected_contents = {directory} | {path for _, path in expected if directory not in path.parents}
         generated_paths = [url_path(root, directory, item.attrib["url"], container_root, False) for item in contents]
@@ -191,7 +188,7 @@ def verify_source_ownership(root, inventory, model, container_root=""):
         generated = collections.Counter((iml_kind(folder), url_path(root, directory, folder.attrib["url"], container_root)) for folder in folders)
         actual = collections.Counter((folder["type"], url_path(root, directory, folder["path"])) for content in imported_contents for folder in content.get("sourceFolders", []))
         if generated != expected or actual != expected:
-            fail(f"missing, duplicate, wrong-kind or wrong-owner canonical roots: {name}")
+            fail(f"missing, duplicate, wrong-kind or wrong-owner compiler roots: {name}")
         for content, content_path in zip(contents, generated_paths):
             for folder in content.findall("sourceFolder"):
                 path = url_path(root, directory, folder.attrib["url"], container_root)
@@ -207,30 +204,21 @@ def verify_source_ownership(root, inventory, model, container_root=""):
         exclusions = [url_path(root, directory, item.attrib["url"], container_root, False) for item in manager.findall("./content/excludeFolder")]
         exclusions += [url_path(root, directory, item["path"], source=False) for content in imported_contents for item in content.get("excludeFolders", [])]
         if any(excluded == path or excluded in path.parents for excluded in exclusions for _, path in expected):
-            fail(f"exclusion hides a canonical compiler root: {name}")
-        displaced_kinds = {source["kind"].startswith("Test") for source in owner["roots"]
-                           if source["exists"] and not source["generated"] and canonical[repository_path(root, source["path"])][0] != name}
+            fail(f"exclusion hides a declared compiler root: {name}")
         outputs = owner["outputs"]
         if len({item["path"] for item in outputs}) != len(outputs):
             fail(f"duplicate owned compiler output: {name}")
         for source in owner["roots"]:
-            if source["exists"] and not source["generated"] and source["inputs"] and canonical[repository_path(root, source["path"])][0] != name:
+            if source["exists"] and not source["generated"] and source["inputs"]:
                 resource = source["kind"].endswith("Resource")
                 if not any(output["sourceSet"] in source["sourceSets"] and output["classes"] != resource and output["exists"] and output["files"] for output in outputs):
-                    fail(f"missing declared output for a displaced compiler input: {name}: {source['path']}")
-        fallback = []
+                    fail(f"missing declared output for a compiler input: {name}: {source['path']}")
         for output in outputs:
             if type(output["classes"]) is not bool or type(output["production"]) is not bool:
                 fail(f"invalid compiler output ownership: {name}")
             path = repository_path(root, output["path"])
             if output["exists"] != path.is_dir() or output["files"] != files_at(path):
                 fail(f"owned compiler outputs are missing or changed: {name}: {path}")
-            if (not output["production"]) in displaced_kinds and output["files"]:
-                fallback.append(output)
-                libraries = [entry for entry in manager.findall("orderEntry[@type='module-library']") if any(url_path(root, directory, item.attrib["url"], container_root, False) == path for item in entry.findall("./library/CLASSES/root"))]
-                imported_libraries = [entry for entry in imported.get("orderEntries", []) if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == path]
-                if len(libraries) != 1 or len(imported_libraries) != 1 or libraries[0].attrib.get("scope", "COMPILE") != ("COMPILE" if output["production"] else "TEST"):
-                    fail(f"missing, duplicate or incorrectly scoped compiled variant: {name}: {path}")
 
         compiler = owner["compiler"]
         if compiler:
@@ -246,13 +234,8 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             values = {item.attrib["name"]: item.attrib.get("value") for item in options}
             if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != compiler["jvmTarget"] or values.get("explicitApi") != compiler["explicitApi"] or configuration.attrib != {"version": "3", "platform": "JVM " + compiler["jvmTarget"], "useProjectSettings": "false"}:
                 fail(f"incorrect Kotlin compiler identity: {name}")
-            expected_visible = {canonical[repository_path(root, source["path"])][0] for source in owner["roots"]
-                                if source["exists"] and not source["generated"] and source["inputs"] and source["kind"] in {"Source", "TestSource"}
-                                and canonical[repository_path(root, source["path"])][0] != name}
-            visible_groups = configuration.findall("additionalVisibleModuleNames")
-            visible = [item.text for group in visible_groups for item in group.findall("friend")]
-            if len(visible_groups) != bool(expected_visible) or len(visible) != len(expected_visible) or set(visible) != expected_visible:
-                fail(f"source-owner visibility differs from shared compiler inputs: {name}")
+            if configuration.findall("additionalVisibleModuleNames"):
+                fail(f"source contexts must not add undeclared source-owner friends: {name}")
             friends = set()
             for friend in compiler["friends"]:
                 path = pathlib.Path(friend["path"])
@@ -260,11 +243,10 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                     fail(f"missing or changed actual Kotlin friend input: {name}: {path}")
                 if friend["exists"]:
                     friends.add(path.as_posix())
-            friends.update(repository_path(root, item["path"]).as_posix() for item in fallback if item["classes"])
             observed = arguments.findall("./option[@name='friendPaths']/array/option")
             if len(observed) != len(friends) or {item.attrib["value"] for item in observed} != friends:
-                fail(f"Kotlin friends differ from actual compiler inputs and owned outputs: {name}")
-    return canonical
+                fail(f"Kotlin friends differ from actual compiler inputs: {name}")
+    return source_owners
 
 
 def verify_report(sarif, revision):
@@ -323,7 +305,7 @@ def verify_model(root, model_path, container_root, java_path):
     ownership_fields = {"native" in entry for entry in declared_projects}
     if ownership_fields == {False, True}:
         fail("partial compiler ownership declaration schema")
-    canonical = verify_source_ownership(root, inventory, model, container_root) if ownership_fields == {True} else None
+    source_owners = verify_source_ownership(root, inventory, model, container_root) if ownership_fields == {True} else None
 
     def declared_shared_root(module_name, contents, kind, path):
         """Permit exact roots shared by actual configured declarations, including native showcase inputs."""
@@ -392,7 +374,7 @@ def verify_model(root, model_path, container_root, java_path):
         entries = [entry for entry in module_entries if url_path(root, directory, entry.attrib["fileurl"], container_root, False) == iml]
         if len(entries) != 1:
             fail(f"generated project does not own exactly one JMH module: {name}")
-        manager, folders = read_iml(iml, multiple_contents=canonical is not None)
+        manager, folders = read_iml(iml, multiple_contents=source_owners is not None)
         java_owners = [module for module in java["modules"] if module["name"] == name]
         if manager.attrib.get("LANGUAGE_LEVEL") != f"JDK_{owner['java']}" or len(java_owners) != 1 or java_owners[0].get("languageLevel") != owner["java"]:
             fail(f"wrong generated or imported owner language level: {name}")
@@ -415,13 +397,13 @@ def verify_model(root, model_path, container_root, java_path):
                 fail(f"authored root contains files outside the selected revision: {name}: {path}")
             if declaration["generated"]:
                 fail(f"declared JMH owner hides roots under an excluded build directory: {name}: {path}")
-            if declaration["exists"] and (canonical is None or canonical[path][0] == name):
+            if declaration["exists"]:
                 expected.append((declaration["kind"], path))
         expected = collections.Counter(expected)
         generated = collections.Counter((iml_kind(folder), url_path(root, directory, folder.attrib["url"], container_root)) for folder in folders)
         imported = modules[name][0]
         imported_content = imported.get("contentEntries", [])
-        if (canonical is None and len(imported_content) != 1) or url_path(root, directory, imported_content[0]["path"], source=False) != directory:
+        if (source_owners is None and len(imported_content) != 1) or url_path(root, directory, imported_content[0]["path"], source=False) != directory:
             fail(f"wrong imported content owner: {name}")
         if imported_content[0].get("excludePatterns", []):
             fail(f"imported owner patterns may hide declared JMH inputs: {name}")
@@ -461,7 +443,7 @@ def verify_model(root, model_path, container_root, java_path):
             foreign_iml = url_path(root, directory, entry.attrib["fileurl"], container_root, False)
             if foreign_iml == iml:
                 continue
-            foreign_manager, foreign_folders = read_iml(foreign_iml, multiple_contents=canonical is not None)
+            foreign_manager, foreign_folders = read_iml(foreign_iml, multiple_contents=source_owners is not None)
             foreign_directory = foreign_iml.parent
             for folder in foreign_folders:
                 foreign_path = url_path(root, foreign_directory, folder.attrib["url"], container_root)
@@ -493,10 +475,10 @@ def verify_model(root, model_path, container_root, java_path):
             fail(f"wrong generated auxiliary owner: {name}")
         if sum(url_path(root, directory, entry.attrib["fileurl"], container_root, False) == iml for entry in module_entries) != 1:
             fail(f"generated project does not own exactly one auxiliary module: {name}")
-        manager, folders = read_iml(iml, multiple_contents=canonical is not None)
+        manager, folders = read_iml(iml, multiple_contents=source_owners is not None)
         imported = modules[name][0]
         contents = imported.get("contentEntries", [])
-        if (canonical is None and len(contents) != 1) or url_path(root, directory, contents[0]["path"], source=False) != directory or url_path(root, directory, manager.find("content").attrib["url"], container_root, False) != directory:
+        if (source_owners is None and len(contents) != 1) or url_path(root, directory, contents[0]["path"], source=False) != directory or url_path(root, directory, manager.find("content").attrib["url"], container_root, False) != directory:
             fail(f"wrong auxiliary content owner: {name}")
         expected = set()
         for compilation in compilations:
@@ -510,7 +492,7 @@ def verify_model(root, model_path, container_root, java_path):
                 files = {file.relative_to(root).as_posix(): sha256(file) for file in path.rglob("*") if file.is_file()} if path.is_dir() else {}
                 if entry["exists"] != path.is_dir() or entry["files"] != files or not set(files).issubset(current):
                     fail(f"auxiliary root membership, existence or bytes changed: {name}: {path}")
-                if entry["exists"] and (canonical is None or canonical[path][0] == name):
+                if entry["exists"]:
                     expected.add((entry["kind"], path))
             outputs = compilation["outputs"]
             if len({entry["path"] for entry in outputs}) != len(outputs) or not any(entry["files"] for entry in outputs):
@@ -550,7 +532,7 @@ def verify_model(root, model_path, container_root, java_path):
             foreign_iml = url_path(root, directory, entry.attrib["fileurl"], container_root, False)
             if foreign_iml == iml:
                 continue
-            foreign_manager, foreign_folders = read_iml(foreign_iml, multiple_contents=canonical is not None)
+            foreign_manager, foreign_folders = read_iml(foreign_iml, multiple_contents=source_owners is not None)
             foreign_contents = [{"path": url_path(root, foreign_iml.parent, item.attrib["url"], container_root, False).as_posix()} for item in foreign_manager.findall("content")]
             for folder in foreign_folders:
                 path = url_path(root, foreign_iml.parent, folder.attrib["url"], container_root)
@@ -583,7 +565,19 @@ def verify_analysis(root, model, report_directory):
     for path in (log_path, statistics_path):
         if path.is_symlink() or not path.is_file():
             fail(f"missing regular analysis evidence: {path.name}")
-    unresolved = set(re.findall(r"No source roots detected for module '([^']+)'", log_path.read_text(encoding="utf-8-sig")))
+    log = log_path.read_text(encoding="utf-8-sig")
+    contexts = collections.defaultdict(set)
+    for module in model["modules"]:
+        for content in module.get("contentEntries", []):
+            for folder in content.get("sourceFolders", []):
+                if folder["type"] in {"Source", "TestSource"}:
+                    contexts[url_path(root, root, folder["path"])].add(module["name"])
+    if any(len(modules) != 1 for modules in contexts.values()):
+        options = re.findall(r"JVM options: \[([^\n]+)\]", log)
+        for key in ("intellij.platform.shared.source.support", "batch.inspections.inspect.all.code.insight.contexts"):
+            if len(options) != 1 or not re.search(r"(?:^|, )-D" + re.escape(key) + r"=true(?:,|$)", options[0]):
+                fail(f"shared Kotlin roots require the analysis JVM option {key}=true")
+    unresolved = set(re.findall(r"No source roots detected for module '([^']+)'", log))
     if unresolved.intersection(owners):
         fail(f"IDE did not resolve Kotlin source owners: {sorted(unresolved.intersection(owners))}")
     performed = 0

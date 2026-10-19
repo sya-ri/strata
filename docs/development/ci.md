@@ -119,10 +119,10 @@ API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common a
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
-Canonical Kotlin source roots have one physical owner, while compiled variants remain on the relevant JVM classpaths.
+Shared Kotlin roots remain in every module that actually compiles them, with that module's dependencies and compiler identity.
+Qodana enables IntelliJ's shared-source support and batch inspection of all code-insight contexts so usages resolve against the corresponding source variant.
 Source and compiled-library roots use resolved file URLs without directory suffixes, and declared output directories that were never produced are omitted from libraries.
-Fallback libraries preserve the production or test scope of displaced inputs.
-Kotlin source-owner visibility follows shared compiler inputs without adding module classpath dependencies; completeness verification rejects missing or unrelated owner links.
+No synthetic fallback library or cross-variant friend relationship substitutes for a compiler's own sources.
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
 The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
 Each Kotlin owner's facet preserves its compiler module name, JVM target, friend paths, and explicit API mode.

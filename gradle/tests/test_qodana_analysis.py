@@ -1,6 +1,7 @@
 """Exercise actual-analysis admission independently of synthetic compiler/model fixtures."""
 
 import importlib.util
+import copy
 import pathlib
 import tempfile
 import unittest
@@ -43,6 +44,19 @@ class QodanaAnalysisTest(unittest.TestCase):
         self.log.write_text("No source roots detected for module 'code'\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "IDE did not resolve Kotlin source owners"):
             self.verify()
+
+    def test_shared_sources_require_both_context_options_in_the_actual_analysis_jvm(self):
+        shared = copy.deepcopy(self.model["modules"][0])
+        shared["name"] = "second-context"
+        self.model["modules"].append(shared)
+        options = ["-Dintellij.platform.shared.source.support=true", "-Dbatch.inspections.inspect.all.code.insight.contexts=true"]
+        self.log.write_text("JVM options: [" + ", ".join(options) + "]\n", encoding="utf-8")
+        self.verify()
+        for supplied in ([], options[:1], options[1:], [option.replace("=true", "=false") for option in options]):
+            with self.subTest(options=supplied):
+                self.log.write_text("JVM options: [" + ", ".join(supplied) + "]\n", encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "require the analysis JVM option"):
+                    self.verify()
 
     def test_omitted_kotlin_sources_are_rejected(self):
         self.model["modules"][0]["contentEntries"] = []
