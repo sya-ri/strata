@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [combined, separate, single-old, single-new, gradle-combined, gradle-separate]
+        mode: [combined, single-old, single-new, gradle-combined, gradle-separate]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-strata-java

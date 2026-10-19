@@ -62,7 +62,7 @@ subprojects {
     for name, value in (("old", 10), ("new", 20)):
         write(f"{name}/src/main/kotlin/fixture/Value.kt", "@file:JvmSynthetic\npackage fixture\ninternal fun versionValue(): Int = " + str(value) + "\n" +
               ("private fun unusedCanary(): Int = 0\n" if name == "old" else ""))
-        write(f"{name}/src/main/kotlin/fixture/Host.kt", "package fixture\npublic fun main(): Unit { check(entry() == " + str(value + 3) + ") }\n")
+        write(f"{name}/src/main/kotlin/fixture/Host.kt", "package fixture\npublic fun main() { check(entry() == " + str(value + 3) + ") }\n")
         write(f"standalone-{name}/settings.gradle.kts", f'rootProject.name = "fixture-{name}"\n')
         write(f"standalone-{name}/build.gradle.kts", f'''
 plugins {{ kotlin("jvm") version "{catalog['kotlin']}" }}
