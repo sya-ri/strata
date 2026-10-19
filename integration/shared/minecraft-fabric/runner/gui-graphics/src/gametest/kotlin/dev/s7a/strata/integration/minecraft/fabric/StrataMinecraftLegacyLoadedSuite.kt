@@ -82,7 +82,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
             return
         }
         verifyProfileCache(context, output)
-        verifyKeyboardActivationAndScreenTransition(context, profile)
+        MinecraftKeyboardTransitionGameTest(createMinecraftCanvasTestContext(context, output), profile).run()
         verifyContinuousInput(context, profile, output)
         verifyReactiveRendering(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
@@ -204,104 +204,6 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 },
             )
         Files.writeString(output.resolve("reactive-rendering.txt"), "minecraftVersion=${minecraftVersion()}\n$receipt")
-    }
-
-    private fun verifyKeyboardActivationAndScreenTransition(
-        context: MinecraftLoadedTestContext,
-        profile: MinecraftUiProfile,
-    ) {
-        val firstActivations = AtomicInteger()
-        val secondActivations = AtomicInteger()
-        val replacementActivations = AtomicInteger()
-        val screens =
-            context.computeOnClient {
-                val replacement =
-                    createMinecraftScreen(
-                        ScreenDefinition("Keyboard replacement") {
-                            Column {
-                                Button(
-                                    "Replacement",
-                                    modifier = Modifier.initialFocus().onActivate { replacementActivations.incrementAndGet() },
-                                )
-                            }
-                        },
-                        profile,
-                        parent = null,
-                    )
-                val initial =
-                    try {
-                        createMinecraftScreen(
-                            ScreenDefinition("Keyboard activation") {
-                                Column {
-                                    Button(
-                                        "First",
-                                        modifier =
-                                            Modifier.onActivate {
-                                                if (firstActivations.incrementAndGet() == 2) {
-                                                    Minecraft.getInstance().setScreen(replacement)
-                                                }
-                                            },
-                                    )
-                                    Button(
-                                        "Second",
-                                        modifier = Modifier.onActivate { secondActivations.incrementAndGet() },
-                                    )
-                                }
-                            },
-                            profile,
-                            parent = null,
-                        )
-                    } catch (failure: Throwable) {
-                        replacement.close()
-                        throw failure
-                    }
-                initial to replacement
-            }
-        val initial = screens.first
-        val replacement = screens.second
-        val outcome =
-            runCatching {
-                context.computeOnClient { minecraft -> minecraft.setScreen(initial) }
-                context.waitFor { minecraft ->
-                    minecraft.screen === initial && readRenderWork(minecraft).inputs != null
-                }
-                context.computeOnClient { minecraft ->
-                    check(pressMinecraftTab(initial)) { "Native Tab must be consumed by Strata focus traversal." }
-                    check(pressMinecraftEnter(initial)) { "Native Enter must be consumed by the first Strata activation target." }
-                    check(firstActivations.get() == 1 && secondActivations.get() == 0)
-                    check(pressMinecraftTab(initial)) { "Native Tab must advance to the second Strata activation target." }
-                    check(pressMinecraftSpace(initial)) { "Native Space must be consumed by the second Strata activation target." }
-                    check(firstActivations.get() == 1 && secondActivations.get() == 1)
-                    check(pressMinecraftTab(initial, reverse = true)) { "Native Shift+Tab must reverse Strata focus traversal." }
-                    check(pressMinecraftEnter(initial)) { "Native Enter must remain consumed while its callback replaces the screen." }
-                    check(minecraft.screen === replacement) { "The Strata activation callback did not install its replacement screen." }
-                    check(firstActivations.get() == 2 && secondActivations.get() == 1)
-                }
-                context.waitFor { minecraft ->
-                    minecraft.screen === replacement && readRenderWork(minecraft).inputs != null
-                }
-                context.computeOnClient { minecraft ->
-                    check(pressMinecraftSpace(replacement)) { "The replacement screen's initial focus did not consume native Space." }
-                    check(minecraft.screen === replacement)
-                    check(replacementActivations.get() == 1) { "The replacement screen did not acquire initial focus." }
-                    check(firstActivations.get() == 2 && secondActivations.get() == 1) {
-                        "The detached screen retained focus or activation callbacks after replacement."
-                    }
-                }
-            }
-        val cleanup =
-            runCatching {
-                context.computeOnClient { minecraft ->
-                    if (minecraft.screen === initial || minecraft.screen === replacement) minecraft.setScreen(null)
-                    initial.close()
-                    replacement.close()
-                }
-            }
-        outcome.exceptionOrNull()?.let { failure ->
-            cleanup.exceptionOrNull()?.let { cleanupFailure -> if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure) }
-            throw failure
-        }
-        cleanup.getOrThrow()
     }
 
     private fun verifyPortableScene(

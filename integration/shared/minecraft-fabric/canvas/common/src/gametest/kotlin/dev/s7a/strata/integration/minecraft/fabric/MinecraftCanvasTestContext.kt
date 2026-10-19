@@ -5,10 +5,10 @@ import dev.s7a.strata.geometry.IntSize
 import net.minecraft.client.gui.screens.Screen
 import java.nio.file.Path
 
-// Why: this test-only bridge keeps the version-specific native operations of one Canvas acceptance scene together.
+// Why: this test-only bridge keeps version-specific native operations outside shared acceptance scenarios.
 
 /**
- * Adapts loaded-client scheduling and native screenshots for Canvas acceptance across game versions.
+ * Adapts loaded-client scheduling, native input and screenshots for shared acceptance across game versions.
  *
  * Scheduling and screenshot calls originate from the runner thread; implementations marshal work to its owning client thread.
  * Screen mutation is explicitly client-thread-only so consumer callbacks never recursively schedule runner work.

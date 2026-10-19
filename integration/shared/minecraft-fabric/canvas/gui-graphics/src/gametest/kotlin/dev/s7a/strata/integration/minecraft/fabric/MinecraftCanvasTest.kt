@@ -68,95 +68,96 @@ private fun withMinecraftCanvasContext(
                 Triple(width[0], height[0], minecraft.options.guiScale().get())
             }
         }
-    val adapter =
-        object : MinecraftCanvasTestContext {
-            override val outputDirectory: Path = output
-
-            override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient { action() }
-
-            override fun setScreen(screen: Screen?) {
-                Minecraft.getInstance().setScreen(screen)
-            }
-
-            override fun currentScreen(): Screen? = Minecraft.getInstance().screen
-
-            override fun hasOverlay(): Boolean = Minecraft.getInstance().overlay != null
-
-            override fun exchangeHudHidden(hidden: Boolean): Boolean {
-                val options = Minecraft.getInstance().options
-                val previous = options.hideGui
-                options.hideGui = hidden
-                return previous
-            }
-
-            override fun movePointer(position: IntOffset) {
-                context.movePointer(position)
-            }
-
-            override fun pressPointer(
-                screen: Screen,
-                position: IntOffset,
-            ): Boolean = pressMinecraftScreen(screen, position)
-
-            override fun dragPointer(
-                screen: Screen,
-                position: IntOffset,
-                delta: IntOffset,
-            ): Boolean = dragMinecraftScreen(screen, position, delta)
-
-            override fun releasePointer(
-                screen: Screen,
-                position: IntOffset,
-            ): Boolean = releaseMinecraftScreen(screen, position)
-
-            override fun setWindowFocused(focused: Boolean) {
-                focusMinecraftWindow(focused)
-            }
-
-            override fun configureViewport(
-                size: IntSize,
-                guiScale: Int,
-            ) {
-                context.configureVerificationViewport(size, guiScale)
-            }
-
-            override fun waitFor(condition: () -> Boolean) {
-                context.waitFor { condition() }
-            }
-
-            override fun waitFor(
-                timeoutTicks: Int,
-                condition: () -> Boolean,
-            ) {
-                context.waitFor(timeoutTicks) { condition() }
-            }
-
-            override fun waitTicks(ticks: Int) {
-                context.waitTicks(ticks)
-            }
-
-            override fun takeScreenshot(
-                name: String,
-                size: IntSize,
-            ): Path = context.takeScreenshot(name, output, size)
-        }
+    val adapter = createMinecraftCanvasTestContext(context, output)
     val previousDecoration = adapter.onClient { GLFW.glfwGetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED) }
-    var failure: Throwable? = null
-    try {
-        // Borderless verification preserves full-monitor framebuffer sizes on Windows without title-bar clamping.
-        adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE) }
-        action(adapter)
-    } catch (caught: Throwable) {
-        failure = caught
-        throw caught
-    } finally {
-        runCanvasTestCleanup(
-            failure,
-            { adapter.configureViewport(IntSize(previous.first, previous.second), previous.third) },
-            { adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, previousDecoration) } },
-        )
+    AutoCloseable { adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, previousDecoration) } }.use {
+        AutoCloseable { adapter.configureViewport(IntSize(previous.first, previous.second), previous.third) }.use {
+            // Borderless verification preserves full-monitor framebuffer sizes on Windows without title-bar clamping.
+            adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE) }
+            action(adapter)
+        }
     }
 }
+
+/**
+ * Creates a scheduling and native-input adapter without changing the viewport or acquiring native resources.
+ * The caller owns [output] and any screens installed through the borrowed [context].
+ */
+internal fun createMinecraftCanvasTestContext(
+    context: MinecraftLoadedTestContext,
+    output: Path,
+): MinecraftCanvasTestContext =
+    object : MinecraftCanvasTestContext {
+        override val outputDirectory: Path = output
+
+        override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient { action() }
+
+        override fun setScreen(screen: Screen?) {
+            Minecraft.getInstance().setScreen(screen)
+        }
+
+        override fun currentScreen(): Screen? = Minecraft.getInstance().screen
+
+        override fun hasOverlay(): Boolean = Minecraft.getInstance().overlay != null
+
+        override fun exchangeHudHidden(hidden: Boolean): Boolean {
+            val options = Minecraft.getInstance().options
+            val previous = options.hideGui
+            options.hideGui = hidden
+            return previous
+        }
+
+        override fun movePointer(position: IntOffset) {
+            context.movePointer(position)
+        }
+
+        override fun pressPointer(
+            screen: Screen,
+            position: IntOffset,
+        ): Boolean = pressMinecraftScreen(screen, position)
+
+        override fun dragPointer(
+            screen: Screen,
+            position: IntOffset,
+            delta: IntOffset,
+        ): Boolean = dragMinecraftScreen(screen, position, delta)
+
+        override fun releasePointer(
+            screen: Screen,
+            position: IntOffset,
+        ): Boolean = releaseMinecraftScreen(screen, position)
+
+        override fun setWindowFocused(focused: Boolean) {
+            focusMinecraftWindow(focused)
+        }
+
+        override fun configureViewport(
+            size: IntSize,
+            guiScale: Int,
+        ) {
+            context.configureVerificationViewport(size, guiScale)
+        }
+
+        override fun waitFor(condition: () -> Boolean) {
+            context.waitFor { condition() }
+        }
+
+        override fun waitFor(
+            timeoutTicks: Int,
+            condition: () -> Boolean,
+        ) {
+            context.waitFor(timeoutTicks) { condition() }
+        }
+
+        override fun waitTicks(ticks: Int) {
+            context.waitTicks(ticks)
+        }
+
+        override fun takeScreenshot(
+            name: String,
+            size: IntSize,
+        ): Path = context.takeScreenshot(name, output, size)
+    }
 
 /**
  * Runs common UI ownership and HUD/input assertions while the suite owns a loaded world.
