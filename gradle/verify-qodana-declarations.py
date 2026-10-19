@@ -2,6 +2,7 @@
 """Compare fresh Gradle declarations with generated IDEA and imported Qodana ownership."""
 
 import collections
+import csv
 import hashlib
 import json
 import os
@@ -257,8 +258,8 @@ def verify_source_ownership(root, inventory, model, container_root=""):
     return canonical
 
 
-def verify(root, model_path, container_root, java_path):
-    """Verify both downstream models against declaration and resolution data from this exact source."""
+def verify_model(root, model_path, container_root, java_path):
+    """Verify declaration provenance and both downstream models, returning the model and report directory."""
     inventory = read_json(root / "build/qodana/declarations.json")
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     if subprocess.check_output(["git", "diff", "--name-only", "HEAD"], cwd=root):
@@ -549,6 +550,49 @@ def verify(root, model_path, container_root, java_path):
                         if any(path == owned or path in owned.parents or owned in path.parents for _, owned in expected) and not declared_shared_root(foreign_name, foreign.get("contentEntries", []), folder["type"], path):
                             fail(f"imported auxiliary root attributed to a foreign owner: {name}: {path}")
     print(f"Verified {len(owners)} declaration-derived JMH owners and {len(auxiliary)} working auxiliary compilations against IDEA and Qodana.")
+    return model, report_directory
+
+
+def verify_analysis(root, model, report_directory):
+    """Require resolved Kotlin source owners and actual Kotlin inspection work from this analysis invocation."""
+    owners = {
+        module["name"] for module in model["modules"]
+        if any(folder["type"] in {"Source", "TestSource"} and any(file.is_file() for file in url_path(root, root, folder["path"]).rglob("*.kt"))
+               for content in module.get("contentEntries", []) for folder in content.get("sourceFolders", []))
+    }
+    if not owners:
+        fail("analysis has no declared Kotlin source owners")
+    log_path = report_directory / "log/idea.log"
+    statistics_path = report_directory / "log/qodana_inspections_summary.csv"
+    for path in (log_path, statistics_path):
+        if path.is_symlink() or not path.is_file():
+            fail(f"missing regular analysis evidence: {path.name}")
+    unresolved = set(re.findall(r"No source roots detected for module '([^']+)'", log_path.read_text(encoding="utf-8-sig")))
+    if unresolved.intersection(owners):
+        fail(f"IDE did not resolve Kotlin source owners: {sorted(unresolved.intersection(owners))}")
+    performed = 0
+    with statistics_path.open(encoding="utf-8-sig", newline="") as source:
+        rows = csv.DictReader(source, delimiter=";")
+        if not {"Inspection Language", "Times Inspection was Performed"}.issubset(rows.fieldnames or []):
+            fail("missing Kotlin inspection statistics columns")
+        for row in rows:
+            if (row.get("Inspection Language") or "").casefold() == "kotlin":
+                try:
+                    count = int(row["Times Inspection was Performed"])
+                except (TypeError, ValueError):
+                    fail("invalid Kotlin inspection count")
+                if count < 0:
+                    fail("invalid Kotlin inspection count")
+                performed += count
+    if not performed:
+        fail("the analysis performed no Kotlin inspections")
+    print(f"Verified resolved sources for {len(owners)} Kotlin owners and {performed} Kotlin inspection invocations.")
+
+
+def verify(root, model_path, container_root, java_path):
+    """Require complete declaration/model evidence and actual Kotlin analysis without an acceptance bypass."""
+    model, report_directory = verify_model(root, model_path, container_root, java_path)
+    verify_analysis(root, model, report_directory)
 
 
 if __name__ == "__main__":

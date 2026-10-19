@@ -65,7 +65,7 @@ tasks.register("qodanaKotlinModel") {
             require(primary.getAttribute("url") == "file://\$MODULE_DIR\$/") { "Unexpected primary IDEA content: $module" }
             primary.children("sourceFolder").forEach { primary.removeChild(it) }
             canonical.values.filter { it.module == module }.sortedBy { it.path }.forEach { source ->
-                val url = "file://\$PROJECT_DIR\$/${source.path}"
+                val url = "file://${rootProject.file(source.path).canonicalPath.replace(File.separatorChar, '/')}"
                 val content = if (source.directory != null && source.path.startsWith("${source.directory}/")) primary else manager.element("content", mapOf("url" to url))
                 val kind = if (source.resource) "type" to if (source.test) "java-test-resource" else "java-resource" else "isTestSource" to source.test.toString()
                 content.element("sourceFolder", mapOf("url" to url, kind))
@@ -92,7 +92,7 @@ tasks.register("qodanaKotlinModel") {
                 val scope = if (compiled["production"] == true) emptyMap() else mapOf("scope" to "TEST")
                 val entry = manager.element("orderEntry", mapOf("type" to "module-library") + scope)
                 val library = entry.element("library")
-                library.element("CLASSES").element("root", mapOf("url" to "file://${rootProject.file(compiled["path"] as String).canonicalPath.replace(File.separatorChar, '/')}/"))
+                library.element("CLASSES").element("root", mapOf("url" to "file://${rootProject.file(compiled["path"] as String).canonicalPath.replace(File.separatorChar, '/')}"))
                 library.element("JAVADOC")
                 library.element("SOURCES")
             }

@@ -58,5 +58,5 @@ java_path = fixture / "Java.json"
 model_path.write_text(json.dumps(dict(modules=modules)), encoding="utf-8")
 java_path.write_text(json.dumps(dict(modules=java)), encoding="utf-8")
 (fixture / "qodana.sarif.json").write_text(json.dumps(dict(runs=[dict(versionControlProvenance=[dict(revisionId=inventory["revision"])])])), encoding="utf-8")
-checker.verify(root, model_path, "", java_path)
+checker.verify_model(root, model_path, "", java_path)
 print("Verified real compiler inputs, source ownership, output bytes, Kotlin identities and dependency closures using a synthetic import fixture.")

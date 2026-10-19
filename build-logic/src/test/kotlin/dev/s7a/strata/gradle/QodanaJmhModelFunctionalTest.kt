@@ -221,7 +221,7 @@ internal class QodanaJmhModelFunctionalTest {
         val twoModel = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(variantTwo["iml"] as String).toFile())
         assertEquals(2, oneModel.getElementsByTagName("sourceFolder").length)
         assertEquals(0, twoModel.getElementsByTagName("sourceFolder").length)
-        assertTrue(Files.readString(directory.resolve(variantTwo["iml"] as String)).contains("variant-two/build/classes/kotlin/main/"))
+        assertTrue(Files.readString(directory.resolve(variantTwo["iml"] as String)).contains("variant-two/build/classes/kotlin/main\""))
         val compiledVariant = directory.resolve("variant-two/build/classes/kotlin/main")
         URLClassLoader(arrayOf(compiledVariant.toUri().toURL()), javaClass.classLoader).use { loader ->
             assertEquals(19, loader.loadClass("fixture.NativeScreenKt").getMethod("nativeScreenValue").invoke(null))
@@ -337,6 +337,7 @@ internal class QodanaJmhModelFunctionalTest {
             (0 until folders.length).forEach { index ->
                 val folder = folders.item(index) as Element
                 val source = path(folder.getAttribute("url"))
+                assertEquals("file://${source.toRealPath().toString().replace('\\', '/')}", folder.getAttribute("url"), "Source roots must use resolved IDEA URLs.")
                 val content = path((folder.parentNode as Element).getAttribute("url"))
                 assertTrue(source.startsWith(content), "Compiler source $source must belong to its direct content root $content.")
                 assertEquals(null, owners.put(source, project["module"] as String), "Compiler roots must have exactly one IDEA owner.")
@@ -344,8 +345,8 @@ internal class QodanaJmhModelFunctionalTest {
         }
         val benchmark = directory.resolve("bench-two/resolved-bench-two.iml")
         val contents = Files.readString(benchmark)
-        assertTrue(contents.contains("bench-two/build/classes/kotlin/jmh/"))
-        assertTrue(contents.contains("bench-two/build/resources/jmh/"))
+        assertTrue(contents.contains("bench-two/build/classes/kotlin/jmh\""))
+        assertTrue(contents.contains("bench-two/build/resources/jmh\""))
         assertTrue(contents.contains("name=\"friendPaths\""))
     }
 
@@ -367,7 +368,7 @@ internal class QodanaJmhModelFunctionalTest {
                     val url = (roots.item(rootIndex) as Element).getAttribute("url")
                     if (url.startsWith("file://")) {
                         val path = Path.of(url.removePrefix("file://").replace("\$PROJECT_DIR\$", directory.toString()).replace("\$MODULE_DIR\$", modelFile.parent.toString())).normalize()
-                        if (url.contains("\$PROJECT_DIR\$") || path in missing) unresolved.add("${project["module"]}: $url")
+                        if (url.contains("\$PROJECT_DIR\$") || url.endsWith("/") || path in missing) unresolved.add("${project["module"]}: $url")
                     }
                 }
             }

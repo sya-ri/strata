@@ -505,6 +505,10 @@ model_path.write_text(json.dumps(model))
 model_path.with_name("Java.json").write_text(json.dumps({"modules": [{"name": owner["module"], "languageLevel": owner["java"]} for owner in owners] + [{"name": "docs", "languageLevel": 17}]}))
 sarif_path = model_path.with_name("qodana.sarif.json")
 sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": revision}]}]}))
+analysis_logs = model_path.parent / "log"
+analysis_logs.mkdir(exist_ok=True)
+(analysis_logs / "idea.log").write_text("Synthetic resolved module evidence.\n", encoding="utf-8")
+(analysis_logs / "qodana_inspections_summary.csv").write_text("Inspection Language;Times Inspection was Performed\nkotlin;1\n", encoding="utf-8")
 validator = pathlib.Path(sys.argv[4])
 
 
@@ -767,6 +771,19 @@ candidate["runs"][0]["invocations"] = [{"executionSuccessful": True, "toolExecut
 sarif_path.write_text(json.dumps(candidate))
 validate(model_path)
 sarif_path.write_bytes(original_sarif)
+
+# Matching exported metadata must also have resolved sources and actual Kotlin inspection work.
+original_statistics = (analysis_logs / "qodana_inspections_summary.csv").read_bytes()
+(analysis_logs / "qodana_inspections_summary.csv").unlink()
+validate(model_path, rejected=True)
+(analysis_logs / "qodana_inspections_summary.csv").write_text("Inspection Language;Times Inspection was Performed\nkotlin;0\nJAVA;100\n", encoding="utf-8")
+validate(model_path, rejected=True)
+(analysis_logs / "qodana_inspections_summary.csv").write_bytes(original_statistics)
+original_idea_log = (analysis_logs / "idea.log").read_bytes()
+(analysis_logs / "idea.log").write_text(f"No source roots detected for module '{owners[0]['module']}'\n", encoding="utf-8")
+validate(model_path, rejected=True)
+(analysis_logs / "idea.log").write_bytes(original_idea_log)
+validate(model_path)
 
 # The full native stage must admit an exact declared shared root in an arbitrary working owner.
 native_path = "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"
