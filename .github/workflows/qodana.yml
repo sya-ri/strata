@@ -25,7 +25,7 @@ jobs:
           cache-read-only: true
       - name: Prepare independent compiled variants
         run: |
-          python3 -B gradle/probe-shared-kotlin-analysis.py prepare
+          python3 -B gradle/probe-shared-kotlin-analysis.py prepare "${{ matrix.mode }}"
           ./gradlew -p qodana-shared-analysis-fixture :old:verifyFixture :new:verifyFixture :old:writeClasspaths :new:writeClasspaths --no-daemon --console=plain
       - name: Export the selected project roots
         id: fixture

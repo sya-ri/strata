@@ -21,7 +21,7 @@ def write(path, text):
     target.write_text(text, encoding="utf-8")
 
 
-def prepare():
+def prepare(mode=None):
     """Compile the same caller against two independently compiled internal implementations."""
     write("settings.gradle.kts", 'rootProject.name = "shared-kotlin-analysis"\ninclude("old", "new")\n')
     write("build.gradle.kts", '''
@@ -59,6 +59,8 @@ subprojects {
 }
 '''.replace("KOTLIN_VERSION", catalog["kotlin"]).replace("JAVA_VERSION", catalog["java-baseline"]))
     write("shared/Shared.kt", "package fixture\npublic fun entry(): Int = versionValue() + 3\n")
+    if mode == "combined-copy":
+        write("shared/Shared.kt", "package fixture\npublic fun entry(): Int = versionValue() + 3\nprivate fun unusedSharedCanary(): Int = 0\n")
     for name, value in (("old", 10), ("new", 20)):
         write(f"{name}/src/main/kotlin/fixture/Value.kt", "@file:JvmSynthetic\npackage fixture\ninternal fun versionValue(): Int = " + str(value) + "\n" +
               ("private fun unusedCanary(): Int = 0\n" if name == "old" else ""))
@@ -155,13 +157,17 @@ def inspect(mode, results):
         assert not findings, findings
     else:
         assert len(canaries) == 1, findings
-        if mode in {"single-old", "combined-copy"}:
+        if mode == "combined-copy":
+            shared_canaries = [item for item in findings if '"unusedSharedCanary"' in item[2]]
+            assert len(shared_canaries) == 2 and len({path for _, path, _ in shared_canaries}) == 2, findings
+            assert len(findings) == 3, findings
+        elif mode == "single-old":
             assert findings == canaries, findings
     print(json.dumps(dict(mode=mode, kotlin_work=work, findings=findings), indent=2))
 
 
 if sys.argv[1] == "prepare":
-    prepare()
+    prepare(sys.argv[2] if len(sys.argv) == 3 else None)
 elif sys.argv[1] == "export":
     export(sys.argv[2])
 else:
