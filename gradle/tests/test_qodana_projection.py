@@ -6,6 +6,7 @@ import hashlib
 import json
 import pathlib
 import subprocess
+import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -18,6 +19,25 @@ SPEC.loader.exec_module(DECLARATIONS)
 
 class QodanaProjectionTest(unittest.TestCase):
     """Keep forgery controls independent from the Gradle model projection implementation."""
+
+    def test_native_python_declared_target_rows_use_exact_lf_delimiters(self):
+        script = (pathlib.Path(__file__).parents[1] / "verify-qodana-model.sh").read_text(encoding="utf-8")
+        marker = '"$qodana_python" - "$project_root/build/qodana/declarations.json" > "$declared_target_source_roots" <<\'PY\'\n'
+        exporter = script.split(marker, 1)[1].split("\nPY\n", 1)[0]
+        inventory = self.root / "declared-rows.json"
+        inventory.write_text(json.dumps(dict(projects=[
+            dict(project=":runtime:minecraft-fabric-1.20", roots=[
+                dict(kind="Source", path="runtime/shared/minecraft-fabric/resources/font-stb/src/main/kotlin", exists=True, generated=False),
+                dict(kind="Source", path="runtime/build/generated", exists=True, generated=True),
+                dict(kind="Source", path="runtime/absent", exists=False, generated=False),
+            ]),
+            dict(project=":integration:docs", roots=[dict(kind="Source", path="showcase/kotlin", exists=True, generated=False)]),
+            dict(project=":unrelated", roots=[]),
+        ])), encoding="utf-8")
+        result = subprocess.run([sys.executable, "-c", exporter, str(inventory)], capture_output=True, check=True)
+        self.assertEqual(
+            b"runtime\t1.20\tSource\tfile://$PROJECT_DIR$/runtime/shared/minecraft-fabric/resources/font-stb/src/main/kotlin\n"
+            b"docs\t-\tSource\tfile://$PROJECT_DIR$/showcase/kotlin\n", result.stdout)
 
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()

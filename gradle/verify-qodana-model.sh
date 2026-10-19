@@ -845,6 +845,7 @@ import json
 import pathlib
 import sys
 
+sys.stdout.reconfigure(newline="\n")
 inventory = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 for owner in inventory["projects"]:
     project = owner["project"]
