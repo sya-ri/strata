@@ -280,10 +280,12 @@ public class RemoteClientSession(
             val next = change(before)
             if (next == before) return UiOperationResult.Accepted
             check(sequence < Long.MAX_VALUE) { "Client UI control sequence is exhausted." }
-            val request = next.copy(sequence = ++sequence)
-            desired = request
-            checkNotNull(outgoing)(RemoteMessage.ControlRequest(identity, request))
-            return UiOperationResult.Accepted
+            return guarded {
+                val request = next.copy(sequence = ++sequence)
+                desired = request
+                checkNotNull(outgoing)(RemoteMessage.ControlRequest(identity, request))
+                UiOperationResult.Accepted
+            }
         }
     }
 
