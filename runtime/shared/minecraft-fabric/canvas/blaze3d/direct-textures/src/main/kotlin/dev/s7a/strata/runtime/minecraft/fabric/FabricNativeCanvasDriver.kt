@@ -28,7 +28,6 @@ import java.util.OptionalInt
  * Native failures propagate to the device so leased inputs and owned targets remain fenced before cleanup.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-@Suppress("TooGenericExceptionCaught")
 internal object FabricNativeCanvasDriver : NativeCanvasDriver {
     private val topLeftPipeline = pipeline(MinecraftCanvasTextureOrigin.TopLeft)
     private val bottomLeftPipeline = pipeline(MinecraftCanvasTextureOrigin.BottomLeft)
@@ -39,15 +38,10 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         depth: Boolean,
     ): NativeCanvasTarget {
         RenderSystem.assertOnRenderThread()
-        FabricNativeCanvasShaders.requireSupportedExtent(physicalSize)
-        val target = OffscreenTarget(depth)
-        try {
+        return createFabricNativeCanvasTarget(physicalSize, { OffscreenTarget(depth) }) { target ->
             target.createBuffers(physicalSize.width, physicalSize.height)
             target.setFilterMode(FilterMode.NEAREST)
-        } catch (failure: Throwable) {
-            FabricNativeCanvasPartialTarget.fail(target, physicalSize, failure)
         }
-        return FabricNativeCanvasTarget.create(target)
     }
 
     @JvmSynthetic
@@ -87,7 +81,7 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         val texture = lease.texture
         require(texture.isClosed.not()) { "A Canvas source texture must remain open for its entire lease." }
         require(texture.format == TextureFormat.RGBA8) { "Canvas accepts only RGBA8 straight-alpha color textures." }
-        FabricNativeCanvasShaders.requireSupportedExtent(lease.size)
+        requireFabricMinecraftCanvasExtent(lease.size)
         require(texture.getWidth(0) == lease.size.width && texture.getHeight(0) == lease.size.height) {
             "A Canvas lease extent must match native mip level zero."
         }
@@ -169,6 +163,6 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
     ): String =
         when (stage) {
             ShaderType.VERTEX -> FabricNativeCanvasShaders.vertex
-            ShaderType.FRAGMENT -> FabricNativeCanvasShaders.fragment(origin)
+            ShaderType.FRAGMENT -> FabricNativeCanvasShaders.fragment(origin, "uniform ivec3 CanvasTargetExtent;")
         }
 }

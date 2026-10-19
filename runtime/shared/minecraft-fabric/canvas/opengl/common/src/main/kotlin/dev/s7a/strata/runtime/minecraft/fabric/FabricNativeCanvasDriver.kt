@@ -34,7 +34,7 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         depth: Boolean,
     ): NativeCanvasTarget {
         RenderSystem.assertOnRenderThread()
-        FabricNativeCanvasShaders.requireSupportedExtent(physicalSize)
+        requireFabricMinecraftCanvasExtent(physicalSize)
         return FabricNativeCanvasGlState().use {
             RenderSystem.activeTexture(GL13.GL_TEXTURE0)
             FabricNativeCanvasTarget.create(createCanvasRenderTarget(physicalSize, depth))
@@ -109,7 +109,7 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
         val previousError = GL11.glGetError()
         check(previousError == GL11.GL_NO_ERROR) { "Canvas capture encountered a pre-existing OpenGL error: $previousError." }
         FabricNativeCanvasGlState().use {
-            FabricNativeCanvasShaders.requireSupportedExtent(lease.size)
+            requireFabricMinecraftCanvasExtent(lease.size)
             require(GL11.glIsTexture(lease.textureId)) { "A Canvas source texture must exist in the active render context." }
             GL13.glActiveTexture(GL13.GL_TEXTURE0)
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, lease.textureId)

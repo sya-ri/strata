@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertNull
@@ -14,10 +15,15 @@ import org.junit.jupiter.api.assertThrows
  */
 internal class FabricMinecraftCanvasSnapshotTest {
     @Test
+    @OptIn(InternalStrataRuntimeApi::class)
     fun nativeExtentBoundProtectsIntegerPixelCenterSampling() {
-        assertDoesNotThrow { FabricNativeCanvasShaders.requireSupportedExtent(IntSize(32768, 32768)) }
+        assertDoesNotThrow { requireFabricMinecraftCanvasExtent(IntSize(32768, 32768)) }
         listOf(IntSize(32769, 1), IntSize(1, 32769), IntSize(0, 1), IntSize(1, 0)).forEach { size ->
-            assertThrows<IllegalArgumentException> { FabricNativeCanvasShaders.requireSupportedExtent(size) }
+            assertThrows<IllegalArgumentException> {
+                createFabricNativeCanvasTarget(size, { error("Invalid extents must fail before native allocation.") }) {
+                    error("Invalid extents must fail before native initialization.")
+                }
+            }
         }
     }
 

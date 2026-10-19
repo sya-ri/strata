@@ -93,7 +93,7 @@ internal class FabricNativeCanvasGlProgram private constructor(
          * @throws IllegalStateException when the OpenGL compiler or linker rejects the fixed shaders.
          */
         @JvmSynthetic
-        internal fun create(origin: MinecraftCanvasTextureOrigin): FabricNativeCanvasGlProgram = create(FabricNativeCanvasShaders.vertex, FabricNativeCanvasShaders.fragment(origin))
+        internal fun create(origin: MinecraftCanvasTextureOrigin): FabricNativeCanvasGlProgram = create(FabricNativeCanvasShaders.vertex, FabricNativeCanvasShaders.fragment(origin, "uniform ivec3 CanvasTargetExtent;"))
 
         /**
          * Compiles the shared exact integer composition source without retaining command or image inputs.

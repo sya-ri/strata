@@ -18,7 +18,5 @@ internal fun drawFabricMinecraftExactSampledImage(
     prepared: AbstractTexture,
     bounds: IntRect,
 ) {
-    submitFabricMinecraftGuiCorners(bounds) { x0, y0, x1, y1 ->
-        graphics.blit(prepared.getTextureView(), prepared.getSampler(), x0, y0, x1, y1, 0f, 1f, 0f, 1f)
-    }
+    graphics.blit(prepared.getTextureView(), prepared.getSampler(), bounds.left, bounds.top, bounds.right, bounds.bottom, 0f, 1f, 0f, 1f)
 }

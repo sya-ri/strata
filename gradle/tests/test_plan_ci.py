@@ -201,8 +201,9 @@ class PlanCiTest(unittest.TestCase):
                  (["docs/development/ci.md"], None, (False, False, False)),
                  (["tools/web/package.json"], None, (False, False, False)),
                  (["unknown-input"], None, (False, True, True)),
-                 ([native], {}, (False, True, False)),
-                 ([native], {"26.3": ["runtime/shared/minecraft-fabric/input"]}, (False, False, False))]
+                 ([native], {}, (False, True, True)),
+                 ([native], {"minecraft": {}, "documentation": []}, (False, True, False)),
+                 ([native], {"minecraft": {"26.3": ["runtime/shared/minecraft-fabric/input"]}, "documentation": []}, (False, False, False))]
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "plan.json"
             model_file = Path(temporary) / "model.json"
@@ -350,10 +351,13 @@ class PlanCiTest(unittest.TestCase):
             git("add", "--all")
             git("commit", "--quiet", "-m", "Move source")
             model = root / "model.json"
-            model.write_text(json.dumps({"1.20": ["runtime/shared/old"], "26.3": ["runtime/shared/new"]}))
+            model.write_text(json.dumps({"minecraft": {"1.20": ["runtime/shared/old"], "26.3": ["runtime/shared/new"]},
+                                         "documentation": ["runtime/shared/old"]}))
             script = Path(__file__).parents[1] / "plan-ci.py"
             output = subprocess.check_output([sys.executable, str(script), "--base", base, "--model", str(model)], cwd=root)
-            self.assertEqual(["1.20", "26.3"], json.loads(output)["minecraft"])
+            result = json.loads(output)
+            self.assertEqual(["1.20", "26.3"], result["minecraft"])
+            self.assertTrue(result["docs_full"])
 
     def test_tooling_and_prose_changes_do_not_start_clients(self):
         for path in ("release/hangar-release.py", "docs/guides/screens.md", ".github/workflows/publish-release.yml", "gradle/tests/test_plan_ci.py", "gradle/verify-qodana-model-fixtures.sh"):
@@ -364,10 +368,32 @@ class PlanCiTest(unittest.TestCase):
             self.assertFalse(result["qodana"])
 
     def test_shared_and_renamed_sources_include_both_owners(self):
-        model = {"1.20": ["runtime/shared/old"], "26.3": ["runtime/shared/new"]}
+        model = {"minecraft": {"1.20": ["runtime/shared/old"], "26.3": ["runtime/shared/new"]}, "documentation": []}
         result = planner.plan(["runtime/shared/old/Deleted.kt", "runtime/shared/new/Added.kt"], model)
         self.assertEqual(["1.20", "26.3"], result["minecraft"])
         self.assertFalse(result["all_minecraft"])
+
+    def test_shared_documentation_sources_keep_native_and_documentation_checks(self):
+        root = "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"
+        model = {"minecraft": {"26.3": [root], "1.20": ["runtime/shared/native"]}, "documentation": [root]}
+        for path in (root, root + "/MinecraftProgressExample.kt", root + "/RemovedExample.kt"):
+            with self.subTest(path=path):
+                result = planner.plan([path], model)
+                self.assertEqual(["26.3"], result["minecraft"])
+                self.assertTrue(result["docs_full"] and result["qodana"])
+                self.assertFalse(result["all_minecraft"] or result["common"] or result["web"])
+        for path in ("runtime/shared/native/Changed.kt", root + "-other/Changed.kt"):
+            with self.subTest(path=path):
+                self.assertFalse(planner.plan([path], model)["docs_full"])
+        renamed = planner.plan([root + "/Deleted.kt", "runtime/shared/native/Added.kt"], model)
+        self.assertEqual(["1.20", "26.3"], renamed["minecraft"])
+        self.assertTrue(renamed["docs_full"])
+
+    def test_unknown_source_model_shapes_keep_full_verification(self):
+        for model in ({}, [], {"26.3": ["runtime/shared/native"]},
+                      {"minecraft": [], "documentation": []}, {"minecraft": {}, "documentation": {}}):
+            with self.subTest(model=model):
+                self.assertEqual(planner.plan([], full=True), planner.plan(["runtime/shared/native/Changed.kt"], model))
 
     def test_unknown_ownership_and_global_inputs_expand_checks(self):
         self.assertTrue(planner.plan(["runtime/shared/unmapped/New.kt"], {})["all_minecraft"])
