@@ -3,6 +3,7 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiCategory
@@ -13,6 +14,7 @@ import dev.s7a.strata.ui.UiSessionStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -128,13 +130,97 @@ internal class RemoteLifecycleEventTest {
         }
     }
 
+    @Test
+    fun serviceCloseRejectsAdmissionBeforeTerminalListenersRun() {
+        Host().use { fixture ->
+            val owner = Any()
+            val definition = UiDefinition { Spacer() }
+            val extension = ProjectionType(ResourceId("example", "terminal"), 1)
+            val handle = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            fixture.drain()
+            var terminalEvents = 0
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed || event is RemoteLifecycleEvent.Disconnected) {
+                    terminalEvents++
+                    assertThrows(IllegalStateException::class.java) { fixture.service.join(Unit) }
+                    assertThrows(IllegalStateException::class.java) { fixture.service.register(owner, extension) }
+                    assertThrows(IllegalStateException::class.java) { fixture.service.open(owner, Unit, definition) }
+                }
+            }
+            fixture.service.close()
+            fixture.service.close()
+            fixture.service.enqueue(Unit, RemotePacket.encode(RemotePacket.Discovery))
+            assertTrue(fixture.drain().isEmpty())
+            assertEquals(2, terminalEvents)
+            assertTrue(handle.uiSession.status is UiSessionStatus.Closed)
+            assertNull(fixture.service.capabilities(Unit))
+            Host().use { replacement ->
+                assertEquals(RemoteSessionStatus.Open, replacement.service.open(owner, Unit, definition).status)
+            }
+        }
+    }
+
+    @Test
+    fun closingFromAReplacedConnectionListenerDoesNotInstallANewPeer() {
+        Host().use { fixture ->
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Disconnected) fixture.service.close()
+            }
+            fixture.service.join(Unit)
+            fixture.service.enqueue(Unit, RemotePacket.encode(RemotePacket.Discovery))
+            fixture.service.tick()
+            assertTrue(fixture.outgoing.isEmpty())
+            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Disconnected>().size)
+        }
+    }
+
+    @Test
+    fun joiningAfterAQueuedServiceCloseDoesNotReviveTheConnection() {
+        Host().use { fixture ->
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Opened) {
+                    fixture.service.close()
+                    fixture.service.join(Unit)
+                }
+            }
+            val handle = fixture.service.open(Any(), Unit, UiDefinition { Spacer() })
+            val snapshot = fixture.drain().filterIsInstance<RemoteMessage.Snapshot>().single()
+            fixture.send(RemoteMessage.ControlApplied(handle.identity, checkNotNull(snapshot.control).sequence))
+            fixture.service.enqueue(Unit, RemotePacket.encode(RemotePacket.Discovery))
+            fixture.service.tick()
+            assertTrue(fixture.outgoing.isEmpty())
+            assertTrue(handle.uiSession.status is UiSessionStatus.Closed)
+            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Disconnected>().size)
+        }
+    }
+
+    @Test
+    fun disconnectingOrReplacingFromAnOpenedListenerStopsTheRetiredTick() {
+        listOf<(RemoteScreenService<Unit, Any>) -> Unit>(
+            { it.disconnect(Unit) },
+            { it.join(Unit) },
+        ).forEach { retire ->
+            Host().use { fixture ->
+                fixture.listener = { event ->
+                    if (event is RemoteLifecycleEvent.Opened) retire(fixture.service)
+                }
+                val handle = fixture.service.open(Any(), Unit, UiDefinition { Spacer() })
+                val snapshot = fixture.drain().filterIsInstance<RemoteMessage.Snapshot>().single()
+                fixture.send(RemoteMessage.ControlApplied(handle.identity, checkNotNull(snapshot.control).sequence))
+                assertTrue(handle.uiSession.status is UiSessionStatus.Closed)
+                assertTrue(fixture.outgoing.isEmpty())
+                assertTrue(fixture.events.last() is RemoteLifecycleEvent.Disconnected)
+            }
+        }
+    }
+
     /**
      * Authenticated packet route with explicit native-application acknowledgements.
      */
     private class Host : AutoCloseable {
         val events = mutableListOf<RemoteLifecycleEvent<Any>>()
         var listener: (RemoteLifecycleEvent<Any>) -> Unit = {}
-        private val outgoing = ArrayDeque<ByteArray>()
+        val outgoing = ArrayDeque<ByteArray>()
         private val incoming = ArrayDeque<ByteArray>()
         val service =
             RemoteScreenService<Unit, Any>(RemoteEndpoint.Server, { _, bytes -> outgoing.addLast(bytes) }, { throw it }, notify = { _, event ->
