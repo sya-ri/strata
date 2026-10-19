@@ -43,8 +43,8 @@ jobs:
       docs_full: ${{ steps.plan.outputs.docs_full }}
       workflow: ${{ steps.plan.outputs.workflow }}
       qodana: ${{ steps.plan.outputs.qodana }}
-      all_minecraft: ${{ steps.plan.outputs.all_minecraft }}
-      minecraft: ${{ steps.plan.outputs.minecraft }}
+      all_minecraft: ${{ steps.ownership.outputs.all_minecraft || steps.plan.outputs.all_minecraft }}
+      minecraft: ${{ steps.ownership.outputs.minecraft || steps.plan.outputs.minecraft }}
       subject_ref: ${{ steps.plan.outputs.subject_ref }}
       client_backend: ${{ steps.plan.outputs.client_backend }}
       client_matrix: ${{ steps.plan.outputs.client_matrix }}
@@ -79,12 +79,6 @@ jobs:
         ref: ${{ inputs.subject_ref }}
         path: subject
         persist-credentials: false
-    - uses: ./.github/actions/setup-strata-java
-      if: inputs.subject_ref == ''
-    - uses: gradle/actions/setup-gradle@v6
-      if: inputs.subject_ref == ''
-      with:
-        gradle-home-cache-excludes: caches/fabric-loom
     - name: Select opt-in paired JVM measurement
       if: inputs.subject_ref == ''
       id: paired
@@ -127,13 +121,6 @@ jobs:
         fi
         if [[ "$EVENT" == pull_request ]]; then
           args=(--base "$BASE" --head "$HEAD")
-          if git diff --no-renames --name-only "$BASE...$HEAD" | grep -Eq '^(runtime|integration)/(shared/|minecraft-fabric-)'; then
-            GITHUB_OUTPUT='' python3 gradle/plan-ci.py "${args[@]}" > /dev/null
-            if jq --exit-status '.common | not' build/github-actions/ci-plan.json > /dev/null; then
-              bash ./gradlew :writeCiSourceModel
-              args+=(--model build/github-actions/source-model.json)
-            fi
-          fi
         elif [[ "$EVENT" == workflow_dispatch && -n "$MANIFEST" ]]; then
           args=(--paired-manifest "$MANIFEST")
         fi
@@ -148,6 +135,21 @@ jobs:
         BACKEND: ${{ inputs.minecraft_backend }}
         SUBJECT: ${{ inputs.subject_ref }}
         GH_TOKEN: ${{ github.token }}
+    - uses: ./.github/actions/setup-strata-java
+      if: steps.plan.outputs.source_model == 'true'
+    - uses: gradle/actions/setup-gradle@v6
+      if: steps.plan.outputs.source_model == 'true'
+      with:
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Resolve native source ownership
+      if: steps.plan.outputs.source_model == 'true'
+      id: ownership
+      run: |-
+        bash ./gradlew :writeCiSourceModel
+        python3 gradle/plan-ci.py --base "$BASE" --head "$HEAD" --model build/github-actions/source-model.json
+      env:
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
   paired-jvm:
     name: Complete paired runtime measurement
     needs: plan
