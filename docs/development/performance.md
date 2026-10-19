@@ -684,7 +684,7 @@ The public `extractMinecraftUiProfile()` factory still reads and returns a fresh
 The cache stores only derived immutable GUI pixels and one detached font snapshot.
 Every host still owns its own font engine, raster caches, and native faces.
 Replacing the key drops the previous cache entry before extraction, and a failed extraction publishes nothing.
-One atomic state captures a monotonic generation counter, the optional current entry, and the terminal flag.
+Each invalidation installs a distinct atomic state containing only the optional current entry and the terminal flag, including when the cache is already empty.
 Both the initial claim and completed publication compare that captured state, so invalidation while empty also rejects work which has not claimed its pending entry yet.
 A separate loading flag remains set until the active extraction unwinds, including after invalidation, and rejects reentry into a canceled load.
 The internal extraction factory receives the exact captured manager, capabilities, and options from the key rather than reading mutable global inputs again.

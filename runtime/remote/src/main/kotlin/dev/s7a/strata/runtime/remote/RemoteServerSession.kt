@@ -201,7 +201,9 @@ public class RemoteServerSession(
             controls.setInteractionMode(message.state.interactionMode)
         }
         if ((status is RemoteSessionStatus.Closed).not()) {
-            send(RemoteMessage.ControlReceipt(identity, message.state.sequence, (controls.status as? UiSessionStatus.Ready)?.rejection))
+            operation {
+                send(RemoteMessage.ControlReceipt(identity, message.state.sequence, (controls.status as? UiSessionStatus.Ready)?.rejection))
+            }
         }
     }
 

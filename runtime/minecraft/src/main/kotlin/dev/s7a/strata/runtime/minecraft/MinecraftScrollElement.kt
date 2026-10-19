@@ -202,7 +202,6 @@ private class MinecraftScrollElement private constructor(
          * @param current next immutable description.
          * @return exact dirty phases required by the update.
          */
-        @Suppress("unused")
         @JvmSynthetic
         internal fun updateFrom(current: MinecraftScrollElement): DirtyMask {
             val imagesChanged =
