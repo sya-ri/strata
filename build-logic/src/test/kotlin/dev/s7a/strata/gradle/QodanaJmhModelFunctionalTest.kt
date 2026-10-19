@@ -36,6 +36,14 @@ internal class QodanaJmhModelFunctionalTest {
             directory.resolve("build.gradle.kts"),
             """
             import groovy.json.JsonOutput
+            import java.io.StringWriter
+            import javax.xml.parsers.DocumentBuilderFactory
+            import javax.xml.transform.OutputKeys
+            import javax.xml.transform.TransformerFactory
+            import javax.xml.transform.dom.DOMSource
+            import javax.xml.transform.stream.StreamResult
+            import org.w3c.dom.Element
+            import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
             import java.io.File
             import java.security.MessageDigest
             import org.gradle.api.artifacts.component.ModuleComponentIdentifier
@@ -75,7 +83,13 @@ internal class QodanaJmhModelFunctionalTest {
         )
         write("support/build.gradle.kts", "")
         write("support/src/main/java/fixture/Support.java", "package fixture; public class Support { public static int value() { return 7; } }")
-        write("support-kotlin/build.gradle.kts", "")
+        write(
+            "support-kotlin/build.gradle.kts",
+            """
+            import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+            tasks.named<KotlinJvmCompile>("compileKotlin") { compilerOptions.moduleName.set("fixture-support") }
+            """.trimIndent(),
+        )
         write("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt", "package fixture\npublic fun kotlinValue(): Int = 5\n")
         write("shared-inputs/kotlin/fixture/SharedValue.kt", "package fixture\ninternal fun sharedValue(): Int = 11\n")
         write("shared-inputs/resources/shared.txt", "shared compilation resource\n")
@@ -126,6 +140,26 @@ internal class QodanaJmhModelFunctionalTest {
         git("-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Create working JMH owners")
         val result = runner().build()
         assertEquals(TaskOutcome.SUCCESS, result.task(":qodanaDeclarationInventory")?.outcome)
+        val kotlinModule = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve("support-kotlin/support-kotlin.iml").toFile())
+        val facets = kotlinModule.getElementsByTagName("facet")
+        assertEquals(1, facets.length)
+        assertEquals(
+            "kotlin-language",
+            facets
+                .item(0)
+                .attributes
+                .getNamedItem("type")
+                .nodeValue,
+        )
+        val options = kotlinModule.getElementsByTagName("option")
+        val compilerOptions =
+            (0 until options.length).associate { index ->
+                val attributes = options.item(index).attributes
+                attributes.getNamedItem("name").nodeValue to attributes.getNamedItem("value").nodeValue
+            }
+        assertTrue(Files.isRegularFile(directory.resolve("support-kotlin/build/classes/kotlin/main/META-INF/fixture-support.kotlin_module")))
+        assertEquals("fixture-support", compilerOptions["moduleName"])
+        assertEquals("17", compilerOptions["jvmTarget"])
         val parsed = JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()) as Map<*, *>
         val inventoried = parsed["owners"] as List<*>
         assertEquals(owners.map { ":$it" }.toSet(), inventoried.map { (it as Map<*, *>)["project"] }.toSet())
@@ -264,7 +298,7 @@ internal class QodanaJmhModelFunctionalTest {
         GradleRunner.create().withProjectDir(directory.toFile()).withArguments(
             "cleanIdea",
             "idea",
-            "qodanaDeclarationInventory",
+            "qodanaKotlinModel",
             ":shared-kmp:compileKotlinJvm",
             "--no-configure-on-demand",
             "--max-workers=1",

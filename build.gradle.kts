@@ -1,6 +1,7 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.papermc.hangarpublishplugin.model.Platforms
+import java.io.StringWriter
 import java.security.MessageDigest
 import java.util.UUID
 import com.vanniktech.maven.publish.Checksum
@@ -51,6 +52,12 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import javax.inject.Inject
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+import org.w3c.dom.Element
 import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -1649,6 +1656,46 @@ if (completeIdeaModelActive) {
             output.parentFile.mkdirs()
             output.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(inventory)) + "\n")
             logger.lifecycle("Inventoried ${owners.size} declared JMH owners independently of generated IDEA and Qodana metadata.")
+        }
+    }
+
+    tasks.register("qodanaKotlinModel") {
+        group = "verification"
+        description = "Exports actual Kotlin compiler module identities into Qodana's generated IDEA model."
+        notCompatibleWithConfigurationCache("Reads configured compiler tasks and updates generated analysis metadata.")
+        dependsOn("idea", "qodanaDeclarationInventory")
+        doLast {
+            /** Appends one standard IDEA element with attributes derived from actual compiler settings. */
+            fun Element.element(name: String, attributes: Map<String, String>): Element {
+                val child = ownerDocument.createElement(name)
+                attributes.forEach { (key, value) -> child.setAttribute(key, value) }
+                appendChild(child)
+                return child
+            }
+            allprojects.forEach { owner ->
+                val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>() ?: return@forEach
+                val main = kotlin.target.compilations.getByName("main")
+                val compiler = owner.tasks.named<KotlinJvmCompile>(main.compileTaskProvider.name).get()
+                val module = owner.extensions.getByType<IdeaModel>().module
+                val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(module.outputFile)
+                val root = document.documentElement
+                val managers = root.getElementsByTagName("component")
+                require((0 until managers.length).none { managers.item(it).attributes.getNamedItem("name")?.nodeValue == "FacetManager" }) {
+                    "Recreate the owned IDEA model with cleanIdea before exporting Kotlin compiler settings."
+                }
+                val facets = root.element("component", mapOf("name" to "FacetManager"))
+                val facet = facets.element("facet", mapOf("type" to "kotlin-language", "name" to "Kotlin"))
+                val target = compiler.compilerOptions.jvmTarget.get().target
+                val configuration = facet.element("configuration", mapOf("version" to "3", "platform" to "JVM $target", "useProjectSettings" to "false"))
+                val arguments = configuration.element("compilerArguments", emptyMap())
+                arguments.element("option", mapOf("name" to "moduleName", "value" to compiler.compilerOptions.moduleName.get()))
+                arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))
+                val text = StringWriter()
+                val transformer = TransformerFactory.newInstance().newTransformer()
+                transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes")
+                transformer.transform(DOMSource(document), StreamResult(text))
+                module.outputFile.writeText("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n$text\n")
+            }
         }
     }
 }

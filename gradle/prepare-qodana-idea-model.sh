@@ -32,7 +32,7 @@ bash ./gradlew \
   cleanIdea \
   :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar \
   classes gametestClasses \
-  idea qodanaDeclarationInventory 2>&1 | tee build/qodana/gradle.log
+  idea qodanaDeclarationInventory qodanaKotlinModel 2>&1 | tee build/qodana/gradle.log
 [[ -s build/qodana/declarations.json ]] || {
   echo 'Gradle did not recreate the declaration-derived JMH inventory.' >&2
   exit 1
