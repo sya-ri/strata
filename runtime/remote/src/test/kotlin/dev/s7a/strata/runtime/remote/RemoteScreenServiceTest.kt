@@ -92,6 +92,23 @@ internal class RemoteScreenServiceTest {
         }
     }
 
+    @Test
+    fun rejectedCompatibilityOpeningsPreserveDefinitionOwnership() {
+        val wrongOwner = ScreenDefinition("Owner") { Spacer() }
+        val stopped = ScreenDefinition("Stopped") { Spacer() }
+        Host().use { fixture ->
+            RuntimeExecutionOwner().run {
+                assertThrows(IllegalStateException::class.java) { fixture.host.open(Unit, Unit, wrongOwner) }
+            }
+            fixture.host.close()
+            assertThrows(IllegalStateException::class.java) { fixture.host.open(Unit, Unit, stopped) }
+        }
+        Host().use { replacement ->
+            assertEquals(RemoteSessionStatus.Open, replacement.host.open(Unit, Unit, wrongOwner).status)
+            assertEquals(RemoteSessionStatus.Open, replacement.host.open(Unit, Unit, stopped).status)
+        }
+    }
+
     /**
      * Uses the same opaque player identity and built-in schemas as a newly joined backend.
      */

@@ -376,7 +376,10 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         owner: Owner,
         player: Player,
         definition: ScreenDefinition,
-    ): RemoteScreenSession = open(owner, player, definition.asUiDefinition())
+    ): RemoteScreenSession {
+        checkOpen()
+        return open(owner, player, definition.asUiDefinition())
+    }
 
     /**
      * Authenticated transport with one ordinary screen and a bounded set of HUDs.
