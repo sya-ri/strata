@@ -143,11 +143,12 @@ internal class UiSessionBinding<T>(
     }
 
     /**
-     * Disables callbacks and discards pending values during session cleanup.
+     * Disables callbacks and releases committed, captured, and pending values during terminal cleanup.
      */
     fun disable() {
         synchronized(monitor) {
             disabled = true
+            committed = null
             pending = null
             captured = null
         }
