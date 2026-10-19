@@ -620,6 +620,7 @@ dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata/component/TabSelectionIndicator;)Ldev/s7a/strata/projection/ProjectionValue;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata/component/TextAreaViewport;)Ldev/s7a/strata/projection/ProjectionValue;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata/component/TextInputAppearance;)Ldev/s7a/strata/projection/ProjectionValue;
+dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata/component/TextStyle;)Ldev/s7a/strata/projection/ProjectionValue;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata/geometry/Insets;)Ldev/s7a/strata/projection/ProjectionValue;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata/geometry/IntRect;)Ldev/s7a/strata/projection/ProjectionValue;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:encode:(Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/projection/ProjectionValue;
@@ -642,6 +643,7 @@ dev.s7a.strata.runtime.remote.RemoteProperties#method:17:skin:(Ldev/s7a/strata/p
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:slot:(Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/component/SlotBinding;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:text:(Ldev/s7a/strata/projection/ProjectionValue;)Ljava/lang/String;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:textLayout:(Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/text/TextLayout;
+dev.s7a.strata.runtime.remote.RemoteProperties#method:17:textStyle:(Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/component/TextStyle;
 dev.s7a.strata.runtime.remote.RemoteProperties#method:17:viewport:(Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/component/TextAreaViewport;
 dev.s7a.strata.runtime.remote.RemoteProperties#type:17:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemoteProperties$WhenMappings#type:4121:java.lang.Object:
