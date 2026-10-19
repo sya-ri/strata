@@ -100,69 +100,43 @@
   <div class="breadcrumbs"><a href="../../index.html">api</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.component</a><span class="delimiter">/</span><span class="current">TextStyle</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Text</span><wbr><span><span>Style</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="index.html">TextStyle</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="index.html">TextStyle</a><span class="token operator">&gt; </span><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/api/src/main/kotlin/dev/s7a/strata/component/TextStyle.kt#L8">source</a>)</span></span></div><p class="paragraph">Closed profile-backed color and shadow policy for text components.</p><p class="paragraph">Values contain no platform resource and are resolved by the active runtime profile during screen evaluation.</p></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">TextStyle</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>color<span class="token operator">: </span><a href="../../dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a><span class="token operator"> = </span>ArgbColor(-1)<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>shadow<span class="token operator">: </span><a href="../-text-shadow/index.html">TextShadow</a><span class="token operator">?</span><span class="token operator"> = </span>TextShadow.Automatic<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>disabledColor<span class="token operator">: </span><a href="../../dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/api/src/main/kotlin/dev/s7a/strata/component/TextStyle.kt#L14">source</a>)</span></span></div><p class="paragraph">Immutable foreground and independent shadow policy shared by labels and editors. Font selection and logical text metrics are independent of this value.</p></div></div>
   </div>
   <div class="tabbedcontent">
-    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="ENTRY">Entries</button></div>
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
-      <div data-togglable="ENTRY">
-        <h2 class="tableheader">Entries</h2>
-        <div class="table"><a data-name="2067747454%2FClasslikes%2F410371219" anchor-label="Normal" id="2067747454%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
-          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="tableheader">Constructors</h2>
+        <div class="table"><a data-name="1018765664%2FConstructors%2F410371219" anchor-label="TextStyle" id="1018765664%2FConstructors%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-normal/index.html">Normal</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2067747454%2FClasslikes%2F410371219"></span>
+                  <div><a href="-text-style.html"><span>Text</span><wbr><span><span>Style</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1018765664%2FConstructors%2F410371219"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><div class="block"><a href="-normal/index.html">Normal</a></div></div><div class="brief "><p class="paragraph">Opaque white foreground with the profile's ordinary dark shadow.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">color<span class="token operator">: </span><a href="../../dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a><span class="token operator"> = </span>ArgbColor(-1)<span class="token punctuation">, </span></span><span class="parameter ">shadow<span class="token operator">: </span><a href="../-text-shadow/index.html">TextShadow</a><span class="token operator">?</span><span class="token operator"> = </span>TextShadow.Automatic<span class="token punctuation">, </span></span><span class="parameter ">disabledColor<span class="token operator">: </span><a href="../../dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="264355394%2FClasslikes%2F410371219" anchor-label="Inactive" id="264355394%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
-          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+        </div>
+      </div>
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="705235368%2FClasslikes%2F410371219" anchor-label="Companion" id="705235368%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-inactive/index.html">Inactive</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="264355394%2FClasslikes%2F410371219"></span>
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="705235368%2FClasslikes%2F410371219"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><div class="block"><a href="-inactive/index.html">Inactive</a></div></div><div class="brief "><p class="paragraph">Muted foreground and shadow used by inactive labels.</p></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-<a data-name="1124393098%2FClasslikes%2F410371219" anchor-label="ContainerLabel" id="1124393098%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
-          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
-            <div class="main-subrow keyValue ">
-              <div class=""><span class="inline-flex">
-                  <div><a href="-container-label/index.html">ContainerLabel</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1124393098%2FClasslikes%2F410371219"></span>
-                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                  </span></span></div>
-              <div>
-                <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><div class="block"><a href="-container-label/index.html">ContainerLabel</a></div></div><div class="brief "><p class="paragraph">Dark foreground without a shadow for labels inside container panels.</p></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-<a data-name="214850430%2FClasslikes%2F410371219" anchor-label="TextField" id="214850430%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
-          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
-            <div class="main-subrow keyValue ">
-              <div class=""><span class="inline-flex">
-                  <div><a href="-text-field/index.html">TextField</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="214850430%2FClasslikes%2F410371219"></span>
-                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                  </span></span></div>
-              <div>
-                <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><div class="block"><a href="-text-field/index.html">TextField</a></div></div><div class="brief "><p class="paragraph">Enabled or disabled text-field colors selected by the field state.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div><div class="brief "><p class="paragraph">Standard Minecraft-compatible presets, which can also be customized with <a href="../../../api/dev.s7a.strata.component/-text-style/copy.html">copy</a>.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -171,81 +145,47 @@
       </div>
       <div data-togglable="PROPERTY">
         <h2 class="tableheader">Properties</h2>
-        <div class="table"><a data-name="-194392367%2FProperties%2F410371219" anchor-label="entries" id="-194392367%2FProperties%2F410371219" data-filterable-set=":api/commonMain"></a>
+        <div class="table"><a data-name="-641793954%2FProperties%2F410371219" anchor-label="color" id="-641793954%2FProperties%2F410371219" data-filterable-set=":api/commonMain"></a>
           <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="entries.html"><span><span>entries</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-194392367%2FProperties%2F410371219"></span>
+                  <div><a href="color.html"><span><span>color</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-641793954%2FProperties%2F410371219"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="entries.html">entries</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.enums/-enum-entries/index.html">EnumEntries</a><span class="token operator">&lt;</span><a href="index.html">TextStyle</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns a representation of an immutable list of all enum entries, in the order they're declared.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="color.html">color</a><span class="token operator">: </span><a href="../../dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a></div><div class="brief "><p class="paragraph">foreground tint, including alpha.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-372974862%2FProperties%2F410371219" anchor-label="name" id="-372974862%2FProperties%2F410371219" data-filterable-set=":api/commonMain"></a>
+<a data-name="-639606278%2FProperties%2F410371219" anchor-label="disabledColor" id="-639606278%2FProperties%2F410371219" data-filterable-set=":api/commonMain"></a>
           <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="../../dev.s7a.strata.ui/-ui-visibility/-close/index.html#-372974862%2FProperties%2F410371219"><span><span>name</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-372974862%2FProperties%2F410371219"></span>
+                  <div><a href="disabled-color.html"><span>disabled</span><wbr><span><span>Color</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-639606278%2FProperties%2F410371219"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">expect </span><span class="token keyword">val </span><a href="../../dev.s7a.strata.ui/-ui-visibility/-close/index.html#-372974862%2FProperties%2F410371219">name</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="disabled-color.html">disabledColor</a><span class="token operator">: </span><a href="../../dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">optional foreground override for disabled editors; null uses <a href="../../../api/dev.s7a.strata.component/-text-style/--root--.html">color</a>.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-739389684%2FProperties%2F410371219" anchor-label="ordinal" id="-739389684%2FProperties%2F410371219" data-filterable-set=":api/commonMain"></a>
+<a data-name="1096285305%2FProperties%2F410371219" anchor-label="shadow" id="1096285305%2FProperties%2F410371219" data-filterable-set=":api/commonMain"></a>
           <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="../../dev.s7a.strata.ui/-ui-visibility/-close/index.html#-739389684%2FProperties%2F410371219"><span><span>ordinal</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-739389684%2FProperties%2F410371219"></span>
+                  <div><a href="shadow.html"><span><span>shadow</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1096285305%2FProperties%2F410371219"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">expect </span><span class="token keyword">val </span><a href="../../dev.s7a.strata.ui/-ui-visibility/-close/index.html#-739389684%2FProperties%2F410371219">ordinal</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div data-togglable="FUNCTION">
-        <h2 class="tableheader">Functions</h2>
-        <div class="table"><a data-name="441608811%2FFunctions%2F410371219" anchor-label="valueOf" id="441608811%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
-          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
-            <div class="main-subrow keyValue ">
-              <div class=""><span class="inline-flex">
-                  <div><a href="value-of.html"><span>value</span><wbr><span><span>Of</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="441608811%2FFunctions%2F410371219"></span>
-                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                  </span></span></div>
-              <div>
-                <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="value-of.html"><span class="token function">valueOf</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">value<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">TextStyle</a></div><div class="brief "><p class="paragraph">Returns the enum constant of this type with the specified name. The string must match exactly an identifier used to declare an enum constant in this type. (Extraneous whitespace characters are not permitted.)</p></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-<a data-name="-82182473%2FFunctions%2F410371219" anchor-label="values" id="-82182473%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
-          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
-            <div class="main-subrow keyValue ">
-              <div class=""><span class="inline-flex">
-                  <div><a href="values.html"><span><span>values</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-82182473%2FFunctions%2F410371219"></span>
-                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                  </span></span></div>
-              <div>
-                <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="values.html"><span class="token function">values</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><a href="index.html">TextStyle</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns an array containing the constants of this enum type, in the order they're declared.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="shadow.html">shadow</a><span class="token operator">: </span><a href="../-text-shadow/index.html">TextShadow</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">shadow policy; null omits shadow images and drawing commands in both enabled states.</p></div></div></div>
                 </div>
               </div>
             </div>
