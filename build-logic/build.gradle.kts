@@ -49,11 +49,19 @@ tasks.test {
     // These production files are read by TestKit outside this included build's normal source inputs.
     inputs.files(
         "../build.gradle.kts",
+        "../settings.gradle.kts",
         "../gradle/libs.versions.toml",
+        "../gradle/performance/bounded-jvm.init.gradle.kts",
+        "../integration/minecraft-fabric-published-runtime.gradle.kts",
         "../gradle/qodana-idea-model.gradle.kts",
         "../gradle/verify-qodana-declarations.py",
         "../gradle/tests/fixtures/assert_qodana_compiler_model.py",
-    ).withPropertyName("qodanaCompilerModel").withPathSensitivity(PathSensitivity.RELATIVE)
+    ).withPropertyName("externalFixtureSources").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.files(
+        fileTree("..") {
+            include("runtime/minecraft-fabric-*/build.gradle.kts", "integration/minecraft-fabric-*/build.gradle.kts")
+        },
+    ).withPropertyName("nativeFixtureProjects").withPathSensitivity(PathSensitivity.RELATIVE)
     // TestKit releases its dedicated daemons when the class worker finishes.
     forkEvery = 1
 }
