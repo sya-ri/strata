@@ -41,14 +41,14 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Private retained implementation of one finite profile-backed CycleButton.
  */
 private class MinecraftCycleButtonElement private constructor(
-    internal val normalSprite: MinecraftButtonSpriteSnapshot,
-    internal val highlightedSprite: MinecraftButtonSpriteSnapshot,
-    internal val disabledSprite: MinecraftButtonSpriteSnapshot,
-    internal val state: CycleButtonState<*>,
+    val normalSprite: MinecraftButtonSpriteSnapshot,
+    val highlightedSprite: MinecraftButtonSpriteSnapshot,
+    val disabledSprite: MinecraftButtonSpriteSnapshot,
+    val state: CycleButtonState<*>,
     labels: List<Pair<MinecraftTextRun, MinecraftTextRun>>,
-    internal val width: Int,
-    internal val enabled: Boolean,
-    internal val actions: ActionDispatcher,
+    val width: Int,
+    val enabled: Boolean,
+    val actions: ActionDispatcher,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -57,7 +57,7 @@ private class MinecraftCycleButtonElement private constructor(
         children = emptyList(),
         modifier = modifier,
     ) {
-    internal val labels: List<Pair<MinecraftTextRun, MinecraftTextRun>> = labels.toList()
+    val labels: List<Pair<MinecraftTextRun, MinecraftTextRun>> = labels.toList()
 
     @Suppress("TooManyFunctions") // The retained node implements the component's input, lifecycle, drawing, and semantics contracts.
     private class Node(
@@ -200,7 +200,7 @@ private class MinecraftCycleButtonElement private constructor(
             focused = false
         }
 
-        internal fun updateFrom(current: MinecraftCycleButtonElement): DirtyMask {
+        fun updateFrom(current: MinecraftCycleButtonElement): DirtyMask {
             val geometryChanged = width != current.width
             val semanticsChanged = enabled != current.enabled || state !== current.state || labels != current.labels
             if (state !== current.state) {
@@ -267,7 +267,7 @@ private class MinecraftCycleButtonElement private constructor(
                 updateNode = { _, current, node -> node.updateFrom(current) },
             )
 
-        internal fun create(
+        fun create(
             normalSprite: MinecraftButtonSpriteSnapshot,
             highlightedSprite: MinecraftButtonSpriteSnapshot,
             disabledSprite: MinecraftButtonSpriteSnapshot,

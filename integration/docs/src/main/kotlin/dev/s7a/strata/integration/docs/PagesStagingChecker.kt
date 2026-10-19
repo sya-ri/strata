@@ -17,7 +17,7 @@ internal object PagesStagingChecker {
      * @param args repository root, staged Pages root, and generated inventory file.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         require(args.size == 3) { "Pages staging checker requires repository, staged-site, and inventory paths." }
         check(Path.of(args[0]), Path.of(args[1]), Path.of(args[2]))
     }

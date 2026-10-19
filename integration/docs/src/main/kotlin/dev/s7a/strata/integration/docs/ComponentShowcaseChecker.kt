@@ -16,7 +16,7 @@ internal object ComponentShowcaseChecker {
      * @param args project root, module build root, exact check staging root, client archive, asset index, asset objects directory, version manifest, native inventory PNG, native inventory receipt, and one or more compiled API component class directories, in that order.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         val launch = ShowcaseLaunchArguments.parse(args, ShowcaseStagingKind.Check)
         val prepared = ShowcasePipeline.prepare(launch)
         ShowcasePipeline.writeStaging(prepared)

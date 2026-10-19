@@ -92,7 +92,7 @@ private class MinecraftTextElement private constructor(
          * @return a profile-backed single-line text element.
          */
         @JvmSynthetic
-        internal fun create(
+        fun create(
             run: MinecraftTextRun,
             modifier: Modifier,
             key: ElementKey<*>?,

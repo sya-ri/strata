@@ -16,7 +16,7 @@ internal object ComponentShowcaseGenerator {
      * @param args project root, module build root, exact generation staging root, client archive, asset index, asset objects directory, version manifest, native inventory PNG, native inventory receipt, and one or more compiled API component class directories, in that order.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         val launch = ShowcaseLaunchArguments.parse(args, ShowcaseStagingKind.Generate)
         val prepared = ShowcasePipeline.prepare(launch)
         ShowcasePipeline.writeStaging(prepared)

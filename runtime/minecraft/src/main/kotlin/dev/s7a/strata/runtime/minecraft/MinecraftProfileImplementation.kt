@@ -728,7 +728,7 @@ internal object MinecraftProfileImplementation {
              * @return a private immutable profile implementation.
              */
             @JvmSynthetic
-            internal fun create(
+            fun create(
                 menuBackground: DrawImage,
                 containerBackground: DrawImage,
                 slotHighlightBack: DrawImage,
@@ -1372,7 +1372,7 @@ internal object MinecraftProfileImplementation {
              * @return an active context bound to the current thread.
              */
             @JvmSynthetic
-            internal fun create(
+            fun create(
                 profile: ProfileSnapshot,
                 platform: MinecraftUiPlatform?,
                 textRenderer: MinecraftTextRenderer,
@@ -1478,7 +1478,7 @@ internal object MinecraftProfileImplementation {
              * @return a reusable evaluator that never retains application content.
              */
             @JvmSynthetic
-            internal fun create(
+            fun create(
                 profile: ProfileSnapshot,
                 platform: MinecraftUiPlatform?,
                 textRenderer: MinecraftTextRenderer,

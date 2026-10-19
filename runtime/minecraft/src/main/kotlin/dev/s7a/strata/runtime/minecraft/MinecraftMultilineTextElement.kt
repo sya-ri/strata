@@ -124,7 +124,7 @@ private class MinecraftMultilineTextElement(
          * @return immutable reusable element description without native resource ownership.
          */
         @JvmSynthetic
-        internal fun create(
+        fun create(
             text: UiText,
             renderer: MinecraftTextRenderer,
             policy: TextLayout.Multiline,

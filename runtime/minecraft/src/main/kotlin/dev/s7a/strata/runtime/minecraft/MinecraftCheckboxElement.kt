@@ -44,17 +44,17 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Private retained implementation of one native-profile Checkbox.
  */
 private class MinecraftCheckboxElement private constructor(
-    internal val normal: DrawImage,
-    internal val highlighted: DrawImage,
-    internal val selected: DrawImage,
-    internal val selectedHighlighted: DrawImage,
-    internal val normalText: MinecraftTextRun,
-    internal val inactiveText: MinecraftTextRun,
-    internal val label: UiText,
-    internal val state: CheckboxState,
-    internal val width: Int,
-    internal val enabled: Boolean,
-    internal val actions: ActionDispatcher,
+    val normal: DrawImage,
+    val highlighted: DrawImage,
+    val selected: DrawImage,
+    val selectedHighlighted: DrawImage,
+    val normalText: MinecraftTextRun,
+    val inactiveText: MinecraftTextRun,
+    val label: UiText,
+    val state: CheckboxState,
+    val width: Int,
+    val enabled: Boolean,
+    val actions: ActionDispatcher,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -192,7 +192,7 @@ private class MinecraftCheckboxElement private constructor(
             focused = false
         }
 
-        internal fun updateFrom(current: MinecraftCheckboxElement): DirtyMask {
+        fun updateFrom(current: MinecraftCheckboxElement): DirtyMask {
             val geometryChanged = width != current.width
             val semanticsChanged = label != current.label || enabled != current.enabled || state !== current.state
             if (state !== current.state) {
@@ -245,7 +245,7 @@ private class MinecraftCheckboxElement private constructor(
                 updateNode = { _, current, node -> node.updateFrom(current) },
             )
 
-        internal fun create(
+        fun create(
             normal: DrawImage,
             highlighted: DrawImage,
             selected: DrawImage,

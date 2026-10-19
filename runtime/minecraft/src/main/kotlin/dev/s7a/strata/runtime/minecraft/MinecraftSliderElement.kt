@@ -44,17 +44,17 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Private retained implementation of one native-profile horizontal Slider.
  */
 private class MinecraftSliderElement private constructor(
-    internal val normalTrack: MinecraftButtonSpriteSnapshot,
-    internal val highlightedTrack: MinecraftButtonSpriteSnapshot,
-    internal val normalHandle: DrawImage,
-    internal val highlightedHandle: DrawImage,
-    internal val normalText: MinecraftTextRun,
-    internal val inactiveText: MinecraftTextRun,
-    internal val label: UiText,
-    internal val state: SliderState,
-    internal val width: Int,
-    internal val enabled: Boolean,
-    internal val actions: ActionDispatcher,
+    val normalTrack: MinecraftButtonSpriteSnapshot,
+    val highlightedTrack: MinecraftButtonSpriteSnapshot,
+    val normalHandle: DrawImage,
+    val highlightedHandle: DrawImage,
+    val normalText: MinecraftTextRun,
+    val inactiveText: MinecraftTextRun,
+    val label: UiText,
+    val state: SliderState,
+    val width: Int,
+    val enabled: Boolean,
+    val actions: ActionDispatcher,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -217,7 +217,7 @@ private class MinecraftSliderElement private constructor(
             dragging = false
         }
 
-        internal fun updateFrom(current: MinecraftSliderElement): DirtyMask {
+        fun updateFrom(current: MinecraftSliderElement): DirtyMask {
             val geometryChanged = width != current.width
             val semanticsChanged = label != current.label || enabled != current.enabled || state !== current.state
             if (state !== current.state) {
@@ -279,7 +279,7 @@ private class MinecraftSliderElement private constructor(
                 updateNode = { _, current, node -> node.updateFrom(current) },
             )
 
-        internal fun create(
+        fun create(
             normalTrack: MinecraftButtonSpriteSnapshot,
             highlightedTrack: MinecraftButtonSpriteSnapshot,
             normalHandle: DrawImage,
