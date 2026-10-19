@@ -209,7 +209,6 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
 
     /**
      * Ends admission before releasing peers and notifying terminal listeners; repeated close has no effect.
-     * All peers finish cleanup before failures reach the caller-owned reporter.
      */
     override fun close() {
         transition {

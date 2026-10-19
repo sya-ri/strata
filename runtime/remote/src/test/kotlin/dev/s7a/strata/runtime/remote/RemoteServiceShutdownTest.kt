@@ -11,7 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
 /**
- * Terminal cleanup must finish every negotiated peer before invoking a fallible error reporter.
+ * A failing error reporter must not interrupt cleanup of other selected sessions.
  */
 internal class RemoteServiceShutdownTest {
     @ParameterizedTest
