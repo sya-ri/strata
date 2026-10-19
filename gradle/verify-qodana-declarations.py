@@ -536,6 +536,8 @@ def verify_model(root, model_path, container_root, java_path):
                 continue
             name = declaration["module"]
             compilations = declaration["productionCompilations"]
+            if compilations and declaration["project"] + ":qodanaDependencyInventory" not in inventory["taskGraph"]:
+                fail(f"missing project-owned dependency export task: {name}")
             expected = {entry["sourceSet"] for entry in declaration["outputs"] if entry["production"]}
             if len({entry["sourceSet"] for entry in compilations}) != len(compilations) or {entry["sourceSet"] for entry in compilations} != expected:
                 fail(f"production compiler outputs and dependency declarations differ: {name}")

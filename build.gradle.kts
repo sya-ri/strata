@@ -50,6 +50,7 @@ import org.jetbrains.dokka.gradle.engine.plugins.DokkaVersioningPluginParameters
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import javax.inject.Inject
@@ -1453,6 +1454,66 @@ if (completeIdeaModelActive) {
         }.orEmpty()
     }
 
+    val dependencyInventories = mutableMapOf<String, TaskProvider<Task>>()
+    gradle.projectsEvaluated {
+        val revision = gitOutput("rev-parse", "HEAD").trim()
+        allprojects.sortedBy { it.path }.forEach { owner ->
+            val sourceSets = owner.extensions.findByType<SourceSetContainer>() ?: return@forEach
+            if (sourceSets.isEmpty()) return@forEach
+            if (owner.extensions.findByType<IdeaModel>() == null) return@forEach
+            val output = owner.layout.buildDirectory.file("qodana/dependencies.json")
+            dependencyInventories[owner.path] = owner.tasks.register("qodanaDependencyInventory") {
+                notCompatibleWithConfigurationCache("Reads this project's configured compiler and resolution model.")
+                outputs.file(output)
+                outputs.upToDateWhen { false }
+                dependsOn(sourceSets.map { it.output })
+                mustRunAfter(owner.tasks.named("ideaModule"))
+                doLast {
+                    val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
+                    val multiplatform = owner.extensions.findByType<KotlinMultiplatformExtension>()
+                    val compilations = kotlin?.target?.compilations.orEmpty() + multiplatform?.targets
+                        ?.filter { it.platformType == KotlinPlatformType.jvm }?.flatMap { it.compilations }.orEmpty()
+                    val auxiliary = owner.workingAuxiliarySourceSets()
+                    val selected = sourceSets.filter { sourceSet ->
+                        sourceSet.name == "main" || compilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name } ||
+                            (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSet.name == "jmh") || sourceSet in auxiliary
+                    }
+                    val declarations = selected.associate { sourceSet ->
+                        val matching = compilations.filter { it.defaultSourceSet.name == sourceSet.name }
+                        require(matching.size <= 1) { "Ambiguous JVM compiler dependencies: ${owner.path}:${sourceSet.name}" }
+                        val compilation = matching.singleOrNull()
+                        val runtimeName = if (compilation == null) sourceSet.runtimeClasspathConfigurationName else requireNotNull(compilation.runtimeDependencyConfigurationName)
+                        val runtimeFiles = if (compilation == null) sourceSet.runtimeClasspath else requireNotNull(compilation.runtimeDependencyFiles)
+                        val classpaths = listOf(
+                            Triple("compile", compilation?.compileDependencyConfigurationName ?: sourceSet.compileClasspathConfigurationName, compilation?.compileDependencyFiles ?: sourceSet.compileClasspath),
+                            Triple("runtime", runtimeName, runtimeFiles),
+                        )
+                        // Resolve only while executing a task owned by this project, including parallel builds.
+                        val artifacts = classpaths.flatMap { (_, name, _) -> owner.configurations.getByName(name).incoming.artifacts.artifacts }
+                            .distinctBy { it.file.canonicalFile }.sortedBy { it.id.displayName }.map { artifact ->
+                                val component = artifact.id.componentIdentifier
+                                val identity = when (component) {
+                                    is ProjectComponentIdentifier -> mapOf("project" to component.projectPath)
+                                    is ModuleComponentIdentifier -> mapOf("identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}")
+                                    else -> mapOf("identity" to component.displayName)
+                                }
+                                identity + mapOf("path" to artifact.file.canonicalFile.invariantSeparatorsPath)
+                            }
+                        sourceSet.name to mapOf(
+                            "classpaths" to classpaths.associate { (role, name, _) -> role to name },
+                            "files" to classpaths.associate { (_, name, files) -> name to files.files.map { it.canonicalFile.invariantSeparatorsPath }.distinct() },
+                            "artifacts" to artifacts,
+                        )
+                    }
+                    output.get().asFile.apply {
+                        parentFile.mkdirs()
+                        writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("revision" to revision, "project" to owner.path, "compilations" to declarations))) + "\n")
+                    }
+                }
+            }
+        }
+    }
+
     tasks.register("qodanaDeclarationInventory") {
         group = "verification"
         description = "Recreates revision-bound JVM compiler root, SDK and dependency expectations from Gradle declarations."
@@ -1461,13 +1522,19 @@ if (completeIdeaModelActive) {
         outputs.upToDateWhen { false }
         dependsOn(provider {
             allprojects.filter { it.plugins.hasPlugin("me.champeau.jmh") }.map { it.tasks.named("jmhClasses") } +
-                allprojects.flatMap { owner -> owner.extensions.findByType<SourceSetContainer>()?.map { it.output }.orEmpty() }
+                allprojects.flatMap { owner -> owner.extensions.findByType<SourceSetContainer>()?.map { it.output }.orEmpty() } + dependencyInventories.values
         })
         mustRunAfter(provider { allprojects.flatMap { it.tasks.matching { task -> task.name == "ideaModule" }.toList() } })
         doLast {
             val changedTrackedSources = gitOutput("diff", "--name-status", "--no-renames", "HEAD")
             require(changedTrackedSources.isBlank()) {
                 "Declaration acceptance requires the selected revision's clean tracked sources. Changed tracked paths:\n$changedTrackedSources"
+            }
+            val revision = gitOutput("rev-parse", "HEAD").trim()
+            val dependencyInputs = dependencyInventories.mapValues { (project, task) ->
+                val input = JsonSlurper().parse(task.get().outputs.files.singleFile) as Map<*, *>
+                require(input["revision"] == revision && input["project"] == project) { "Dependency inventory differs from the selected project revision: $project" }
+                input["compilations"] as Map<*, *>
             }
             // All producers have completed; these maps live only for this action's immutable filesystem snapshot.
             val fileHashes = mutableMapOf<File, String>()
@@ -1496,37 +1563,31 @@ if (completeIdeaModelActive) {
              * Resolves actual compiler/runtime edges while omitting owner outputs and absent source-set outputs from NO_SOURCE tasks.
              * Missing required libraries still fail their byte inventory instead of disappearing from analysis.
              */
-            fun Project.declarationDependencies(sourceSet: SourceSet): Map<String, List<Map<String, String>>> {
-                val owner = this
+            fun Project.declarationDependencies(sourceSet: SourceSet): Map<String, Any> {
                 val sourceSets = extensions.getByType<SourceSetContainer>()
                 val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
-                val artifacts = listOf(sourceSet.compileClasspathConfigurationName, sourceSet.runtimeClasspathConfigurationName).flatMap { configurationName ->
-                    owner.configurations.getByName(configurationName).incoming.artifacts.artifacts
-                }.distinctBy { it.file.canonicalFile }
-                return listOf(sourceSet.compileClasspathConfigurationName to sourceSet.compileClasspath, sourceSet.runtimeClasspathConfigurationName to sourceSet.runtimeClasspath).associate { (configurationName, classpath) ->
-                    val requiredFiles = classpath.files.map { it.canonicalFile }.toSet() - ownOutputs - absentOutputs
-                    val resolved = artifacts.filter { it.file.canonicalFile in requiredFiles }
-                    val resolvedFiles = resolved.map { it.file.canonicalFile }.toSet()
-                    val identities = resolved.sortedBy { it.id.displayName }.map { artifact ->
-                        val component = artifact.id.componentIdentifier
-                        when (component) {
-                            is ProjectComponentIdentifier -> {
-                                val dependency = rootProject.project(component.projectPath)
-                                mapOf("kind" to "Module", "identity" to dependency.extensions.getByType<IdeaModel>().module.name, "project" to component.projectPath)
-                            }
-                            is ModuleComponentIdentifier -> mapOf(
-                                "kind" to "Library",
-                                "identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}",
-                                "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'),
-                                "sha256" to artifact.file.sha256(),
-                            )
-                            else -> mapOf("kind" to "Library", "identity" to component.displayName, "path" to artifact.file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to artifact.file.sha256())
+                val input = dependencyInputs.getValue(path)[sourceSet.name] as Map<*, *>
+                val classpaths = (input["classpaths"] as Map<*, *>).entries.associate { (role, name) -> role as String to name as String }
+                val artifacts = (input["artifacts"] as List<*>).map { it as Map<*, *> }
+                val dependencies = (input["files"] as Map<*, *>).entries.associate { (name, paths) ->
+                    val requiredFiles = (paths as List<*>).map { File(it as String).canonicalFile }.toSet() - ownOutputs - absentOutputs
+                    val resolved = artifacts.filter { File(it["path"] as String) in requiredFiles }
+                    val resolvedFiles = resolved.map { File(it["path"] as String) }.toSet()
+                    val identities = resolved.map { artifact ->
+                        val dependencyProject = artifact["project"] as String?
+                        if (dependencyProject == null) {
+                            val library = File(artifact["path"] as String)
+                            mapOf("kind" to "Library", "identity" to artifact["identity"] as String, "path" to library.invariantSeparatorsPath, "sha256" to library.sha256())
+                        } else {
+                            val dependency = rootProject.project(dependencyProject)
+                            mapOf("kind" to "Module", "identity" to dependency.extensions.getByType<IdeaModel>().module.name, "project" to dependencyProject)
                         }
                     }.distinct() + (requiredFiles - resolvedFiles).sortedBy { it.path }.map { file ->
                         mapOf("kind" to "Library", "identity" to "file:${file.canonicalPath}", "path" to file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to file.sha256())
                     }
-                    configurationName to identities
+                    name as String to identities
                 }
+                return mapOf("classpaths" to classpaths, "dependencies" to dependencies)
             }
 
             val projects = allprojects.sortedBy { it.path }.map { owner ->
@@ -1626,11 +1687,7 @@ if (completeIdeaModelActive) {
                     "productionCompilations" to sourceSets.orEmpty().filter { sourceSet ->
                         sourceSet.name == "main" || platformCompilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name }
                     }.map { sourceSet ->
-                        mapOf(
-                            "sourceSet" to sourceSet.name,
-                            "classpaths" to mapOf("compile" to sourceSet.compileClasspathConfigurationName, "runtime" to sourceSet.runtimeClasspathConfigurationName),
-                            "dependencies" to owner.declarationDependencies(sourceSet),
-                        )
+                        mapOf("sourceSet" to sourceSet.name) + owner.declarationDependencies(sourceSet)
                     },
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
                     "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
@@ -1688,9 +1745,7 @@ if (completeIdeaModelActive) {
                     "compilations" to kotlin?.target?.compilations?.map { compilation ->
                         mapOf("name" to compilation.name, "sourceSets" to compilation.allKotlinSourceSets.map { it.name }.sorted(), "associatedWith" to compilation.associatedCompilations.map { it.name }.sorted())
                     }.orEmpty(),
-                    "classpaths" to mapOf("compile" to jmh.compileClasspathConfigurationName, "runtime" to jmh.runtimeClasspathConfigurationName),
-                    "dependencies" to dependencies,
-                )
+                ) + dependencies
             }
             val auxiliary = allprojects.sortedBy { it.path }.flatMap { owner ->
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
@@ -1724,13 +1779,11 @@ if (completeIdeaModelActive) {
                     require(outputs.any { (it["files"] as Map<*, *>).isNotEmpty() }) { "Working auxiliary compilation produced no classes or metadata: ${owner.path}:${sourceSet.name}" }
                     mapOf("project" to owner.path, "sourceSet" to sourceSet.name, "directory" to owner.projectDir.repositoryPath(), "module" to module.name,
                         "java" to owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion.get().asInt(),
-                        "iml" to module.outputFile.repositoryPath(), "roots" to roots, "outputs" to outputs,
-                        "classpaths" to mapOf("compile" to sourceSet.compileClasspathConfigurationName, "runtime" to sourceSet.runtimeClasspathConfigurationName),
-                        "dependencies" to owner.declarationDependencies(sourceSet))
+                        "iml" to module.outputFile.repositoryPath(), "roots" to roots, "outputs" to outputs) + owner.declarationDependencies(sourceSet)
                 }
             }
             require(owners.isNotEmpty()) { "The complete model must discover configured working JMH owners." }
-            val inventory = mapOf("revision" to gitOutput("rev-parse", "HEAD").trim(), "tracked" to tracked, "projects" to projects, "owners" to owners, "auxiliary" to auxiliary, "taskGraph" to gradle.taskGraph.allTasks.map { it.path })
+            val inventory = mapOf("revision" to revision, "tracked" to tracked, "projects" to projects, "owners" to owners, "auxiliary" to auxiliary, "taskGraph" to gradle.taskGraph.allTasks.map { it.path })
             val output = layout.buildDirectory.file("qodana/declarations.json").get().asFile
             output.parentFile.mkdirs()
             output.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(inventory)) + "\n")

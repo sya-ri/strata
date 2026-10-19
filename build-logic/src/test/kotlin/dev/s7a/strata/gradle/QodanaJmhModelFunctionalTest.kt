@@ -42,6 +42,7 @@ internal class QodanaJmhModelFunctionalTest {
             directory.resolve("build.gradle.kts"),
             """
             import groovy.json.JsonOutput
+            import groovy.json.JsonSlurper
             import java.io.StringWriter
             import javax.xml.parsers.DocumentBuilderFactory
             import javax.xml.transform.OutputKeys
@@ -56,14 +57,17 @@ internal class QodanaJmhModelFunctionalTest {
             import org.gradle.api.artifacts.component.ProjectComponentIdentifier
             import org.gradle.api.plugins.JavaPluginExtension
             import org.gradle.api.Project
+            import org.gradle.api.Task
             import org.gradle.api.tasks.SourceSet
             import org.gradle.api.tasks.SourceSetContainer
+            import org.gradle.api.tasks.TaskProvider
             import org.gradle.jvm.toolchain.JavaLanguageVersion
             import org.gradle.jvm.toolchain.JavaToolchainService
             import org.gradle.plugins.ide.idea.model.IdeaModel
             import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
             import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
             import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+            import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
             plugins {
                 idea
                 alias(libs.plugins.kotlin.jvm) apply false
@@ -253,6 +257,8 @@ internal class QodanaJmhModelFunctionalTest {
         assertEquals("strict", sharedCompiler["explicitApi"])
         val sharedProduction = (projects.single { it["project"] == ":shared-kmp" }["productionCompilations"] as List<*>).single() as Map<*, *>
         val sharedClasspaths = sharedProduction["classpaths"] as Map<*, *>
+        assertEquals("jvmCompileClasspath", sharedClasspaths["compile"])
+        assertEquals("jvmRuntimeClasspath", sharedClasspaths["runtime"])
         val sharedDependencies = sharedProduction["dependencies"] as Map<*, *>
         val compileDependencies = (sharedDependencies[sharedClasspaths["compile"]] as List<*>).map { it as Map<*, *> }
         val runtimeDependencies = (sharedDependencies[sharedClasspaths["runtime"]] as List<*>).map { it as Map<*, *> }
@@ -332,6 +338,7 @@ internal class QodanaJmhModelFunctionalTest {
         val firstView = (sourceViews["roots"] as List<*>).first() as Map<*, *>
         val obsoleteSource = directory.resolve(firstView["view"] as String).resolve("Obsolete.kt")
         Files.writeString(obsoleteSource, "This stale file must not enter a later analysis.\n")
+        Files.writeString(directory.resolve("shared-kmp/build/qodana/dependencies.json"), "{\"revision\":\"stale\",\"project\":\":foreign\",\"compilations\":{}}\n")
         val reused = runner().build()
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
         assertTrue(Files.exists(obsoleteSource).not(), "Each analysis must recreate the exact selected source views.")
@@ -547,8 +554,8 @@ internal class QodanaJmhModelFunctionalTest {
             "qodanaKotlinModel",
             ":shared-kmp:compileKotlinJvm",
             "--no-configure-on-demand",
-            "--max-workers=1",
-            "--no-parallel",
+            "--max-workers=2",
+            "--parallel",
             "-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m",
             "--stacktrace",
         )

@@ -87,6 +87,19 @@ finally:
 assert library_resolutions and all(count <= library_edge_budget[edge] for edge, count in library_resolutions.items()), library_resolutions.most_common(5)
 production_owner = next((owner for owner in inventory["projects"] if owner["project"] == ":auxiliary-owner"), None)
 if production_owner is not None:
+    declaration_path = root / "build/qodana/declarations.json"
+    original_declarations = declaration_path.read_bytes()
+    changed_declarations = copy.deepcopy(inventory)
+    changed_declarations["taskGraph"].remove(production_owner["project"] + ":qodanaDependencyInventory")
+    declaration_path.write_text(json.dumps(changed_declarations), encoding="utf-8")
+    try:
+        checker.verify_model(root, model_path, "", java_path)
+    except ValueError as failure:
+        assert "missing project-owned dependency export task" in str(failure), failure
+    else:
+        raise AssertionError("Accepted a dependency inventory without its project-owned producer")
+    finally:
+        declaration_path.write_bytes(original_declarations)
     # The TestKit owner calls Support.value() from production code, so TEST-only edges cannot provide its classpath.
     production_iml = root / production_owner["iml"]
     original_iml = production_iml.read_bytes()

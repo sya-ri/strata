@@ -149,6 +149,7 @@ Roots already admitted by production keep that ownership once.
 This IDE view is an analysis union; isolated Gradle compilations and `checkStrataSkillExampleClasspath` still enforce API-only skill dependencies.
 `qodanaDeclarationInventory` discovers owners from the configured Gradle plugin/source-set model and records actual module identities, Java requirements, source/resource declarations, file membership and hashes, and resolved project/library dependency identities independently of IML and Qodana JSON.
 After compilation finishes, the inventory shares directory membership and fingerprints only within its current task action; each execution reads them afresh.
+Each JVM project resolves its compiler and runtime configurations in its own export task, and the root inventory consumes those revision-bound outputs without resolving another project's configurations.
 The same inventory depends on working auxiliary compiler outputs, records their actual bytes, and rejects missing or changed outputs before accepting their generated/imported model roots.
 Nonexistent directories remain explicit declarations without becoming model roots; compiler and harness outputs are build intermediates, and authored JMH roots inside excluded build directories fail verification.
 The verifier compares the declaration inventory with both generated IML and imported Qodana roots, SDKs, language levels, and dependency closures.
