@@ -18,7 +18,7 @@ def plan(paths, model=None, full=False):
             result.update(workflow=True, preflight=True)
             continue
         result["preflight"] |= path.startswith("gradle/performance/") or path in ("gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml")
-        if path.startswith("build-logic/src/test/"):
+        if path.startswith("build-logic/src/test/") or path == "gradle/qodana-idea-model.gradle.kts":
             result.update(common=True, workflow=True, qodana=True)
         elif path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")) or (path.startswith("gradle/performance/") and path.endswith(".py")):
             result["workflow"] = True
