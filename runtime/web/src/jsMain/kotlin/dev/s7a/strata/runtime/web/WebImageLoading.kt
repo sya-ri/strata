@@ -64,6 +64,6 @@ public suspend fun loadWebImage(
             if (continuation.isActive) continuation.resumeWithException(IllegalStateException("Web image could not be decoded under browser resource policy."))
         }
         continuation.invokeOnCancellation { release() }
-        image.src = url
+        if (continuation.isActive) image.src = url
     }
 }
