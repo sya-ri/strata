@@ -155,8 +155,8 @@ internal object InventorySlotGestureParity {
     ) {
         val expected = AtomicReference<NativeInventoryOutcome>()
         test.onServer { player ->
-            container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, itemCount))
-            container.setItem(test.chargeSlotIndex, ItemStack(Items.DIRT, itemCount))
+            container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, test.itemCount))
+            container.setItem(test.chargeSlotIndex, ItemStack(Items.DIRT, test.itemCount))
             player.containerMenu.carried = ItemStack.EMPTY
             player.containerMenu.broadcastChanges()
             expected.set(
@@ -193,7 +193,7 @@ internal object InventorySlotGestureParity {
     ) {
         val expected = AtomicReference<NativeInventoryOutcome>()
         test.onServer { player ->
-            container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, itemCount))
+            container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, test.itemCount))
             container.setItem(test.chargeSlotIndex, ItemStack.EMPTY)
             player.containerMenu.carried = ItemStack.EMPTY
             player.containerMenu.broadcastChanges()
@@ -250,8 +250,8 @@ internal object InventorySlotGestureParity {
                     previous.set((0 until inventory.containerSize).filter { index -> inventory.getItem(index).`is`(Items.DIRT) }.map { index -> index to inventory.getItem(index).copy() })
                     for ((index, _) in previous.get()) inventory.setItem(index, ItemStack.EMPTY)
                     container.clearContent()
-                    container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, itemCount))
-                    container.setItem(test.chargeSlotIndex, ItemStack(Items.DIRT, itemCount))
+                    container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, test.itemCount))
+                    container.setItem(test.chargeSlotIndex, ItemStack(Items.DIRT, test.itemCount))
                     player.containerMenu.carried = ItemStack.EMPTY
                     player.containerMenu.broadcastChanges()
                     expected.set(
@@ -510,7 +510,4 @@ internal object InventorySlotGestureParity {
                 ItemStack.matches(secondSlot, menu.getSlot(secondSlotIndex).item) &&
                 ItemStack.matches(carried, menu.carried)
     }
-
-    @Suppress("MayBeConstant")
-    private val itemCount = 7
 }
