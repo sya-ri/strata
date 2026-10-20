@@ -108,7 +108,7 @@ internal ACTUALclass EvaluationContext<T : Any> ACTUALconstructor() {
     host = '''package fixture
 
 /** Executes the compiled getter, setter and null release on the selected JVM. */
-fun main() {
+public fun main() {
     val context = EvaluationContext<String>()
     check(context.current == null)
     context.current = "active"
@@ -219,6 +219,7 @@ def export():
         facet = ET.SubElement(ET.SubElement(module, "component", name="FacetManager"), "facet", type="kotlin-language", name="Kotlin")
         configuration = ET.SubElement(facet, "configuration", version="3", platform="JVM 17", useProjectSettings="false")
         arguments = ET.SubElement(configuration, "compilerArguments")
+        ET.SubElement(arguments, "option", name="explicitApi", value="strict")
         for key, value in (("moduleName", "fixture-" + compiled), ("jvmTarget", "17")):
             ET.SubElement(arguments, "option", name=key, value=value)
         if multi_platform:
@@ -248,6 +249,7 @@ def export():
             common_facet = ET.SubElement(ET.SubElement(common_module, "component", name="FacetManager"), "facet", type="kotlin-language", name="Kotlin")
             common_configuration = ET.SubElement(common_facet, "configuration", version="3", platform="Common (experimental) ", useProjectSettings="false")
             common_arguments = ET.SubElement(common_configuration, "compilerArguments")
+            ET.SubElement(common_arguments, "option", name="explicitApi", value="strict")
             ET.SubElement(common_arguments, "option", name="moduleName", value="fixture-" + compiled)
             ET.SubElement(common_arguments, "option", name="multiPlatform", value="true")
             ET.SubElement(common_arguments, "option", name="expectActualClasses", value="true")
