@@ -1,51 +1,45 @@
-name: Analysis source-view probe
+name: Multiplatform actual-property probe
 on:
   workflow_dispatch:
 permissions:
   contents: read
   checks: write
 jobs:
-  source-views:
+  inspect:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [actual-build-included, actual-ignored]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-strata-java
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
-      - name: Compile and execute the real SDK-specific controls
+      - name: Compile and execute plain and multiplatform controls
         run: |
-          python3 -B gradle/probe-qodana-sdks.py prepare
-          ./gradlew -p qodana-sdk-analysis-fixture :old:verifyFixture :new:verifyFixture :old:writeClasspaths :new:writeClasspaths --no-daemon --console=plain
-          python3 -B gradle/probe-qodana-sdks.py export "${{ matrix.mode }}"
-      - name: Inspect the selected source views
+          python3 -B gradle/probe-qodana-multiplatform.py prepare
+          ./gradlew -p qodana-multiplatform-analysis-fixture :plain:verifyFixture :mpp:verifyFixture --no-daemon --console=plain
+          python3 -B gradle/probe-qodana-multiplatform.py export
+      - name: Inspect compiler and own-output controls
         continue-on-error: true
         uses: JetBrains/qodana-action@v2026.2
         with:
-          cache-dir: ${{ runner.temp }}/sdk-cache
-          results-dir: ${{ runner.temp }}/sdk-results
+          cache-dir: ${{ runner.temp }}/mpp-cache
+          results-dir: ${{ runner.temp }}/mpp-results
           use-caches: false
           pr-mode: false
           args: >-
             --linter=qodana-jvm-community --within-docker=false
-            --project-dir=${{ github.workspace }}/qodana-sdk-analysis-fixture
-            --config=${{ github.workspace }}/qodana-sdk-analysis-fixture/probe.yaml
-            --property=idea.config.path=${{ github.workspace }}/qodana-sdk-analysis-fixture/ide-config
-            --property=intellij.platform.shared.source.support=true
-            --property=batch.inspections.inspect.all.code.insight.contexts=true
-      - name: Require both compiler contexts and all genuine unused canaries
+            --project-dir=${{ github.workspace }}/qodana-multiplatform-analysis-fixture
+            --config=${{ github.workspace }}/qodana-multiplatform-analysis-fixture/probe.yaml
+            --property=idea.config.path=${{ github.workspace }}/qodana-multiplatform-analysis-fixture/ide-config
+      - name: Compare genuine unused canaries and actual-property findings
         if: always()
-        run: python3 -B gradle/probe-qodana-sdks.py inspect "${{ matrix.mode }}" "${{ runner.temp }}/sdk-results"
-      - name: Retain the exact source, compiled and analysis evidence
+        run: python3 -B gradle/probe-qodana-multiplatform.py inspect "${{ runner.temp }}/mpp-results"
+      - name: Retain compiled, source, model and analysis evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: source-view-control-${{ matrix.mode }}
+          name: multiplatform-property-controls
           path: |
-            ${{ runner.temp }}/sdk-results
-            qodana-sdk-analysis-fixture
+            ${{ runner.temp }}/mpp-results
+            qodana-multiplatform-analysis-fixture
           include-hidden-files: true
