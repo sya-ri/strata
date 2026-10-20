@@ -31,7 +31,7 @@ import dev.s7a.strata.text.UiText
  * @property height the natural height.
  * @property color the emitted fill color.
  * @property label the unresolved semantics label.
- * @property key the optional typed retained identity.
+ * @param key the optional typed retained identity.
  */
 internal class HeadlessPrimitive(
     val probe: HeadlessProbe,
