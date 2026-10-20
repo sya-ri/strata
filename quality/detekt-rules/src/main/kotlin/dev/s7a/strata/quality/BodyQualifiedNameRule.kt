@@ -24,7 +24,7 @@ internal class BodyQualifiedNameRule(
 ) : Rule(
         config = config,
         description = "Reports body-qualified references that should use imports.",
-        url = URI("https://github.com/sya-ri/strata/blob/master/docs/architecture.md"),
+        url = URI("https://github.com/sya-ri/strata/blob/master/AGENTS.md"),
     ) {
     /**
      * Reports a qualified user type when it is written directly in a body.
