@@ -29,6 +29,7 @@ Tab and Shift+Tab use shared focus traversal, including its visibility and virtu
 Composition with `Modifier.semantics` preserves standard roles, accessible names and disabled, selected or checked state in DOM, including controls drawn from ordinary layout, image and text primitives.
 Outer semantic modifiers override matching fields supplied by the native component.
 The host retains each logical operation surface across keyed updates, synchronizes native focus with the common owner and places the surface in paint order so an overlapping editor remains usable.
+Transparent operation surfaces leave focus visuals to the common definition's painters.
 Button surfaces use native buttons following the [browser button accessibility contract](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/button_role); pointer, keyboard and accessibility activation route through common input behavior.
 
 Pointer coordinates account for CSS scaling of the root.

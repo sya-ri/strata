@@ -225,7 +225,7 @@ internal class FocusedInputPipeline(
 
     private fun requestsInitialFocus(owner: RetainedNode): Boolean =
         focusTargetEntries(owner).any { entry ->
-            entry.retained.placed && entry.target.acceptsFocus && entry.target.requestsInitialFocus
+            entry.retained.placed && entry.target.requestsInitialFocus && entry.target.acceptsFocus
         }
 
     private fun moveFocus(

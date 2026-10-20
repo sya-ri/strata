@@ -198,6 +198,15 @@ async function verifyInteractions(browser, engine, touch) {
         for (const key of ['field', 'area', 'scroll', 'list', 'zoom', 'centerX', 'centerY']) assert.equal(resized[key], retained[key], key);
         assert.equal(await page.evaluate(() => document.querySelector('input') === window.retainedField && document.querySelector('textarea') === window.retainedArea), true);
         const action = page.getByRole('button', { name: 'Action surface', exact: true });
+        await action.focus();
+        await action.evaluate(element => { window.actionFocusLosses = 0; element.addEventListener('focusout', () => window.actionFocusLosses += 1); window.strataInteractions.update(); });
+        await page.getByText('Revision 3', { exact: true }).waitFor();
+        assert.equal(await page.evaluate(() => window.actionFocusLosses), 0, 'Painting must not transiently disable a focused semantic surface');
+        await area.fill('draft after semantic focus');
+        assert.equal((await snapshot()).area, 'draft after semantic focus');
+        assert.equal(await area.evaluate(element => document.activeElement === element), true);
+        await action.focus();
+        assert.equal(await action.evaluate(element => getComputedStyle(element).outlineStyle), 'none');
         if (touch) {
             const bounds = await action.boundingBox();
             await page.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);

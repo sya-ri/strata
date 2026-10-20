@@ -207,7 +207,7 @@ internal class WebDomRenderer(
         if (element.textContent != presentation?.label.orEmpty()) element.textContent = presentation?.label.orEmpty()
         if (element is HTMLButtonElement) {
             element.type = "button"
-            element.disabled = presentation?.enabled != true
+            element.disabled = entry.semantic?.semantics?.disabled ?: (presentation?.enabled != true)
         }
         if (element is HTMLProgressElement) {
             element.max = 1.0

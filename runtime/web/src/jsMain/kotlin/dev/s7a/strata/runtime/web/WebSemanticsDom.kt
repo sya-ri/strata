@@ -72,6 +72,8 @@ internal object WebSemanticsDom {
             element.style.padding = "0"
             element.style.color = "transparent"
             element.style.fontSize = "0px"
+            element.style.outline = "none"
+            element.style.boxShadow = "none"
             element.style.setProperty("pointer-events", if (owner.focusable && value.disabled.not()) "auto" else "none")
         }
     }
