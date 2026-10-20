@@ -5,6 +5,7 @@ import dev.detekt.api.Config
 import dev.detekt.api.Entity
 import dev.detekt.api.Finding
 import dev.detekt.api.Rule
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtImportDirective
@@ -23,7 +24,7 @@ internal class BodyQualifiedNameRule(
 ) : Rule(
         config = config,
         description = "Reports body-qualified references that should use imports.",
-        url = URI("https://github.com/sya-ri/strata/blob/master/docs/architecture.md"),
+        url = URI("https://github.com/sya-ri/strata/blob/master/AGENTS.md"),
     ) {
     /**
      * Reports a qualified user type when it is written directly in a body.
@@ -101,9 +102,13 @@ internal class BodyQualifiedNameRule(
             }
 
             is KtDotQualifiedExpression -> {
-                val selector = expression.selectorExpression
-                val selectorName = (selector as? KtNameReferenceExpression)?.getReferencedName()
-                collectExpressionSegments(expression.receiverExpression) + listOfNotNull(selectorName)
+                val receiver = collectExpressionSegments(expression.receiverExpression)
+                val name =
+                    when (val selector = expression.selectorExpression) {
+                        is KtCallExpression -> selector.calleeExpression as? KtNameReferenceExpression
+                        else -> selector as? KtNameReferenceExpression
+                    }
+                if (receiver.isEmpty()) emptyList() else receiver + listOfNotNull(name?.getReferencedName())
             }
 
             else -> {

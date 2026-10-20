@@ -19,6 +19,9 @@ def plan(paths, model=None, full=False):
     documentation_sources = (model or {}).get("documentation", [])
     versions = set()
     for path in paths:
+        if path in (".github/mise.toml", ".github/mise.lock") or path.startswith(".github/.mise/locks/"):
+            result["workflow"] = True
+            continue
         if path.startswith(".github/performance/") or path == ".github/performance" or path == "gradle/performance/paired-jvm.example.json":
             result.update(workflow=True, preflight=True)
             continue

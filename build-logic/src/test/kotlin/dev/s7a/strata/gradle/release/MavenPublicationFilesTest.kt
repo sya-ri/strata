@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
-/** Exercises publication-owned artifact shapes and rejects incomplete or unsafe release inventories. */
+/**
+ * Exercises publication-owned artifact shapes and rejects incomplete or unsafe release inventories.
+ */
 internal class MavenPublicationFilesTest {
     @Test
     fun `plugin and multiplatform file sets retain every artifact`() {

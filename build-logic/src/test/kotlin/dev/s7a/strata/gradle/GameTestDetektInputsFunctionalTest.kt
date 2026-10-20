@@ -29,6 +29,32 @@ internal class GameTestDetektInputsFunctionalTest {
         val declaration = production.substring(start, production.indexOf("\n    }\n    if (completeIdeaModelActive)", start))
         write("settings.gradle.kts", "rootProject.name = \"game-test-analysis\"\ninclude(\"owner\")\n")
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
+        writeBuild(declaration)
+        write("owner/src/main/kotlin/Ordinary.kt", "internal class Ordinary\n")
+        write("owner/authored/SelectedGame.kt", "internal class SelectedGame\n")
+        write("owner/authored/ExcludedGame.kt", "This file must remain outside compilation and analysis.\n")
+        write("shared/SelectedExample.kt", "internal class SelectedExample\n")
+        write("shared/ExcludedExample.kt", "This excluded example must remain outside compilation and analysis.\n")
+        write("shared/Ignored.kt", "This non-example must remain outside compilation and analysis.\n")
+        val result =
+            GradleRunner
+                .create()
+                .withProjectDir(directory.toFile())
+                .withArguments(
+                    ":owner:verifyDetektSelection",
+                    "--no-configure-on-demand",
+                    "--max-workers=2",
+                    "-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m",
+                    "--stacktrace",
+                ).build()
+        assertEquals(TaskOutcome.SUCCESS, result.task(":owner:compileGametestKotlin")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":owner:verifyDetektSelection")?.outcome)
+    }
+
+    /**
+     * Applies the current production source declaration to late, filtered compiler roots.
+     */
+    private fun writeBuild(declaration: String) {
         write(
             "build.gradle.kts",
             """
@@ -74,25 +100,6 @@ internal class GameTestDetektInputsFunctionalTest {
             }
             """.trimIndent(),
         )
-        write("owner/src/main/kotlin/Ordinary.kt", "internal class Ordinary\n")
-        write("owner/authored/SelectedGame.kt", "internal class SelectedGame\n")
-        write("owner/authored/ExcludedGame.kt", "This file must remain outside compilation and analysis.\n")
-        write("shared/SelectedExample.kt", "internal class SelectedExample\n")
-        write("shared/ExcludedExample.kt", "This excluded example must remain outside compilation and analysis.\n")
-        write("shared/Ignored.kt", "This non-example must remain outside compilation and analysis.\n")
-        val result =
-            GradleRunner
-                .create()
-                .withProjectDir(directory.toFile())
-                .withArguments(
-                    ":owner:verifyDetektSelection",
-                    "--no-configure-on-demand",
-                    "--max-workers=2",
-                    "-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m",
-                    "--stacktrace",
-                ).build()
-        assertEquals(TaskOutcome.SUCCESS, result.task(":owner:compileGametestKotlin")?.outcome)
-        assertEquals(TaskOutcome.SUCCESS, result.task(":owner:verifyDetektSelection")?.outcome)
     }
 
     /**

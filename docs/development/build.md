@@ -35,6 +35,8 @@ Build and mount must use the same theme; adoption rejects mismatches before modi
 The full-document renderer includes theme CSS before the body, and interactive hosts release their own stylesheet on close.
 Node.js must be available on `PATH`; Playwright is resolved by the Kotlin npm installation using the version catalog, and `installWebBrowsers` installs its matching engines.
 Run `./gradlew :integration:web:check` to compare the shared scenario's Minecraft semantics and headless rasterization with Chromium, Firefox, and WebKit state transitions.
+On a Linux machine that still needs browser system packages, add `-Pstrata.web.installSystemDependencies=true` to let Playwright install them with its matching browsers.
+PR CI runs this same verification on Linux and Windows; browser screenshots and receipts are retained separately for each operating system.
 The browser check opens the emitted document with JavaScript disabled first, then verifies startup adoption, native button actions, ordinary conditionals, and keyed sibling identity.
 Fresh screenshots and comparison receipts are written to `integration/web/build/parity` on every browser verification run.
 This comparison covers presentation labels and state transitions; native platform typography and geometry are intentionally different and are not asserted pixel-identical.
@@ -91,6 +93,7 @@ Canvas GUI-consumption hooks compile against the Mixin and MixinExtras versions 
 Those dependencies are compile-only, remain in the version catalog, and add neither a nested runtime library nor a Fabric rendering API requirement.
 The exact Loader dependency versions are checked against [its primary build configuration](https://github.com/FabricMC/fabric-loader) and the [MixinExtras setup contract](https://github.com/LlamaLad7/MixinExtras#setup).
 Detekt and Kotlinter are applied to all project modules.
+Root Detekt also analyzes the production and test sources of `build-logic`; the included build owns their compilation, formatting, ABI and TestKit checks.
 Detekt reads loaded-test files from the configured Kotlin `gametest` source set after version-specific roots and filters are applied, so every compiled test file is analyzed without an additional root allowlist.
 The shared runtime roots remain explicit because [the generic task](https://detekt.dev/docs/gettingstarted/gradle/#available-plugin-tasks) otherwise scans only conventional project directories.
 Kover exposes HTML and XML reports without enforcing a coverage threshold.

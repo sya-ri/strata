@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
-/** Verifies that authenticated release tasks cannot forward a PAT to an overridden endpoint. */
+/**
+ * Verifies that authenticated release tasks cannot forward a PAT to an overridden endpoint.
+ */
 internal class ModrinthReleaseTaskTest {
     @Test
     fun `authenticated endpoint is fixed to official Modrinth v2`() {

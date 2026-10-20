@@ -16,7 +16,7 @@ internal class NoNonNullAssertionRule(
 ) : Rule(
         config = config,
         description = "Reports the non-null assertion operator.",
-        url = URI("https://github.com/sya-ri/strata/blob/master/docs/architecture.md"),
+        url = URI("https://github.com/sya-ri/strata/blob/master/AGENTS.md"),
     ) {
     /**
      * Reports a postfix expression whose operator is the non-null assertion.
