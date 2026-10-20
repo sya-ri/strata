@@ -139,6 +139,10 @@ internal class QodanaJmhModelFunctionalTest {
                 jvm()
                 jvmToolchain(17)
                 explicitApi()
+                val sharedBaseMain = sourceSets.create("sharedBaseMain") {
+                    dependsOn(sourceSets.getByName("commonMain"))
+                }
+                sourceSets.named("jvmMain") { dependsOn(sharedBaseMain) }
                 sourceSets.named("commonTest") {
                     kotlin.srcDir(rootProject.file("shared-inputs/kotlin"))
                     resources.srcDir(rootProject.file("shared-inputs/resources"))
@@ -149,6 +153,8 @@ internal class QodanaJmhModelFunctionalTest {
             """.trimIndent(),
         )
         write("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt", "package fixture\npublic fun ownedValue(): Int = 13\n")
+        write("shared-kmp/src/sharedBaseMain/kotlin/fixture/BaseValue.kt", "package fixture\npublic fun baseValue(): Int = ownedValue()\n")
+        write("shared-kmp/src/jvmMain/kotlin/fixture/JvmValue.kt", "package fixture\npublic fun jvmValue(): Int = baseValue()\n")
         writeAuxiliaryOwner()
         writeNativeVariants()
         owners.forEach { owner ->
@@ -255,6 +261,19 @@ internal class QodanaJmhModelFunctionalTest {
         assertEquals("strict", supportCompiler["explicitApi"])
         val sharedCompiler = projects.single { it["project"] == ":shared-kmp" }["compiler"] as Map<*, *>
         assertEquals("strict", sharedCompiler["explicitApi"])
+        val sharedProject = projects.single { it["project"] == ":shared-kmp" }
+        assertEquals("jvmMain", sharedProject["defaultSourceSet"])
+        assertEquals(setOf("commonMain", "sharedBaseMain"), (sharedProject["sourceSetDependencies"] as List<*>).toSet())
+        val commonSources = (sharedProject["commonSourceSets"] as List<*>).map { it as Map<*, *> }
+        assertEquals(setOf("commonMain", "sharedBaseMain"), commonSources.map { it["name"] }.toSet())
+        val commonMain = commonSources.single { it["name"] == "commonMain" }
+        assertEquals(emptyList<String>(), commonMain["dependsOn"])
+        assertEquals(listOf("shared-kmp/src/commonMain/kotlin"), commonMain["kotlinRoots"])
+        assertEquals(listOf("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt"), commonMain["kotlinInputs"])
+        val sharedBase = commonSources.single { it["name"] == "sharedBaseMain" }
+        assertEquals(listOf("commonMain"), sharedBase["dependsOn"])
+        assertEquals(listOf("shared-kmp/src/sharedBaseMain/kotlin/fixture/BaseValue.kt"), sharedBase["kotlinInputs"])
+        assertEquals(emptyList<Any>(), support["commonSourceSets"])
         val sharedProduction = (projects.single { it["project"] == ":shared-kmp" }["productionCompilations"] as List<*>).single() as Map<*, *>
         val sharedClasspaths = sharedProduction["classpaths"] as Map<*, *>
         assertEquals("jvmCompileClasspath", sharedClasspaths["compile"])

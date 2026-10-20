@@ -1625,6 +1625,18 @@ if (completeIdeaModelActive) {
                 }.orEmpty()
                 val main = kotlin?.target?.compilations?.findByName("main")
                     ?: multiplatform?.targets?.findByName("jvm")?.compilations?.findByName("main")
+                val commonSourceSets = if (multiplatform == null) emptyList() else {
+                    main?.allKotlinSourceSets.orEmpty().filter { it != main?.defaultSourceSet }.sortedBy { it.name }.map { sourceSet ->
+                        mapOf(
+                            "name" to sourceSet.name,
+                            "dependsOn" to sourceSet.dependsOn.map { it.name }.sorted(),
+                            "kotlinRoots" to sourceSet.kotlin.srcDirs.map { it.repositoryPath() }.sorted(),
+                            "resourceRoots" to sourceSet.resources.srcDirs.map { it.repositoryPath() }.sorted(),
+                            "kotlinInputs" to sourceSet.kotlin.files.map { it.repositoryPath() }.sorted(),
+                            "resourceInputs" to sourceSet.resources.files.map { it.repositoryPath() }.sorted(),
+                        )
+                    }
+                }
                 val compiler = main?.compileTaskProvider?.name?.let { owner.tasks.named<KotlinJvmCompile>(it).get() }
                 val kotlinCompilers = owner.tasks.withType<KotlinJvmCompile>().associate { task ->
                     task.name to task.kotlinJavaToolchain.javaVersion.get().majorVersion.toInt()
@@ -1682,6 +1694,9 @@ if (completeIdeaModelActive) {
                         )
                     }.distinct(),
                     "outputs" to outputs,
+                    "defaultSourceSet" to main?.defaultSourceSet?.name,
+                    "sourceSetDependencies" to main?.defaultSourceSet?.dependsOn.orEmpty().map { it.name }.sorted(),
+                    "commonSourceSets" to commonSourceSets,
                     "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends) },
                     "compilerToolchain" to compilerToolchain,
                     "productionCompilations" to sourceSets.orEmpty().filter { sourceSet ->
