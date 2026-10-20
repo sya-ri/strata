@@ -5,6 +5,7 @@ import dev.detekt.api.Config
 import dev.detekt.api.Entity
 import dev.detekt.api.Finding
 import dev.detekt.api.Rule
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtImportDirective
@@ -101,9 +102,14 @@ internal class BodyQualifiedNameRule(
             }
 
             is KtDotQualifiedExpression -> {
+                val receiver = collectExpressionSegments(expression.receiverExpression)
                 val selector = expression.selectorExpression
-                val selectorName = (selector as? KtNameReferenceExpression)?.getReferencedName()
-                collectExpressionSegments(expression.receiverExpression) + listOfNotNull(selectorName)
+                val name =
+                    when (selector) {
+                        is KtCallExpression -> selector.calleeExpression as? KtNameReferenceExpression
+                        else -> selector as? KtNameReferenceExpression
+                    }
+                if (receiver.isEmpty()) emptyList() else receiver + listOfNotNull(name?.getReferencedName())
             }
 
             else -> {
