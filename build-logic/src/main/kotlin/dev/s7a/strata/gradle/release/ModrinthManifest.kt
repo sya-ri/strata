@@ -103,7 +103,7 @@ internal data class ModrinthManifest(
         )
 
     private fun ProjectMetadata.toMap(): Map<String, Any> =
-        linkedMapOf<String, Any>(
+        linkedMapOf(
             "slug" to slug,
             "title" to title,
             "description" to description,

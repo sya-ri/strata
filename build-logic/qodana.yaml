@@ -1,0 +1,17 @@
+version: "1.0"
+linter: jetbrains/qodana-jvm-community:2026.2
+rootJavaProjects:
+  - .
+profile:
+  base:
+    name: qodana.recommended
+  inspections:
+    # The recommended profile otherwise skips the imported test sources.
+    - group: ALL
+      ignore:
+        - "!scope#test:*..*"
+    - inspection: UnusedSymbol
+      enabled: true
+    - inspection: RedundantVisibilityModifier
+      enabled: true
+failThreshold: 0

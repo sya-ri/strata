@@ -129,7 +129,7 @@ internal class QodanaSourceContextAssertions(
                         .map { it.getAttribute("url") }
                 urls
                     .filter { it.startsWith("file://") }
-                    .filter { it.contains("\$PROJECT_DIR\$") || it.endsWith("/") || path(it, modelFile.parent) in missing }
+                    .filter { it.contains($$"$PROJECT_DIR$") || it.endsWith("/") || path(it, modelFile.parent) in missing }
                     .map { "${project["module"]}: $it" }
             }
         assertEquals(emptyList<String>(), unresolved, "IDE libraries must not retain unresolved output roots.")
@@ -141,7 +141,7 @@ internal class QodanaSourceContextAssertions(
     private fun path(
         url: String,
         moduleDirectory: Path,
-    ): Path = Path.of(url.removePrefix("file://").replace("\$PROJECT_DIR\$", directory.toString()).replace("\$MODULE_DIR\$", moduleDirectory.toString())).normalize()
+    ): Path = Path.of(url.removePrefix("file://").replace($$"$PROJECT_DIR$", directory.toString()).replace($$"$MODULE_DIR$", moduleDirectory.toString())).normalize()
 
     /**
      * Recomputes the stable source-view identity independently of the production exporter.

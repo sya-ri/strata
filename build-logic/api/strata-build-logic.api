@@ -20,11 +20,6 @@ public final class dev/s7a/strata/gradle/fabric/FabricToolchainManifest {
 	public final fun verify (Ljava/util/zip/ZipFile;)V
 }
 
-public abstract class dev/s7a/strata/gradle/fabric/LibraryClientProductionRunTask : net/fabricmc/loom/task/prod/ClientProductionRunTask {
-	public fun <init> ()V
-	public abstract fun getVerificationLibraries ()Lorg/gradle/api/file/ConfigurableFileCollection;
-}
-
 public final class dev/s7a/strata/gradle/performance/JmhEvidenceConventionsKt {
 	public static final fun configureJmhEvidence (Lorg/gradle/api/tasks/JavaExec;Ljava/io/File;ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
 	public static synthetic fun configureJmhEvidence$default (Lorg/gradle/api/tasks/JavaExec;Ljava/io/File;ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ILjava/lang/Object;)V

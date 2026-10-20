@@ -160,3 +160,9 @@ jobs:
         key: ${{ steps.loom_cache.outputs.cache-primary-key }}
     needs: plan
     if: needs.plan.outputs.qodana == 'true'
+  build-logic:
+    needs: plan
+    if: needs.plan.outputs.qodana == 'true'
+    uses: ./.github/workflows/qodana-build-logic.yml
+    with:
+      ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}

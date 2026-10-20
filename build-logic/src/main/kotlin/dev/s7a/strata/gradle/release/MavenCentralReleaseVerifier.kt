@@ -211,15 +211,15 @@ internal class MavenCentralReleaseVerifier(
         var verifiedFileCount = 0
         var verifiedChecksumCount = 0
         for (coordinate in coordinates) {
-            for (expected in expectedBaseFiles(coordinate)) {
-                val remotePath = coordinate.remotePath(expected.suffix)
+            for ((suffix, path) in expectedBaseFiles(coordinate)) {
+                val remotePath = coordinate.remotePath(suffix)
                 val actual =
-                    if (expected.suffix == POM_SUFFIX) {
+                    if (suffix == POM_SUFFIX) {
                         pomBytes[coordinate]
                     } else {
                         readOptional(remotePath)
                     } ?: return Inspection(State.PARTIAL, presentCoordinateCount, verifiedFileCount, verifiedChecksumCount)
-                val expectedBytes = expected.path.toFile().readBytes()
+                val expectedBytes = path.toFile().readBytes()
                 check(actual.contentEquals(expectedBytes)) {
                     "Maven Central immutable file differs from the staged publication: $remotePath"
                 }
@@ -293,7 +293,7 @@ internal class MavenCentralReleaseVerifier(
                 }
 
                 response.statusCode() == 429 ||
-                    (500 <= response.statusCode() && response.statusCode() < 600) -> {
+                    response.statusCode() in 500..<600 -> {
                     if (attempt < MAXIMUM_READ_ATTEMPTS) {
                         sleeper(retryBaseMillis * attempt)
                         continue
