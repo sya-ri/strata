@@ -108,7 +108,7 @@ public object CanvasVerification {
         check(menuBackgroundBlurriness in 0..10) { "The terminal Canvas receipt has an invalid menu background blur option." }
         check(proof.getProperty("originalCloseReturned")?.toBooleanStrictOrNull() == true) { "The terminal Canvas proof did not observe successful original close." }
         val backend = proof.getProperty("backend").orEmpty()
-        check(CanvasVerification.Backend.entries.any { it.name.equals(backend, ignoreCase = true) }) { "The terminal Canvas receipt has no recognized native backend." }
+        check(Backend.entries.any { it.name.equals(backend, ignoreCase = true) }) { "The terminal Canvas receipt has no recognized native backend." }
         listOf("queuedElementsBefore", "portableSetsBefore").forEach { key ->
             check(0 < requireNotNull(proof.getProperty(key)?.toIntOrNull())) { "The terminal Canvas receipt did not prove pending native GUI work: $key" }
         }
