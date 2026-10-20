@@ -50,6 +50,7 @@
 /older/0.2.1/index.html
 /older/0.2.2/index.html
 /older/0.2.3/index.html
+/older/0.3.0/index.html
 /paper-api/index.html
 /performance-testkit/index.html
 /runtime/core/index.html
