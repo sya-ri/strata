@@ -11,6 +11,7 @@ import net.minecraft.client.input.MouseButtonInfo
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
 import org.apache.commons.lang3.function.FailableConsumer
 import org.apache.commons.lang3.function.FailableFunction
 import java.util.UUID
@@ -63,7 +64,7 @@ internal class InventorySlotTestContext(
         client.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen ?: error("The synchronized Slot screen is not active.")
-                val event = MouseButtonEvent(pointer.x.toDouble(), pointer.y.toDouble(), MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0))
+                val event = mouseEvent(pointer, InputConstants.MOUSE_BUTTON_LEFT)
                 check(screen.mouseClicked(event, false)) { "The synchronized Slot must consume a primary press." }
                 check(screen.mouseReleased(event)) { "The synchronized Slot must consume the matching release." }
             },
@@ -142,4 +143,24 @@ internal class InventorySlotTestContext(
         pointer: IntOffset,
         button: Int,
     ): MouseButtonEvent = MouseButtonEvent(pointer.x.toDouble(), pointer.y.toDouble(), MouseButtonInfo(button, 0))
+
+    /**
+     * Shares the fixed slot indices and client coordinates used by synchronization and native gesture scenarios.
+     */
+    internal companion object {
+        internal const val FUEL_SLOT_INDEX: Int = 0
+        internal const val CHARGE_SLOT_INDEX: Int = 1
+        internal const val CONTAINER_SIZE: Int = 27
+        internal const val ITEM_COUNT: Int = 7
+        internal val industrialFuelPointer: IntOffset = IntOffset(90, 49)
+        internal val industrialChargePointer: IntOffset = IntOffset(223, 49)
+
+        /**
+         * Matches the fixture's item and count without replacing component-sensitive native oracle comparisons.
+         */
+        internal fun stackMatches(
+            stack: ItemStack,
+            item: Item,
+        ): Boolean = stack.`is`(item) && stack.count == ITEM_COUNT
+    }
 }
