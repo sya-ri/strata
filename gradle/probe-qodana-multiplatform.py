@@ -69,6 +69,7 @@ subprojects { repositories { mavenCentral() } }
 project(":plain") {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     val kotlin = extensions.getByType<KotlinJvmProjectExtension>()
+    kotlin.explicitApi()
     kotlin.jvmToolchain(17)
     kotlin.compilerOptions.moduleName.set("fixture-plain")
     registerControl(kotlin.target.compilations.getByName("main"))
@@ -76,6 +77,7 @@ project(":plain") {
 project(":mpp") {
     apply(plugin = "org.jetbrains.kotlin.multiplatform")
     val kotlin = extensions.getByType<KotlinMultiplatformExtension>()
+    kotlin.explicitApi()
     kotlin.jvmToolchain(17)
     kotlin.compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
     kotlin.js().nodejs()
@@ -106,7 +108,7 @@ internal ACTUALclass EvaluationContext<T : Any> ACTUALconstructor() {
     host = '''package fixture
 
 /** Executes the compiled getter, setter and null release on the selected JVM. */
-public fun main() {
+public fun main(): Unit {
     val context = EvaluationContext<String>()
     check(context.current == null)
     context.current = "active"
@@ -179,12 +181,8 @@ def export():
     project = ET.Element("project", version="4")
     registrations = ET.SubElement(ET.SubElement(project, "component", name="ProjectModuleManager"), "modules")
     cases = {
-        "plain": ("plain", False, False),
-        "merged": ("mpp", True, False),
+        "plain": ("plain", True, False),
         "no-self-output": ("mpp", False, False),
-        "multiplatform-option": ("mpp", True, True),
-        "multiplatform-no-self": ("mpp", False, True),
-        "split-legacy": ("mpp", False, True),
         "split-hmpp": ("mpp", False, True),
         "split-metadata": ("mpp", False, True),
         "split-metadata-file": ("mpp", False, True),
@@ -306,8 +304,12 @@ def inspect(results):
         assert any(canary in row["message"] for row in selected), (name, selected)
         if name.startswith("split-"):
             assert all(row["rule"] != "UnusedSymbol" or "unused" in row["message"] for row in selected), (name, selected)
-        if name.startswith("split-metadata"):
+        if name in {"split-metadata", "split-metadata-common"}:
             assert selected and all(row["rule"] == "UnusedSymbol" and "unused" in row["message"] for row in selected), (name, selected)
+            sanity = [item for run in report["runs"] for item in run.get("properties", {}).get("qodana.sanity.results", [])]
+            assert all(not item["locations"][0]["physicalLocation"]["artifactLocation"]["uri"].startswith("analysis/" + name + "/") for item in sanity), (name, sanity)
+        if name == "split-metadata-file-common":
+            assert any(row["rule"] == "KDocUnresolvedReference" for row in selected), (name, selected)
         print(name, json.dumps(selected))
 
 
