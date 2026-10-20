@@ -35,6 +35,8 @@ Build and mount must use the same theme; adoption rejects mismatches before modi
 The full-document renderer includes theme CSS before the body, and interactive hosts release their own stylesheet on close.
 Node.js must be available on `PATH`; Playwright is resolved by the Kotlin npm installation using the version catalog, and `installWebBrowsers` installs its matching engines.
 Run `./gradlew :integration:web:check` to compare the shared scenario's Minecraft semantics and headless rasterization with Chromium, Firefox, and WebKit state transitions.
+On a Linux machine that still needs browser system packages, add `-Pstrata.web.installSystemDependencies=true` to let Playwright install them with its matching browsers.
+PR CI runs this same verification on Linux and Windows; browser screenshots and receipts are retained separately for each operating system.
 The browser check opens the emitted document with JavaScript disabled first, then verifies startup adoption, native button actions, ordinary conditionals, and keyed sibling identity.
 Fresh screenshots and comparison receipts are written to `integration/web/build/parity` on every browser verification run.
 This comparison covers presentation labels and state transitions; native platform typography and geometry are intentionally different and are not asserted pixel-identical.

@@ -357,16 +357,10 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: .\gradlew.bat :integration:web:check
-    - name: Verify Linux Web runtime and static build
-      if: runner.os == 'Linux'
       shell: bash
-      run: |-
-        bash ./gradlew kotlinNpmInstall
-        node build/js/node_modules/playwright/cli.js install --with-deps chromium firefox webkit
-        bash ./gradlew :integration:web:check
+      run: bash ./gradlew :integration:web:check -Pstrata.web.installSystemDependencies="$INSTALL_SYSTEM_DEPENDENCIES"
+      env:
+        INSTALL_SYSTEM_DEPENDENCIES: ${{ runner.os == 'Linux' }}
     - name: Upload browser evidence
       if: always()
       uses: actions/upload-artifact@v7
