@@ -1963,7 +1963,12 @@ subprojects {
             }
         }
         extensions.configure<DetektExtension> {
-            source.from(nativeTests.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+            // Resolve selected files after all version-specific source sets and filters are configured.
+            source.from(
+                providers.provider {
+                    this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.findByName("gametest")?.kotlin?.files.orEmpty()
+                },
+            )
         }
     }
     if (completeIdeaModelActive) {
@@ -2161,10 +2166,6 @@ subprojects {
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
                 }
             }
-            extensions.configure<DetektExtension> {
-                source.from(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/kotlin"), remoteVerificationFamily.resolve("kotlin"))
-                if (target.remapped) source.from(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gui-graphics-scenario/kotlin"))
-            }
             val profileCacheTests = rootProject.file("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/profile-cache/kotlin")
             val continuousInputTests = rootProject.file("integration/shared/minecraft-fabric/input/fabric-client-gametest/src/continuous-input/kotlin")
             val renderMonitoringTests = rootProject.file("integration/shared/minecraft-fabric/scenarios/fabric-client-gametest/src/render-monitoring/kotlin")
@@ -2194,28 +2195,6 @@ subprojects {
                     kotlin.srcDir(renderMonitoringTests)
                     kotlin.srcDir(continuousScrollTests)
                 }
-            }
-            extensions.configure<DetektExtension> {
-                source.from(
-                    providers.provider {
-                        val selectedGameTestRoots = this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.findByName("gametest")?.kotlin?.srcDirs.orEmpty()
-                        listOf(
-                            "integration/shared/minecraft-fabric/runner/standalone-world-presets/src/gametest/kotlin",
-                            "integration/shared/minecraft-fabric/canvas/terminal/gui-holder/src/gametest/kotlin",
-                            "integration/shared/minecraft-fabric/screen/gui-holder/src/gametest/kotlin",
-                            "integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/kotlin",
-                            "integration/shared/minecraft-fabric/screen/tooltip/component-enchantments/src/gametest/kotlin",
-                            "integration/shared/minecraft-fabric/screen/tooltip/registry-enchantments/src/gametest/kotlin",
-                            "integration/shared/minecraft-fabric/screen/tooltip/lookup-enchantments/src/gametest/kotlin",
-                            "integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin",
-                        ).map(rootProject::file).filter(selectedGameTestRoots::contains)
-                    },
-                )
-                source.from(profileCacheTests)
-                source.from(nativeComponentCases)
-                if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) source.from(nativeShowcase)
-                source.from(continuousInputTests, continuousScrollTests)
-                source.from(renderMonitoringTests)
             }
             providers.gradleProperty("strata.performance.nativeOutput").orNull?.let { output ->
                 val nativeOutput = rootProject.file(output).absoluteFile

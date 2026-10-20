@@ -87,7 +87,8 @@ Canvas GUI-consumption hooks compile against the Mixin and MixinExtras versions 
 Those dependencies are compile-only, remain in the version catalog, and add neither a nested runtime library nor a Fabric rendering API requirement.
 The exact Loader dependency versions are checked against [its primary build configuration](https://github.com/FabricMC/fabric-loader) and the [MixinExtras setup contract](https://github.com/LlamaLad7/MixinExtras#setup).
 Detekt and Kotlinter are applied to all project modules.
-The Canvas family roots and loaded-test roots are explicitly included in Detekt's source inputs, because [its generic task](https://detekt.dev/docs/gettingstarted/gradle/#available-plugin-tasks) otherwise scans only conventional project directories.
+Detekt reads loaded-test files from the configured Kotlin `gametest` source set after version-specific roots and filters are applied, so every compiled test file is analyzed without an additional root allowlist.
+The shared runtime roots remain explicit because [the generic task](https://detekt.dev/docs/gettingstarted/gradle/#available-plugin-tasks) otherwise scans only conventional project directories.
 Kover exposes HTML and XML reports without enforcing a coverage threshold.
 Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`; each fully qualified root report task first runs the ordinary JVM test suite selected by `koverJvmTests` without discovering same-named tasks in unrelated projects.
 `gradle/kover-jvm-projects.txt` is the single source of truth for that aggregation boundary: it includes modules with ordinary JVM tests and excludes testless remapped adapters, loaded-client-only integrations, and benchmarks so coverage does not configure or compile unrelated Loom projects.
