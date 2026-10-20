@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.screen
 
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -26,6 +24,7 @@ public object Screens {
     @Deprecated("Use UiDefinition.open() and retain its UiSession. Scheduled for removal in 1.0.0.")
     @JvmStatic
     @OptIn(InternalStrataRuntimeApi::class)
+    @Suppress("DEPRECATION")
     public fun open(definition: ScreenDefinition) {
         ScreenPresenters.present(definition)
     }

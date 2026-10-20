@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.spi
 
 import dev.s7a.strata.screen.ScreenDefinition
@@ -21,5 +19,6 @@ public fun interface ScreenPresenter {
      * @throws ScreenOpenThreadException when the calling thread is invalid; implementations must throw before transfer.
      * @throws Throwable when presentation fails; after transfer the implementation owns all cleanup.
      */
+    @Suppress("DEPRECATION")
     public fun present(definition: ScreenDefinition)
 }
