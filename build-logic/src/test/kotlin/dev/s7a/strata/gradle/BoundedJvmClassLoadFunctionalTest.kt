@@ -9,7 +9,9 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 
-/** Exercises the complete production init and real inherited JVM arguments without benchmark timing. */
+/**
+ * Exercises the complete production init and real inherited JVM arguments without benchmark timing.
+ */
 internal class BoundedJvmClassLoadFunctionalTest {
     @TempDir
     lateinit var directory: Path
@@ -20,48 +22,9 @@ internal class BoundedJvmClassLoadFunctionalTest {
         val workspace = directory.resolve("source with spaces")
         val logs = directory.resolve("class logs with spaces")
         val vmLogs = directory.resolve("VM logs with spaces")
-        Files.createDirectories(workspace.resolve("src/main/java/fixture"))
-        Files.createDirectories(workspace.resolve("execution with spaces"))
+        prepareWorkspace(workspace)
         Files.createDirectories(logs)
         Files.createDirectories(vmLogs)
-        Files.writeString(workspace.resolve("settings.gradle.kts"), "rootProject.name = \"class-load-transport\"\n")
-        Files.writeString(
-            workspace.resolve("build.gradle.kts"),
-            """
-            plugins { java }
-            tasks.register<JavaExec>("verifyInheritedLogger") {
-                dependsOn("classes")
-                classpath = sourceSets["main"].runtimeClasspath
-                mainClass.set("fixture.Probe")
-                workingDir(layout.projectDirectory.dir("execution with spaces").asFile)
-            }
-            """.trimIndent(),
-        )
-        Files.writeString(
-            workspace.resolve("src/main/java/fixture/Probe.java"),
-            """
-            package fixture;
-            import java.lang.management.ManagementFactory;
-            import java.nio.file.Path;
-            import java.util.ArrayList;
-            public class Probe {
-                public static void main(String[] args) throws Exception {
-                    System.out.println("loaded-pid=" + ProcessHandle.current().pid());
-                    if (args.length == 0) {
-                        ArrayList<String> command = new ArrayList<>();
-                        command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
-                        command.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
-                        command.add("-cp");
-                        command.add(System.getProperty("java.class.path"));
-                        command.add("fixture.Probe");
-                        command.add("child");
-                        int exit = new ProcessBuilder(command).inheritIO().start().waitFor();
-                        if (exit != 0) throw new IllegalStateException("Inherited logger child failed: " + exit);
-                    }
-                }
-            }
-            """.trimIndent(),
-        )
         val environment = System.getenv().toMutableMap()
         environment["STRATA_PAIRED_WORKSPACE"] = workspace.toString()
         environment["STRATA_PAIRED_CLASS_LOGS"] = logs.toString()
@@ -99,5 +62,58 @@ internal class BoundedJvmClassLoadFunctionalTest {
             assertTrue(text.contains("[$pid]") && text.contains("fixture.Probe source:"), text)
             assertTrue(text.endsWith("\n") && Files.size(file) <= 1024 * 1024)
         }
+    }
+
+    /**
+     * Creates the working JavaExec project and its deliberately spaced execution directory.
+     */
+    private fun prepareWorkspace(workspace: Path) {
+        Files.createDirectories(workspace.resolve("src/main/java/fixture"))
+        Files.createDirectories(workspace.resolve("execution with spaces"))
+        Files.writeString(workspace.resolve("settings.gradle.kts"), "rootProject.name = \"class-load-transport\"\n")
+        Files.writeString(
+            workspace.resolve("build.gradle.kts"),
+            """
+            plugins { java }
+            tasks.register<JavaExec>("verifyInheritedLogger") {
+                dependsOn("classes")
+                classpath = sourceSets["main"].runtimeClasspath
+                mainClass.set("fixture.Probe")
+                workingDir(layout.projectDirectory.dir("execution with spaces").asFile)
+            }
+            """.trimIndent(),
+        )
+        writeProbe(workspace)
+    }
+
+    /**
+     * Writes a real Java process that forwards inherited JVM arguments to its child.
+     */
+    private fun writeProbe(workspace: Path) {
+        Files.writeString(
+            workspace.resolve("src/main/java/fixture/Probe.java"),
+            """
+            package fixture;
+            import java.lang.management.ManagementFactory;
+            import java.nio.file.Path;
+            import java.util.ArrayList;
+            public class Probe {
+                public static void main(String[] args) throws Exception {
+                    System.out.println("loaded-pid=" + ProcessHandle.current().pid());
+                    if (args.length == 0) {
+                        ArrayList<String> command = new ArrayList<>();
+                        command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+                        command.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
+                        command.add("-cp");
+                        command.add(System.getProperty("java.class.path"));
+                        command.add("fixture.Probe");
+                        command.add("child");
+                        int exit = new ProcessBuilder(command).inheritIO().start().waitFor();
+                        if (exit != 0) throw new IllegalStateException("Inherited logger child failed: " + exit);
+                    }
+                }
+            }
+            """.trimIndent(),
+        )
     }
 }

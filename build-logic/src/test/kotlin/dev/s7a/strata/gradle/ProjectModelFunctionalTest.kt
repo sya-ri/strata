@@ -10,7 +10,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
 
-/** Exercises production settings and native task resolution without game or product plugins. */
+/**
+ * Exercises production settings and native task resolution without game or product plugins.
+ */
 internal class ProjectModelFunctionalTest {
     @TempDir
     lateinit var directory: Path
@@ -19,7 +21,9 @@ internal class ProjectModelFunctionalTest {
         generateSequence(Path.of("").toAbsolutePath()) { it.parent }
             .first { Files.isRegularFile(it.resolve("gradle/performance-modules.tsv")) }
 
-    /** Copies real project selection, fixed available tasks and an executable typed-Test fixture. */
+    /**
+     * Copies real project selection, fixed available tasks and an executable typed-Test fixture.
+     */
     @BeforeEach
     fun prepare() {
         val settings = Files.readString(repository.resolve("settings.gradle.kts"))
@@ -314,7 +318,7 @@ internal class ProjectModelFunctionalTest {
     @Test
     fun `Minecraft source scope retains selected project dependencies and native Test options`() {
         val full = included("check")
-        val common = full.filter { it.contains(":minecraft-fabric-").not() && it != ":integration:docs" }.toSet()
+        val common = full.filter { it.contains(":minecraft-fabric-").not() }.toSet() - ":integration:docs"
         listOf("1.20", "26.3").forEach { version ->
             val selected = setOf(":runtime:minecraft-fabric-$version", ":integration:minecraft-fabric-$version")
             assertEquals(
@@ -376,7 +380,9 @@ internal class ProjectModelFunctionalTest {
         assertEquals(22, full.count { it.startsWith(":integration:minecraft-fabric-") })
     }
 
-    /** Reads actual fresh JUnit output, proving the option selected one of the two real tests. */
+    /**
+     * Reads actual fresh JUnit output, proving the option selected one of the two real tests.
+     */
     private fun assertJUnit(
         project: String,
         task: String,
@@ -400,13 +406,17 @@ internal class ProjectModelFunctionalTest {
         )
     }
 
-    /** Returns projects with real build files, excluding implicit parent projects. */
+    /**
+     * Returns projects with real build files, excluding implicit parent projects.
+     */
     private fun included(vararg arguments: String): Set<String> {
         runner(*arguments).build()
         return Files.readAllLines(directory.resolve("included-projects.txt")).toSet()
     }
 
-    /** Distinguishes settings-time rejection from resolved-graph rejection before any task executes. */
+    /**
+     * Distinguishes settings-time rejection from resolved-graph rejection before any task executes.
+     */
     private fun rejected(
         reason: String,
         beforeConfiguration: Boolean,
@@ -420,7 +430,9 @@ internal class ProjectModelFunctionalTest {
         assertTrue(Files.exists(directory.resolve("executed-tasks.txt")).not())
     }
 
-    /** Uses the current distribution with bounded plugin-free model tasks and one small JVM fixture. */
+    /**
+     * Uses the current distribution with bounded plugin-free model tasks and one small JVM fixture.
+     */
     private fun runner(vararg arguments: String): GradleRunner =
         GradleRunner
             .create()
