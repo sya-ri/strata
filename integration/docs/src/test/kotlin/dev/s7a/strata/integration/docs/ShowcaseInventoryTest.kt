@@ -133,11 +133,6 @@ internal class ShowcaseInventoryTest {
         assertTrue(duplicate.message.orEmpty().contains("binary names"))
     }
 
-    private fun repositoryRoot(): Path {
-        val current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
-        return if (Files.isDirectory(current.resolve("api"))) current else current.resolve("../..").normalize()
-    }
-
     private fun copyClass(
         sourceRoot: Path,
         destinationRoot: Path,
@@ -158,7 +153,7 @@ internal class ShowcaseInventoryTest {
         Files.createDirectories(sourceFile.parent)
         Files.createDirectories(output)
         Files.writeString(sourceFile, source)
-        val compiler = ToolProvider.getSystemJavaCompiler() ?: throw IllegalStateException("A Java compiler is required for inventory fixtures.")
+        val compiler = ToolProvider.getSystemJavaCompiler() ?: error("A Java compiler is required for inventory fixtures.")
         val result =
             compiler.run(
                 null,
