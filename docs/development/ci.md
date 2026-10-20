@@ -2,6 +2,8 @@
 
 CI distributes the checks from [local verification](build.md) and validates each analysis/publication boundary.
 Use this document when changing workflow topology or caches; [release publication](release.md) owns external mutations.
+CI scripts require Python 3.11 or newer for standard-library TOML parsing.
+The Java setup action and Qodana bootstrap read their ordinary and frozen paired toolchains from the same catalog reader.
 
 ## Build configuration and concurrency
 
@@ -168,7 +170,9 @@ Before analysis, disk reclamation runs only when free space is below 40 GiB; fre
 IDE indexes are restored for matching build-model inputs and saved only after successful analysis and complete-model verification.
 Keeping matrix Gradle caches read-only limits storage pressure so these indexes and the complete Loom project cache can coexist.
 Every run recreates the project model and analysis reports and verifies every expected module.
-The report artifact retains the fresh declaration inventory, generated IML/project metadata, and bootstrap task log under `modelEvidence` beside the imported model and SARIF.
+The `qodana-model-evidence` artifact retains the fresh declaration inventory, generated IML/project metadata, and bootstrap task log in their repository-relative paths.
+The `qodana-report` artifact retains the imported model, inspection logs, and SARIF.
+Both uploads run after failed analysis so available evidence remains inspectable.
 Gradle task outcomes distinguish executed work from `NO-SOURCE`, `SKIPPED`, `UP-TO-DATE`, and `FROM-CACHE`; build-cache reuse does not establish current source membership or analysis.
 Cold and reused-index acceptance must retain equivalent revision-bound owner/root/dependency inventories and fresh reports; zero findings, compilation, or Detekt cannot establish analysis of an omitted JMH corpus.
 Disable an inspection only with an actionable rationale in the checked-in configuration.

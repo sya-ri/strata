@@ -8,7 +8,6 @@ import re
 import subprocess
 import sys
 import tempfile
-import textwrap
 import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
@@ -49,11 +48,8 @@ class PlanCiTest(unittest.TestCase):
             return completed, result
 
     def check_outcomes(self, results):
-        """Execute the workflow's actual always-running aggregation script."""
-        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/jvm.yml"
-        script = workflow.read_text().split("python3 - <<'PY'\n", 1)[1].split("\n        PY", 1)[0]
-        with patch.dict(os.environ, {"RESULTS": json.dumps(results)}):
-            exec(compile(textwrap.dedent(script), str(workflow), "exec"), {})
+        """Check the same planner-owned aggregation used by the workflow."""
+        planner.check_results(results)
 
     def test_explicit_manual_inputs_keep_complete_jvm_browser_and_source_contracts(self):
         expected = {"common": False, "web": False, "docs": False, "docs_full": False, "workflow": False,
@@ -140,6 +136,22 @@ class PlanCiTest(unittest.TestCase):
                         changed = {**results, job: {**results[job], "result": status}}
                         with self.assertRaises(AssertionError):
                             self.check_outcomes(changed)
+
+    def test_outcome_cli_checks_results_without_creating_a_new_plan(self):
+        jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
+        jobs["plan"] = {"result": "success", "outputs": {key: json.dumps(value) for key, value in planner.plan([]).items()}}
+        with tempfile.TemporaryDirectory() as temporary:
+            command = [sys.executable, "-B", str(Path(__file__).resolve().parents[1] / "plan-ci.py"), "--check-results"]
+            environment = {**os.environ, "RESULTS": json.dumps(jobs)}
+            completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
+            self.assertEqual(0, completed.returncode, completed.stderr)
+            self.assertEqual([], list(Path(temporary).iterdir()))
+            jobs["checks"]["result"] = "success"
+            environment["RESULTS"] = json.dumps(jobs)
+            completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
+            self.assertNotEqual(0, completed.returncode)
+            self.assertIn("checks: expected skipped, got success", completed.stderr)
+
     def test_workflow_isolates_selected_client_concurrency_and_paired_intent(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
         group = next(line.removeprefix("  group: ") for line in workflow.splitlines() if line.startswith("  group: "))

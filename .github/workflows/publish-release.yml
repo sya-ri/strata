@@ -263,23 +263,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Record publication results
-      run: |-
-        python3 - <<'PY'
-        import json, os
-        from pathlib import Path
-        inputs = json.loads(os.environ['RELEASE_INPUTS'])
-        root = Path('build/release')
-        for operation in ('stage', 'verify'):
-            source = root / f'modrinth-{operation}.json'
-            if source.is_file():
-                destination = root / 'modrinth-receipts'
-                destination.mkdir(exist_ok=True)
-                source.rename(destination / f'{operation}.json')
-        request = dict(operation=inputs['operation'], tag=inputs['tag'], sourceCommit=inputs['source_commit'], preparedRunId=int(os.environ['PREPARED_RUN_ID']), destinations={key: inputs[key] for key in ('maven_central', 'github_release', 'modrinth', 'curseforge', 'hangar')})
-        os.environ['PUBLICATION_REQUEST'] = json.dumps(request)
-        import runpy
-        runpy.run_path('release/publication-summary.py', run_name='__main__')
-        PY
+      run: python3 release/publication-summary.py
       if: needs.source.result == 'success'
       env:
         RELEASE_INPUTS: ${{ toJSON(inputs) }}
@@ -297,16 +281,9 @@ jobs:
         if-no-files-found: ignore
         retention-days: 90
     - name: Summarize publication jobs
-      run: |-
-        python3 - <<'PY'
-        import json, os
-        results = json.loads(os.environ['RESULTS'])
-        with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
-            summary.write('| Job | Result |\n| --- | --- |\n')
-            for name, job in results.items():
-                summary.write(f"| {name} | {job['result']} |\n")
-        assert all(job['result'] in ('success', 'skipped') for job in results.values())
-        PY
+      run: |
+        jq -r '"| Job | Result |", "| --- | --- |", (to_entries[] | "| \(.key) | \(.value.result) |")' <<< "$RESULTS" >> "$GITHUB_STEP_SUMMARY"
+        jq -e 'all(.[]; .result == "success" or .result == "skipped")' <<< "$RESULTS"
       env:
         RESULTS: ${{ toJSON(needs) }}
     - name: Request release documentation separately
