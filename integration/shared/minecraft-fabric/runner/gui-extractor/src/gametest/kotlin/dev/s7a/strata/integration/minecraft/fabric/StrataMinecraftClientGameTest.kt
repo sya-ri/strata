@@ -477,118 +477,120 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     ) {
         closeFabricScreen(context)
         val world = context.worldBuilder().setUseConsistentSettings(true).create()
-        try {
-            resizeMinecraftTestWindow(context, IntSize(containerViewport.width, containerViewport.height))
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    minecraft.resizeGui()
-                },
-            )
-            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-            context.setScreen {
-                val inventory = checkNotNull(Minecraft.getInstance().player).inventory
-                inventory.clearContent()
-                DeterministicContainerScreen(inventory)
-            }
-            context.waitForScreen(DeterministicContainerScreen::class.java)
-            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-            context.waitTicks(2)
-            val backgroundNativePath =
-                context.takeScreenshot(
-                    TestScreenshotOptions
-                        .of("strata-container-background-native")
-                        .disableCounterPrefix()
-                        .withSize(containerViewport.width, containerViewport.height)
-                        .withDestinationDir(output),
+        val result =
+            runCatching {
+                resizeMinecraftTestWindow(context, IntSize(containerViewport.width, containerViewport.height))
+                context.runOnClient(
+                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                        minecraft.resizeGui()
+                    },
                 )
-            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
-            context.waitTicks(2)
-            val slotNativePath =
-                context.takeScreenshot(
-                    TestScreenshotOptions
-                        .of("strata-slot-native")
-                        .disableCounterPrefix()
-                        .withSize(containerViewport.width, containerViewport.height)
-                        .withDestinationDir(output),
-                )
-
-            NativeImage.read(backgroundNativePath.inputStream()).use { backgroundNative ->
-                NativeImage.read(slotNativePath.inputStream()).use { slotNative ->
-                    requireImageSize(backgroundNative, containerViewport)
-                    requireImageSize(slotNative, containerViewport)
-                    val containerBackground =
-                        context.computeOnClient(
-                            FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                renderHeadless(profile, createContainerBackgroundScreenDefinition(), containerViewport, containerOutsidePointer)
-                            },
-                        )
-                    val slot =
-                        context.computeOnClient(
-                            FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                renderHeadless(profile, createSlotScreenDefinition(), containerViewport, containerPointer)
-                            },
-                        )
-                    Files.write(output.resolve("strata-container-background-headless.png"), containerBackground.encodePng())
-                    Files.write(output.resolve("strata-slot-headless.png"), slot.encodePng())
-                    requireExactPixels(backgroundNative, containerBackground)
-                    requireExactPixels(slotNative, slot)
-
-                    context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-                    context.setScreen { createMinecraftScreen(createContainerBackgroundScreenDefinition(), profile, parent = null) }
-                    context.waitForScreen(FabricMinecraftScreen::class.java)
-                    context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-                    context.waitTicks(2)
-                    context.assertScreenshotEquals(
-                        TestScreenshotComparisonOptions
-                            .of(backgroundNative)
-                            .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                            .saveWithFileName("strata-container-background-fabric")
-                            .disableCounterPrefix()
-                            .withSize(containerViewport.width, containerViewport.height)
-                            .withDestinationDir(output),
-                    )
-                    closeFabricScreen(context)
-
-                    context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
-                    context.setScreen { createMinecraftScreen(createSlotScreenDefinition(), profile, parent = null) }
-                    context.waitForScreen(FabricMinecraftScreen::class.java)
-                    context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
-                    context.waitTicks(2)
-                    context.assertScreenshotEquals(
-                        TestScreenshotComparisonOptions
-                            .of(slotNative)
-                            .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                            .saveWithFileName("strata-slot-fabric")
-                            .disableCounterPrefix()
-                            .withSize(containerViewport.width, containerViewport.height)
-                            .withDestinationDir(output),
-                    )
-                    InventorySlotSynchronizationGameTest.run(context, profile, output)
-                    closeFabricScreen(context)
-                    val industrial = MinecraftIndustrialParity.run(context, profile, output)
-                    val playerHead = MinecraftPlayerHeadParity.run(context, profile, output)
-                    val social = MinecraftSocialParity.run(context, profile, output)
-                    val progress = MinecraftProgressParity.run(context, profile, output)
-                    val componentShowcases = MinecraftComponentShowcaseParity(context, profile, output).run()
-                    writeParityEvidence(
-                        output,
-                        confirm,
-                        scroll,
-                        directJoin,
-                        containerBackground,
-                        slot,
-                        industrial,
-                        playerHead,
-                        social,
-                        progress,
-                        componentShowcases,
-                    )
+                context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                context.setScreen {
+                    val inventory = checkNotNull(Minecraft.getInstance().player).inventory
+                    inventory.clearContent()
+                    DeterministicContainerScreen(inventory)
                 }
+                context.waitForScreen(DeterministicContainerScreen::class.java)
+                context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                context.waitTicks(2)
+                val backgroundNativePath =
+                    context.takeScreenshot(
+                        TestScreenshotOptions
+                            .of("strata-container-background-native")
+                            .disableCounterPrefix()
+                            .withSize(containerViewport.width, containerViewport.height)
+                            .withDestinationDir(output),
+                    )
+                context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                context.waitTicks(2)
+                val slotNativePath =
+                    context.takeScreenshot(
+                        TestScreenshotOptions
+                            .of("strata-slot-native")
+                            .disableCounterPrefix()
+                            .withSize(containerViewport.width, containerViewport.height)
+                            .withDestinationDir(output),
+                    )
+
+                val (containerBackground, slot) =
+                    NativeImage.read(backgroundNativePath.inputStream()).use { backgroundNative ->
+                        NativeImage.read(slotNativePath.inputStream()).use { slotNative ->
+                            requireImageSize(backgroundNative, containerViewport)
+                            requireImageSize(slotNative, containerViewport)
+                            val containerBackground =
+                                context.computeOnClient(
+                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                                        renderHeadless(profile, createContainerBackgroundScreenDefinition(), containerViewport, containerOutsidePointer)
+                                    },
+                                )
+                            val slot =
+                                context.computeOnClient(
+                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                                        renderHeadless(profile, createSlotScreenDefinition(), containerViewport, containerPointer)
+                                    },
+                                )
+                            Files.write(output.resolve("strata-container-background-headless.png"), containerBackground.encodePng())
+                            Files.write(output.resolve("strata-slot-headless.png"), slot.encodePng())
+                            requireExactPixels(backgroundNative, containerBackground)
+                            requireExactPixels(slotNative, slot)
+
+                            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                            context.setScreen { createMinecraftScreen(createContainerBackgroundScreenDefinition(), profile, parent = null) }
+                            context.waitForScreen(FabricMinecraftScreen::class.java)
+                            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                            context.waitTicks(2)
+                            context.assertScreenshotEquals(
+                                TestScreenshotComparisonOptions
+                                    .of(backgroundNative)
+                                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
+                                    .saveWithFileName("strata-container-background-fabric")
+                                    .disableCounterPrefix()
+                                    .withSize(containerViewport.width, containerViewport.height)
+                                    .withDestinationDir(output),
+                            )
+                            closeFabricScreen(context)
+
+                            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                            context.setScreen { createMinecraftScreen(createSlotScreenDefinition(), profile, parent = null) }
+                            context.waitForScreen(FabricMinecraftScreen::class.java)
+                            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                            context.waitTicks(2)
+                            context.assertScreenshotEquals(
+                                TestScreenshotComparisonOptions
+                                    .of(slotNative)
+                                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
+                                    .saveWithFileName("strata-slot-fabric")
+                                    .disableCounterPrefix()
+                                    .withSize(containerViewport.width, containerViewport.height)
+                                    .withDestinationDir(output),
+                            )
+                            containerBackground to slot
+                        }
+                    }
+                InventorySlotSynchronizationGameTest.run(context, profile, output)
+                closeFabricScreen(context)
+                val industrial = MinecraftIndustrialParity.run(context, profile, output)
+                val playerHead = MinecraftPlayerHeadParity.run(context, profile, output)
+                val social = MinecraftSocialParity.run(context, profile, output)
+                val progress = MinecraftProgressParity.run(context, profile, output)
+                val componentShowcases = MinecraftComponentShowcaseParity(context, profile, output).run()
+                writeParityEvidence(
+                    output,
+                    confirm,
+                    scroll,
+                    directJoin,
+                    containerBackground,
+                    slot,
+                    industrial,
+                    playerHead,
+                    social,
+                    progress,
+                    componentShowcases,
+                )
             }
-            closeFabricScreen(context)
-        } finally {
-            world.close()
-        }
+        runCanvasTestCleanup(result.exceptionOrNull(), { closeFabricScreen(context) }, world::close)
+        result.getOrThrow()
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
