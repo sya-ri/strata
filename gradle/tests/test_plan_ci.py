@@ -185,6 +185,22 @@ class PlanCiTest(unittest.TestCase):
         mixed["workflow"] = True
         self.assertEqual(mixed, planner.plan([path, "api/src/main/kotlin/Element.kt"]))
 
+    def test_workflow_tool_configuration_keeps_all_linter_checks_without_loading_clients(self):
+        expected = planner.plan([])
+        expected["workflow"] = True
+        paths = [".github/mise.toml", ".github/mise.lock", ".github/.mise/locks/pypi-pyflakes/4.0.3/uv.lock"]
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual(expected, planner.plan([path]))
+        self.assertEqual(expected, planner.plan(paths))
+        self.assertEqual(planner.plan([], full=True), planner.plan(paths, full=True))
+        for other in ("api/src/main/kotlin/Element.kt", "mise.toml", "unknown-input"):
+            for mixed in ([paths[0], other], [other, paths[0]]):
+                with self.subTest(paths=mixed):
+                    result = planner.plan([other])
+                    result["workflow"] = True
+                    self.assertEqual(result, planner.plan(mixed))
+
     def test_build_logic_tests_keep_jvm_analysis_without_unrelated_platform_acceptance(self):
         expected = planner.plan([])
         expected.update(common=True, workflow=True, qodana=True)
