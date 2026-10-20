@@ -5,18 +5,12 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.mojang.blaze3d.platform.InputConstants
 import com.mojang.blaze3d.platform.NativeImage
 import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Image
-import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Spacer
-import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
-import dev.s7a.strata.component.VirtualList
-import dev.s7a.strata.component.VirtualListState
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.activeFabricScreen
@@ -28,7 +22,6 @@ import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.rend
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireExactPixels
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireImageSize
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.modifier.onPreedit
@@ -43,7 +36,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
-import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer
@@ -146,7 +138,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         verifyReactiveRendering(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
         runSampledImagePixelParity(context, profile, output)
-        verifyResourceImageMemoization(context, profile)
+        MinecraftResourceImageMemoizationGameTest.run(context, profile)
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
@@ -311,112 +303,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     requireExactPixels(fabric, headless)
                 }
             }
-        val cleanup = runCatching { closeFabricScreen(context) }.exceptionOrNull()
-        val primary = presentation.exceptionOrNull()
-        if (primary != null) {
-            if (cleanup != null && primary !== cleanup) primary.addSuppressed(cleanup)
-            throw primary
-        }
-        if (cleanup != null) throw cleanup
+        runCanvasTestCleanup(presentation.exceptionOrNull(), { closeFabricScreen(context) })
+        presentation.getOrThrow()
     }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun verifyResourceImageMemoization(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-    ) {
-        closeFabricScreen(context)
-        val first = captureResourceImageIdentity(context, profile)
-        val second = captureResourceImageIdentity(context, profile)
-        require(second !== first) {
-            "The Fabric resource bridge did not decode a new image snapshot for the new host."
-        }
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun captureResourceImageIdentity(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-    ): DrawImage {
-        val presentation =
-            runCatching {
-                context.setScreen {
-                    createMinecraftScreen(
-                        resourceImageMemoizationDefinition(),
-                        profile,
-                        parent = null,
-                    )
-                }
-                context.waitForScreen(FabricMinecraftScreen::class.java)
-                context.waitFor(
-                    Predicate<Minecraft> { minecraft ->
-                        val work = readRenderWork(minecraft)
-                        0L < work.renderExtractions && work.sources.isNotEmpty() && work.portableTextures.isNotEmpty()
-                    },
-                )
-                context.computeOnClient(
-                    FailableFunction<Minecraft, DrawImage, RuntimeException> { minecraft ->
-                        val screen = activeFabricScreen(minecraft)
-                        requireResourceImageMemoizationWork(readRenderWork(minecraft))
-                        resourceImageIdentity(screen)
-                    },
-                )
-            }
-        val cleanup = runCatching { closeFabricScreen(context) }.exceptionOrNull()
-        val identity =
-            presentation.getOrElse { failure ->
-                cleanup?.let { if (it !== failure) failure.addSuppressed(it) }
-                throw failure
-            }
-        if (cleanup != null) throw cleanup
-        return identity
-    }
-
-    private fun requireResourceImageMemoizationWork(observed: RenderWork) {
-        require(observed.sources.size == 1 && 0L < observed.sourceBytes) { "Equal resource Images must share one actual native source entry: $observed" }
-        require(observed.portableTextures.isNotEmpty()) { "The ImageBackground must retain its real portable texture." }
-    }
-
-    private fun resourceImageIdentity(screen: FabricMinecraftScreen): DrawImage {
-        val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
-        check(commandsField.trySetAccessible()) { "The Fabric prepared command cache is inaccessible." }
-        val commands = commandsField.get(screen) as? List<*> ?: error("The Fabric screen has no prepared command list.")
-        val sampled = commands.filterIsInstance<DrawCommand.SampledImage>()
-        val backgrounds = commands.filterIsInstance<DrawCommand.BlitImage>()
-        require(sampled.size == 2 && backgrounds.size == 1) {
-            "The resource memoization scene must contain two deferred VirtualList Images and one ImageBackground."
-        }
-        val resolved = sampled.first().image
-        require(sampled.all { command -> command.image === resolved } && backgrounds.all { command -> command.image === resolved }) {
-            "Equal resource identifiers resolved to different image identities within one Minecraft host."
-        }
-        return resolved
-    }
-
-    private fun resourceImageMemoizationDefinition(): ScreenDefinition {
-        val state = VirtualListState<Int>()
-        val viewportSize = IntSize(resourceImageSize.width, resourceImageSize.height * 2)
-        return ScreenDefinition("Resource image memoization") {
-            Stack(
-                modifier =
-                    Modifier
-                        .size(viewportSize.width, viewportSize.height)
-                        .imageBackground(resourceImageSource(), ImageScale.Stretch),
-            ) {
-                VirtualList(listOf(0, 1), { item -> item }, state, viewportSize, rowHeight = resourceImageSize.height) {
-                    Image(resourceImageSource(), resourceImageSourceRegion, resourceImageSize)
-                }
-            }
-        }
-    }
-
-    private fun resourceImageSource(): ImageSource =
-        ImageSource.Resource(
-            ResourceId(
-                "strata_test",
-                "textures/gui/coal_generator.png",
-            ),
-        )
 
     @OptIn(InternalStrataRuntimeApi::class)
     @Suppress("LongMethod")
@@ -1344,8 +1233,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         private val industrialViewport = IntSize(320, 180)
         private val industrialPointer = IntOffset.Zero
         private val industrialAssetSize = IntSize(1229, 1280)
-        private val resourceImageSourceRegion = IntRect(0, 0, 16, 16)
-        private val resourceImageSize = IntSize(16, 16)
         private val playerHeadViewport = IntSize(64, 64)
     }
 
