@@ -69,14 +69,6 @@ internal class QodanaJmhModelFunctionalTest {
             import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
             import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
             import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-            import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-            import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
-            import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinResolvedBinaryDependency
-            import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinProjectArtifactDependency
-            import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinSourceDependency
-            import org.jetbrains.kotlin.gradle.idea.tcs.isKotlinCompileBinaryType
-            import org.jetbrains.kotlin.gradle.idea.tcs.extras.artifactsClasspath
-            import org.jetbrains.kotlin.gradle.plugin.ide.IdeMultiplatformImport
             plugins {
                 idea
                 alias(libs.plugins.kotlin.jvm) apply false
@@ -200,7 +192,7 @@ internal class QodanaJmhModelFunctionalTest {
             /** Exercises shared [Pair], [AutoCloseable], [ReadOnlyProperty] and coroutine metadata. */
             @JvmSynthetic
             public fun commonSupport(): Pair<Int, Int> {
-                val resource = object : AutoCloseable { override fun close() {} }
+                val resource = AutoCloseable {}
                 resource.close()
                 val number by ReadOnlyProperty<Any?, Int> { _, _ -> MutableStateFlow(12).value }
                 return Pair(FixtureId(number).value, (ceil(1.5) - floor(1.5)).toInt())
@@ -329,20 +321,23 @@ internal class QodanaJmhModelFunctionalTest {
         val commonSources = (sharedProject["commonSourceSets"] as List<*>).map { it as Map<*, *> }
         assertEquals(setOf("commonMain", "sharedBaseMain"), commonSources.map { it["name"] }.toSet())
         val commonMain = commonSources.single { it["name"] == "commonMain" }
-        assertEquals(listOf("js", "jvm"), commonMain["platforms"])
-        val commonDependencies = (commonMain["dependencies"] as List<*>).map { it as Map<*, *> }
-        assertTrue(commonDependencies.any { it["kind"] == "Module" && it["identity"] == "common-support.commonMain" && it["sourceSet"] == "commonMain" })
-        assertTrue(commonDependencies.any { (it["identity"] as String).startsWith("org.jetbrains.kotlin:kotlin-stdlib:commonMain:") && it["path"].toString().endsWith(".klib") })
-        assertTrue(commonDependencies.none { it["path"].toString().contains("-jvm-") })
-        val commonSupportSources = projects.single { it["project"] == ":common-support" }["commonSourceSets"] as List<*>
-        val commonSupport = commonSupportSources.single() as Map<*, *>
-        val commonSupportDependencies = (commonSupport["dependencies"] as List<*>).map { it as Map<*, *> }
-        assertTrue(commonSupportDependencies.any { (it["identity"] as String).startsWith("org.jetbrains.kotlinx:kotlinx-coroutines-core:commonMain:") })
+        val commonModel = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve("shared-kmp/shared-kmp.commonMain.iml").toFile())
+        val commonEdges = commonModel.getElementsByTagName("orderEntry")
+        val dependencyScopes =
+            (0 until commonEdges.length)
+                .map { commonEdges.item(it) as Element }
+                .filter { it.getAttribute("type") == "module" }
+                .associate { it.getAttribute("module-name") to it.getAttribute("scope").ifEmpty { "COMPILE" } }
+        assertEquals("COMPILE", dependencyScopes["common-support"])
+        assertEquals("RUNTIME", dependencyScopes["support"])
+        assertEquals("JVM 17", (commonModel.getElementsByTagName("configuration").item(0) as Element).getAttribute("platform"))
+        val commonSupport = (projects.single { it["project"] == ":common-support" }["productionCompilations"] as List<*>).single() as Map<*, *>
+        val commonSupportDependencies = (commonSupport["dependencies"] as Map<*, *>).values.flatMap { it as List<*> }.map { it as Map<*, *> }
+        assertTrue(commonSupportDependencies.any { (it["identity"] as String).startsWith("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:") })
         assertEquals(emptyList<String>(), commonMain["dependsOn"])
         assertEquals(listOf("shared-kmp/src/commonMain/kotlin"), commonMain["kotlinRoots"])
         assertEquals(listOf("shared-kmp/src/commonMain/kotlin/fixture/FixtureContext.kt", "shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt"), commonMain["kotlinInputs"])
         val sharedBase = commonSources.single { it["name"] == "sharedBaseMain" }
-        assertEquals(listOf("jvm"), sharedBase["platforms"])
         assertEquals(listOf("commonMain"), sharedBase["dependsOn"])
         assertEquals(listOf("shared-kmp/src/sharedBaseMain/kotlin/fixture/BaseValue.kt"), sharedBase["kotlinInputs"])
         assertEquals(emptyList<Any>(), support["commonSourceSets"])

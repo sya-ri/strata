@@ -173,8 +173,10 @@ class QodanaProjectionTest(unittest.TestCase):
         """Give one compiled owner a production common source set with independently selected inputs."""
         owner = self.inventory["projects"][0]
         owner.update(defaultSourceSet="jvmMain", sourceSetDependencies=["commonMain"], commonSourceSets=[dict(
-            name="commonMain", platforms=["js", "jvm"], dependencies=[], dependsOn=[], kotlinRoots=["shared/kotlin"], resourceRoots=["shared/resources"],
+            name="commonMain", dependsOn=[], kotlinRoots=["shared/kotlin"], resourceRoots=["shared/resources"],
             kotlinInputs=["shared/kotlin/Value.kt"], resourceInputs=["shared/resources/value.txt"])])
+        owner["productionCompilations"] = [dict(sourceSet="jvmMain", classpaths=dict(compile="jvmCompileClasspath", runtime="jvmRuntimeClasspath"),
+                                               dependencies=dict(jvmCompileClasspath=[], jvmRuntimeClasspath=[]))]
         return owner
 
     def test_production_common_sources_retain_one_owner_and_real_compiler_outputs(self):
@@ -189,11 +191,12 @@ class QodanaProjectionTest(unittest.TestCase):
         self.assertEqual(owner["outputs"], common["outputs"])
         self.assertEqual(owner["compiler"]["moduleName"], common["compiler"]["moduleName"])
         self.assertEqual([], common["compiler"]["friends"])
+        self.assertEqual(owner["productionCompilations"][0], common["jvmCompilation"])
 
     def test_invalid_common_source_set_graphs_and_selections_are_rejected(self):
         owner = self.common_declaration()
         original = copy.deepcopy(owner)
-        for mutation in ("duplicate", "cycle", "unknown", "unreachable", "default", "missing-default", "wrong-root", "wrong-selection", "duplicate-edge", "empty-platforms", "duplicate-platforms", "foreign-platform", "missing-dependencies"):
+        for mutation in ("duplicate", "cycle", "unknown", "unreachable", "default", "missing-default", "wrong-root", "wrong-selection", "duplicate-edge", "missing-compilation", "duplicate-compilation"):
             with self.subTest(mutation=mutation):
                 owner.clear()
                 owner.update(copy.deepcopy(original))
@@ -207,17 +210,15 @@ class QodanaProjectionTest(unittest.TestCase):
                 elif mutation == "wrong-root": source["kotlinRoots"] = ["foreign/kotlin"]
                 elif mutation == "wrong-selection": source["kotlinInputs"] = ["beta/src/main/kotlin/Screen.kt"]
                 elif mutation == "duplicate-edge": owner["sourceSetDependencies"] *= 2
-                elif mutation == "empty-platforms": source["platforms"] = []
-                elif mutation == "duplicate-platforms": source["platforms"] *= 2
-                elif mutation == "foreign-platform": source["platforms"] = ["jvm", "unknown"]
-                elif mutation == "missing-dependencies": source["dependencies"] = None
+                elif mutation == "missing-compilation": owner["productionCompilations"] = []
+                elif mutation == "duplicate-compilation": owner["productionCompilations"] *= 2
                 with self.assertRaises(ValueError):
                     DECLARATIONS.analysis_owners(self.inventory)
 
     def test_empty_intermediate_source_sets_do_not_create_placeholder_modules(self):
         owner = self.common_declaration()
         owner["sourceSetDependencies"] = ["emptyMain"]
-        owner["commonSourceSets"].append(dict(name="emptyMain", platforms=["js", "jvm"], dependencies=[], dependsOn=["commonMain"], kotlinRoots=[], resourceRoots=[], kotlinInputs=[], resourceInputs=[]))
+        owner["commonSourceSets"].append(dict(name="emptyMain", dependsOn=["commonMain"], kotlinRoots=[], resourceRoots=[], kotlinInputs=[], resourceInputs=[]))
         projected = DECLARATIONS.analysis_owners(self.inventory)
         self.assertEqual(["alpha", "alpha.commonMain", "beta"], [item["module"] for item in projected])
         self.assertEqual(["commonMain"], projected[0]["refines"])

@@ -83,6 +83,8 @@ fun analysisOwners(owner: Map<*, *>): List<Map<*, *>> {
     require(reachable == nodes.keys) { "Common source sets differ from the JVM compilation refinement graph: ${owner["module"]}" }
     val original = owner + mapOf("roots" to retained, "common" to false, "templateIml" to owner["iml"],
         "sourceSet" to owner["defaultSourceSet"], "refines" to primaryRefinements)
+    val compilation = if (declarations.isEmpty()) null else (owner["productionCompilations"] as List<*>).map { it as Map<*, *> }
+        .single { it["sourceSet"] == owner["defaultSourceSet"] }
     val fragments = declarations.filter { it["name"] in active }.map { declaration ->
         val name = declaration["name"] as String
         require(name !in setOf(".", "..") && name.none { it in "/\\:" }) { "Noncanonical common source-set name: $name" }
@@ -91,7 +93,7 @@ fun analysisOwners(owner: Map<*, *>): List<Map<*, *>> {
         val compiler = owner["compiler"] as Map<*, *>
         owner + mapOf("module" to module, "iml" to iml, "templateIml" to owner["iml"], "roots" to assigned.getValue(name),
             "common" to true, "sourceSet" to name, "refines" to refinements(declaration["dependsOn"] as List<*>),
-            "platforms" to declaration["platforms"], "sourceDependencies" to declaration["dependencies"],
+            "jvmCompilation" to compilation,
             "compiler" to (compiler + mapOf("friends" to emptyList<Any>())))
     }
     return listOf(original) + fragments
@@ -206,18 +208,26 @@ tasks.register("qodanaKotlinModel") {
             require(primary.getAttribute("url") == "file://\$MODULE_DIR\$/") { "Unexpected primary IDEA content: $module" }
             primary.children("sourceFolder").forEach { primary.removeChild(it) }
             val common = owner["common"] == true
-            val commonPlatform = common && owner["platforms"] != listOf("jvm")
             if (common) manager.removeChild(primary)
             if (common) {
                 manager.children("orderEntry").filter { it.getAttribute("type") in setOf("module", "module-library") }.forEach { manager.removeChild(it) }
-                (owner["sourceDependencies"] as List<*>).map { it as Map<*, *> }.forEach { dependency ->
+                val compilation = owner["jvmCompilation"] as Map<*, *>
+                val classpaths = compilation["classpaths"] as Map<*, *>
+                val dependencies = compilation["dependencies"] as Map<*, *>
+                val compile = (dependencies[classpaths["compile"]] as List<*>).map { it as Map<*, *> }
+                val runtime = (dependencies[classpaths["runtime"]] as List<*>).map { it as Map<*, *> }
+                (compile + runtime).distinct().forEach { dependency ->
+                    val scope = when {
+                        dependency in compile && dependency in runtime -> emptyMap()
+                        dependency in compile -> mapOf("scope" to "PROVIDED")
+                        else -> mapOf("scope" to "RUNTIME")
+                    }
                     when (dependency["kind"]) {
-                        "Module" -> manager.element("orderEntry", mapOf("type" to "module", "module-name" to dependency["identity"] as String, "exported" to ""))
+                        "Module" -> manager.element("orderEntry", mapOf("type" to "module", "module-name" to dependency["identity"] as String) + scope)
                         "Library" -> {
                             val file = File(dependency["path"] as String).canonicalFile
                             require(file.exists()) { "Common compiler library is unavailable: $file" }
-                            val attributes = mapOf("name" to dependency["identity"] as String) + if (commonPlatform) mapOf("type" to "kotlin.common") else emptyMap()
-                            val library = manager.element("orderEntry", mapOf("type" to "module-library")).element("library", attributes)
+                            val library = manager.element("orderEntry", mapOf("type" to "module-library") + scope).element("library")
                             val url = if (file.isDirectory) "file://${file.invariantSeparatorsPath}" else "jar://${file.invariantSeparatorsPath}!/"
                             library.element("CLASSES").element("root", mapOf("url" to url))
                             library.element("JAVADOC")
@@ -258,7 +268,7 @@ tasks.register("qodanaKotlinModel") {
                 val target = compiler["jvmTarget"] as String
                 val refines = owner["refines"] as List<*>
                 val multiplatform = common || refines.isNotEmpty()
-                val configuration = facet.element("configuration", mapOf("version" to "3", "platform" to if (commonPlatform) "Common (experimental) " else "JVM $target", "useProjectSettings" to "false"))
+                val configuration = facet.element("configuration", mapOf("version" to "3", "platform" to "JVM $target", "useProjectSettings" to "false"))
                 if (multiplatform) {
                     configuration.setAttribute("isHmppProject", "true")
                     configuration.setAttribute("externalProjectId", owner["project"] as String)
@@ -276,7 +286,7 @@ tasks.register("qodanaKotlinModel") {
                 }
                 val arguments = configuration.element("compilerArguments")
                 arguments.element("option", mapOf("name" to "moduleName", "value" to compiler["moduleName"] as String))
-                if (commonPlatform.not()) arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))
+                arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))
                 if (multiplatform) arguments.element("option", mapOf("name" to "multiPlatform", "value" to "true"))
                 if (compiler["expectActualClasses"] == true) arguments.element("option", mapOf("name" to "expectActualClasses", "value" to "true"))
                 (compiler["explicitApi"] as String?)?.let { arguments.element("option", mapOf("name" to "explicitApi", "value" to it)) }

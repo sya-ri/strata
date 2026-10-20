@@ -50,14 +50,6 @@ import org.jetbrains.dokka.gradle.engine.plugins.DokkaVersioningPluginParameters
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
-import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinResolvedBinaryDependency
-import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinProjectArtifactDependency
-import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinSourceDependency
-import org.jetbrains.kotlin.gradle.idea.tcs.isKotlinCompileBinaryType
-import org.jetbrains.kotlin.gradle.idea.tcs.extras.artifactsClasspath
-import org.jetbrains.kotlin.gradle.plugin.ide.IdeMultiplatformImport
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -1462,54 +1454,6 @@ if (completeIdeaModelActive) {
         }.orEmpty()
     }
 
-    /** Includes the producers registered by Kotlin's IDE dependency resolvers before this owner's export. */
-    @OptIn(ExternalKotlinTargetApi::class, ExperimentalKotlinGradlePluginApi::class)
-    fun Project.prepareCommonDependencyExport(task: Task) {
-        if (extensions.findByType<KotlinMultiplatformExtension>() != null) IdeMultiplatformImport.instance(this).addDependencyOnResolvers(task)
-    }
-
-    /** Resolves source-set metadata variants and source edges through the configured Kotlin IDE import model. */
-    @OptIn(ExternalKotlinTargetApi::class)
-    fun Project.commonDependencyDeclarations(): Map<String, Any> {
-        val kotlin = extensions.findByType<KotlinMultiplatformExtension>() ?: return emptyMap()
-        val main = kotlin.targets.single { it.platformType == KotlinPlatformType.jvm }.compilations.getByName("main")
-        return (main.allKotlinSourceSets - main.defaultSourceSet).sortedBy { it.name }.associate { source ->
-            val platforms = kotlin.targets.filter { target ->
-                target.platformType != KotlinPlatformType.common && target.compilations.any { source in it.allKotlinSourceSets }
-            }.map { it.platformType.name }.distinct().sorted()
-            require(platforms.isNotEmpty()) { "Common source set has no platform compilation: $path:${source.name}" }
-            val dependencies = IdeMultiplatformImport.instance(this).resolveDependencies(source).flatMap { dependency ->
-                when (dependency) {
-                    is IdeaKotlinResolvedBinaryDependency -> {
-                        require(dependency.isKotlinCompileBinaryType && dependency.classpath.isNotEmpty()) { "Missing Kotlin IDE compile dependency: $dependency" }
-                        dependency.classpath.sortedBy { it.canonicalPath }.map { file ->
-                            mapOf("kind" to "Library", "identity" to "${dependency.coordinates?.identityString}:${file.name}",
-                                "path" to file.canonicalFile.invariantSeparatorsPath)
-                        }
-                    }
-                    is IdeaKotlinSourceDependency -> when (dependency.type) {
-                        IdeaKotlinSourceDependency.Type.DependsOn -> emptyList()
-                        IdeaKotlinSourceDependency.Type.Regular -> {
-                            require(dependency.coordinates.buildPath == ":") { "Source dependency belongs to another build: $dependency" }
-                            listOf(mapOf("kind" to "Module", "project" to dependency.coordinates.projectPath, "sourceSet" to dependency.coordinates.sourceSetName))
-                        }
-                        IdeaKotlinSourceDependency.Type.Friend -> error("Production common source set has a friend dependency: $dependency")
-                    }
-                    is IdeaKotlinProjectArtifactDependency -> {
-                        require(platforms == listOf("jvm") && dependency.type == IdeaKotlinSourceDependency.Type.Regular &&
-                            dependency.coordinates.buildPath == ":" && dependency.coordinates.projectPath != path &&
-                            dependency.artifactsClasspath.isNotEmpty() && dependency.artifactsClasspath.all { it.isFile }) {
-                            "Unsupported platform project dependency: $dependency"
-                        }
-                        listOf(mapOf("kind" to "Module", "project" to dependency.coordinates.projectPath))
-                    }
-                    else -> error("Unresolved or unsupported Kotlin IDE dependency: $dependency")
-                }
-            }.distinct()
-            source.name to mapOf("platforms" to platforms, "dependencies" to dependencies)
-        }
-    }
-
     val dependencyInventories = mutableMapOf<String, TaskProvider<Task>>()
     gradle.projectsEvaluated {
         val revision = gitOutput("rev-parse", "HEAD").trim()
@@ -1524,7 +1468,6 @@ if (completeIdeaModelActive) {
                 outputs.upToDateWhen { false }
                 dependsOn(sourceSets.map { it.output })
                 mustRunAfter(owner.tasks.named("ideaModule"))
-                owner.prepareCommonDependencyExport(this)
                 doLast {
                     val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
                     val multiplatform = owner.extensions.findByType<KotlinMultiplatformExtension>()
@@ -1564,8 +1507,7 @@ if (completeIdeaModelActive) {
                     }
                     output.get().asFile.apply {
                         parentFile.mkdirs()
-                        writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("revision" to revision, "project" to owner.path, "compilations" to declarations,
-                            "sourceSets" to owner.commonDependencyDeclarations()))) + "\n")
+                        writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf("revision" to revision, "project" to owner.path, "compilations" to declarations))) + "\n")
                     }
                 }
             }
@@ -1592,7 +1534,7 @@ if (completeIdeaModelActive) {
             val dependencyInputs = dependencyInventories.mapValues { (project, task) ->
                 val input = JsonSlurper().parse(task.get().outputs.files.singleFile) as Map<*, *>
                 require(input["revision"] == revision && input["project"] == project) { "Dependency inventory differs from the selected project revision: $project" }
-                input
+                input["compilations"] as Map<*, *>
             }
             // All producers have completed; these maps live only for this action's immutable filesystem snapshot.
             val fileHashes = mutableMapOf<File, String>()
@@ -1624,7 +1566,7 @@ if (completeIdeaModelActive) {
             fun Project.declarationDependencies(sourceSet: SourceSet): Map<String, Any> {
                 val sourceSets = extensions.getByType<SourceSetContainer>()
                 val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
-                val input = (dependencyInputs.getValue(path)["compilations"] as Map<*, *>)[sourceSet.name] as Map<*, *>
+                val input = dependencyInputs.getValue(path)[sourceSet.name] as Map<*, *>
                 val classpaths = (input["classpaths"] as Map<*, *>).entries.associate { (role, name) -> role as String to name as String }
                 val artifacts = (input["artifacts"] as List<*>).map { it as Map<*, *> }
                 val dependencies = (input["files"] as Map<*, *>).entries.associate { (name, paths) ->
@@ -1685,20 +1627,8 @@ if (completeIdeaModelActive) {
                     ?: multiplatform?.targets?.findByName("jvm")?.compilations?.findByName("main")
                 val commonSourceSets = if (multiplatform == null) emptyList() else {
                     main?.allKotlinSourceSets.orEmpty().filter { it != main?.defaultSourceSet }.sortedBy { it.name }.map { sourceSet ->
-                        val input = (dependencyInputs.getValue(owner.path)["sourceSets"] as Map<*, *>)[sourceSet.name] as Map<*, *>
-                        val dependencies = (input["dependencies"] as List<*>).map { it as Map<*, *> }.map { dependency ->
-                            if (dependency["kind"] == "Library") {
-                                dependency + mapOf("sha256" to File(dependency["path"] as String).sha256())
-                            } else {
-                                val project = rootProject.project(dependency["project"] as String)
-                                val module = project.extensions.getByType<IdeaModel>().module.name
-                                dependency + mapOf("identity" to (dependency["sourceSet"]?.let { "$module.$it" } ?: module))
-                            }
-                        }
                         mapOf(
                             "name" to sourceSet.name,
-                            "platforms" to input["platforms"],
-                            "dependencies" to dependencies,
                             "dependsOn" to sourceSet.dependsOn.map { it.name }.sorted(),
                             "kotlinRoots" to sourceSet.kotlin.srcDirs.map { it.repositoryPath() }.sorted(),
                             "resourceRoots" to sourceSet.resources.srcDirs.map { it.repositoryPath() }.sorted(),

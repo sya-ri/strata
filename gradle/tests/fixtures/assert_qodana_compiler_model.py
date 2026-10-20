@@ -109,7 +109,7 @@ if common_parent is not None:
             common_import["contentEntries"][0]["path"] = "file://$PROJECT_DIR$/shared-kmp"
             expected = "content ownership"
         elif mutation == "wrong-common-platform":
-            common_document.find(".//configuration").set("platform", "JVM 17")
+            common_document.find(".//configuration").set("platform", "Common (experimental) ")
             expected = "compiler identity"
         elif mutation == "missing-refinement":
             configuration.remove(configuration.find("dependsOnModuleNames"))
@@ -142,8 +142,8 @@ if common_parent is not None:
                 common_import["orderEntries"].remove(imported_library)
                 expected = "compilation dependency"
             elif mutation == "wrong-common-library-kind":
-                library.find("library").attrib.pop("type")
-                expected = "common library identity or kind"
+                library.find("library").attrib["type"] = "kotlin.common"
+                expected = "common JVM library has an incompatible name or platform kind"
             elif mutation == "test-common-library":
                 library.attrib["scope"] = "TEST"
                 expected = "incompatible compile/runtime scope"
@@ -152,11 +152,11 @@ if common_parent is not None:
                 classes = ET.SubElement(ET.SubElement(extra, "library"), "CLASSES")
                 ET.SubElement(classes, "root", url="file://" + (root / own_output).as_posix())
                 common_import["orderEntries"].append(dict(type="Library", name=(root / own_output).as_posix()))
-                expected = "common dependency closure"
+                expected = "common JVM dependency closure"
         elif mutation == "jvm-common-project":
-            edge = common_document.find("./component[@name='NewModuleRootManager']/orderEntry[@type='module'][@module-name='common-support.commonMain']")
-            edge.attrib["module-name"] = "common-support"
-            next(entry for entry in common_import["orderEntries"] if entry.get("type") == "Module" and entry.get("name") == "common-support.commonMain")["name"] = "common-support"
+            edge = common_document.find("./component[@name='NewModuleRootManager']/orderEntry[@type='module'][@module-name='common-support']")
+            edge.attrib["module-name"] = "common-support.commonMain"
+            next(entry for entry in common_import["orderEntries"] if entry.get("type") == "Module" and entry.get("name") == "common-support")["name"] = "common-support.commonMain"
             expected = "refinement edge"
         primary_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(primary_document))
         common_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(common_document))
