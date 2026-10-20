@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.minecraft
@@ -34,7 +32,6 @@ import org.junit.jupiter.api.Test
 /**
  * Verifies the fixed-size common Minecraft pointer-button behavior.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftPointerButtonTest {
     @Test
     fun directJoinWidthUsesTheCompleteNativeTwoHundredPixelSprite() {
@@ -140,7 +137,6 @@ internal class MinecraftPointerButtonTest {
 
     @Test
     fun disabledButtonDoesNotConsumeAndUsesInactiveSemantics() {
-        var presses = 0
         val host =
             host {
                 evaluateComponentTree { Button("A", enabled = false) }
@@ -154,7 +150,28 @@ internal class MinecraftPointerButtonTest {
                 .semantics.disabled,
         )
         assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Press(IntOffset(5, 5), PointerButton.Primary)))
-        assertEquals(0, presses)
+        host.close()
+    }
+
+    @Test
+    fun disabledAppearanceRetainsCallerOwnedPointerBehavior() {
+        var presses = 0
+        val host =
+            host {
+                evaluateComponentTree {
+                    Button("A", enabled = false, modifier = Modifier.onPress { presses += 1 })
+                }
+            }
+        host.attach()
+        val frame = host.frame(IntSize(150, 20))
+        assertEquals(
+            true,
+            frame.semantics
+                .single()
+                .semantics.disabled,
+        )
+        assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(5, 5), PointerButton.Primary)))
+        assertEquals(1, presses)
         host.close()
     }
 
@@ -377,7 +394,6 @@ internal class MinecraftPointerButtonTest {
     @Test
     fun disabledTopButtonFallsThroughToEnabledLowerButtonAndDoesNotHover() {
         var lowerPresses = 0
-        var upperPresses = 0
         val host =
             host {
                 evaluateComponentTree {
@@ -395,13 +411,11 @@ internal class MinecraftPointerButtonTest {
         assertSame(normal[5].image, hovered[5].image)
         assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(5, 5), PointerButton.Primary)))
         assertEquals(1, lowerPresses)
-        assertEquals(0, upperPresses)
         host.close()
     }
 
     @Test
     fun allDisabledButtonsIgnorePrimaryPress() {
-        var presses = 0
         val host =
             host {
                 evaluateComponentTree {
@@ -414,10 +428,10 @@ internal class MinecraftPointerButtonTest {
         host.attach()
         host.frame(IntSize(150, 20))
         assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Press(IntOffset(5, 5), PointerButton.Primary)))
-        assertEquals(0, presses)
         host.close()
     }
 
+    @Suppress("DEPRECATION")
     private fun host(
         profile: MinecraftUiProfile = MinecraftProfileFixture.create(),
         content: () -> Element,

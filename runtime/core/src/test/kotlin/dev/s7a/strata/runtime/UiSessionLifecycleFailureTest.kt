@@ -141,8 +141,7 @@ internal class UiSessionLifecycleFailureTest {
         val secondClose = IllegalStateException("second close")
         val sourceOne = FailingSource(firstClose)
         val sourceTwo = FailingSource(secondClose)
-        lateinit var session: UiSession
-        session =
+        val session =
             UiSession(TestOwnerDispatcher()) {
                 throw primary
             }

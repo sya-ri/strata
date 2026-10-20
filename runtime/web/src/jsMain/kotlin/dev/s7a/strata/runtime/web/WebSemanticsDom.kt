@@ -27,7 +27,7 @@ internal object WebSemanticsDom {
                     entry
                 } else {
                     SemanticsEntry(
-                        checkNotNull(previous).bounds,
+                        previous.bounds,
                         Semantics(first.label ?: next.label, first.role ?: next.role, first.value ?: next.value, first.disabled || next.disabled, first.selected ?: next.selected, first.checked ?: next.checked),
                         checkNotNull(previous.owner),
                     )

@@ -23,8 +23,8 @@ public object BrowserPerformanceJson {
      */
     public fun sample(sample: BrowserPerformanceSample): String {
         val result = js("({})")
-        result.operation_wall = JSON.parse<dynamic>(distribution(sample.operation))
-        result.action_to_animation_frame = JSON.parse<dynamic>(distribution(sample.animationFrame))
+        result.operation_wall = JSON.parse(distribution(sample.operation))
+        result.action_to_animation_frame = JSON.parse(distribution(sample.animationFrame))
         result.cpu_ns = null
         result.allocated_bytes = null
         return JSON.stringify(result)

@@ -1,7 +1,5 @@
 package dev.s7a.strata.runtime.web
 
-import dev.s7a.strata.component.ImageSource
-import dev.s7a.strata.component.TextInputAppearance
 import dev.s7a.strata.component.TextShadow
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect

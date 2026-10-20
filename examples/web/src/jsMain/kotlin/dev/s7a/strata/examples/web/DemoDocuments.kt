@@ -15,7 +15,7 @@ internal object DemoDocuments {
      * Returns path/HTML records as JSON for the build harness without exposing an additional runtime API.
      */
     fun render(revision: String): String {
-        require(revision.matches(Regex("(?:master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40})"))) {
+        require(revision.matches(Regex("master|v[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?|[0-9a-f]{40}"))) {
             "Invalid demo source revision."
         }
         val pages = mutableListOf(record("index.html", index(revision)))

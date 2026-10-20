@@ -31,8 +31,7 @@ public class StrataMinecraftLegacyClientGameTest : FabricClientGameTest {
 
     private class FabricContext(
         private val delegate: ClientGameTestContext,
-    ) : MinecraftLoadedTestContext,
-        ClientGameTestContext by delegate {
+    ) : MinecraftLoadedTestContext {
         override fun <T : Any> computeOnClient(action: (Minecraft) -> T): T =
             delegate.computeOnClient(
                 FailableFunction<Minecraft, T, RuntimeException> { minecraft -> action(minecraft) },
