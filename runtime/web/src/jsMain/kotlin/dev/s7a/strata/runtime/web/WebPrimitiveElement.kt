@@ -11,6 +11,7 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.FocusTargetNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
@@ -43,10 +44,19 @@ internal class WebPrimitiveElement(
         MeasureNode,
         PaintNode,
         SemanticsNode,
+        FocusTargetNode,
         LifecycleNode {
         private val identity = initial.allocateIdentity()
         private var presentation: WebPresentation? = initial.presentation.copy(identity = identity)
         private var naturalSize = initial.naturalSize
+        private var focused = false
+        override val acceptsFocus: Boolean get() = presentation?.let { it.kind == WebPresentation.Kind.Button && it.enabled } == true
+
+        override fun onFocusChanged(focused: Boolean) {
+            this.focused = focused
+            presentation = presentation?.copy(focused = focused)
+            invalidate(DirtyMask.of(DirtyPhase.Paint))
+        }
 
         override fun measure(
             scope: MeasureScope,
@@ -84,7 +94,7 @@ internal class WebPrimitiveElement(
          * Applies a reconciled snapshot on the owner agent without changing the DOM identity.
          */
         fun update(current: WebPrimitiveElement): DirtyMask {
-            val next = current.presentation.copy(identity = identity)
+            val next = current.presentation.copy(identity = identity, focused = focused)
             val previous = presentation
             var dirty = DirtyMask.None
             if (naturalSize != current.naturalSize) dirty += DirtyMask.of(DirtyPhase.Measure)

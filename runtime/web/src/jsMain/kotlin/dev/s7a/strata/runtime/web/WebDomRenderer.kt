@@ -1,14 +1,24 @@
 package dev.s7a.strata.runtime.web
 
+import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.TextInputAppearance
 import dev.s7a.strata.component.TextShadow
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.w3c.dom.HTMLButtonElement
+import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLProgressElement
+import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.Text
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * Owns DOM nodes for exactly the current frame, indexed by retained presentation identity or decorative command position.
@@ -16,9 +26,11 @@ import org.w3c.dom.Text
  * All calls require the browser's owning agent. Caller text is assigned as textContent and is never parsed as markup.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooManyFunctions") // DOM adoption, validation and paint share one owner and lifetime.
 internal class WebDomRenderer(
     private val root: HTMLElement,
     private val theme: WebTheme = WebTheme.Native,
+    private var resources: WebUiResources? = WebUiResources(),
 ) : AutoCloseable {
     private var nodes = emptyMap<String, HTMLElement>()
     private var initialized = false
@@ -59,6 +71,10 @@ internal class WebDomRenderer(
             if (next[identity] !== element) element.parentNode?.removeChild(element)
         }
         nodes = next
+        entries.firstOrNull { it.editor?.focused == true || it.presentation?.focused == true }?.let { entry ->
+            val target = checkNotNull(nodes[entry.identity])
+            if (root.ownerDocument?.activeElement !== target && target.isConnected) target.focus()
+        }
     }
 
     override fun close() {
@@ -66,11 +82,13 @@ internal class WebDomRenderer(
         nodes = emptyMap()
         stylesheet?.let { it.parentNode?.removeChild(it) }
         stylesheet = null
+        resources = null
         if (initialized) {
             if (originalTheme == null) root.removeAttribute("data-strata-theme-root") else root.setAttribute("data-strata-theme-root", originalTheme)
         }
     }
 
+    @Suppress("CyclomaticComplexMethod") // Validate every native kind before mutating generated markup.
     private fun adoptInitialDom(entries: List<Entry>) {
         check(originalTheme == null || originalTheme == theme.token) { "Initial web root does not match the requested theme." }
         if (root.hasChildNodes().not()) return
@@ -91,7 +109,7 @@ internal class WebDomRenderer(
             check(element.getAttribute("data-strata-node") == entry.identity && element.tagName.lowercase() == entry.tag) {
                 "Initial web HTML does not match the screen's retained identities and element kinds."
             }
-            check(element.textContent == entry.presentation?.label.orEmpty()) {
+            check(entry.editor != null || element.textContent == entry.presentation?.label.orEmpty()) {
                 "Initial web HTML does not match the screen's initial text; the screen factory must be deterministic."
             }
             if (element is HTMLButtonElement) {
@@ -103,6 +121,15 @@ internal class WebDomRenderer(
                 check(element.max == 1.0 && element.value == entry.presentation?.progress && element.hasAttribute("value")) {
                     "Initial web HTML does not match the screen's initial progress."
                 }
+            }
+            if (entry.editor != null) {
+                val value =
+                    when (element) {
+                        is HTMLInputElement -> element.value
+                        is HTMLTextAreaElement -> element.value
+                        else -> error("Initial editor has the wrong DOM type.")
+                    }
+                check(value == entry.editor.value) { "Initial web editor value does not match." }
             }
             adopted[entry.identity] = element
         }
@@ -127,19 +154,18 @@ internal class WebDomRenderer(
         style.setProperty("clip-path", clipPath(bounds, entry.clip))
         style.backgroundColor = entry.background
         val presentation = entry.presentation
-        if (presentation?.kind == WebPresentation.Kind.Text) {
-            val foreground = if (presentation.enabled) presentation.style.color else presentation.style.disabledColor ?: presentation.style.color
-            style.color = cssColor(foreground.value)
-            style.textShadow =
-                when (val shadow = presentation.style.shadow) {
-                    null -> "none"
-                    TextShadow.Automatic -> "1px 1px ${cssColor((foreground.value and 0xff000000.toInt()) or ((foreground.value and 0xfcfcfc) ushr 2))}"
-                    is TextShadow.Color -> "1px 1px ${cssColor(shadow.color.value)}"
-                }
-        } else {
-            style.color = ""
-            style.textShadow = ""
+        if (presentation?.font != null) style.font = presentation.font
+        style.lineHeight = presentation?.lineHeight?.let { "${it}px" }.orEmpty()
+        val image = entry.image
+        if (image != null) {
+            paintImage(element as HTMLCanvasElement, image, bounds, entry.clip)
+            return
         }
+        if (entry.editor != null) {
+            WebEditorDom.update(element, entry.editor, checkNotNull(resources))
+            return
+        }
+        textStyle(element, presentation)
         style.setProperty("pointer-events", if (presentation == null) "none" else "auto")
         if (element.textContent != presentation?.label.orEmpty()) element.textContent = presentation?.label.orEmpty()
         if (element is HTMLButtonElement) {
@@ -152,12 +178,18 @@ internal class WebDomRenderer(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod") // Exhaustive command decoding preserves paint order and nested clips.
     private fun entries(frame: RuntimeUiFrame): List<Entry> {
-        val clips = ArrayDeque<IntRect>()
+        val clips = ArrayDeque<FloatRect>()
         val entries = ArrayList<Entry>()
         frame.drawCommands.forEachIndexed { index, command ->
             when (command) {
                 is DrawCommand.PushClip -> {
+                    val bounds = floating(command.bounds)
+                    clips.addLast(clips.lastOrNull()?.let { intersect(it, bounds) } ?: bounds)
+                }
+
+                is DrawCommand.PushFractionalClip -> {
                     clips.addLast(clips.lastOrNull()?.let { intersect(it, command.bounds) } ?: command.bounds)
                 }
 
@@ -172,14 +204,23 @@ internal class WebDomRenderer(
                 }
 
                 is DrawCommand.Platform -> {
-                    val presentation =
-                        command.command as? WebPresentation
-                            ?: throw UnsupportedOperationException("The web renderer does not recognize this platform payload.")
-                    entries.add(Entry("n${presentation.identity}", presentation.kind.tag, command.bounds, clips.lastOrNull(), "", presentation))
+                    when (val presentation = command.command) {
+                        is WebPresentation -> entries.add(Entry("n${presentation.identity}", presentation.kind.tag, command.bounds, clips.lastOrNull(), "", presentation))
+                        is WebEditorPresentation -> entries.add(Entry("n${presentation.identity}", if (presentation.multiline) "textarea" else "input", command.bounds, clips.lastOrNull(), "", null, presentation))
+                        else -> throw UnsupportedOperationException("The web renderer does not recognize this platform payload.")
+                    }
                 }
 
-                else -> {
-                    throw UnsupportedOperationException("The web renderer does not support this image command.")
+                is DrawCommand.BlitImage -> {
+                    entries.add(Entry("d$index", "canvas", command.destination, clips.lastOrNull(), "", null, image = command))
+                }
+
+                is DrawCommand.BlitImagePixels -> {
+                    entries.add(Entry("d$index", "canvas", command.destination, clips.lastOrNull(), "", null, image = command))
+                }
+
+                is DrawCommand.SampledImage -> {
+                    entries.add(Entry("d$index", "canvas", enclosing(command.destination), clips.lastOrNull(), "", null, image = command))
                 }
             }
         }
@@ -194,21 +235,21 @@ internal class WebDomRenderer(
     private fun cssColor(value: Int): String = "rgba(${value ushr 16 and 255},${value ushr 8 and 255},${value and 255},${(value ushr 24) / 255.0})"
 
     private fun intersect(
-        left: IntRect,
-        right: IntRect,
-    ): IntRect {
+        left: FloatRect,
+        right: FloatRect,
+    ): FloatRect {
         val x = maxOf(left.left, right.left)
         val y = maxOf(left.top, right.top)
-        return IntRect(x, y, maxOf(x, minOf(left.right, right.right)), maxOf(y, minOf(left.bottom, right.bottom)))
+        return FloatRect(x, y, maxOf(x, minOf(left.right, right.right)), maxOf(y, minOf(left.bottom, right.bottom)))
     }
 
     private fun clipPath(
         bounds: IntRect,
-        clip: IntRect?,
+        clip: FloatRect?,
     ): String {
         if (clip == null) return "none"
-        val visible = intersect(bounds, clip)
-        return "inset(${visible.top - bounds.top}px ${maxOf(0, bounds.right - visible.right)}px ${maxOf(0, bounds.bottom - visible.bottom)}px ${visible.left - bounds.left}px)"
+        val visible = intersect(floating(bounds), clip)
+        return "inset(${visible.top - bounds.top}px ${maxOf(0f, bounds.right - visible.right)}px ${maxOf(0f, bounds.bottom - visible.bottom)}px ${visible.left - bounds.left}px)"
     }
 
     /**
@@ -218,8 +259,50 @@ internal class WebDomRenderer(
         val identity: String,
         val tag: String,
         val bounds: IntRect,
-        val clip: IntRect?,
+        val clip: FloatRect?,
         val background: String,
         val presentation: WebPresentation?,
+        val editor: WebEditorPresentation? = null,
+        val image: DrawCommand? = null,
     )
+
+    private fun floating(bounds: IntRect): FloatRect = FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat())
+
+    private fun enclosing(bounds: FloatRect): IntRect = IntRect(floor(bounds.left).toInt(), floor(bounds.top).toInt(), ceil(bounds.right).toInt(), ceil(bounds.bottom).toInt())
+
+    private fun paintImage(
+        canvas: HTMLCanvasElement,
+        image: DrawCommand,
+        bounds: IntRect,
+        clip: FloatRect?,
+    ) {
+        canvas.style.setProperty("pointer-events", "none")
+        canvas.style.setProperty("clip-path", "none")
+        when (image) {
+            is DrawCommand.SampledImage -> WebImageRasterizer.draw(canvas, image.image, image.source, image.destination, bounds, clip, image.tint, image.alphaCutoff, image.orientation)
+            is DrawCommand.BlitImage -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
+            is DrawCommand.BlitImagePixels -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
+            else -> error("Unexpected web image command.")
+        }
+    }
+
+    private fun textStyle(
+        element: HTMLElement,
+        presentation: WebPresentation?,
+    ) {
+        val style = element.style
+        if (presentation?.kind == WebPresentation.Kind.Text) {
+            val foreground = if (presentation.enabled) presentation.style.color else presentation.style.disabledColor ?: presentation.style.color
+            style.color = cssColor(foreground.value)
+            style.textShadow =
+                when (val shadow = presentation.style.shadow) {
+                    null -> "none"
+                    TextShadow.Automatic -> "1px 1px ${cssColor((foreground.value and 0xff000000.toInt()) or ((foreground.value and 0xfcfcfc) ushr 2))}"
+                    is TextShadow.Color -> "1px 1px ${cssColor(shadow.color.value)}"
+                }
+        } else {
+            style.color = ""
+            style.textShadow = ""
+        }
+    }
 }

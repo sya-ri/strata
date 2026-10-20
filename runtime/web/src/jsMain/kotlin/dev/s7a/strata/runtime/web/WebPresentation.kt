@@ -17,6 +17,9 @@ internal data class WebPresentation(
     val enabled: Boolean,
     val style: TextStyle,
     val progress: Double? = null,
+    val font: String? = null,
+    val focused: Boolean = false,
+    val lineHeight: Int? = null,
 ) : PlatformDrawCommand {
     /**
      * Native DOM kinds and their matching portable semantics.

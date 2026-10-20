@@ -34,7 +34,7 @@ internal class WebUiHostTest {
         val session = host.uiSession
         assertEquals(UiPresentation.Screen, session.presentation)
         assertEquals(UiOperationResult.Rejected(UiRejection.Unsupported), session.switch(UiPresentation.Hud))
-        assertEquals(UiOperationResult.Rejected(UiRejection.Unsupported), session.setInputPolicy(UiInputPolicy.All))
+        assertEquals(UiOperationResult.Accepted, session.setInputPolicy(UiInputPolicy.All))
         assertEquals(UiPresentation.Screen, session.presentation)
         session.close()
         session.close()

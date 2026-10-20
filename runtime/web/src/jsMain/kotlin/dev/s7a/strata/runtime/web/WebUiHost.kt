@@ -3,11 +3,7 @@
 package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.Constraints
-import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.PointerButton
-import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.runtime.spi.RuntimeUiController
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -23,9 +19,6 @@ import dev.s7a.strata.ui.UiRejection
 import dev.s7a.strata.ui.UiSession
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.EventListener
-import org.w3c.dom.events.MouseEvent
-import kotlin.math.floor
 
 /**
  * Owns one browser-agent retained session and the contents of a caller-owned DOM root.
@@ -40,31 +33,23 @@ public class WebUiHost internal constructor(
     private var viewport: IntSize,
     private val controls: RuntimeUiController,
     theme: WebTheme = WebTheme.Native,
+    runtime: WebComponentRuntime = WebComponentRuntime(theme),
 ) : AutoCloseable {
     /**
      * Stable event receiver; unsupported game presentation/input controls return an explicit rejection.
      */
     public val uiSession: UiSession get() = controls
 
-    private val renderer = WebDomRenderer(root, theme)
+    private val renderer = WebDomRenderer(root, theme, runtime.resources)
     private var lastFrame: RuntimeUiFrame? = null
     private var request: Int? = null
     private var closed = false
-    private val pressListener =
-        EventListener { event ->
-            val mouse = event as? MouseEvent
-            if (mouse != null) {
+    private var rendering = false
+    private val events =
+        WebInputEvents(root, session, runtime) { action ->
+            if (rendering.not() && closed.not()) {
                 guarded {
-                    val bounds = root.getBoundingClientRect()
-                    val position = IntOffset(floor(mouse.clientX - bounds.left).toInt(), floor(mouse.clientY - bounds.top).toInt())
-                    val button =
-                        when (val value = mouse.button.toInt()) {
-                            0 -> PointerButton.Primary
-                            1 -> PointerButton.Middle
-                            2 -> PointerButton.Secondary
-                            else -> PointerButton.Auxiliary(value)
-                        }
-                    if (session.dispatchPointer(PointerEvent.Press(position, button)) == InputResult.Consumed) mouse.preventDefault()
+                    action()
                     render(viewport)
                 }
             }
@@ -77,7 +62,7 @@ public class WebUiHost internal constructor(
     internal fun start() {
         guarded {
             prepare()
-            root.addEventListener("pointerdown", pressListener)
+            events.start()
             schedule()
         }
     }
@@ -103,7 +88,13 @@ public class WebUiHost internal constructor(
         guarded {
             val frame = session.frame(Constraints.fixed(viewport.width, viewport.height))
             if (frame !== lastFrame) {
-                renderer.render(frame)
+                rendering = true
+                try {
+                    renderer.render(frame)
+                    events.synchronizeEditors()
+                } finally {
+                    rendering = false
+                }
                 lastFrame = frame
             }
         }
@@ -114,7 +105,7 @@ public class WebUiHost internal constructor(
         closed = true
         request?.let(window::cancelAnimationFrame)
         request = null
-        root.removeEventListener("pointerdown", pressListener)
+        events.close()
         lastFrame = null
         val controlFailure = runCatching { controls.close() }.exceptionOrNull()
         val sessionFailure = runCatching { session.close() }.exceptionOrNull()
@@ -153,7 +144,6 @@ public class WebUiHost internal constructor(
  * The returned host retains application content through the shared core session, allowing ordinary Kotlin conditionals to reevaluate.
  * Existing generated children are validated and reused; mismatched initial content fails before modifying that HTML.
  * Build and browser must create independent definitions from the same deterministic initial values.
- *
  * @param definition available one-shot screen definition created on this agent.
  * @param root caller-owned DOM container.
  * @param viewport non-negative initial logical viewport.
@@ -188,25 +178,39 @@ internal fun createWebHost(
     root: HTMLElement,
     viewport: IntSize,
     theme: WebTheme = WebTheme.Native,
+    resources: WebUiResources = WebUiResources(),
 ): WebUiHost {
-    require(definition.presentation == UiPresentation.Screen && definition.inputPolicy == UiInputPolicy.BlockAll) {
-        "The Web runtime supports Screen presentation without game input forwarding."
+    require(definition.presentation == UiPresentation.Screen) {
+        "The Web runtime supports Screen presentation."
     }
-    val runtime = WebComponentRuntime(theme)
+    val runtime = WebComponentRuntime(theme, resources)
     val transferred = definition.transfer()
     var host: WebUiHost? = null
     lateinit var controls: RuntimeUiController
     controls =
-        RuntimeUiController(UiPresentation.Screen, apply = { request ->
-            if (request.presentation != UiPresentation.Screen || request.inputPolicy != UiInputPolicy.BlockAll || request.interactionMode != UiInteractionMode.Cursor) {
+        RuntimeUiController(UiPresentation.Screen, definition.inputPolicy, apply = { request ->
+            if (request.presentation != UiPresentation.Screen || request.interactionMode != UiInteractionMode.Cursor) {
                 controls.rejected(request.sequence, UiRejection.Unsupported)
             } else {
                 controls.applied(request.sequence)
             }
         }, close = { host?.close() })
     val session = createRuntimeUiSession(controls) { ComponentRuntimeBridge.evaluate(runtime, transferred.content) }
-    return WebUiHost(root, session, viewport, controls, theme).also { host = it }
+    return WebUiHost(root, session, viewport, controls, theme, runtime).also { host = it }
 }
+
+/**
+ * Mounts one shared definition with a caller-prepared resource snapshot.
+ * Fonts and skin sources remain caller-owned and must outlive this host.
+ * Game input policies are preserved as metadata; the browser has no gameplay forwarding target.
+ */
+public fun mountWeb(
+    definition: UiDefinition,
+    root: HTMLElement,
+    viewport: IntSize,
+    resources: WebUiResources,
+    theme: WebTheme = WebTheme.Native,
+): WebUiHost = createWebHost(definition, root, viewport, theme, resources).also(WebUiHost::start)
 
 /**
  * Compatibility overload retaining the same common UI session and browser ownership.

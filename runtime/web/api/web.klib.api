@@ -17,6 +17,41 @@ final enum class dev.s7a.strata.runtime.web/WebTheme : kotlin/Enum<dev.s7a.strat
     final fun values(): kotlin/Array<dev.s7a.strata.runtime.web/WebTheme> // dev.s7a.strata.runtime.web/WebTheme.values|values#static(){}[0]
 }
 
+sealed interface dev.s7a.strata.runtime.web/WebPlayerSkin { // dev.s7a.strata.runtime.web/WebPlayerSkin|null[0]
+    final class Ready : dev.s7a.strata.runtime.web/WebPlayerSkin { // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready|null[0]
+        constructor <init>(dev.s7a.strata.render/DrawImage) // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.<init>|<init>(dev.s7a.strata.render.DrawImage){}[0]
+
+        final val image // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.image|{}image[0]
+            final fun <get-image>(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.image.<get-image>|<get-image>(){}[0]
+
+        final fun component1(): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.component1|component1(){}[0]
+        final fun copy(dev.s7a.strata.render/DrawImage = ...): dev.s7a.strata.runtime.web/WebPlayerSkin.Ready // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.copy|copy(dev.s7a.strata.render.DrawImage){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.web/WebPlayerSkin.Ready.toString|toString(){}[0]
+    }
+
+    final object Failed : dev.s7a.strata.runtime.web/WebPlayerSkin { // dev.s7a.strata.runtime.web/WebPlayerSkin.Failed|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.web/WebPlayerSkin.Failed.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.web/WebPlayerSkin.Failed.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.web/WebPlayerSkin.Failed.toString|toString(){}[0]
+    }
+
+    final object Loading : dev.s7a.strata.runtime.web/WebPlayerSkin { // dev.s7a.strata.runtime.web/WebPlayerSkin.Loading|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.web/WebPlayerSkin.Loading.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.web/WebPlayerSkin.Loading.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.runtime.web/WebPlayerSkin.Loading.toString|toString(){}[0]
+    }
+}
+
+final class dev.s7a.strata.runtime.web/WebFont : kotlin/AutoCloseable { // dev.s7a.strata.runtime.web/WebFont|null[0]
+    final fun close() // dev.s7a.strata.runtime.web/WebFont.close|close(){}[0]
+
+    final object Companion { // dev.s7a.strata.runtime.web/WebFont.Companion|null[0]
+        final suspend fun load(kotlin/String, kotlin/String, kotlin/Int = ...): dev.s7a.strata.runtime.web/WebFont // dev.s7a.strata.runtime.web/WebFont.Companion.load|load(kotlin.String;kotlin.String;kotlin.Int){}[0]
+    }
+}
+
 final class dev.s7a.strata.runtime.web/WebUiHost : kotlin/AutoCloseable { // dev.s7a.strata.runtime.web/WebUiHost|null[0]
     final val uiSession // dev.s7a.strata.runtime.web/WebUiHost.uiSession|{}uiSession[0]
         final fun <get-uiSession>(): dev.s7a.strata.ui/UiSession // dev.s7a.strata.runtime.web/WebUiHost.uiSession.<get-uiSession>|<get-uiSession>(){}[0]
@@ -25,10 +60,20 @@ final class dev.s7a.strata.runtime.web/WebUiHost : kotlin/AutoCloseable { // dev
     final fun render(dev.s7a.strata.geometry/IntSize) // dev.s7a.strata.runtime.web/WebUiHost.render|render(dev.s7a.strata.geometry.IntSize){}[0]
 }
 
+final class dev.s7a.strata.runtime.web/WebUiResources { // dev.s7a.strata.runtime.web/WebUiResources|null[0]
+    constructor <init>(kotlin.collections/Map<dev.s7a.strata.resource/ResourceId, dev.s7a.strata.render/DrawImage> = ..., kotlin.collections/Map<dev.s7a.strata.resource/ResourceId, dev.s7a.strata.runtime.web/WebFont> = ..., dev.s7a.strata.runtime.web/WebFont? = ..., kotlin/Function1<dev.s7a.strata.component/PlayerSkinSource, dev.s7a.strata.state/StateSource<dev.s7a.strata.runtime.web/WebPlayerSkin>>? = ...) // dev.s7a.strata.runtime.web/WebUiResources.<init>|<init>(kotlin.collections.Map<dev.s7a.strata.resource.ResourceId,dev.s7a.strata.render.DrawImage>;kotlin.collections.Map<dev.s7a.strata.resource.ResourceId,dev.s7a.strata.runtime.web.WebFont>;dev.s7a.strata.runtime.web.WebFont?;kotlin.Function1<dev.s7a.strata.component.PlayerSkinSource,dev.s7a.strata.state.StateSource<dev.s7a.strata.runtime.web.WebPlayerSkin>>?){}[0]
+
+    final val defaultFont // dev.s7a.strata.runtime.web/WebUiResources.defaultFont|{}defaultFont[0]
+        final fun <get-defaultFont>(): dev.s7a.strata.runtime.web/WebFont? // dev.s7a.strata.runtime.web/WebUiResources.defaultFont.<get-defaultFont>|<get-defaultFont>(){}[0]
+    final val skins // dev.s7a.strata.runtime.web/WebUiResources.skins|{}skins[0]
+        final fun <get-skins>(): kotlin/Function1<dev.s7a.strata.component/PlayerSkinSource, dev.s7a.strata.state/StateSource<dev.s7a.strata.runtime.web/WebPlayerSkin>>? // dev.s7a.strata.runtime.web/WebUiResources.skins.<get-skins>|<get-skins>(){}[0]
+}
+
 final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.screen/ScreenDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.screen.ScreenDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize){}[0]
 final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.screen/ScreenDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.runtime.web/WebTheme): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.screen.ScreenDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.runtime.web.WebTheme){}[0]
 final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.ui/UiDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.ui.UiDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize){}[0]
 final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.ui/UiDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.runtime.web/WebTheme): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.ui.UiDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.runtime.web.WebTheme){}[0]
+final fun dev.s7a.strata.runtime.web/mountWeb(dev.s7a.strata.ui/UiDefinition, org.w3c.dom/HTMLElement, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.runtime.web/WebUiResources, dev.s7a.strata.runtime.web/WebTheme = ...): dev.s7a.strata.runtime.web/WebUiHost // dev.s7a.strata.runtime.web/mountWeb|mountWeb(dev.s7a.strata.ui.UiDefinition;org.w3c.dom.HTMLElement;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.runtime.web.WebUiResources;dev.s7a.strata.runtime.web.WebTheme){}[0]
 final fun dev.s7a.strata.runtime.web/renderWebDocument(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize, kotlin/String, kotlin/String): kotlin/String // dev.s7a.strata.runtime.web/renderWebDocument|renderWebDocument(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize;kotlin.String;kotlin.String){}[0]
 final fun dev.s7a.strata.runtime.web/renderWebDocument(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize, kotlin/String, kotlin/String, dev.s7a.strata.runtime.web/WebTheme): kotlin/String // dev.s7a.strata.runtime.web/renderWebDocument|renderWebDocument(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize;kotlin.String;kotlin.String;dev.s7a.strata.runtime.web.WebTheme){}[0]
 final fun dev.s7a.strata.runtime.web/renderWebDocument(dev.s7a.strata.ui/UiDefinition, dev.s7a.strata.geometry/IntSize, kotlin/String, kotlin/String): kotlin/String // dev.s7a.strata.runtime.web/renderWebDocument|renderWebDocument(dev.s7a.strata.ui.UiDefinition;dev.s7a.strata.geometry.IntSize;kotlin.String;kotlin.String){}[0]
@@ -37,3 +82,4 @@ final fun dev.s7a.strata.runtime.web/renderWebHtml(dev.s7a.strata.screen/ScreenD
 final fun dev.s7a.strata.runtime.web/renderWebHtml(dev.s7a.strata.screen/ScreenDefinition, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.runtime.web/WebTheme): kotlin/String // dev.s7a.strata.runtime.web/renderWebHtml|renderWebHtml(dev.s7a.strata.screen.ScreenDefinition;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.runtime.web.WebTheme){}[0]
 final fun dev.s7a.strata.runtime.web/renderWebHtml(dev.s7a.strata.ui/UiDefinition, dev.s7a.strata.geometry/IntSize): kotlin/String // dev.s7a.strata.runtime.web/renderWebHtml|renderWebHtml(dev.s7a.strata.ui.UiDefinition;dev.s7a.strata.geometry.IntSize){}[0]
 final fun dev.s7a.strata.runtime.web/renderWebHtml(dev.s7a.strata.ui/UiDefinition, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.runtime.web/WebTheme): kotlin/String // dev.s7a.strata.runtime.web/renderWebHtml|renderWebHtml(dev.s7a.strata.ui.UiDefinition;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.runtime.web.WebTheme){}[0]
+final suspend fun dev.s7a.strata.runtime.web/loadWebImage(kotlin/String, kotlin/Int = ...): dev.s7a.strata.render/DrawImage // dev.s7a.strata.runtime.web/loadWebImage|loadWebImage(kotlin.String;kotlin.Int){}[0]
