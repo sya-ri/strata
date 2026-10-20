@@ -160,3 +160,34 @@ jobs:
         key: ${{ steps.loom_cache.outputs.cache-primary-key }}
     needs: plan
     if: needs.plan.outputs.qodana == 'true'
+  native-product:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Analyze the product with its native Gradle model
+      uses: JetBrains/qodana-action@v2026.2
+      with:
+        cache-dir: ${{ runner.temp }}/qodana-native-product/caches
+        results-dir: ${{ runner.temp }}/qodana-native-product/results
+        use-caches: false
+        pr-mode: false
+        args: >-
+          --config=${{ github.workspace }}/.github/native-product-qodana.yaml
+          --linter=qodana-jvm-community --within-docker=false
+    - name: Retain native product analysis evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: native-product-analysis
+        path: ${{ runner.temp }}/qodana-native-product/results
+        if-no-files-found: error
+        include-hidden-files: true
