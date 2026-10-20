@@ -1,0 +1,39 @@
+name: Native build logic analysis
+'on':
+  workflow_dispatch: {}
+permissions:
+  actions: read
+  contents: read
+  checks: write
+  pull-requests: write
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - uses: ./.github/actions/setup-strata-java
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Analyze the included Gradle build
+      uses: JetBrains/qodana-action@v2026.2
+      with:
+        cache-dir: ${{ runner.temp }}/qodana-build-logic/caches
+        results-dir: ${{ runner.temp }}/qodana-build-logic/results
+        use-caches: false
+        pr-mode: false
+        args: >-
+          --project-dir=${{ github.workspace }}/build-logic
+          --config=${{ github.workspace }}/build-logic/qodana.yaml
+          --linter=qodana-jvm-community --within-docker=false
+    - name: Retain the native analysis evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: native-build-logic-analysis
+        path: ${{ runner.temp }}/qodana-build-logic/results
+        if-no-files-found: error
+        include-hidden-files: true

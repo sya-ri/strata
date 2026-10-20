@@ -1,0 +1,13 @@
+version: "1.0"
+linter: jetbrains/qodana-jvm-community:2026.2
+rootJavaProjects:
+  - .
+profile:
+  base:
+    name: qodana.recommended
+  inspections:
+    - inspection: UnusedSymbol
+      enabled: true
+    - inspection: RedundantVisibilityModifier
+      enabled: true
+failThreshold: 0
