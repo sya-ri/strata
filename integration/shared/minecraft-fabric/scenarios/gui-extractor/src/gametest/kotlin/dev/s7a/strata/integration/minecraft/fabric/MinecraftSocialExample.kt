@@ -18,6 +18,7 @@ import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
@@ -93,40 +94,7 @@ internal fun createSocialScreenDefinition(
                         )
                         Text("$playerName - New World - 1 player")
                     }
-                    Row(modifier = Modifier.padding(left = 1, top = 1), spacing = 1) {
-                        Tab("All", selected = true, width = 73, modifier = Modifier.onActivate {})
-                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.onActivate {})
-                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.onActivate {})
-                    }
-                    Row(
-                        modifier = Modifier.padding(left = 5, top = 9),
-                        spacing = 3,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        Image(
-                            searchIcon,
-                            size = IntSize(12, 12),
-                            modifier = Modifier.padding(top = 2),
-                        )
-                        TextField(
-                            search,
-                            size = IntSize(200, 15),
-                            textStyle = TextStyle.Normal,
-                            modifier = Modifier.initialFocus(),
-                        )
-                    }
-                    Row(
-                        modifier =
-                            Modifier
-                                .padding(left = 3, top = 3)
-                                .size(216, 32)
-                                .background(ArgbColor(0xFF4A4A4A.toInt())),
-                        spacing = 4,
-                        verticalAlignment = VerticalAlignment.Center,
-                    ) {
-                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.padding(left = 4))
-                        Text(playerName)
-                    }
+                    socialPlayerList(search, searchIcon, playerSkin, playerName)
                 }
                 Button(
                     "Done",
@@ -135,6 +103,51 @@ internal fun createSocialScreenDefinition(
                 )
             }
         }
+    }
+}
+
+/**
+ * Composes the example's tabs, search control and one deterministic player row.
+ */
+private fun UiScope.socialPlayerList(
+    search: TextFieldState,
+    searchIcon: ImageSource,
+    playerSkin: PlayerSkinSource,
+    playerName: String,
+) {
+    Row(modifier = Modifier.padding(left = 1, top = 1), spacing = 1) {
+        Tab("All", selected = true, width = 73, modifier = Modifier.onActivate {})
+        Tab("Hidden", selected = false, width = 73, modifier = Modifier.onActivate {})
+        Tab("Blocked", selected = false, width = 73, modifier = Modifier.onActivate {})
+    }
+    Row(
+        modifier = Modifier.padding(left = 5, top = 9),
+        spacing = 3,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        Image(
+            searchIcon,
+            size = IntSize(12, 12),
+            modifier = Modifier.padding(top = 2),
+        )
+        TextField(
+            search,
+            size = IntSize(200, 15),
+            textStyle = TextStyle.Normal,
+            modifier = Modifier.initialFocus(),
+        )
+    }
+    Row(
+        modifier =
+            Modifier
+                .padding(left = 3, top = 3)
+                .size(216, 32)
+                .background(ArgbColor(0xFF4A4A4A.toInt())),
+        spacing = 4,
+        verticalAlignment = VerticalAlignment.Center,
+    ) {
+        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.padding(left = 4))
+        Text(playerName)
     }
 }
 
