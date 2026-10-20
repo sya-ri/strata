@@ -13,17 +13,21 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.Executors
 
-/** Verifies immutable Maven release reconciliation against an in-process repository server. */
+/**
+ * Verifies immutable Maven release reconciliation against an in-process repository server.
+ */
 internal class MavenCentralReleaseVerifierTest {
     @TempDir
     lateinit var temporaryDirectory: Path
 
     private val servers = mutableListOf<MockCentralRepository>()
 
+    /**
+     * Releases the local HTTP servers owned by this test.
+     */
     @AfterEach
     fun closeServers() {
         servers.forEach(MockCentralRepository::close)
@@ -296,53 +300,22 @@ internal class MavenCentralReleaseVerifierTest {
                     return
                 }
             }
-            if (mode == Mode.ABSENT) {
-                respond(exchange, 404, ByteArray(0))
-                return
-            }
-            if (mode == Mode.ORPHAN && relativePath.endsWith("strata-api-0.1.1.jar").not()) {
-                respond(exchange, 404, ByteArray(0))
-                return
-            }
-            if (mode == Mode.ORPHAN_MD5 && relativePath.endsWith("strata-api-0.1.1.jar.md5").not()) {
-                respond(exchange, 404, ByteArray(0))
-                return
-            }
-            if (mode == Mode.ORPHAN_SIGNATURE_MD5 && relativePath.endsWith("strata-api-0.1.1.jar.asc.md5").not()) {
-                respond(exchange, 404, ByteArray(0))
-                return
-            }
-            if (mode == Mode.PARTIAL && relativePath.startsWith("dev/s7a/strata/strata-api/").not()) {
-                respond(exchange, 404, ByteArray(0))
-                return
-            }
-            if (mode == Mode.MISSING_SIGNATURE && relativePath.endsWith("strata-api-0.1.1.jar.asc")) {
-                respond(exchange, 404, ByteArray(0))
-                return
-            }
-            if (mode == Mode.MISSING_BASE_CHECKSUM && relativePath.endsWith("strata-api-0.1.1.jar.sha512")) {
+            if (isUnavailable(relativePath)) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
 
-            val checksumAlgorithm =
-                when {
-                    relativePath.endsWith(".md5") -> "MD5".also { requestedChecksumExtensions += "md5" }
-                    relativePath.endsWith(".sha1") -> "SHA-1".also { requestedChecksumExtensions += "sha1" }
-                    relativePath.endsWith(".sha256") -> "SHA-256".also { requestedChecksumExtensions += "sha256" }
-                    relativePath.endsWith(".sha512") -> "SHA-512".also { requestedChecksumExtensions += "sha512" }
-                    else -> null
-                }
+            val checksum = MavenFixtureChecksum.entries.firstOrNull { relativePath.endsWith(".${it.extension}") }
             val contentPath =
-                when (checksumAlgorithm) {
-                    "MD5" -> relativePath.removeSuffix(".md5")
-                    "SHA-1" -> relativePath.removeSuffix(".sha1")
-                    "SHA-256" -> relativePath.removeSuffix(".sha256")
-                    "SHA-512" -> relativePath.removeSuffix(".sha512")
-                    else -> relativePath
+                if (checksum == null) {
+                    relativePath
+                } else {
+                    requestedChecksumExtensions += checksum.extension
+                    val path = relativePath.removeSuffix(".${checksum.extension}")
+                    requestedChecksumContentPaths += path
+                    path
                 }
-            if (checksumAlgorithm != null) requestedChecksumContentPaths += contentPath
-            if (checksumAlgorithm != null && contentPath.endsWith(".asc") && mode != Mode.ORPHAN_SIGNATURE_MD5) {
+            if (checksum != null && contentPath.endsWith(".asc") && mode != Mode.ORPHAN_SIGNATURE_MD5) {
                 respond(exchange, 404, ByteArray(0))
                 return
             }
@@ -356,13 +329,28 @@ internal class MavenCentralReleaseVerifierTest {
                 bytes = "different immutable bytes".toByteArray(StandardCharsets.UTF_8)
             }
             val responseBytes =
-                if (checksumAlgorithm == null) {
+                if (checksum == null) {
                     bytes
                 } else {
-                    (bytes.hash(checksumAlgorithm) + "\n").toByteArray(StandardCharsets.UTF_8)
+                    (checksum.digest(bytes) + "\n").toByteArray(StandardCharsets.UTF_8)
                 }
             respond(exchange, 200, responseBytes)
         }
+
+        /**
+         * Resolves which paths the selected incomplete-publication scenario hides.
+         */
+        private fun isUnavailable(relativePath: String): Boolean =
+            when (mode) {
+                Mode.ABSENT -> true
+                Mode.ORPHAN -> relativePath.endsWith("strata-api-0.1.1.jar").not()
+                Mode.ORPHAN_MD5 -> relativePath.endsWith("strata-api-0.1.1.jar.md5").not()
+                Mode.ORPHAN_SIGNATURE_MD5 -> relativePath.endsWith("strata-api-0.1.1.jar.asc.md5").not()
+                Mode.PARTIAL -> relativePath.startsWith("dev/s7a/strata/strata-api/").not()
+                Mode.MISSING_SIGNATURE -> relativePath.endsWith("strata-api-0.1.1.jar.asc")
+                Mode.MISSING_BASE_CHECKSUM -> relativePath.endsWith("strata-api-0.1.1.jar.sha512")
+                Mode.EXACT, Mode.MISMATCH -> false
+            }
 
         private fun respond(
             exchange: HttpExchange,
@@ -391,6 +379,9 @@ internal class MavenCentralReleaseVerifierTest {
         MISMATCH,
     }
 
+    /**
+     * Defines the complete artifact and checksum inventory served by the repository fixture.
+     */
     companion object {
         private const val CHECKSUM_COUNT_PER_BASE = 4
         private val BASE_SUFFIXES = listOf(".pom", ".module", ".jar", "-sources.jar", "-javadoc.jar")
@@ -400,7 +391,5 @@ internal class MavenCentralReleaseVerifierTest {
                 "1.21",
                 "26.2",
             )
-
-        private fun ByteArray.hash(algorithm: String): String = MessageDigest.getInstance(algorithm).digest(this).joinToString("") { byte -> "%02x".format(byte) }
     }
 }

@@ -15,17 +15,21 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 import java.time.Duration
 import java.util.concurrent.Executors
 
-/** Verifies authenticated Central deployment reconciliation against an in-process Portal. */
+/**
+ * Verifies authenticated Central deployment reconciliation against an in-process Portal.
+ */
 internal class MavenCentralPortalCoordinatorTest {
     @TempDir
     lateinit var temporaryDirectory: Path
 
     private val servers = mutableListOf<MockCentralPortal>()
 
+    /**
+     * Releases the local HTTP servers owned by this test.
+     */
     @AfterEach
     fun closeServers() {
         servers.forEach(MockCentralPortal::close)
@@ -140,7 +144,7 @@ internal class MavenCentralPortalCoordinatorTest {
             )
 
         val expectedContentFileCount = fixture.coordinates.size * BASE_SUFFIXES.size * 2
-        val expectedChecksumCount = fixture.coordinates.size * BASE_SUFFIXES.size * CHECKSUMS.size
+        val expectedChecksumCount = fixture.coordinates.size * BASE_SUFFIXES.size * MavenFixtureChecksum.entries.size
         assertEquals(MavenCentralPortalCoordinator.State.EXACT, exact.state)
         assertEquals(expectedContentFileCount, exact.verifiedContentFileCount)
         assertEquals(expectedChecksumCount, exact.verifiedChecksumCount)
@@ -469,8 +473,8 @@ internal class MavenCentralPortalCoordinatorTest {
             }
             exactFiles.keys.filter { path -> path.endsWith(".asc").not() }.toList().forEach { path ->
                 val content = exactFiles[path] ?: error("Missing mock content for $path")
-                CHECKSUMS.forEach { algorithm ->
-                    exactFiles["$path.${algorithm.extension}"] = (content.hash(algorithm.messageDigestName) + "\n").toByteArray(StandardCharsets.UTF_8)
+                MavenFixtureChecksum.entries.forEach { algorithm ->
+                    exactFiles["$path.${algorithm.extension}"] = (algorithm.digest(content) + "\n").toByteArray(StandardCharsets.UTF_8)
                 }
             }
             server.executor = executor
@@ -480,13 +484,15 @@ internal class MavenCentralPortalCoordinatorTest {
             server.start()
         }
 
-        /** Adds the prepared bundle's signature sidecars without changing the legacy fixture. */
+        /**
+         * Adds the prepared bundle's signature sidecars without changing the legacy fixture.
+         */
         fun addSignatureChecksums(corrupt: Boolean = false) {
             exactFiles.keys.filter { it.endsWith(".asc") }.toList().forEach { path ->
                 val content = exactFiles.getValue(path)
                 Files.write(fixture.repository.resolve(path), content)
-                CHECKSUMS.forEach { algorithm ->
-                    val digest = if (corrupt) "invalid checksum" else content.hash(algorithm.messageDigestName)
+                MavenFixtureChecksum.entries.forEach { algorithm ->
+                    val digest = if (corrupt) "invalid checksum" else algorithm.digest(content)
                     exactFiles["$path.${algorithm.extension}"] = digest.toByteArray(StandardCharsets.UTF_8)
                 }
             }
@@ -638,25 +644,10 @@ internal class MavenCentralPortalCoordinatorTest {
         EXTRA_PATH,
     }
 
-    private data class Checksum(
-        val extension: String,
-        val messageDigestName: String,
-    )
-
+    /**
+     * Defines the base publication filenames and checksum algorithms served by the Portal fixture.
+     */
     companion object {
         private val BASE_SUFFIXES = listOf(".pom", ".module", ".jar", "-sources.jar", "-javadoc.jar")
-        private val CHECKSUMS =
-            listOf(
-                Checksum("md5", "MD5"),
-                Checksum("sha1", "SHA-1"),
-                Checksum("sha256", "SHA-256"),
-                Checksum("sha512", "SHA-512"),
-            )
-
-        private fun ByteArray.hash(algorithm: String): String =
-            MessageDigest
-                .getInstance(algorithm)
-                .digest(this)
-                .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 }
