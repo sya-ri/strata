@@ -896,7 +896,7 @@ internal object MinecraftProfileImplementation {
             key: ElementKey<*>?,
         ): Element {
             val currentProfile = requireProfile()
-            require(0 < width && width <= 200) { "Minecraft CycleButton width must be positive and no larger than 200." }
+            require(width in 1..200) { "Minecraft CycleButton width must be positive and no larger than 200." }
             require(labels.size == state.values.size) { "CycleButton labels must match its values." }
             val runs =
                 labels.map { label ->
@@ -926,7 +926,7 @@ internal object MinecraftProfileImplementation {
             key: ElementKey<*>?,
         ): Element {
             val currentProfile = requireProfile()
-            require(8 < width && width <= 200) { "Minecraft Slider width must be greater than 8 and no larger than 200." }
+            require(width in 9..200) { "Minecraft Slider width must be greater than 8 and no larger than 200." }
             val normalText = requireTextRenderer().create(label, TextStyle.Normal)
             val inactiveText = requireTextRenderer().create(label, TextStyle.Inactive)
             return createMinecraftSliderElement(
@@ -1011,7 +1011,7 @@ internal object MinecraftProfileImplementation {
             key: ElementKey<*>?,
         ): Element {
             val currentProfile = requireProfile()
-            require(0 < width && width <= 200) { "Minecraft Button width must be positive and no larger than 200." }
+            require(width in 1..200) { "Minecraft Button width must be positive and no larger than 200." }
             val normalText = requireTextRenderer().create(label, TextStyle.Normal)
             val inactiveText = requireTextRenderer().create(label, TextStyle.Inactive)
             return createMinecraftPointerButtonElement(
@@ -1211,7 +1211,7 @@ internal object MinecraftProfileImplementation {
             key: ElementKey<*>?,
         ): Element {
             val currentProfile = requireProfile()
-            require(0 < width && width <= 200) { "Minecraft Tab width must be positive and no larger than 200." }
+            require(width in 1..200) { "Minecraft Tab width must be positive and no larger than 200." }
             val normalText = requireTextRenderer().create(label, TextStyle.Normal)
             val inactiveText = requireTextRenderer().create(label, TextStyle.Inactive)
             return createMinecraftTabElement(
