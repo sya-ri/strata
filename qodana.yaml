@@ -7,6 +7,10 @@ profile:
   base:
     name: qodana.recommended
   inspections:
+    # Include the imported test sources in the same recommended inspections.
+    - group: ALL
+      ignore:
+        - "!scope#test:*..*"
     - inspection: UnusedSymbol
       enabled: true
     - inspection: RedundantVisibilityModifier

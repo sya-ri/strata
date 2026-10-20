@@ -119,6 +119,7 @@ Superseded JVM and Qodana runs on the same ref are cancelled.
 Qodana runs for PRs changing analyzed code or analysis configuration, manual full runs, and first release preparation.
 It uses its recommended JVM profile without a baseline and receives every catalog-declared Java toolchain.
 Each run analyzes the complete selected revision once with a zero-problem threshold; PR differential mode is disabled so it does not rebuild and reindex the base commit.
+The product scan lifts the recommended profile's default test-source exclusion so imported test roots receive the same configured inspections.
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
 One `--no-daemon` Gradle invocation compiles `classes`, `gametestClasses`, and every discovered JMH owner's `jmhClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model and declaration inventory.
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
