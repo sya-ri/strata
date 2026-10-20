@@ -16,7 +16,8 @@ import kotlin.js.json
  */
 internal fun mountInteractionApplication() {
     MainScope().launch {
-        val font = WebFont.load("StrataFixture", "strata-browser-test.ttf", 9)
+        // Integral advances keep the original fixture independent of native font hinting.
+        val font = WebFont.load("StrataFixture", "strata-browser-test.ttf", 10)
         val fontWidth = font.measure("A日🙂")
         val scenario = InteractionScenario()
         val root = checkNotNull(document.getElementById("strata-root")) as HTMLElement
