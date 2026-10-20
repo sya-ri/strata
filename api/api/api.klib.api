@@ -548,6 +548,7 @@ abstract interface dev.s7a.strata.node/PointerHoverNode { // dev.s7a.strata.node
 
 abstract interface dev.s7a.strata.node/PointerInputNode { // dev.s7a.strata.node/PointerInputNode|null[0]
     abstract fun onPointerEvent(dev.s7a.strata.input/PointerEvent, dev.s7a.strata.geometry/IntOffset): dev.s7a.strata.input/InputResult // dev.s7a.strata.node/PointerInputNode.onPointerEvent|onPointerEvent(dev.s7a.strata.input.PointerEvent;dev.s7a.strata.geometry.IntOffset){}[0]
+    open fun onPointerGesture(dev.s7a.strata.input/PointerGesture, dev.s7a.strata.geometry/IntOffset): dev.s7a.strata.input/InputResult // dev.s7a.strata.node/PointerInputNode.onPointerGesture|onPointerGesture(dev.s7a.strata.input.PointerGesture;dev.s7a.strata.geometry.IntOffset){}[0]
 }
 
 abstract interface dev.s7a.strata.node/ReactiveContentNode : dev.s7a.strata.node/DeferredContentNode { // dev.s7a.strata.node/ReactiveContentNode|null[0]
@@ -598,7 +599,9 @@ abstract interface dev.s7a.strata.render/PaintScope { // dev.s7a.strata.render/P
     open fun withClip(dev.s7a.strata.geometry/IntRect, kotlin/Function0<kotlin/Unit>) // dev.s7a.strata.render/PaintScope.withClip|withClip(dev.s7a.strata.geometry.IntRect;kotlin.Function0<kotlin.Unit>){}[0]
 }
 
-abstract interface dev.s7a.strata.render/PlatformDrawCommand // dev.s7a.strata.render/PlatformDrawCommand|null[0]
+abstract interface dev.s7a.strata.render/PlatformDrawCommand { // dev.s7a.strata.render/PlatformDrawCommand|null[0]
+    open fun transformed(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.geometry/FloatRect): dev.s7a.strata.render/PlatformDrawCommand? // dev.s7a.strata.render/PlatformDrawCommand.transformed|transformed(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.FloatRect){}[0]
+}
 
 abstract interface dev.s7a.strata.render/RootOverlayPaintScope : dev.s7a.strata.render/PaintScope { // dev.s7a.strata.render/RootOverlayPaintScope|null[0]
     abstract val anchorBounds // dev.s7a.strata.render/RootOverlayPaintScope.anchorBounds|{}anchorBounds[0]
@@ -1178,6 +1181,46 @@ sealed interface dev.s7a.strata.input/PointerEvent { // dev.s7a.strata.input/Poi
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.input/PointerEvent.Scroll.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.input/PointerEvent.Scroll.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // dev.s7a.strata.input/PointerEvent.Scroll.toString|toString(){}[0]
+    }
+}
+
+sealed interface dev.s7a.strata.input/PointerGesture { // dev.s7a.strata.input/PointerGesture|null[0]
+    abstract val position // dev.s7a.strata.input/PointerGesture.position|{}position[0]
+        abstract fun <get-position>(): dev.s7a.strata.geometry/IntOffset // dev.s7a.strata.input/PointerGesture.position.<get-position>|<get-position>(){}[0]
+
+    final class Pan : dev.s7a.strata.input/PointerGesture { // dev.s7a.strata.input/PointerGesture.Pan|null[0]
+        constructor <init>(dev.s7a.strata.geometry/IntOffset, kotlin/Double, kotlin/Double) // dev.s7a.strata.input/PointerGesture.Pan.<init>|<init>(dev.s7a.strata.geometry.IntOffset;kotlin.Double;kotlin.Double){}[0]
+
+        final val deltaX // dev.s7a.strata.input/PointerGesture.Pan.deltaX|{}deltaX[0]
+            final fun <get-deltaX>(): kotlin/Double // dev.s7a.strata.input/PointerGesture.Pan.deltaX.<get-deltaX>|<get-deltaX>(){}[0]
+        final val deltaY // dev.s7a.strata.input/PointerGesture.Pan.deltaY|{}deltaY[0]
+            final fun <get-deltaY>(): kotlin/Double // dev.s7a.strata.input/PointerGesture.Pan.deltaY.<get-deltaY>|<get-deltaY>(){}[0]
+        final val position // dev.s7a.strata.input/PointerGesture.Pan.position|{}position[0]
+            final fun <get-position>(): dev.s7a.strata.geometry/IntOffset // dev.s7a.strata.input/PointerGesture.Pan.position.<get-position>|<get-position>(){}[0]
+
+        final fun component1(): dev.s7a.strata.geometry/IntOffset // dev.s7a.strata.input/PointerGesture.Pan.component1|component1(){}[0]
+        final fun component2(): kotlin/Double // dev.s7a.strata.input/PointerGesture.Pan.component2|component2(){}[0]
+        final fun component3(): kotlin/Double // dev.s7a.strata.input/PointerGesture.Pan.component3|component3(){}[0]
+        final fun copy(dev.s7a.strata.geometry/IntOffset = ..., kotlin/Double = ..., kotlin/Double = ...): dev.s7a.strata.input/PointerGesture.Pan // dev.s7a.strata.input/PointerGesture.Pan.copy|copy(dev.s7a.strata.geometry.IntOffset;kotlin.Double;kotlin.Double){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.input/PointerGesture.Pan.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.input/PointerGesture.Pan.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.input/PointerGesture.Pan.toString|toString(){}[0]
+    }
+
+    final class Zoom : dev.s7a.strata.input/PointerGesture { // dev.s7a.strata.input/PointerGesture.Zoom|null[0]
+        constructor <init>(dev.s7a.strata.geometry/IntOffset, kotlin/Double) // dev.s7a.strata.input/PointerGesture.Zoom.<init>|<init>(dev.s7a.strata.geometry.IntOffset;kotlin.Double){}[0]
+
+        final val factor // dev.s7a.strata.input/PointerGesture.Zoom.factor|{}factor[0]
+            final fun <get-factor>(): kotlin/Double // dev.s7a.strata.input/PointerGesture.Zoom.factor.<get-factor>|<get-factor>(){}[0]
+        final val position // dev.s7a.strata.input/PointerGesture.Zoom.position|{}position[0]
+            final fun <get-position>(): dev.s7a.strata.geometry/IntOffset // dev.s7a.strata.input/PointerGesture.Zoom.position.<get-position>|<get-position>(){}[0]
+
+        final fun component1(): dev.s7a.strata.geometry/IntOffset // dev.s7a.strata.input/PointerGesture.Zoom.component1|component1(){}[0]
+        final fun component2(): kotlin/Double // dev.s7a.strata.input/PointerGesture.Zoom.component2|component2(){}[0]
+        final fun copy(dev.s7a.strata.geometry/IntOffset = ..., kotlin/Double = ...): dev.s7a.strata.input/PointerGesture.Zoom // dev.s7a.strata.input/PointerGesture.Zoom.copy|copy(dev.s7a.strata.geometry.IntOffset;kotlin.Double){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.input/PointerGesture.Zoom.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.input/PointerGesture.Zoom.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.input/PointerGesture.Zoom.toString|toString(){}[0]
     }
 }
 

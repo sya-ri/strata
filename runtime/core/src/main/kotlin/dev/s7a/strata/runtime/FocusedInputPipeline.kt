@@ -7,6 +7,8 @@ import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.node.ClipChildrenNode
+import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.FocusTargetNode
 import dev.s7a.strata.node.KeyboardInputNode
 import dev.s7a.strata.node.Node
@@ -26,10 +28,38 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions")
-internal class FocusedInputPipeline {
+internal class FocusedInputPipeline(
+    private val dirtyTracker: DirtyTracker = DirtyTracker(),
+) {
     private var focusedOwner: RetainedNode? = null
     private var focusedTargets: List<FocusTargetNode> = emptyList()
     private var textInputTargets: List<FocusTargetNode> = emptyList()
+
+    /**
+     * Reads current owner acceptance using the same visibility rule as keyboard traversal.
+     */
+    fun isFocusable(
+        root: RetainedNode,
+        owner: RetainedNode,
+    ): Boolean = isTraversalCandidate(root, owner)
+
+    /**
+     * Reads detached semantic focus without exposing the live owner.
+     */
+    fun isFocused(owner: RetainedNode): Boolean = focusedOwner === owner && focusedTargets.isNotEmpty()
+
+    /**
+     * Synchronizes native accessibility focus by stable owner identity without activation.
+     */
+    fun focusSemantics(
+        root: RetainedNode,
+        identity: Long,
+    ): InputResult {
+        if (identity <= 0L) return InputResult.Ignored
+        val owner = logicalOwners(root).firstOrNull { it.semanticsId == identity && isTraversalCandidate(root, it) } ?: return InputResult.Ignored
+        setFocusedOwner(owner)
+        return InputResult.Consumed
+    }
 
     /**
      * Detached identity of the current editable focus interval, read only on the enclosing tree's owner thread.
@@ -127,6 +157,7 @@ internal class FocusedInputPipeline {
         val previousTargets = focusedTargets
         val retainedTargets = focusTargets(previous)
         releaseRetainedReferences()
+        invalidateSemantics(previous)
         val failures = FailureAccumulator()
         previousTargets.forEach { target ->
             if (retainedTargets.any { it === target }) {
@@ -158,7 +189,15 @@ internal class FocusedInputPipeline {
             if (retainedTargets.any { it === target }) target.onFocusChanged(false)
         }
         focusedOwner = owner
+        previous?.let(::invalidateSemantics)
+        owner?.let(::invalidateSemantics)
         owner?.let(::reconcileFocusTargets)
+    }
+
+    private fun invalidateSemantics(owner: RetainedNode) {
+        if (owner.localSemantics?.isNotEmpty() == true || owner.modifiers.any { it.localSemantics?.isNotEmpty() == true }) {
+            dirtyTracker.record(owner, DirtyMask.of(DirtyPhase.Semantics))
+        }
     }
 
     private fun reconcileFocusTargets(owner: RetainedNode) {
@@ -186,7 +225,7 @@ internal class FocusedInputPipeline {
 
     private fun requestsInitialFocus(owner: RetainedNode): Boolean =
         focusTargetEntries(owner).any { entry ->
-            entry.retained.placed && entry.target.acceptsFocus && entry.target.requestsInitialFocus
+            entry.retained.placed && entry.target.requestsInitialFocus && entry.target.acceptsFocus
         }
 
     private fun moveFocus(

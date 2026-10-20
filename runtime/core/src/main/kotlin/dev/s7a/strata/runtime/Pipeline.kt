@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
@@ -37,9 +38,9 @@ internal class Pipeline(
 ) {
     private val frameCallbacks = FrameCallbackIndex()
     private val paintPipeline = PaintPipeline(ownerGuard)
-    private val focusedInputPipeline = FocusedInputPipeline()
+    private val focusedInputPipeline = FocusedInputPipeline(dirtyTracker)
     private val inputPipeline = InputPipeline(focusedInputPipeline)
-    private val semanticsPipeline = SemanticsPipeline(ownerGuard)
+    private val semanticsPipeline = SemanticsPipeline(ownerGuard, focusedInputPipeline)
 
     /**
      * Detached current editable-focus identity, read outside a tree operation under its execution owner.
@@ -95,6 +96,24 @@ internal class Pipeline(
         root: RetainedNode,
         event: PointerEvent,
     ): InputResult = inputPipeline.dispatch(root, event)
+
+    /**
+     * Dispatches recognized navigation without changing pointer focus or capture.
+     */
+    fun dispatchGesture(
+        root: RetainedNode,
+        gesture: PointerGesture,
+    ): InputResult = inputPipeline.dispatchGesture(root, gesture)
+
+    /**
+     * Acquires native focus at committed coordinates without pointer activation.
+     */
+    fun focusAt(
+        root: RetainedNode,
+        position: IntOffset,
+    ) {
+        focusedInputPipeline.acquireFromPointer(root, position)
+    }
 
     /**
      * Dispatches [event] through the focused logical component and applies ignored Tab traversal.
@@ -163,7 +182,18 @@ internal class Pipeline(
      * @param root the installed logical root.
      * @return entries in effective parent-before-child order.
      */
-    fun semantics(root: RetainedNode): List<SemanticsEntry> = if (root.hasSemantics) semanticsPipeline.semantics(root.effectiveRoot) else emptyList()
+    fun semantics(
+        root: RetainedNode,
+        ownership: Boolean = false,
+    ): List<SemanticsEntry> = if (root.hasSemantics) semanticsPipeline.semantics(root, ownership) else emptyList()
+
+    /**
+     * Acquires a visible semantic owner without pointer activation.
+     */
+    fun focusSemantics(
+        root: RetainedNode,
+        identity: Long,
+    ): InputResult = focusedInputPipeline.focusSemantics(root, identity)
 
     /**
      * Captures pending external observations for every effective entry without committing any observation.

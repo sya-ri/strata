@@ -77,6 +77,8 @@ try {
                 for (const theme of ['native', 'minecraft']) {
                     receipts.push(await verifyTheme(browser, engine, theme, expected));
                 }
+                receipts.push(await verifyInteractions(browser, engine, false));
+                receipts.push(await verifyInteractions(browser, engine, true));
             } finally { await browser.close(); }
         }
         const sourceRevision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim();
@@ -94,7 +96,7 @@ async function verifyTheme(browser, engine, theme, expected) {
     await staticPage.close();
     const page = await browser.newPage({ viewport: { width: 640, height: 480 } });
     const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
+    page.on('pageerror', error => errors.push(error.stack ?? error.message));
     await page.goto(address);
     await page.locator('[data-mounted="true"]').waitFor();
     const snapshot = () => page.locator('#strata-root > :not(progress)').allTextContents();
@@ -123,6 +125,130 @@ async function verifyTheme(browser, engine, theme, expected) {
     console.log(`Verified initial HTML, adoption, conditionals, native actions and keyed reorder: ${engine.name()} / ${theme}`);
     await page.close();
     return receipt;
+}
+
+async function verifyInteractions(browser, engine, touch) {
+    const context = await browser.newContext({ viewport: touch ? { width: 360, height: 640 } : { width: 800, height: 700 }, hasTouch: touch, deviceScaleFactor: touch ? 2 : 1 });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.stack ?? error.message));
+    try {
+        await page.goto(`${url}/interactions.html`);
+        await page.locator('[data-mounted="true"]').waitFor();
+        const snapshot = () => page.evaluate(() => JSON.parse(window.strataInteractions.snapshot()));
+        const field = page.locator('input');
+        const area = page.locator('textarea');
+        await field.fill('日本語🙂');
+        await area.fill('日本語\nsecond line');
+        assert.equal((await snapshot()).field, '日本語🙂');
+        assert.equal((await snapshot()).area, '日本語\nsecond line');
+        await page.evaluate(() => { window.retainedField = document.querySelector('input'); window.retainedArea = document.querySelector('textarea'); });
+        await field.focus();
+        await field.evaluate(element => {
+            element.setSelectionRange(1, 2);
+            element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: 'に' }));
+            element.value = '日本語🙂にほん';
+            element.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true, data: 'にほん' }));
+            window.strataInteractions.update();
+        });
+        await page.getByText('Revision 1', { exact: true }).waitFor();
+        assert.equal(await field.inputValue(), '日本語🙂にほん');
+        assert.equal((await snapshot()).field, '日本語🙂');
+        await field.evaluate(element => element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '日本' })));
+        assert.equal((await snapshot()).field, '日本語🙂にほん');
+        await page.keyboard.press('Tab');
+        assert.equal(await area.evaluate(element => document.activeElement === element), true, 'Core Tab traversal synchronizes the native editor');
+        await page.keyboard.press('Shift+Tab');
+        assert.equal(await field.evaluate(element => document.activeElement === element), true);
+        const root = await page.locator('#strata-root').boundingBox();
+        assert.ok(root);
+        await page.mouse.move(root.x + 60, root.y + 180);
+        await page.mouse.wheel(0, 72);
+        await page.waitForFunction(() => JSON.parse(window.strataInteractions.snapshot()).scroll > 0);
+        await page.mouse.move(root.x + 60, root.y + 320);
+        await page.mouse.wheel(0, 80);
+        await page.waitForFunction(() => JSON.parse(window.strataInteractions.snapshot()).list > 0);
+        await page.mouse.move(root.x + 180, root.y + 180);
+        await page.mouse.wheel(0, -18);
+        await page.waitForFunction(() => JSON.parse(window.strataInteractions.snapshot()).zoom > 2);
+        const beforePan = await snapshot();
+        await page.mouse.move(root.x + 160, root.y + 170);
+        await page.mouse.down();
+        await page.mouse.move(root.x + 180, root.y + 180, { steps: 5 });
+        await page.mouse.up();
+        if (touch) {
+            const beforeTouch = await snapshot();
+            await touchSequence(page, root, [
+                ['pointerdown', 11, 60, 180], ['pointermove', 11, 60, 160], ['pointerup', 11, 60, 160],
+                ['pointerdown', 12, 60, 320], ['pointermove', 12, 60, 295], ['pointerup', 12, 60, 295],
+                ['pointerdown', 13, 160, 190], ['pointerdown', 14, 200, 190],
+                ['pointermove', 14, 220, 190], ['pointerup', 13, 160, 190], ['pointerup', 14, 220, 190],
+            ]);
+            const afterTouch = await snapshot();
+            assert.ok(afterTouch.scroll > beforeTouch.scroll);
+            assert.ok(afterTouch.list > beforeTouch.list);
+            assert.ok(afterTouch.zoom > beforeTouch.zoom);
+            assert.equal(afterTouch.actions, 0, 'Swiping an actionable row must not synthesize a tap');
+        }
+        const retained = await snapshot();
+        assert.notEqual(retained.centerX, beforePan.centerX);
+        await page.evaluate(() => { window.strataInteractions.update(); window.strataInteractions.resize(320, 500); });
+        await page.getByText('Revision 2', { exact: true }).waitFor();
+        const resized = await snapshot();
+        for (const key of ['field', 'area', 'scroll', 'list', 'zoom', 'centerX', 'centerY']) assert.equal(resized[key], retained[key], key);
+        assert.equal(await page.evaluate(() => document.querySelector('input') === window.retainedField && document.querySelector('textarea') === window.retainedArea), true);
+        const action = page.getByRole('button', { name: 'Action surface', exact: true });
+        await action.focus();
+        await action.evaluate(element => { window.actionFocusLosses = 0; element.addEventListener('focusout', () => window.actionFocusLosses += 1); window.strataInteractions.update(); });
+        await page.getByText('Revision 3', { exact: true }).waitFor();
+        assert.equal(await page.evaluate(() => window.actionFocusLosses), 0, 'Painting must not transiently disable a focused semantic surface');
+        await area.evaluate(element => { window.strataInteractions.update(); element.focus(); });
+        assert.equal(await area.evaluate(element => document.activeElement === element), true, 'A pending frame must not interrupt native focus transfer');
+        await area.fill('draft after semantic focus');
+        assert.equal((await snapshot()).area, 'draft after semantic focus');
+        assert.equal(await area.evaluate(element => document.activeElement === element), true);
+        await action.focus();
+        assert.equal(await action.evaluate(element => getComputedStyle(element).outlineStyle), 'none');
+        if (touch) {
+            const bounds = await action.boundingBox();
+            await page.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        } else await action.click();
+        assert.equal((await snapshot()).actions, 1);
+        await page.keyboard.press('Enter');
+        assert.equal((await snapshot()).actions, 2);
+        await action.press('Space');
+        assert.equal((await snapshot()).actions, 3);
+        await action.evaluate(element => element.click());
+        assert.equal((await snapshot()).actions, 4, 'Accessibility activation must dispatch exactly one common action');
+        assert.ok(await page.locator('canvas').count() > 0);
+        const family = await page.getByText('A日🙂', { exact: true }).evaluate(element => getComputedStyle(element).fontFamily);
+        assert.ok(family.includes('StrataFixture'), 'The resource font must be the loaded fixture face');
+        assert.equal((await snapshot()).fontWidth, 21, 'Independent advance widths from the original OpenType fixture');
+        assert.deepEqual(errors, []);
+        await mkdir(resolve(build, 'parity'), { recursive: true });
+        await page.screenshot({ path: resolve(build, 'parity', `${engine.name()}-interactions-${touch ? 'touch' : 'desktop'}.png`) });
+        await page.evaluate(() => window.strataInteractions.close());
+        assert.equal(await page.locator('#strata-root > *').count(), 0);
+        assert.equal((await snapshot()).subscriptions, 0);
+        assert.deepEqual(errors, []);
+        return { engine: engine.name(), version: browser.version(), scenario: 'retained-interactions', touchEmulation: touch, syntheticNavigation: touch, osIme: 'not tested', physicalDevice: 'not tested' };
+    } catch (failure) {
+        console.error("Interaction browser errors:", errors);
+        console.error("Interaction active element:", await page.evaluate(() => document.activeElement?.outerHTML));
+        await mkdir(resolve(build, 'parity'), { recursive: true });
+        await writeFile(resolve(build, 'parity', `${engine.name()}-interactions-failure.html`), await page.locator("body").innerHTML());
+        throw failure;
+    } finally { await context.close(); }
+}
+
+async function touchSequence(page, root, events) {
+    await page.evaluate(({ root, events }) => {
+        const target = document.getElementById('strata-root');
+        for (const [type, pointerId, x, y] of events) target.dispatchEvent(new PointerEvent(type, {
+            pointerId, pointerType: 'touch', clientX: root.x + x, clientY: root.y + y,
+            button: 0, buttons: type === 'pointerup' ? 0 : 1, bubbles: true, cancelable: true,
+        }));
+    }, { root, events });
 }
 
 /** Adds frozen caller inputs while retaining the compiled standard workload and collector defaults. */

@@ -39,6 +39,10 @@ The browser check opens the emitted document with JavaScript disabled first, the
 Fresh screenshots and comparison receipts are written to `integration/web/build/parity` on every browser verification run.
 This comparison covers presentation labels and state transitions; native platform typography and geometry are intentionally different and are not asserted pixel-identical.
 Both themes are verified in each browser, including disabled button behavior and determinate progress.
+The same site includes `interactions.html`, whose common definition exercises native editors, scrolling, virtual rows, tiled navigation and explicitly prepared original image and font resources.
+Browser verification covers desktop and touch-emulated contexts, records synthetic composition and navigation separately, and checks retained identity through updates and resize plus source release on close.
+OS input-method candidates and physical-device touch require separate manual acceptance.
+See [sharing a UI with the browser](../guides/web.md) for the host and resource contracts.
 Browser tasks share the loaded-client execution service when client verification is explicitly serial.
 In [automatic or fixed parallel correctness verification](ci.md#build-configuration-and-concurrency), browser tasks wait for the selected Minecraft clients so they do not contend for the desktop graphics device.
 

@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PointerCaptureNode
@@ -78,6 +79,28 @@ internal object PanZoomModifier {
         PointerCaptureNode {
         private var element: Element = initial
         private var capturedButton: PointerButton? = null
+
+        override fun onPointerGesture(
+            gesture: PointerGesture,
+            localPosition: IntOffset,
+        ): InputResult {
+            val state = element.state
+            val metrics = state.metrics
+            when (gesture) {
+                is PointerGesture.Pan -> {
+                    val scale = if (metrics.geometryKnown) metrics.scale else 1.0
+                    state.panBy(DoubleOffset(-gesture.deltaX / scale, -gesture.deltaY / scale))
+                }
+
+                is PointerGesture.Zoom -> {
+                    state.zoomTo(
+                        (metrics.zoom * gesture.factor).coerceIn(state.minimumZoom, state.maximumZoom),
+                        if (metrics.geometryKnown) DoubleOffset(localPosition.x.toDouble(), localPosition.y.toDouble()) else null,
+                    )
+                }
+            }
+            return InputResult.Consumed
+        }
 
         override fun onPointerCaptureAcquired(button: PointerButton) {
             check(button == element.panButton && capturedButton == null) { "Pan-and-zoom capture was acquired for an unexpected gesture." }

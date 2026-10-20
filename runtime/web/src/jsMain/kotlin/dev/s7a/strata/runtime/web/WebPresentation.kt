@@ -1,6 +1,8 @@
 package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.geometry.FloatRect
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -17,7 +19,15 @@ internal data class WebPresentation(
     val enabled: Boolean,
     val style: TextStyle,
     val progress: Double? = null,
+    val font: String? = null,
+    val focused: Boolean = false,
+    val lineHeight: Int? = null,
 ) : PlatformDrawCommand {
+    override fun transformed(
+        source: IntRect,
+        destination: FloatRect,
+    ): PlatformDrawCommand = WebScaledPresentation(this, source, destination)
+
     /**
      * Native DOM kinds and their matching portable semantics.
      */
