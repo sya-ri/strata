@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:progress-bar
@@ -10,13 +8,13 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the complete minimal ProgressBar showcase frame.
  */
-internal fun createProgressBarShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Progress bar") {
+internal fun createProgressBarShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Progress bar") {
         Stack(
             modifier = Modifier.size(116, 28).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:direct-join-screen
@@ -18,16 +16,16 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the Minecraft Direct Connection screen used by native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition with the actual EditBox and 200-pixel Button geometry.
  */
-internal fun createDirectJoinScreenDefinition(): ScreenDefinition {
+internal fun createDirectJoinScreenDefinition(): UiDefinition {
     val address = TextFieldState("play.example.net", maxLength = 128)
-    return ScreenDefinition("Direct Connection") {
+    return UiDefinition("Direct Connection") {
         Stack(modifier = Modifier.size(320, 240).menuBackground()) {
             Column(
                 modifier = Modifier.size(320, 212),

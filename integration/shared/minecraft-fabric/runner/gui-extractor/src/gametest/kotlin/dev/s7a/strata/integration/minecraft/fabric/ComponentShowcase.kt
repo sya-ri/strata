@@ -3,16 +3,15 @@ package dev.s7a.strata.integration.minecraft.fabric
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.FrameTime
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Canonical component factories and their native capture geometry and accepted animation phases.
  */
-@Suppress("DEPRECATION") // The showcase still exercises the compatibility ScreenDefinition factories.
 internal enum class ComponentShowcase(
     val slug: String,
     val viewport: IntSize,
-    val definition: (ComponentShowcaseAssets) -> ScreenDefinition,
+    val definition: (ComponentShowcaseAssets) -> UiDefinition,
     val pointer: IntOffset = IntOffset.Zero,
     val animationFrameTimes: List<FrameTime> = emptyList(),
     val scale: Int = 1,

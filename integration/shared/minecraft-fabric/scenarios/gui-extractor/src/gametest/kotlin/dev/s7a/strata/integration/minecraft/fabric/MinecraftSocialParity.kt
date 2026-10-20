@@ -121,7 +121,7 @@ internal object MinecraftSocialParity {
         profile: MinecraftUiProfile,
         assets: SocialAssets,
     ): HeadlessImage =
-        createMinecraftUiHost(definition(assets), profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition(assets), profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             val frame = host.frame(viewport)
             val expectedPlayerLabels =

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:canvas
@@ -13,7 +11,7 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained CPU Canvas showcase with immutable, independently known source texels.
@@ -23,7 +21,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  *
  * @return an unevaluated definition stretching a four-by-two CPU image into a 64 by 32 logical rectangle.
  */
-internal fun createCanvasShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createCanvasShowcaseScreenDefinition(): UiDefinition {
     val image =
         createDrawImage(
             IntSize(4, 2),
@@ -39,7 +37,7 @@ internal fun createCanvasShowcaseScreenDefinition(): ScreenDefinition {
             ),
         )
     val source = canvasSource(image)
-    return ScreenDefinition("Canvas showcase") {
+    return UiDefinition("Canvas showcase") {
         Stack(
             modifier =
                 Modifier

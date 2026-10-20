@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:spacer
@@ -12,15 +10,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Spacer showcase that reserves visible space between two siblings.
  *
  * @return one-shot definition in which the Spacer, rather than parent spacing or child padding, owns the 16-pixel gap.
  */
-internal fun createSpacerShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Spacer showcase") {
+internal fun createSpacerShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Spacer showcase") {
         Row(
             modifier =
                 Modifier

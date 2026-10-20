@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:stack
@@ -11,15 +9,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Stack showcase with a status badge painted over a Minecraft-profile button.
  *
  * @return one-shot definition demonstrating declaration-order painting from the button to the foreground badge.
  */
-internal fun createStackShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Stack showcase") {
+internal fun createStackShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Stack showcase") {
         Stack(
             modifier =
                 Modifier

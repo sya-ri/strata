@@ -13,8 +13,8 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Client-thread headless rendering and borrowed native-image assertions for screenshot parity.
@@ -25,16 +25,15 @@ internal object MinecraftParityRendering {
      * The default pointer matches the native baseline screen captures; component scenes supply their own position.
      */
     @OptIn(InternalStrataRuntimeApi::class)
-    @Suppress("DEPRECATION") // Baseline parity retains the compatibility ScreenDefinition host path.
     internal fun renderHeadless(
         profile: MinecraftUiProfile,
-        definition: ScreenDefinition,
+        definition: UiDefinition,
         viewport: IntSize,
         pointerPosition: IntOffset = IntOffset(100, 110),
         frameTime: FrameTime? = null,
         scale: Int = 1,
     ): HeadlessImage =
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             if (frameTime == null) host.frame(viewport) else host.frame(viewport, FrameTime(0L))
             host.dispatchPointer(PointerEvent.Move(pointerPosition))

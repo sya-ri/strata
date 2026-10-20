@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:industrial-screen
@@ -27,7 +25,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a resource-pack-aware coal generator screen from general-purpose components.
@@ -46,8 +44,8 @@ internal fun createIndustrialScreenDefinition(
     fuelBinding: SlotBinding? = Slots.container(0),
     chargeBinding: SlotBinding? = Slots.container(1),
     playerInventory: (Int) -> SlotBinding? = Slots::playerInventory,
-): ScreenDefinition =
-    ScreenDefinition("Coal Generator") {
+): UiDefinition =
+    UiDefinition("Coal Generator") {
         Stack(
             modifier =
                 Modifier

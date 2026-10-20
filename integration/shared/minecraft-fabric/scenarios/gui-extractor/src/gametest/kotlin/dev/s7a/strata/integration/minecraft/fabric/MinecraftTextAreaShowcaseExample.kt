@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:text-area
@@ -15,7 +13,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds one complete multiline editor frame with an independently placed scrollbar.
@@ -24,7 +22,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  * The resource-font profile supplies the illustrated Unicode glyphs, while soft wrapping leaves the stored value unchanged.
  * @return one-shot definition containing a 200 by 64 editor and its separately composed scrollbar.
  */
-internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createTextAreaShowcaseScreenDefinition(): UiDefinition {
     val size = IntSize(200, 64)
     val state =
         TextAreaState(
@@ -38,7 +36,7 @@ internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
                     "The original value keeps its newlines.",
             maxLength = 2048,
         )
-    return ScreenDefinition("TextArea showcase") {
+    return UiDefinition("TextArea showcase") {
         Row(
             modifier = Modifier.size(226, 80).background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,

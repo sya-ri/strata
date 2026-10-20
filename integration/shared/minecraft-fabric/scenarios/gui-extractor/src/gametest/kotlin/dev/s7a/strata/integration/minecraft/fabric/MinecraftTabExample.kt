@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:tab
@@ -13,15 +11,15 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Tab showcase with selected and unselected states side by side.
  *
  * @return one-shot definition whose selected All tab displays the standard underline indicator.
  */
-internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Tab showcase") {
+internal fun createTabShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Tab showcase") {
         Row(
             modifier =
                 Modifier

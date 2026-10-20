@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.component.Stack
@@ -16,8 +14,8 @@ import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Supplies immutable text and logical positions to independent native and portable readability renderers.
@@ -35,8 +33,8 @@ internal object MinecraftTextReadabilityScene {
     /**
      * Creates a one-shot public Text scene using the default resource font and custom shadowless guidance style.
      */
-    fun definition(): ScreenDefinition =
-        ScreenDefinition("Default font readability") {
+    fun definition(): UiDefinition =
+        UiDefinition("Default font readability") {
             Stack(modifier = Modifier.fillMaxSize().background(ArgbColor(BACKGROUND))) {
                 rows.forEach { row ->
                     Text(row.text, style = TextStyle.Inactive.copy(shadow = null), modifier = Modifier.padding(left = LEFT, top = row.top))
@@ -57,10 +55,10 @@ internal object MinecraftTextReadabilityScene {
     fun render(
         profile: MinecraftUiProfile,
         scale: Int,
-        definition: ScreenDefinition = definition(),
+        definition: UiDefinition = definition(),
         viewport: IntSize = this.viewport,
     ): HeadlessImage =
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+        createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             val frame = host.frame(viewport)
             rasterizeHeadless(frame.drawCommands, frame.size, scale)

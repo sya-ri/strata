@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.component.Canvas
@@ -12,7 +10,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Compiles a native texture and independent custom-renderer Canvas scene with clipping and ordered portable overlays.
@@ -20,8 +18,8 @@ import dev.s7a.strata.screen.ScreenDefinition
  * The externally owned fixture supplies sources only; declaration acquires no native resource.
  * The returned definition is consumed once on the client thread and propagates scene-construction failures.
  */
-internal fun createNativeCanvasScreenDefinition(fixture: MinecraftCanvasTestFixture): ScreenDefinition =
-    ScreenDefinition("Native Canvas acceptance") {
+internal fun createNativeCanvasScreenDefinition(fixture: MinecraftCanvasTestFixture): UiDefinition =
+    UiDefinition("Native Canvas acceptance") {
         Stack(Modifier.background(ArgbColor(0xFF000000.toInt()))) {
             Column(spacing = 16) {
                 Row(spacing = 16) {

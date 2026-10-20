@@ -28,7 +28,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds one advancement-inspired Mod screen from resource-pack sources and an application-owned component.
@@ -46,8 +46,8 @@ internal fun createProgressScreenDefinition(
     background: ImageSource = advancementBackground,
     obtained: ImageSource = obtainedTaskFrame,
     unobtained: ImageSource = unobtainedTaskFrame,
-): ScreenDefinition =
-    ScreenDefinition("Power milestones") {
+): UiDefinition =
+    UiDefinition("Power milestones") {
         Stack(
             modifier =
                 Modifier

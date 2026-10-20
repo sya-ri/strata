@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:social-screen
@@ -35,7 +33,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the deterministic one-player Minecraft Social Interactions screen from general-purpose primitives.
@@ -53,9 +51,9 @@ internal fun createSocialScreenDefinition(
     searchIcon: ImageSource = socialSearchIcon,
     playerSkin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
     playerName: String = "Player0",
-): ScreenDefinition {
+): UiDefinition {
     val search = TextFieldState("", maxLength = 16)
-    return ScreenDefinition("Social Interactions") {
+    return UiDefinition("Social Interactions") {
         Stack(
             modifier =
                 Modifier

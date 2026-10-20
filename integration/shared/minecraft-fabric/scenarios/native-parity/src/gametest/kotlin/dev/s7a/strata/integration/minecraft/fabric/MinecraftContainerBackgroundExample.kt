@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:container-background
@@ -16,7 +14,7 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the draw-command-equivalent unhovered background of an empty three-row Minecraft chest screen.
@@ -25,8 +23,8 @@ import dev.s7a.strata.screen.ScreenDefinition
  *
  * @return one-shot screen definition reproducing the menu texture, generic container, and native shadow-free labels.
  */
-internal fun createContainerBackgroundScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Chest") {
+internal fun createContainerBackgroundScreenDefinition(): UiDefinition =
+    UiDefinition("Chest") {
         Stack(
             modifier =
                 Modifier

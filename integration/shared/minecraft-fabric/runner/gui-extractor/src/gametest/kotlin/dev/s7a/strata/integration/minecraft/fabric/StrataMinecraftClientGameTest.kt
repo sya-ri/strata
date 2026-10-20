@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.InputConstants
@@ -22,6 +20,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -590,6 +589,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
+    @Suppress("DEPRECATION") // Reactive regression fixtures retain the legacy screen-opening contract.
     private fun verifyReactiveRendering(
         context: ClientGameTestContext,
         profile: MinecraftUiProfile,
@@ -854,7 +854,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
     private enum class SampledParityScene(
         val slug: String,
-        val definition: (IntSize) -> ScreenDefinition,
+        val definition: (IntSize) -> UiDefinition,
     ) {
         Ordered("strata-sampled-image", ::createSampledImageParityScreenDefinition),
         Effects("strata-sampled-image-effects", ::createSampledImageEffectsParityScreenDefinition),
