@@ -345,7 +345,7 @@ internal class MavenCentralPortalCoordinator(
             val root = parseObject(postJson("api/v1/publisher/deployments/files", body), "Central deployment inventory")
             check(root.requiredInt("page") == page) { "Central Publisher Portal returned a different deployment page." }
             val pageSize = root.requiredInt("pageSize")
-            check(0 < pageSize && pageSize <= PAGE_SIZE) { "Central Publisher Portal returned an invalid deployment page size." }
+            check(pageSize in 1..PAGE_SIZE) { "Central Publisher Portal returned an invalid deployment page size." }
             pageCount = root.requiredInt("pageCount")
             check(pageCount in 0..MAXIMUM_PAGES) { "Central Publisher Portal returned an invalid deployment page count." }
             val totalCount = root.requiredInt("totalResultCount")

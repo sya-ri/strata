@@ -275,7 +275,7 @@ internal class ModrinthReleaseCoordinator(
                 disclosureMissing = remoteContract.inspectProjectDisclosures(api.getProjectDisclosures(manifest.projectId), allowBootstrap),
             )
         } else {
-            BootstrapPlan(ProjectPatchPlan(false, false, false), false)
+            BootstrapPlan(ProjectPatchPlan(categoriesMissing = false, additionalCategoriesMissing = false, environmentMissing = false), disclosureMissing = false)
         }
 
     private val appendProjectStatuses: Set<ProjectStatus>

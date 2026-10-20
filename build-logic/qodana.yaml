@@ -6,6 +6,9 @@ profile:
   base:
     name: qodana.recommended
   inspections:
+    - group: ALL
+      ignore:
+        - "!scope#test:*..*"
     - inspection: UnusedSymbol
       enabled: true
     - inspection: RedundantVisibilityModifier

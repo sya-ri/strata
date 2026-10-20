@@ -14,7 +14,6 @@ import dev.detekt.gradle.extensions.DetektExtension
 import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
 import dev.s7a.strata.gradle.fabric.FabricClientResourceService
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
-import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask
 import dev.s7a.strata.gradle.performance.PublishedPerformanceInventory
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
@@ -2253,13 +2252,21 @@ subprojects {
                     }
                 }
             }
-            tasks.withType<LibraryClientProductionRunTask>().configureEach {
+            val productionVerificationLibraries = configurations.register("productionVerificationLibraries") {
+                isCanBeConsumed = false
+                isCanBeResolved = false
+            }
+            dependencies.add(
+                productionVerificationLibraries.name,
+                files(providers.provider {
+                    project(":performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
+                }),
+            )
+            configurations.matching { it.name == "minecraftTestClientRuntimeLibraries" }.configureEach {
+                extendsFrom(productionVerificationLibraries.get())
+            }
+            tasks.withType<ClientProductionRunTask>().configureEach {
                 dependsOn(":performance-testkit:jvmJar")
-                verificationLibraries.from(
-                    providers.provider {
-                        project(":performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
-                    },
-                )
             }
             val remoteVerification = rootProject.file("integration/shared/minecraft-fabric/transport/verification/src")
             val remoteVerificationFamily = remoteVerification.resolve(target.remoteNetworkFamily.sourceRoot)
@@ -2309,30 +2316,30 @@ subprojects {
             providers.gradleProperty("strata.performance.nativeOutput").orNull?.let { output ->
                 val nativeOutput = rootProject.file(output).absoluteFile
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.quick", quickPerformance) }
-                tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.quick=$quickPerformance") }
+                tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.quick=$quickPerformance") }
                 providers.gradleProperty("strata.performance.sampledImages").orNull?.let { selected ->
                     val sampled = selected.toBooleanStrict()
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.sampledImages", sampled) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.sampledImages=$sampled") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.sampledImages=$sampled") }
                 }
                 providers.gradleProperty("strata.performance.gpuQueries").orNull?.let { selected ->
                     val enabled = selected.toBooleanStrict()
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.gpuQueries", enabled) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
                 }
                 providers.gradleProperty("strata.performance.inactivity").orNull?.let { selected ->
                     require(selected in setOf("minimized", "afk")) { "strata.performance.inactivity must be minimized or afk." }
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.inactivity", selected) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
                 }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
                 }
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.nativeOutput", nativeOutput.path) }
-                tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeOutput=${nativeOutput.path}") }
+                tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeOutput=${nativeOutput.path}") }
                 afterEvaluate {
-                    tasks.named<LibraryClientProductionRunTask>("runProductionClientGameTest") {
+                    tasks.named<ClientProductionRunTask>("runProductionClientGameTest") {
                         // Each receipt retains its actual processed-mod origins across later invocations.
                         runDir.set(layout.buildDirectory.dir("run/native-performance/${UUID.randomUUID()}"))
                         doFirst {

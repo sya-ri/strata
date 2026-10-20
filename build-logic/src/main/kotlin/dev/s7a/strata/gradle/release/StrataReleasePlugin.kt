@@ -39,16 +39,15 @@ public class StrataReleasePlugin : Plugin<Project> {
                 projectAssetFiles.from(extension.projectAssetFiles)
                 outputDirectory.set(extension.outputDirectory)
             }
-        val githubBundle =
-            project.tasks.register("githubReleaseBundle", GenerateGithubReleaseBundle::class.java) {
-                group = "release"
-                description = "Builds every configured signed JAR and SHA256SUMS uploaded to GitHub Releases."
-                dependsOn(manifest, "mavenCentralReleaseVerify")
-                manifestFile.set(extension.outputDirectory.file("manifest.json"))
-                artifactDirectory.set(extension.outputDirectory.dir("artifacts"))
-                signatureDirectory.set(project.layout.buildDirectory.dir("release/maven-central/signatures"))
-                outputDirectory.set(project.layout.buildDirectory.dir("release/github"))
-            }
+        project.tasks.register("githubReleaseBundle", GenerateGithubReleaseBundle::class.java) {
+            group = "release"
+            description = "Builds every configured signed JAR and SHA256SUMS uploaded to GitHub Releases."
+            dependsOn(manifest, "mavenCentralReleaseVerify")
+            manifestFile.set(extension.outputDirectory.file("manifest.json"))
+            artifactDirectory.set(extension.outputDirectory.dir("artifacts"))
+            signatureDirectory.set(project.layout.buildDirectory.dir("release/maven-central/signatures"))
+            outputDirectory.set(project.layout.buildDirectory.dir("release/github"))
+        }
 
         fun registerCentralTask(
             name: String,
