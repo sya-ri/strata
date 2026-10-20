@@ -41,8 +41,17 @@ def summarize(root, selections, operation, *, curseforge_read_enabled=True):
 
 def main():
     """Write the producer-bound request and the Actions job summary, including failed-run evidence."""
-    request = json.loads(os.environ["PUBLICATION_REQUEST"])
+    inputs = json.loads(os.environ["RELEASE_INPUTS"])
+    request = dict(operation=inputs["operation"], tag=inputs["tag"], sourceCommit=inputs["source_commit"],
+                   preparedRunId=int(os.environ["PREPARED_RUN_ID"]),
+                   destinations={key: inputs[key] for key in ("maven_central", "github_release", "modrinth", "curseforge", "hangar")})
     root = Path("build/release")
+    for operation in ("stage", "verify"):
+        source = root / f"modrinth-{operation}.json"
+        if source.is_file():
+            destination = root / "modrinth-receipts"
+            destination.mkdir(exist_ok=True)
+            source.rename(destination / f"{operation}.json")
     states = summarize(root, request["destinations"], request["operation"],
                        curseforge_read_enabled=os.environ.get("CURSEFORGE_READ_ENABLED") == "true")
     request.update(schemaVersion=1, runId=int(os.environ["GITHUB_RUN_ID"]), runAttempt=int(os.environ["GITHUB_RUN_ATTEMPT"]),

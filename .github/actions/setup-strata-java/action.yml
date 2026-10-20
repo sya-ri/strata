@@ -19,11 +19,13 @@ runs:
       id: toolchains
       shell: bash
       working-directory: ${{ inputs.directory }}
+      env:
+        TOOLCHAIN_READER: ${{ github.action_path }}/../../../gradle/java-toolchains.py
       run: |
         set -euo pipefail
         {
           echo 'versions<<STRATA_JAVA_VERSIONS'
-          bash gradle/list-java-toolchains.sh
+          python -B "$TOOLCHAIN_READER"
           echo 'STRATA_JAVA_VERSIONS'
         } >> "$GITHUB_OUTPUT"
     - name: Install Java toolchains
@@ -37,8 +39,9 @@ runs:
       id: paired
       shell: bash
       working-directory: ${{ inputs.directory }}
-      run: |
-        python -B -c "import os,tomllib; v=tomllib.load(open('gradle/libs.versions.toml','rb'))['versions']; f=open(os.environ['GITHUB_OUTPUT'],'a'); f.write('toolchain='+v['performance-toolchain']+'\nlauncher='+v['performance-launcher']+'\n'); f.close()"
+      env:
+        TOOLCHAIN_READER: ${{ github.action_path }}/../../../gradle/java-toolchains.py
+      run: python -B "$TOOLCHAIN_READER" --paired >> "$GITHUB_OUTPUT"
     - name: Install frozen fixture toolchain
       if: inputs.paired == 'true'
       id: fixture

@@ -1,9 +1,11 @@
 """Distinguish accepted uploads from public verification in destination summaries."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 def load(name):
@@ -49,3 +51,28 @@ class PublicationSummaryTest(unittest.TestCase):
             (root / "curseforge/receipt.json").write_text(json.dumps({"files": {"a.jar": {"state": "pending"}}}))
             self.assertEqual({"curseforge": "pending", "hangar": "exact", "modrinth": "disabled"},
                              module.summarize(root, {"curseforge": True, "hangar": True, "modrinth": False}, "release"))
+
+    def test_actions_entrypoint_records_request_and_normalizes_downloaded_receipts(self):
+        module = load("publication-summary")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            release = root / "build/release"
+            release.mkdir(parents=True)
+            for operation in ("stage", "verify"):
+                (release / f"modrinth-{operation}.json").write_text(json.dumps({"operation": operation, "listed": ["1.2.3"], "absent": []}))
+            inputs = dict(operation="verify", tag="v1.2.3", source_commit="a" * 40, modrinth=True,
+                          maven_central=False, github_release=False, hangar=False, curseforge=False)
+            environment = dict(RELEASE_INPUTS=json.dumps(inputs), PREPARED_RUN_ID="123", GITHUB_RUN_ID="456",
+                               GITHUB_RUN_ATTEMPT="2", GITHUB_SHA="b" * 40, GITHUB_STEP_SUMMARY=str(root / "summary.md"))
+            with patch.dict(os.environ, environment), patch.object(module, "Path", side_effect=lambda value: root / value):
+                module.main()
+            request = json.loads((release / "publication-request.json").read_text())
+            self.assertEqual("a" * 40, request["sourceCommit"])
+            self.assertEqual("b" * 40, request["controllerCommit"])
+            self.assertEqual((123, 456, 2), (request["preparedRunId"], request["runId"], request["runAttempt"]))
+            self.assertEqual("verified files", request["results"]["modrinth"])
+            self.assertEqual("disabled", request["results"]["maven_central"])
+            for operation in ("stage", "verify"):
+                self.assertFalse((release / f"modrinth-{operation}.json").exists())
+                self.assertEqual(operation, json.loads((release / f"modrinth-receipts/{operation}.json").read_text())["operation"])
+            self.assertIn("| modrinth | verified files |", (root / "summary.md").read_text())

@@ -14,18 +14,17 @@ inventory_directory=$(mktemp -d)
 trap 'rm -rf -- "$inventory_directory"' EXIT
 bash gradle/plan-minecraft-ci.sh "$project_root" "$inventory_directory" >/dev/null
 
-mapfile -t java_toolchains < <(bash gradle/list-java-toolchains.sh gradle/libs.versions.toml)
-project_jdk=${java_toolchains[${#java_toolchains[@]} - 1]}
-
 qodana_python=''
 for python_candidate in python3 python; do
   if command -v "$python_candidate" >/dev/null 2>&1 && \
-    "$python_candidate" -c 'import sys; raise SystemExit(sys.version_info < (3, 8))' >/dev/null 2>&1; then
+    "$python_candidate" -c 'import tomllib' >/dev/null 2>&1; then
     qodana_python=$python_candidate
     break
   fi
 done
-[[ -n "$qodana_python" ]] || { echo 'Qodana IDEA preparation requires Python 3.8 or newer.' >&2; exit 1; }
+[[ -n "$qodana_python" ]] || { echo 'Qodana IDEA preparation requires Python 3.11 or newer.' >&2; exit 1; }
+
+project_jdk=$("$qodana_python" -B gradle/java-toolchains.py | tail -n 1)
 
 # Recreate the selected revision's source roots even when the IDE reuses indexes from an earlier scan.
 mkdir -p build/qodana

@@ -3272,8 +3272,9 @@ class PairedJvmTest(unittest.TestCase):
         self.assertTrue(output.with_suffix(".zip").is_file())
 
     def test_workflow_result_accepts_runner_omitted_empty_opt_in_output(self):
-        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
-        script = textwrap.dedent(re.search(r"(?ms)^\s+python3 - <<'PY'\n(.*?)^\s+PY\n", workflow)[1])
+        spec = importlib.util.spec_from_file_location("plan_ci", Path(__file__).parents[1] / "plan-ci.py")
+        planner = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(planner)
         outputs = {key: "false" for key in ("common", "web", "docs", "docs_full", "workflow", "all_minecraft")}
         outputs.update(minecraft="[]", paired_manifest="")
         # The runner omits empty outputs before exposing needs.plan.outputs to the aggregation job.
@@ -3281,17 +3282,17 @@ class PairedJvmTest(unittest.TestCase):
         jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
         jobs["plan"] = {"result": "success", "outputs": exposed}
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
-            exec(compile(script, "jvm-workflow-result", "exec"), {})
+            planner.check_results(json.loads(os.environ["RESULTS"]))
         exposed["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
-            exec(compile(script, "jvm-workflow-result", "exec"), {})
+            planner.check_results(json.loads(os.environ["RESULTS"]))
         for result in ("failure", "cancelled"):
             jobs["paired-jvm"]["result"] = result
             with self.subTest(result=result), patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
-                exec(compile(script, "jvm-workflow-result", "exec"), {})
+                planner.check_results(json.loads(os.environ["RESULTS"]))
         jobs["paired-jvm"]["result"] = "success"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
-            exec(compile(script, "jvm-workflow-result", "exec"), {})
+            planner.check_results(json.loads(os.environ["RESULTS"]))
 
 
 if __name__ == "__main__":
