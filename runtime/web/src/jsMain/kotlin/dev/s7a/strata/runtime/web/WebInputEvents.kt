@@ -81,10 +81,7 @@ internal class WebInputEvents(
         listen(WebDomEvent.CompositionUpdate, ::composition)
         listen(WebDomEvent.CompositionEnd, ::composition)
         listen(WebDomEvent.FocusIn, ::focus)
-        listen(WebDomEvent.FocusOut, { event ->
-            val related = event.asDynamic().relatedTarget as? Node
-            if (related == null || root.contains(related).not()) reset()
-        })
+        listen(WebDomEvent.FocusOut, { reset() })
         listen(WebDomEvent.Scroll, ::scroll, capture = true)
         window.addEventListener("blur", blur)
         window.addEventListener("focus", windowFocus)
@@ -119,7 +116,15 @@ internal class WebInputEvents(
         action: (Event) -> Unit,
         capture: Boolean = false,
     ) {
-        val listener = EventListener { event -> transaction { action(event) } }
+        val listener =
+            EventListener { event ->
+                if (type == WebDomEvent.FocusOut) {
+                    val related = event.asDynamic().relatedTarget as? Node
+                    // Let focusin complete an internal transfer before a frame can restore the preceding owner.
+                    if (related != null && root.contains(related)) return@EventListener
+                }
+                transaction { action(event) }
+            }
         listeners[type] = listener
         root.addEventListener(type.nativeName, listener, capture)
     }

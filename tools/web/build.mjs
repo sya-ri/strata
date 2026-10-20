@@ -202,6 +202,8 @@ async function verifyInteractions(browser, engine, touch) {
         await action.evaluate(element => { window.actionFocusLosses = 0; element.addEventListener('focusout', () => window.actionFocusLosses += 1); window.strataInteractions.update(); });
         await page.getByText('Revision 3', { exact: true }).waitFor();
         assert.equal(await page.evaluate(() => window.actionFocusLosses), 0, 'Painting must not transiently disable a focused semantic surface');
+        await area.evaluate(element => { window.strataInteractions.update(); element.focus(); });
+        assert.equal(await area.evaluate(element => document.activeElement === element), true, 'A pending frame must not interrupt native focus transfer');
         await area.fill('draft after semantic focus');
         assert.equal((await snapshot()).area, 'draft after semantic focus');
         assert.equal(await area.evaluate(element => document.activeElement === element), true);

@@ -3,6 +3,9 @@ package dev.s7a.strata.runtime.web
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
+import dev.s7a.strata.component.TextArea
+import dev.s7a.strata.component.TextAreaState
+import dev.s7a.strata.component.TextAreaViewport
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.element.ElementKey
@@ -20,6 +23,8 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.test.Test
@@ -31,6 +36,48 @@ import kotlin.test.assertSame
  * Exercises public modifier composition through native accessibility, focus and paint order.
  */
 internal class WebSemanticsTest {
+    @Test
+    fun pendingFrameCannotRestoreThePreviousOwnerDuringNativeEditorFocus() {
+        val root = document.createElement("div") as HTMLElement
+        document.body?.appendChild(root)
+        val revision = mutableStateOf(0)
+        val state = TextAreaState()
+        val host =
+            mountWeb(
+                UiDefinition {
+                    Column {
+                        Text("Revision ${revision.value}")
+                        Stack(Modifier.size(100, 24).semantics(Semantics(UiText.Literal("Action"), SemanticsRole.Button)).onActivate {}) { Text("Action") }
+                        TextArea(state, TextAreaViewport.Size(IntSize(100, 30)))
+                    }
+                },
+                root,
+                IntSize(120, 120),
+            )
+        try {
+            val button = root.querySelector("button") as HTMLButtonElement
+            val editor = root.querySelector("textarea") as HTMLTextAreaElement
+            button.focus()
+            assertSame(button, document.activeElement)
+            revision.value += 1
+            editor.focus()
+            assertSame(editor, document.activeElement)
+            editor.value = "日本語の下書き"
+            editor.dispatchEvent(Event("input", js("({bubbles: true})")))
+            editor.setSelectionRange(1, 3)
+            revision.value += 1
+            host.render(IntSize(120, 120))
+            assertEquals("日本語の下書き", state.value)
+            assertEquals(state.value, editor.value)
+            assertSame(editor, document.activeElement)
+            assertEquals(1, editor.selectionStart)
+            assertEquals(3, editor.selectionEnd)
+        } finally {
+            host.close()
+            root.remove()
+        }
+    }
+
     @Test
     fun composedActionsExposeNamesAndRetainNativeFocusThroughKeyedReorder() {
         val root = document.createElement("div") as HTMLElement
