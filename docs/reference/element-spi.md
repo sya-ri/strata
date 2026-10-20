@@ -205,7 +205,7 @@ It includes a stable typed `ElementType`, a measured and placed child, painting,
 Its behavior is exercised by the [external integration test](../../integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ExternalPrimitiveIntegrationTest.kt).
 
 Use that fixture as the executable example.
-Application code emits the external element directly inside `ScreenDefinition { element(external) }`, alongside any standard component composition.
+Application code emits the external element directly inside `UiDefinition { element(external) }`, alongside any standard component composition.
 The runtime evaluates that callback synchronously under its installed profile, and the callback scope cannot be used for later or cross-thread emission.
 Zero or multiple roots fail before retained-tree creation; a callback failure is propagated unchanged before cardinality validation.
 Low-level SPI tests may opt into `evaluateComponentTree` and install its returned element in a `UiTree`, but this privileged bridge is not an application screen builder.

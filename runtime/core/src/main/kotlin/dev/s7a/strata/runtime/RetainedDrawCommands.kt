@@ -25,7 +25,7 @@ internal class RetainedDrawCommands(
     override val size: Int = ends.lastOrNull() ?: 0
 
     override fun get(index: Int): DrawCommand {
-        if (index < 0 || size <= index) throw IndexOutOfBoundsException("Command index $index outside 0 until $size.")
+        if ((index in indices).not()) throw IndexOutOfBoundsException("Command index $index outside 0 until $size.")
         var first = 0
         var last = parts.lastIndex
         while (first < last) {

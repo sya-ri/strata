@@ -26,14 +26,6 @@ exclude:
       - api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
-  # Bounds and geometry checks keep explicit comparisons instead of relying on range construction.
-  - name: ConvertTwoComparisonsToRangeCheck
-    paths:
-      - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
-      - api/src/main/kotlin/dev/s7a/strata/geometry/IntRect.kt
-      - api/src/main/kotlin/dev/s7a/strata/input/TextInputEvent.kt
-      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/RetainedDrawCommands.kt
-      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftProfileImplementation.kt
   # Named domain records keep source and destination axes explicit; positional destructuring would obscure the scroll and glyph arithmetic.
   - name: DestructuringDeclaration
     paths:
