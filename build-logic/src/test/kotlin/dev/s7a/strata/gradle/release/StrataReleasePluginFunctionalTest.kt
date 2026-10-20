@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.util.HexFormat
 
 /**
  * Verifies plugin application, lazy target wiring, task dependencies, and generated bundle structure with TestKit.
@@ -131,7 +132,8 @@ internal class StrataReleasePluginFunctionalTest {
         githubAssets.filter { file -> file.name.endsWith(".jar.asc") }.forEach { file ->
             assertTrue(file.readText().startsWith("central-signature-"))
         }
-        assertTrue(0L < githubAssets.single { file -> file.name == "SHA256SUMS" }.length())
+        val checksums = projectDirectory.resolve("build/release/github/SHA256SUMS").toFile().toURI()
+        assertTrue(0L < githubAssets.single { file -> file.toURI() == checksums }.length())
 
         val staleReceipt = projectDirectory.resolve("build/release/modrinth-receipts/preflight.json")
         Files.createDirectories(staleReceipt.parent)
@@ -141,7 +143,7 @@ internal class StrataReleasePluginFunctionalTest {
                 .create()
                 .withProjectDir(projectDirectory.toFile())
                 .withPluginClasspath()
-                .withEnvironment(System.getenv().filterKeys { key -> key != "MODRINTH_TOKEN" })
+                .withEnvironment(System.getenv() - "MODRINTH_TOKEN")
                 .withArguments("modrinthReleasePreflight", "--stacktrace")
                 .buildAndFail()
         assertEquals(TaskOutcome.UP_TO_DATE, failedResult.task(":modrinthReleaseManifest")?.outcome)
@@ -387,8 +389,11 @@ internal class StrataReleasePluginFunctionalTest {
         return bytes
     }
 
-    private fun ByteArray.hash(): String = MessageDigest.getInstance("SHA-256").digest(this).joinToString("") { byte -> "%02x".format(byte) }
+    private fun ByteArray.hash(): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(this))
 
+    /**
+     * Provides versioned release notes for the functional publication fixtures.
+     */
     companion object {
         private const val RELEASE_NOTES =
             "# Strata 0.1.1\n\nUnicode text and resource-pack fonts: 日本語 한국어 🙂.\n" +
