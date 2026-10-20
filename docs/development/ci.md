@@ -72,6 +72,7 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
 | Build-logic tests/resources, private JVM Kotlin test sources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and Qodana |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
+| API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and Qodana |
 | Prose and links | Documentation and Skill consistency |
 | Documentation generation, examples, images, or Dokka | Compiled documentation and generated-output checks |
 | One Minecraft runtime or shared source | Every version using that source |
@@ -79,9 +80,11 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Web | Linux unit/demo checks and Windows browser parity |
 | Unrecognized input | Full verification |
 
-Native helpers, compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
+Native helpers, native compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
 Private JVM test sources are consumed only by their owning JVM tests; shared verification helpers belong in their declared shared roots.
-Resources and common test sources keep their existing broader plans, since fixtures such as fonts are also browser inputs.
+JavaScript sources and common tests in the API, core, and performance testkit retain both JVM and Web verification, including the existing ABI and static checks.
+They do not select loaded clients or full documentation; their owning tests still run through the existing job commands.
+Resources and unrecognized source roots keep their broader plans, since fixtures such as fonts are also browser inputs.
 Build-logic test-only changes and the IDEA analysis model do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
 
 `writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model and the documentation project's actual source roots.

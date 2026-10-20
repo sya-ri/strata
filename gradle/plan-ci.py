@@ -54,6 +54,8 @@ def plan(paths, model=None, full=False):
             result["qodana"] |= path.endswith((".kt", ".kts"))
         elif path.startswith(("docs/", "skills/")) or path in ("README.md", "CHANGELOG.md"):
             result["docs"] = True
+        elif re.fullmatch(r"(?:api|runtime/core|performance-testkit)/src/(?:jsMain|jsTest|commonTest)/kotlin/.+\.kt", path):
+            result.update(common=True, web=True, qodana=True)
         elif re.fullmatch(
                 r"(?:api|runtime/core)/src/(?:test|jvmTest)/kotlin/.+\.kt"
                 r"|runtime/(?:remote|headless|minecraft|minecraft-fonts-lwjgl)/src/test/kotlin/.+\.kt", path):
