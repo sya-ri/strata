@@ -1,0 +1,33 @@
+import groovy.json.JsonOutput
+import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaToolchainService
+
+// Diagnostic receipt only: resolve the actual configured compiler installations without compiling or rewriting IDE metadata.
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    root.tasks.register('nativeCompilerSdkEvidence') {
+        notCompatibleWithConfigurationCache('Records the selected compiler installations for the native model experiment.')
+        doLast {
+            def owners = [:]
+            root.allprojects.each { owner ->
+                def java = owner.extensions.findByType(JavaPluginExtension)
+                if (java == null) return
+                def metadata = owner.extensions.getByType(JavaToolchainService).launcherFor(java.toolchain).get().metadata
+                def home = metadata.installationPath.asFile.canonicalFile
+                def compilers = owner.tasks.withType(JavaCompile).collectEntries { task ->
+                    def compiler = task.javaCompiler.get().metadata
+                    [(task.name): compiler.installationPath.asFile.canonicalFile.path]
+                }
+                assert compilers.values().every { it == home.path }
+                owners[owner.path] = [directory: owner.projectDir.canonicalPath, java: metadata.languageVersion.asInt(),
+                                     installation: home.path, vendor: metadata.vendor, runtimeVersion: metadata.javaRuntimeVersion, javaCompilers: compilers]
+            }
+            assert owners
+            def output = root.file(root.providers.gradleProperty('nativeSdkEvidencePath').get())
+            output.parentFile.mkdirs()
+            output.text = JsonOutput.prettyPrint(JsonOutput.toJson(owners)) + '\n'
+            println "Recorded compiler installations for ${owners.size()} Java owners."
+        }
+    }
+}

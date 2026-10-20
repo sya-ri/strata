@@ -1,0 +1,53 @@
+version: "1.0"
+linter: jetbrains/qodana-jvm-community:2026.2
+rootJavaProjects:
+  - .
+profile:
+  base:
+    name: qodana.recommended
+  inspections:
+    - group: ALL
+      ignore:
+        - "!build-logic/src/test/**"
+    - inspection: UnusedSymbol
+      enabled: true
+    - inspection: RedundantVisibilityModifier
+      enabled: true
+failThreshold: 0
+exclude:
+  # UpperCamel names are the intentional declarative component surface.
+  - name: FunctionName
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/component/CanvasComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObserveComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/SelectionListComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/TextInputComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/VirtualListComponents.kt
+  # Named domain records keep source and destination axes explicit; positional destructuring would obscure the scroll and glyph arithmetic.
+  - name: DestructuringDeclaration
+    paths:
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftScrollElement.kt
+      - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextRun.kt
+  # The project deliberately reserves const values for external compile-time API requirements.
+  - name: MayBeConstant
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt
+  # These Java interoperability boundaries deliberately validate values that Kotlin's source types consider non-null.
+  - name: RedundantRequireNotNullCall
+    paths:
+      - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/HeadlessRendering.kt
+  # Named concrete facades keep internal coroutine/control state distinct from their exposed CoroutineScope and UiSession contracts.
+  - name: ConvertToExplicitBackingFields
+    paths:
+      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiSession.kt
+      - runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientSession.kt
+  # Migration changes definition construction and session ownership outside the opening call, so no call-only replacement is valid.
+  - name: DeprecatedCallableAddReplaceWith
+    paths:
+      - api/src/main/kotlin/dev/s7a/strata/screen/Screens.kt
+      - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/PaperScreens.kt

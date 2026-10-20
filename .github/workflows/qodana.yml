@@ -166,3 +166,66 @@ jobs:
     uses: ./.github/workflows/qodana-build-logic.yml
     with:
       ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+  native-product:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Analyze complete roots with the native Gradle model
+      uses: JetBrains/qodana-action@v2026.2
+      with:
+        cache-dir: ${{ runner.temp }}/qodana-native-product/caches
+        results-dir: ${{ runner.temp }}/qodana-native-product/results
+        use-caches: false
+        pr-mode: false
+        args: >-
+          --config=${{ github.workspace }}/.github/native-complete-roots-qodana.yaml
+          --linter=qodana-jvm-community --within-docker=false
+          --property=intellij.platform.shared.source.support=true
+          --property=batch.inspections.inspect.all.code.insight.contexts=true
+    - name: Record actual compiler installations
+      if: always()
+      shell: bash
+      env:
+        NATIVE_RESULTS: ${{ runner.temp }}/qodana-native-product/results
+      run: |
+        bash ./gradlew --console=plain --no-configuration-cache -I "$GITHUB_WORKSPACE/.github/native-product-sdks.init.gradle" nativeCompilerSdkEvidence -PnativeSdkEvidencePath="$NATIVE_RESULTS/compiler-sdks-product.json"
+        bash ./gradlew -p build-logic --console=plain --no-configuration-cache -I "$GITHUB_WORKSPACE/.github/native-product-sdks.init.gradle" nativeCompilerSdkEvidence -PnativeSdkEvidencePath="$NATIVE_RESULTS/compiler-sdks-build-logic.json"
+    - name: Record imported SDK binaries
+      if: always()
+      shell: bash
+      env:
+        NATIVE_RESULTS: ${{ runner.temp }}/qodana-native-product/results
+      run: |
+        mkdir -p "$NATIVE_RESULTS/sdk-binaries"
+        {
+          jq -r '.sdks[].roots[] | select(startswith("jrt://")) | sub("^jrt://"; "") | split("!/")[0]' "$NATIVE_RESULTS/projectStructure/SDKs.json"
+          jq -r '.[].installation' "$NATIVE_RESULTS/compiler-sdks-product.json"
+          jq -r '.[].installation' "$NATIVE_RESULTS/compiler-sdks-build-logic.json"
+        } | sort -u > "$NATIVE_RESULTS/sdk-binaries/homes.txt"
+        index=0
+        while IFS= read -r home; do
+          index=$((index + 1))
+          {
+            printf 'SDK home: %s\nCanonical home: %s\n' "$home" "$(readlink -f "$home")"
+            "$home/bin/java" --version
+            sha256sum "$home/bin/java" "$home/lib/modules" "$home/release"
+          } > "$NATIVE_RESULTS/sdk-binaries/sdk-$index.txt"
+        done < "$NATIVE_RESULTS/sdk-binaries/homes.txt"
+        test "$index" -ne 0
+    - name: Retain native product analysis evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: native-product-complete-roots-analysis
+        path: ${{ runner.temp }}/qodana-native-product/results
+        if-no-files-found: error
+        include-hidden-files: true
