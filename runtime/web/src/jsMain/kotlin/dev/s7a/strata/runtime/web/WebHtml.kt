@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.IntSize
@@ -106,6 +104,7 @@ public fun renderWebDocument(
  * Compatibility overload for deterministic initial markup.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun renderWebHtml(
     definition: ScreenDefinition,
     viewport: IntSize,
@@ -115,6 +114,7 @@ public fun renderWebHtml(
  * Compatibility overload for a complete initial document.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun renderWebDocument(
     definition: ScreenDefinition,
     viewport: IntSize,
@@ -129,6 +129,7 @@ public fun renderWebDocument(
  * Compatibility overload for themed initial markup.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun renderWebHtml(
     definition: ScreenDefinition,
     viewport: IntSize,
@@ -139,6 +140,7 @@ public fun renderWebHtml(
  * Compatibility overload for a themed initial document.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun renderWebDocument(
     definition: ScreenDefinition,
     viewport: IntSize,

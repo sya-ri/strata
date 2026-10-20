@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.screen.ScreenDefinition
@@ -49,6 +47,7 @@ public class StrataFabricClient : ClientModInitializer {
     }
 
     private object Presenter : ScreenPresenter {
+        @Suppress("DEPRECATION")
         override fun present(definition: ScreenDefinition) {
             val minecraft = Minecraft.getInstance()
             if (minecraft.isSameThread.not()) throw ScreenOpenThreadException("UI opening requires the Minecraft client thread.")

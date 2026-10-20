@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Retains the previous screen factory as a compatibility entry.
-
 package dev.s7a.strata.runtime.velocity
 
 import com.velocitypowered.api.proxy.Player
@@ -113,6 +111,7 @@ internal class VelocityScreenService(
     /**
      * Constructs the entire definition and its state on the UI owner thread.
      */
+    @Suppress("DEPRECATION")
     fun open(
         owner: Any,
         player: Player,

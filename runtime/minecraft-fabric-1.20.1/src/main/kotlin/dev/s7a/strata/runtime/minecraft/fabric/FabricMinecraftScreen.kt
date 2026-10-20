@@ -1,5 +1,4 @@
 @file:JvmName("FabricMinecraftScreens")
-@file:Suppress("DEPRECATION", "MatchingDeclarationName", "ktlint:standard:filename")
 
 package dev.s7a.strata.runtime.minecraft.fabric
 
@@ -606,6 +605,7 @@ private fun currentMinecraftScreen(): Screen? {
  * Compatibility factory sharing the common UI host path.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun createMinecraftScreen(
     definition: ScreenDefinition,
     profile: MinecraftUiProfile,

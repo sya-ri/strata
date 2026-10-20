@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.remote
@@ -377,6 +375,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     /**
      * Compatibility entry sharing the common definition and session path.
      */
+    @Suppress("DEPRECATION")
     public fun open(
         owner: Owner,
         player: Player,
