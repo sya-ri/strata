@@ -16,4 +16,20 @@ import dev.s7a.strata.semantics.Semantics
 public data class SemanticsEntry(
     public val bounds: IntRect,
     public val semantics: Semantics,
-)
+) {
+    private var ownership: SemanticsOwner? = null
+
+    /**
+     * Detached native metadata supplied by session frames; direct tree semantics omit it.
+     * Logical equality, destructuring and copy retain their bounds/payload contract across backends.
+     * A logical copy omits ownership because changed payload or geometry cannot reuse native placement.
+     */
+    public val owner: SemanticsOwner? get() = ownership
+
+    /**
+     * Constructs one detached native snapshot, initializing metadata only during construction.
+     */
+    public constructor(bounds: IntRect, semantics: Semantics, owner: SemanticsOwner) : this(bounds, semantics) {
+        ownership = owner
+    }
+}

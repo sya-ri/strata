@@ -199,6 +199,9 @@ internal class WebEditorTest {
         val host = mountWeb(UiDefinition { TextArea(area, TextAreaViewport.Size(IntSize(200, 80))) }, root, IntSize(220, 100))
         try {
             val input = root.querySelector("textarea") as HTMLTextAreaElement
+            assertEquals("textbox", input.getAttribute("role"))
+            assertEquals("true", input.getAttribute("aria-multiline"))
+            assertEquals(1, root.querySelectorAll("[role='textbox']").length)
             input.value = "日本語\nsecond line"
             input.dispatchEvent(Event("input", js("({bubbles: true})")))
             assertEquals("日本語\nsecond line", area.value)

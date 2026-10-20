@@ -3,7 +3,6 @@ package dev.s7a.strata.integration.web
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
-import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.PanZoomState
 import dev.s7a.strata.component.PlayerHead
 import dev.s7a.strata.component.PlayerHeadScale
@@ -37,10 +36,13 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.panZoom
+import dev.s7a.strata.modifier.semantics
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.semantics.Semantics
+import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
@@ -53,6 +55,7 @@ import dev.s7a.strata.ui.UiInputPolicy
 /**
  * Shared declarations and caller-owned state for browser and portable interaction acceptance.
  */
+@Suppress("unused") // The real browser acceptance entry point is in jsMain, outside Qodana's JVM usage graph.
 internal class InteractionScenario {
     val field = TextFieldState(maxLength = 128)
     val area = TextAreaState(maxLength = 1000)
@@ -102,7 +105,13 @@ internal class InteractionScenario {
                     Text(UiText.WithFont(UiText.Literal("A日🙂"), fontId))
                 }
                 VirtualList(10_000, { it }, { it }, list, IntSize(260, 80), 24) { Text("Row $it", modifier = Modifier.onActivate { actions.value += 1 }) }
-                Stack(Modifier.size(120, 30).background(ArgbColor(0xff777777.toInt())).onActivate { actions.value += 1 }) {
+                Stack(
+                    Modifier
+                        .size(120, 30)
+                        .background(ArgbColor(0xff777777.toInt()))
+                        .semantics(Semantics(UiText.Literal("Action surface"), SemanticsRole.Button))
+                        .onActivate { actions.value += 1 },
+                ) {
                     Text("Action ${actions.value}")
                 }
             }

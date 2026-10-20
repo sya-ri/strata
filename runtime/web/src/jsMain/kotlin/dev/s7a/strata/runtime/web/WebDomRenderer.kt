@@ -8,7 +8,9 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
@@ -54,7 +56,7 @@ internal class WebDomRenderer(
         root.style.height = "${frame.size.height}px"
         root.setAttribute("data-strata-theme-root", theme.token)
         var cursor = root.firstChild
-        entries.forEachIndexed { index, entry ->
+        entries.forEach { entry ->
             val previous = nodes[entry.identity]
             val element =
                 if (previous?.tagName?.lowercase() == entry.tag) {
@@ -66,7 +68,8 @@ internal class WebDomRenderer(
             owned.add(element)
             element.setAttribute("data-strata-theme", theme.token)
             update(element, entry)
-            element.style.zIndex = index.toString()
+            WebSemanticsDom.update(element, entry.semantic, entry.proxy)
+            element.style.zIndex = entry.order.toString()
             val activeEditor = entry.editor != null && (root.ownerDocument?.activeElement === element || element.hasAttribute("data-strata-composing"))
             if (element === cursor) {
                 cursor = cursor.nextSibling
@@ -79,11 +82,13 @@ internal class WebDomRenderer(
             if (next[identity] !== element) release(element)
         }
         nodes = next
-        entries.firstOrNull { it.editor?.focused == true || it.presentation?.focused == true }?.let { entry ->
+        entries.firstOrNull(::focusedEntry)?.let { entry ->
             val target = checkNotNull(nodes[entry.identity])
             if (root.ownerDocument?.activeElement !== target && target.isConnected) target.focus()
         }
     }
+
+    private fun focusedEntry(entry: Entry): Boolean = entry.semantic?.let { it.owner?.let { owner -> owner.focused && owner.focusable } == true && it.semantics.disabled.not() } ?: (entry.editor?.focused == true || entry.presentation?.focused == true)
 
     override fun close() {
         owned.toList().forEach(::release)
@@ -130,7 +135,8 @@ internal class WebDomRenderer(
                 "Initial web HTML does not match the screen's initial text; the screen factory must be deterministic."
             }
             if (element is HTMLButtonElement) {
-                check(element.disabled == (entry.presentation?.enabled != true)) {
+                val disabled = entry.semantic?.semantics?.disabled ?: (entry.presentation?.enabled != true)
+                check(element.disabled == disabled) {
                     "Initial web HTML does not match the screen's initial enabled state."
                 }
             }
@@ -197,7 +203,7 @@ internal class WebDomRenderer(
             return
         }
         textStyle(element, presentation)
-        style.setProperty("pointer-events", if (presentation == null) "none" else "auto")
+        style.setProperty("pointer-events", if (presentation?.kind == WebPresentation.Kind.Button) "auto" else "none")
         if (element.textContent != presentation?.label.orEmpty()) element.textContent = presentation?.label.orEmpty()
         if (element is HTMLButtonElement) {
             element.type = "button"
@@ -214,6 +220,7 @@ internal class WebDomRenderer(
         val clips = ArrayDeque<FloatRect>()
         val entries = ArrayList<Entry>()
         frame.drawCommands.forEachIndexed { index, command ->
+            val count = entries.size
             when (command) {
                 is DrawCommand.PushClip -> {
                     val bounds = floating(command.bounds)
@@ -250,11 +257,23 @@ internal class WebDomRenderer(
                     entries.add(Entry("d$index", "canvas", enclosing(command.destination), clips.lastOrNull(), "", null, image = command))
                 }
             }
+            if (count < entries.size) entries[entries.lastIndex] = entries.last().copy(order = index.toLong() * 2 + 1)
         }
         check(clips.isEmpty()) { "Unterminated web clip." }
         check(entries.map(Entry::identity).distinct().size == entries.size) { "Duplicate web presentation identity." }
-        return entries
+        WebSemanticsDom.entries(frame.semantics).forEach { semantic ->
+            val owner = checkNotNull(semantic.owner)
+            val native = entries.indexOfFirst { it.order == owner.contentPaintOrder.toLong() * 2 + 1 && nativeRole(it) == semantic.semantics.role }
+            if (0 <= native) {
+                entries[native] = entries[native].copy(semantic = semantic)
+            } else {
+                entries.add(Entry("s${owner.identity}", WebSemanticsDom.tag(semantic.semantics.role), semantic.bounds, floating(owner.visibleBounds), "", null, order = owner.paintOrder.toLong() * 2, semantic = semantic, proxy = true))
+            }
+        }
+        return entries.sortedBy(Entry::order)
     }
+
+    private fun nativeRole(entry: Entry): SemanticsRole? = entry.presentation?.kind?.role ?: entry.editor?.let { if (it.multiline) SemanticsRole.TextArea else SemanticsRole.TextField }
 
     /**
      * Converts straight ARGB channels without dropping alpha or browser-dependent named colors.
@@ -292,6 +311,9 @@ internal class WebDomRenderer(
         val editor: WebEditorPresentation? = null,
         val image: DrawCommand? = null,
         val scaled: WebScaledPresentation? = null,
+        val order: Long = 0,
+        val semantic: SemanticsEntry? = null,
+        val proxy: Boolean = false,
     )
 
     private fun floating(bounds: IntRect): FloatRect = FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat())

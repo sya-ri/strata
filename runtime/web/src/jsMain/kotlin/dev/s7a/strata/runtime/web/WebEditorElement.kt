@@ -98,7 +98,7 @@ internal class WebEditorElement(
         }
 
         override fun semantics(scope: SemanticsScope) {
-            scope.emit(Semantics(value = UiText.Literal(state.value), role = SemanticsRole.TextField, disabled = acceptsFocus.not()))
+            scope.emit(Semantics(value = UiText.Literal(state.value), role = if (state is WebEditorState.Area) SemanticsRole.TextArea else SemanticsRole.TextField, disabled = acceptsFocus.not()))
         }
 
         override fun onFocusChanged(focused: Boolean) {

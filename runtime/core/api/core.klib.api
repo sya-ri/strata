@@ -162,6 +162,7 @@ sealed interface dev.s7a.strata.runtime.spi/RuntimeUiSession : kotlin/AutoClosea
     abstract fun dispatchPointerGesture(dev.s7a.strata.input/PointerGesture): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchPointerGesture|dispatchPointerGesture(dev.s7a.strata.input.PointerGesture){}[0]
     abstract fun dispatchTextInput(dev.s7a.strata.input/TextInputEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.dispatchTextInput|dispatchTextInput(dev.s7a.strata.input.TextInputEvent){}[0]
     abstract fun focusAt(dev.s7a.strata.geometry/IntOffset) // dev.s7a.strata.runtime.spi/RuntimeUiSession.focusAt|focusAt(dev.s7a.strata.geometry.IntOffset){}[0]
+    abstract fun focusSemantics(kotlin/Long): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime.spi/RuntimeUiSession.focusSemantics|focusSemantics(kotlin.Long){}[0]
     abstract fun frame(dev.s7a.strata.geometry/Constraints): dev.s7a.strata.runtime.spi/RuntimeUiFrame // dev.s7a.strata.runtime.spi/RuntimeUiSession.frame|frame(dev.s7a.strata.geometry.Constraints){}[0]
     abstract fun frame(dev.s7a.strata.geometry/Constraints, dev.s7a.strata.runtime/FrameTime): dev.s7a.strata.runtime.spi/RuntimeUiFrame // dev.s7a.strata.runtime.spi/RuntimeUiSession.frame|frame(dev.s7a.strata.geometry.Constraints;dev.s7a.strata.runtime.FrameTime){}[0]
     abstract fun resetInputState() // dev.s7a.strata.runtime.spi/RuntimeUiSession.resetInputState|resetInputState(){}[0]
@@ -198,9 +199,12 @@ final class <#A: kotlin/Any> dev.s7a.strata.runtime.spi/RuntimeUiInput : kotlin/
 
 final class dev.s7a.strata.runtime.semantics/SemanticsEntry { // dev.s7a.strata.runtime.semantics/SemanticsEntry|null[0]
     constructor <init>(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.semantics/Semantics) // dev.s7a.strata.runtime.semantics/SemanticsEntry.<init>|<init>(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.semantics.Semantics){}[0]
+    constructor <init>(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.semantics/Semantics, dev.s7a.strata.runtime.semantics/SemanticsOwner) // dev.s7a.strata.runtime.semantics/SemanticsEntry.<init>|<init>(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.semantics.Semantics;dev.s7a.strata.runtime.semantics.SemanticsOwner){}[0]
 
     final val bounds // dev.s7a.strata.runtime.semantics/SemanticsEntry.bounds|{}bounds[0]
         final fun <get-bounds>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.semantics/SemanticsEntry.bounds.<get-bounds>|<get-bounds>(){}[0]
+    final val owner // dev.s7a.strata.runtime.semantics/SemanticsEntry.owner|{}owner[0]
+        final fun <get-owner>(): dev.s7a.strata.runtime.semantics/SemanticsOwner? // dev.s7a.strata.runtime.semantics/SemanticsEntry.owner.<get-owner>|<get-owner>(){}[0]
     final val semantics // dev.s7a.strata.runtime.semantics/SemanticsEntry.semantics|{}semantics[0]
         final fun <get-semantics>(): dev.s7a.strata.semantics/Semantics // dev.s7a.strata.runtime.semantics/SemanticsEntry.semantics.<get-semantics>|<get-semantics>(){}[0]
 
@@ -210,6 +214,34 @@ final class dev.s7a.strata.runtime.semantics/SemanticsEntry { // dev.s7a.strata.
     final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsEntry.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsEntry.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // dev.s7a.strata.runtime.semantics/SemanticsEntry.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.runtime.semantics/SemanticsOwner { // dev.s7a.strata.runtime.semantics/SemanticsOwner|null[0]
+    constructor <init>(kotlin/Long, kotlin/Boolean, kotlin/Boolean, kotlin/Int, kotlin/Int, dev.s7a.strata.geometry/IntRect) // dev.s7a.strata.runtime.semantics/SemanticsOwner.<init>|<init>(kotlin.Long;kotlin.Boolean;kotlin.Boolean;kotlin.Int;kotlin.Int;dev.s7a.strata.geometry.IntRect){}[0]
+
+    final val contentPaintOrder // dev.s7a.strata.runtime.semantics/SemanticsOwner.contentPaintOrder|{}contentPaintOrder[0]
+        final fun <get-contentPaintOrder>(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsOwner.contentPaintOrder.<get-contentPaintOrder>|<get-contentPaintOrder>(){}[0]
+    final val focusable // dev.s7a.strata.runtime.semantics/SemanticsOwner.focusable|{}focusable[0]
+        final fun <get-focusable>(): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsOwner.focusable.<get-focusable>|<get-focusable>(){}[0]
+    final val focused // dev.s7a.strata.runtime.semantics/SemanticsOwner.focused|{}focused[0]
+        final fun <get-focused>(): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsOwner.focused.<get-focused>|<get-focused>(){}[0]
+    final val identity // dev.s7a.strata.runtime.semantics/SemanticsOwner.identity|{}identity[0]
+        final fun <get-identity>(): kotlin/Long // dev.s7a.strata.runtime.semantics/SemanticsOwner.identity.<get-identity>|<get-identity>(){}[0]
+    final val paintOrder // dev.s7a.strata.runtime.semantics/SemanticsOwner.paintOrder|{}paintOrder[0]
+        final fun <get-paintOrder>(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsOwner.paintOrder.<get-paintOrder>|<get-paintOrder>(){}[0]
+    final val visibleBounds // dev.s7a.strata.runtime.semantics/SemanticsOwner.visibleBounds|{}visibleBounds[0]
+        final fun <get-visibleBounds>(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.semantics/SemanticsOwner.visibleBounds.<get-visibleBounds>|<get-visibleBounds>(){}[0]
+
+    final fun component1(): kotlin/Long // dev.s7a.strata.runtime.semantics/SemanticsOwner.component1|component1(){}[0]
+    final fun component2(): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsOwner.component2|component2(){}[0]
+    final fun component3(): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsOwner.component3|component3(){}[0]
+    final fun component4(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsOwner.component4|component4(){}[0]
+    final fun component5(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsOwner.component5|component5(){}[0]
+    final fun component6(): dev.s7a.strata.geometry/IntRect // dev.s7a.strata.runtime.semantics/SemanticsOwner.component6|component6(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Int = ..., kotlin/Int = ..., dev.s7a.strata.geometry/IntRect = ...): dev.s7a.strata.runtime.semantics/SemanticsOwner // dev.s7a.strata.runtime.semantics/SemanticsOwner.copy|copy(kotlin.Long;kotlin.Boolean;kotlin.Boolean;kotlin.Int;kotlin.Int;dev.s7a.strata.geometry.IntRect){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.runtime.semantics/SemanticsOwner.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.runtime.semantics/SemanticsOwner.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.runtime.semantics/SemanticsOwner.toString|toString(){}[0]
 }
 
 final class dev.s7a.strata.runtime.spi/RuntimeDeclaration { // dev.s7a.strata.runtime.spi/RuntimeDeclaration|null[0]
@@ -293,6 +325,7 @@ final class dev.s7a.strata.runtime/UiTree : kotlin/AutoCloseable { // dev.s7a.st
     final fun dispatchPointerGesture(dev.s7a.strata.input/PointerGesture): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime/UiTree.dispatchPointerGesture|dispatchPointerGesture(dev.s7a.strata.input.PointerGesture){}[0]
     final fun dispatchTextInput(dev.s7a.strata.input/TextInputEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime/UiTree.dispatchTextInput|dispatchTextInput(dev.s7a.strata.input.TextInputEvent){}[0]
     final fun focusAt(dev.s7a.strata.geometry/IntOffset) // dev.s7a.strata.runtime/UiTree.focusAt|focusAt(dev.s7a.strata.geometry.IntOffset){}[0]
+    final fun focusSemantics(kotlin/Long): dev.s7a.strata.input/InputResult // dev.s7a.strata.runtime/UiTree.focusSemantics|focusSemantics(kotlin.Long){}[0]
     final fun layout() // dev.s7a.strata.runtime/UiTree.layout|layout(){}[0]
     final fun measure(dev.s7a.strata.geometry/Constraints): dev.s7a.strata.geometry/IntSize // dev.s7a.strata.runtime/UiTree.measure|measure(dev.s7a.strata.geometry.Constraints){}[0]
     final fun paint(): kotlin.collections/List<dev.s7a.strata.runtime.render/DrawCommand> // dev.s7a.strata.runtime/UiTree.paint|paint(){}[0]

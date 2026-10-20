@@ -45,6 +45,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
                 "dispatchPointer",
                 "dispatchPointerGesture",
                 "focusAt",
+                "focusSemantics",
                 "dispatchKeyboard",
                 "dispatchTextInput",
                 "projectDeclarations",
@@ -166,6 +167,8 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         assertEquals(listOf(Function0::class.java), byName.getValue("dispatchAction").parameterTypes.toList())
         assertEquals(Void.TYPE, byName.getValue("focusAt").returnType)
         assertEquals(listOf(IntOffset::class.java), byName.getValue("focusAt").parameterTypes.toList())
+        assertEquals(InputResult::class.java, byName.getValue("focusSemantics").returnType)
+        assertEquals(listOf(Long::class.javaPrimitiveType), byName.getValue("focusSemantics").parameterTypes.toList())
         val attach = byName.getValue("attach")
         val close = byName.getValue("close")
         val detach = byName.getValue("detach")

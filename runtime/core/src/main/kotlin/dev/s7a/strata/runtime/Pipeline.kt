@@ -38,9 +38,9 @@ internal class Pipeline(
 ) {
     private val frameCallbacks = FrameCallbackIndex()
     private val paintPipeline = PaintPipeline(ownerGuard)
-    private val focusedInputPipeline = FocusedInputPipeline()
+    private val focusedInputPipeline = FocusedInputPipeline(dirtyTracker)
     private val inputPipeline = InputPipeline(focusedInputPipeline)
-    private val semanticsPipeline = SemanticsPipeline(ownerGuard)
+    private val semanticsPipeline = SemanticsPipeline(ownerGuard, focusedInputPipeline)
 
     /**
      * Detached current editable-focus identity, read outside a tree operation under its execution owner.
@@ -182,7 +182,18 @@ internal class Pipeline(
      * @param root the installed logical root.
      * @return entries in effective parent-before-child order.
      */
-    fun semantics(root: RetainedNode): List<SemanticsEntry> = if (root.hasSemantics) semanticsPipeline.semantics(root.effectiveRoot) else emptyList()
+    fun semantics(
+        root: RetainedNode,
+        ownership: Boolean = false,
+    ): List<SemanticsEntry> = if (root.hasSemantics) semanticsPipeline.semantics(root, ownership) else emptyList()
+
+    /**
+     * Acquires a visible semantic owner without pointer activation.
+     */
+    fun focusSemantics(
+        root: RetainedNode,
+        identity: Long,
+    ): InputResult = focusedInputPipeline.focusSemantics(root, identity)
 
     /**
      * Captures pending external observations for every effective entry without committing any observation.

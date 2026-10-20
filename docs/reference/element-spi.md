@@ -130,6 +130,11 @@ A payload that declines transformation causes `UnsupportedOperationException` du
 Nodes without `ClipChildrenNode` preserve valid local and descendant paint overflow.
 Use `UiText` in semantics without resolving it.
 `SemanticsNode` emits a complete unresolved payload through `SemanticsScope`.
+Session frames add optional detached `SemanticsOwner` metadata to each entry: tree-local stable logical identity, focus eligibility and focus, clipped visible bounds and native presentation insertion positions.
+The metadata contains values only and survives frame retention without retaining live nodes or callbacks.
+Native adapters synchronize focus with `focusSemantics`; stale, hidden and nonaccepting owners are ignored without activation.
+Direct `UiTree.semantics()` keeps its payload-only collection contract.
+`SemanticsEntry` equality and logical copies continue to describe bounds and payload; adapters read native ownership separately, and a logical copy omits that placement metadata.
 The runtime-owned `SemanticsEntry` values combine cached local payloads with current accumulated bounds in parent-before-child and local emission order.
 A clean semantics pass reuses each retained node's immutable local payload snapshot and combines it with current accumulated bounds.
 A dirty bit is cleared before each callback, so node-local invalidation during the callback remains pending for the next pass.

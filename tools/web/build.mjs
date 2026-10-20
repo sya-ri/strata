@@ -197,7 +197,7 @@ async function verifyInteractions(browser, engine, touch) {
         const resized = await snapshot();
         for (const key of ['field', 'area', 'scroll', 'list', 'zoom', 'centerX', 'centerY']) assert.equal(resized[key], retained[key], key);
         assert.equal(await page.evaluate(() => document.querySelector('input') === window.retainedField && document.querySelector('textarea') === window.retainedArea), true);
-        const action = page.getByText('Action 0', { exact: true });
+        const action = page.getByRole('button', { name: 'Action surface', exact: true });
         if (touch) {
             const bounds = await action.boundingBox();
             await page.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
@@ -205,6 +205,10 @@ async function verifyInteractions(browser, engine, touch) {
         assert.equal((await snapshot()).actions, 1);
         await page.keyboard.press('Enter');
         assert.equal((await snapshot()).actions, 2);
+        await action.press('Space');
+        assert.equal((await snapshot()).actions, 3);
+        await action.evaluate(element => element.click());
+        assert.equal((await snapshot()).actions, 4, 'Accessibility activation must dispatch exactly one common action');
         assert.ok(await page.locator('canvas').count() > 0);
         const family = await page.getByText('A日🙂', { exact: true }).evaluate(element => getComputedStyle(element).fontFamily);
         assert.ok(family.includes('StrataFixture'), 'The resource font must be the loaded fixture face');
@@ -219,7 +223,9 @@ async function verifyInteractions(browser, engine, touch) {
         return { engine: engine.name(), version: browser.version(), scenario: 'retained-interactions', touchEmulation: touch, syntheticNavigation: touch, osIme: 'not tested', physicalDevice: 'not tested' };
     } catch (failure) {
         console.error("Interaction browser errors:", errors);
-        console.error("Interaction body:", await page.locator("body").innerHTML());
+        console.error("Interaction active element:", await page.evaluate(() => document.activeElement?.outerHTML));
+        await mkdir(resolve(build, 'parity'), { recursive: true });
+        await writeFile(resolve(build, 'parity', `${engine.name()}-interactions-failure.html`), await page.locator("body").innerHTML());
         throw failure;
     } finally { await context.close(); }
 }

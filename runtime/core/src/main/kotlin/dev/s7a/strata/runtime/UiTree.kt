@@ -486,6 +486,27 @@ public class UiTree(
         }
 
     /**
+     * Adds detached native ownership to frame semantics after committed painting.
+     */
+    internal fun ownedSemantics(): List<SemanticsEntry> =
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation emptyList()
+            pipeline.requirePlacedRoot(retainedRoot)
+            pipeline.semantics(retainedRoot, ownership = true)
+        }
+
+    /**
+     * Acquires a visible semantic owner by its frame identity without activation.
+     * Ownership, geometry and failure contracts follow [dispatchPointer].
+     */
+    public fun focusSemantics(identity: Long): InputResult =
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation InputResult.Ignored
+            pipeline.requirePlacedRoot(retainedRoot)
+            pipeline.focusSemantics(retainedRoot, identity)
+        }
+
+    /**
      * Cleans all retained ownership in descendant-first order.
      *
      * Close is confined to the execution owner and non-reentrant.

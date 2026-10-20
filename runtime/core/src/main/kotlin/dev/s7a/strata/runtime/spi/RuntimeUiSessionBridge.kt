@@ -72,6 +72,8 @@ private class RuntimeUiSessionBridge(
 
     override fun focusAt(position: IntOffset): Unit = session.focusAt(position)
 
+    override fun focusSemantics(identity: Long): InputResult = session.focusSemantics(identity)
+
     override fun dispatchKeyboard(event: KeyboardEvent): InputResult = session.dispatchKeyboard(event)
 
     override fun dispatchTextInput(event: TextInputEvent): InputResult = session.dispatchTextInput(event)

@@ -23,6 +23,11 @@ internal class RetainedNode(
     var logicalParent: RetainedNode?,
 ) : RetainedEntry(node) {
     /**
+     * Tree-local native semantics identity, assigned lazily and released with this owner.
+     */
+    var semanticsId: Long = 0L
+
+    /**
      * Last immutable dynamic-child list already validated and reconciled; cached access requires no sibling diff.
      */
     var dynamicDescriptions: List<Element>? = null

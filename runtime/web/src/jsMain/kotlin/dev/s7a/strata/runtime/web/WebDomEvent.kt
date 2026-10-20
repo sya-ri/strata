@@ -14,6 +14,7 @@ internal enum class WebDomEvent(
     Wheel("wheel"),
     KeyDown("keydown"),
     KeyUp("keyup"),
+    Click("click"),
     Input("input"),
     BeforeInput("beforeinput"),
     CompositionStart("compositionstart"),

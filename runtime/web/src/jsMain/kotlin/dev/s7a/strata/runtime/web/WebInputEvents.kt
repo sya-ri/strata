@@ -4,6 +4,7 @@ package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.KeyboardModifiers
 import dev.s7a.strata.input.PointerButton
@@ -44,7 +45,12 @@ internal class WebInputEvents(
         EventListener {
             transaction {
                 val target = root.ownerDocument?.activeElement as? HTMLElement
-                if (target?.hasAttribute("data-strata-editor") == true) focusEditor(target)
+                val identity = target?.getAttribute("data-strata-owner")?.toLongOrNull()
+                if (identity != null) {
+                    session.focusSemantics(identity)
+                } else if (target?.hasAttribute("data-strata-editor") == true) {
+                    focusEditor(target)
+                }
             }
         }
     private val touch =
@@ -68,6 +74,7 @@ internal class WebInputEvents(
         listen(WebDomEvent.Wheel, ::wheel)
         listen(WebDomEvent.KeyDown, ::keyboard)
         listen(WebDomEvent.KeyUp, ::keyboard)
+        listen(WebDomEvent.Click, ::click)
         listen(WebDomEvent.Input, ::input)
         listen(WebDomEvent.BeforeInput, ::beforeInput)
         listen(WebDomEvent.CompositionStart, ::composition)
@@ -195,8 +202,33 @@ internal class WebInputEvents(
     }
 
     private fun focus(event: Event) {
-        val target = editor(event) ?: return
-        focusEditor(target)
+        val target = event.target as? HTMLElement ?: return
+        val identity = target.getAttribute("data-strata-owner")?.toLongOrNull()
+        if (identity != null) {
+            session.focusSemantics(identity)
+        } else if (editor(event) != null) {
+            focusEditor(target)
+        }
+    }
+
+    private fun click(event: Event) {
+        val mouse = event as? MouseEvent ?: return
+        if (mouse.detail != 0) return
+        val target = event.target as? HTMLElement ?: return
+        val identity = target.getAttribute("data-strata-owner")?.toLongOrNull() ?: return
+        if (editor(event) != null || session.focusSemantics(identity) != InputResult.Consumed) return
+        event.preventDefault()
+        val result = session.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0))
+        session.dispatchKeyboard(KeyboardEvent.Release(KeyCode.Enter, 0))
+        if (result == InputResult.Ignored) {
+            val bounds = target.getBoundingClientRect()
+            val outer = root.getBoundingClientRect()
+            val x = (bounds.left - outer.left + bounds.width / 2) * root.clientWidth / outer.width
+            val y = (bounds.top - outer.top + bounds.height / 2) * root.clientHeight / outer.height
+            val at = IntOffset(floor(x).toInt(), floor(y).toInt())
+            session.dispatchPointer(PointerEvent.Press(at, PointerButton.Primary))
+            session.dispatchPointer(PointerEvent.Release(at, PointerButton.Primary))
+        }
     }
 
     private fun focusEditor(target: HTMLElement) {

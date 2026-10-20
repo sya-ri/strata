@@ -26,6 +26,11 @@ Native deletion, replacement, clipboard and selection behavior stay with the bro
 Application key modifiers may consume shortcuts before native editing.
 Tab and Shift+Tab use shared focus traversal, including its visibility and virtualization rules.
 
+Composition with `Modifier.semantics` preserves standard roles, accessible names and disabled, selected or checked state in DOM, including controls drawn from ordinary layout, image and text primitives.
+Outer semantic modifiers override matching fields supplied by the native component.
+The host retains each logical operation surface across keyed updates, synchronizes native focus with the common owner and places the surface in paint order so an overlapping editor remains usable.
+Button surfaces use native buttons following the [browser button accessibility contract](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/button_role); pointer, keyboard and accessibility activation route through common input behavior.
+
 Pointer coordinates account for CSS scaling of the root.
 Pointer capture preserves an active drag outside its initial bounds; cancellation, window blur and close reset held input.
 Wheel input is normalized before shared scroll or map navigation.

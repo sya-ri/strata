@@ -133,6 +133,12 @@ public sealed interface RuntimeUiSession : AutoCloseable {
     public fun focusAt(position: IntOffset)
 
     /**
+     * Acquires a visible semantic owner from the committed frame without activation.
+     * Stale, hidden or nonaccepting identities return Ignored; dispatchPointer owns failure rules.
+     */
+    public fun focusSemantics(identity: Long): InputResult
+
+    /**
      * Dispatches one keyboard event synchronously to the focused component in the most recently committed frame.
      * When focused handlers ignore a Tab press, the retained tree traverses visible accepting owners in cyclic paint order, with Shift reversing direction.
      * Pending geometry uses the same pre-input synchronization as [dispatchPointer].

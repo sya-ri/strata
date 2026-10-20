@@ -357,7 +357,7 @@ internal class UiSession(
                 val size = retainedTree.measure(constraints)
                 retainedTree.layout()
                 val draw = retainedTree.paint()
-                val semantics = retainedTree.semantics()
+                val semantics = retainedTree.ownedSemantics()
                 val frame = createRuntimeUiFrameWithOwnedSemantics(size, draw, semantics)
                 committedFrameConstraints = constraints
                 frameAvailable = true
@@ -420,6 +420,11 @@ internal class UiSession(
      * Dispatches recognized navigation against the committed tree under ordinary input failure ownership.
      */
     internal fun dispatchPointerGesture(gesture: PointerGesture): InputResult = dispatchFocusedInput { it.dispatchPointerGesture(gesture) }
+
+    /**
+     * Synchronizes a native semantic focus target under the ordinary committed-input contract.
+     */
+    internal fun focusSemantics(identity: Long): InputResult = dispatchFocusedInput { it.focusSemantics(identity) }
 
     /**
      * Synchronizes native focus against committed geometry without application pointer actions.
