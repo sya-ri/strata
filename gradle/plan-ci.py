@@ -76,7 +76,7 @@ def plan(paths, model=None, full=False):
 
 
 def client_plan(root, versions, backend, subject_ref):
-    """Admit exact paired targets declaring the existing full backend client contract."""
+    """Select immutable paired targets; Gradle admits their actual full backend tasks before execution."""
     if not re.fullmatch(r"[0-9a-f]{40}", subject_ref):
         raise ValueError("subject_ref must be a full lowercase immutable commit SHA")
     actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
@@ -94,15 +94,6 @@ def client_plan(root, versions, backend, subject_ref):
         projects = [f"{kind}/minecraft-fabric-{version}" for kind in ("runtime", "integration")]
         if not all((root / project / "build.gradle.kts").is_file() for project in projects):
             raise ValueError(f"Unknown paired Minecraft target: {version}")
-        build = (root / projects[1] / "build.gradle.kts").read_text(encoding="utf-8")
-        declaration = re.search(r"enum class Backend\(val argument: String\)\s*\{([^}]+)\}", build)
-        tasks = [f":integration:minecraft-fabric-{version}:{name}" for name in ("runClientGameTest", "runProductionClientGameTest")]
-        check = re.search(r'tasks\.named\("check"\)\s*\{\s*dependsOn\("runClientGameTest",\s*runProductionClientGameTest\)\s*\}', build)
-        if (not declaration or f'("{backend}")' not in declaration[1]
-                or 'Scope.Full' not in build or '"strata.canvas.backend"' not in build
-                or not check
-                or any(f'"{task.rsplit(":", 1)[1]}"' not in build for task in tasks)):
-            raise ValueError(f"Minecraft {version} does not declare full {backend} development and production client verification")
         entries.append(dict(id=f"minecraft-{version.replace('.', '-')}-{backend}", version=version,
                             documentation=False, name=f"Minecraft {version} {backend} full clients",
                             gradle_arguments=" ".join([f":integration:minecraft-fabric-{version}:check", f"-Pstrata.minecraftVersions={version}",
