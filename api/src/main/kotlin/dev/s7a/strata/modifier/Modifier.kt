@@ -54,10 +54,10 @@ public interface Modifier {
      */
     public companion object : Modifier {
         /**
-         * Compatibility alias for [Modifier], deprecated in 0.3.1 and scheduled for removal in 1.0.0.
+         * Compatibility alias for [Modifier], deprecated in 0.3.0 and scheduled for removal in 1.0.0.
          */
         @Deprecated(
-            message = "Use Modifier instead. Deprecated in 0.3.1 and scheduled for removal in 1.0.0.",
+            message = "Use Modifier instead. Deprecated in 0.3.0 and scheduled for removal in 1.0.0.",
             replaceWith = ReplaceWith("Modifier"),
             level = DeprecationLevel.WARNING,
         )
