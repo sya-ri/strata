@@ -45,6 +45,6 @@ public fun main() {
                 WebComponentPerformanceFixture(theme, component, PerformancePhase.valueOf(phase)).measure()
             }
         }
-        window.addEventListener("pagehide", { host.close() })
+        window.addEventListener("pagehide") { host.close() }
     }
 }

@@ -49,9 +49,9 @@ internal fun mountInteractionApplication() {
                 },
             )
         root.setAttribute("data-mounted", "true")
-        window.addEventListener("pagehide", {
+        window.addEventListener("pagehide") {
             host.close()
             font.close()
-        })
+        }
     }
 }
