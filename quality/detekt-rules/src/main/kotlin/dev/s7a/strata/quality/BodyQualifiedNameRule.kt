@@ -103,9 +103,8 @@ internal class BodyQualifiedNameRule(
 
             is KtDotQualifiedExpression -> {
                 val receiver = collectExpressionSegments(expression.receiverExpression)
-                val selector = expression.selectorExpression
                 val name =
-                    when (selector) {
+                    when (val selector = expression.selectorExpression) {
                         is KtCallExpression -> selector.calleeExpression as? KtNameReferenceExpression
                         else -> selector as? KtNameReferenceExpression
                     }
