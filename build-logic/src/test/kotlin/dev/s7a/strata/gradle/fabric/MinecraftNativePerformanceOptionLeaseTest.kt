@@ -227,7 +227,7 @@ internal class MinecraftNativePerformanceOptionLeaseTest {
         assertSame(
             failure,
             assertThrows(IllegalArgumentException::class.java) {
-                lease.capture<Int>({ throw failure }, { writes++ }, 120)
+                lease.capture({ throw failure }, { writes++ }, 120)
             },
         )
         lease.close()

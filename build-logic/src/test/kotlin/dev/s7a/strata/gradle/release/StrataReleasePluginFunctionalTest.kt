@@ -261,13 +261,13 @@ internal class StrataReleasePluginFunctionalTest {
             .build()
 
     private fun assertManifestTextInputsInvalidateCache(artifactHashes: Map<String, String>) {
-        val updatedNotes = RELEASE_NOTES + "\nTextField IME preview: にほん 한국 🙂.\n"
+        val updatedNotes = "$RELEASE_NOTES\nTextField IME preview: にほん 한국 🙂.\n"
         write("release-notes.md", updatedNotes.replace("\n", "\r\n") + " \t\r\n")
         val changedNotes = runManifestWithBuildCache()
         assertEquals(TaskOutcome.SUCCESS, changedNotes.task(":modrinthReleaseManifest")?.outcome)
         assertManifestText(readManifest(), updatedNotes, PROJECT_BODY)
 
-        val updatedBody = PROJECT_BODY + "\nCustom font example: 日本語 한국어 🚀.\n"
+        val updatedBody = "$PROJECT_BODY\nCustom font example: 日本語 한국어 🚀.\n"
         write("project-body.md", updatedBody.replace("\n", "\r\n") + " \t\r\n")
         val changedBody = runManifestWithBuildCache()
         assertEquals(TaskOutcome.SUCCESS, changedBody.task(":modrinthReleaseManifest")?.outcome)

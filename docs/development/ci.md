@@ -121,6 +121,7 @@ It uses its recommended JVM profile without a baseline and receives every catalo
 Each run analyzes the complete selected revision once with a zero-problem threshold; PR differential mode is disabled so it does not rebuild and reindex the base commit.
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
 The included `build-logic` build also receives a standalone native Gradle import, covering its production and test sources, resources, and linked game-independent pacing tests with their actual dependencies.
+This scan lifts the recommended profile's default test-source exclusion while preserving test source roles and dependencies.
 Its wrapper is generated with the selected source's checked-in root wrapper, so the analysis uses the build's Gradle distribution without another version pin.
 The analysis controller supplies the inspection profile even when a selected historical revision predates that configuration; Java toolchains and imported sources still come from the selected product checkout.
 The `native-build-logic-analysis` artifact retains the imported model, inspection logs, and SARIF from this independent zero-problem scan.

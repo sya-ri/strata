@@ -2,9 +2,6 @@ package dev.s7a.strata.gradle.release
 
 import dev.s7a.strata.gradle.release.ModrinthApiClient.AiUse
 import dev.s7a.strata.gradle.release.ModrinthApiClient.SideSupport
-import dev.s7a.strata.gradle.release.ModrinthReleaseFixture.Companion.GAME_VERSIONS
-import dev.s7a.strata.gradle.release.ModrinthReleaseFixture.Companion.PREVIOUS_PROJECT_BODY
-import dev.s7a.strata.gradle.release.ModrinthReleaseFixture.Companion.PROJECT_ID
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -15,7 +12,7 @@ import java.util.HexFormat
 /**
  * Retains the manifest, authored artifacts and local client used by the release tests.
  */
-internal data class ModrinthReleaseFixture(
+internal class ModrinthReleaseFixture(
     val bundle: File,
     val manifest: ModrinthManifest,
     val iconBytes: ByteArray,

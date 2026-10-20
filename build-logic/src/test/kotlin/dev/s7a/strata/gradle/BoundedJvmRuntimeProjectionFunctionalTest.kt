@@ -76,7 +76,7 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
     private fun writeBuild(replacement: String) {
         write(
             "build.gradle.kts",
-            """
+            $$"""
             import org.gradle.api.artifacts.component.ProjectComponentIdentifier
             import org.gradle.api.attributes.LibraryElements
             import org.gradle.api.attributes.Usage
@@ -92,7 +92,7 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
                 }
             }
             val selected = providers.gradleProperty("fixture.runtimes").get().split(',')
-            (selected + "support").forEach { dependencies.add(jmhRuntimeClasspath.name, dependencies.project(":${'$'}it")) }
+            (selected + "support").forEach { dependencies.add(jmhRuntimeClasspath.name, dependencies.project(":$it")) }
             tasks.register<JavaExec>("verifyProjection") {
                 dependsOn("classes", jmhRuntimeClasspath)
                 classpath = sourceSets["main"].runtimeClasspath + jmhRuntimeClasspath
@@ -102,7 +102,7 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
                 doFirst {
                     val reportRequest: Map<*, *>? = null
                     val requested = rootProject.providers.gradleProperty("strata.paired.runtime").orNull
-            $replacement
+            $$replacement
                 }
             }
             """.trimIndent(),

@@ -6,6 +6,7 @@ profile:
   base:
     name: qodana.recommended
   inspections:
+    # The recommended profile otherwise skips the imported test sources.
     - group: ALL
       ignore:
         - "!scope#test:*..*"
