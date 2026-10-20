@@ -298,6 +298,10 @@ jobs:
       uses: actions/checkout@v7
       with:
         fetch-depth: 0
+    - name: Set up workflow tools
+      uses: jdx/mise-action@v5
+      with:
+        cache: false
     - name: Check GitHub Actions workflows
       run: bash .github/check-workflows.sh
     - name: Set up Java

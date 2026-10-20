@@ -17,14 +17,14 @@ bash gradle/plan-minecraft-ci.sh "$project_root" "$inventory_directory" >/dev/nu
 qodana_python=''
 for python_candidate in python3 python; do
   if command -v "$python_candidate" >/dev/null 2>&1 && \
-    "$python_candidate" -B gradle/catalog-versions.py --help >/dev/null 2>&1; then
+    "$python_candidate" -c 'import tomllib' >/dev/null 2>&1; then
     qodana_python=$python_candidate
     break
   fi
 done
 [[ -n "$qodana_python" ]] || { echo 'Qodana IDEA preparation requires Python 3.11 or newer.' >&2; exit 1; }
 
-project_jdk=$("$qodana_python" -B gradle/catalog-versions.py | tail -n 1)
+project_jdk=$("$qodana_python" -B gradle/java-toolchains.py | tail -n 1)
 
 # Recreate the selected revision's source roots even when the IDE reuses indexes from an earlier scan.
 mkdir -p build/qodana

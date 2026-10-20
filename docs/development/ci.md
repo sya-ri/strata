@@ -181,8 +181,10 @@ Disable an inspection only with an actionable rationale in the checked-in config
 
 `Workflow checks` runs actionlint, shell syntax checks, Python behavior tests, and Java/CI/Qodana model fixtures without starting Minecraft.
 Declare external production files consumed by TestKit fixtures as inputs of `build-logic:test` so source changes invalidate cached fixture results.
-The linter step downloads official actionlint and ShellCheck release binaries, verifies their checksums, and installs the hash-checked Pyflakes wheel in a temporary environment.
-Tool versions belong in the version catalog; review the pinned ShellCheck and Pyflakes digests in `.github/check-workflows.sh` when changing their versions.
+The linter step uses the official mise action to install the CLI tools declared in `mise.toml` from `mise.lock`, including the locked Pyflakes package graph.
+Run `mise install --locked` and `mise exec -- bash .github/check-workflows.sh` locally; tool updates regenerate the lockfile rather than changing bootstrap code or embedded checksums.
+Commit both the lockfile and `.mise/locks/` package graphs; regenerate them with `mise lock --platform linux-x64,windows-x64` when changing tools.
+Gradle dependencies and plugins remain in the version catalog.
 Explicit executable paths and valid/invalid workflow, shell, and Python fixtures keep both script integrations enabled without Docker Hub credentials.
 It compiles the isolated publication tools without loading product projects.
 Behavior tests cover changed-path ownership, missing or altered prepared artifacts, successful preparation followed by a failed destination, immutable-release recovery, service conflicts, and receipt restoration.

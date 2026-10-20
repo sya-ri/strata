@@ -1,0 +1,7 @@
+min_version = "2026.10.15"
+
+[tools]
+actionlint = "1.7.12"
+shellcheck = "0.11.0"
+uv = "0.13.3"
+"pypi:pyflakes" = { version = "4.0.3", depends = ["uv"] }

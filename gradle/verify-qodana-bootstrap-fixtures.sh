@@ -11,7 +11,7 @@ mkdir -p "$fixture_root/gradle" "$fixture_root/runtime/minecraft-fabric-1.21" \
 cp "$project_root/gradle/prepare-qodana-idea-model.sh" \
   "$project_root/gradle/prepare-qodana-project.py" \
   "$project_root/gradle/plan-minecraft-ci.sh" \
-  "$project_root/gradle/catalog-versions.py" "$fixture_root/gradle/"
+  "$project_root/gradle/java-toolchains.py" "$fixture_root/gradle/"
 printf '[versions]\njava-baseline = "17"\njava-current = "25"\n' > "$fixture_root/gradle/libs.versions.toml"
 touch "$fixture_root/runtime/minecraft-fabric-1.21/build.gradle.kts" \
   "$fixture_root/integration/minecraft-fabric-1.21/build.gradle.kts"

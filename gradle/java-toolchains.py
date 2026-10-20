@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read named versions or Java profiles from the Gradle version catalog."""
+"""Read ordinary or frozen paired Java toolchains from the Gradle version catalog."""
 import argparse
 from pathlib import Path
 import sys
@@ -7,22 +7,15 @@ import tomllib
 
 
 def main():
-    """Print selected catalog values, sorted Java majors or frozen Actions outputs."""
+    """Print sorted Java majors or the two named frozen Actions outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("catalog", nargs="?", type=Path, default=Path("gradle/libs.versions.toml"))
-    selection = parser.add_mutually_exclusive_group()
-    selection.add_argument("--paired", action="store_true")
-    selection.add_argument("--keys", nargs="+", metavar="KEY", help="print named catalog versions in the requested order")
+    parser.add_argument("--paired", action="store_true")
     args = parser.parse_args()
     sys.stdout.reconfigure(newline="\n")
     with args.catalog.open("rb") as source:
         versions = tomllib.load(source)["versions"]
-    if args.keys:
-        values = [versions.get(key) for key in args.keys]
-        if any(not isinstance(value, str) or not value or any(character.isspace() for character in value) for value in values):
-            parser.error("Requested catalog versions must be nonempty strings without whitespace")
-        print(" ".join(values))
-    elif args.paired:
+    if args.paired:
         for output, key in (("toolchain", "performance-toolchain"), ("launcher", "performance-launcher")):
             value = versions[key]
             if not isinstance(value, str) or not value or any(character.isspace() for character in value):
