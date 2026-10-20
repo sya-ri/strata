@@ -221,17 +221,6 @@ public fun mountWeb(
 ): WebUiHost = mountWeb(definition.asUiDefinition(), root, viewport)
 
 /**
- * Compatibility overload for deterministic HTML generation.
- */
-@OptIn(InternalStrataRuntimeApi::class)
-@Suppress("DEPRECATION")
-internal fun createWebHost(
-    definition: ScreenDefinition,
-    root: HTMLElement,
-    viewport: IntSize,
-): WebUiHost = createWebHost(definition.asUiDefinition(), root, viewport)
-
-/**
  * Compatibility overload for mounting a themed screen.
  */
 @OptIn(InternalStrataRuntimeApi::class)
