@@ -301,6 +301,7 @@ jobs:
     - name: Set up workflow tools
       uses: jdx/mise-action@v5
       with:
+        working_directory: .github
         cache: false
     - name: Check GitHub Actions workflows
       run: bash .github/check-workflows.sh

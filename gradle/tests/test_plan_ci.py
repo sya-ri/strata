@@ -188,13 +188,13 @@ class PlanCiTest(unittest.TestCase):
     def test_workflow_tool_configuration_keeps_all_linter_checks_without_loading_clients(self):
         expected = planner.plan([])
         expected["workflow"] = True
-        paths = ["mise.toml", "mise.lock", ".mise/locks/pypi-pyflakes/4.0.3/uv.lock"]
+        paths = [".github/mise.toml", ".github/mise.lock", ".github/.mise/locks/pypi-pyflakes/4.0.3/uv.lock"]
         for path in paths:
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
         self.assertEqual(expected, planner.plan(paths))
         self.assertEqual(planner.plan([], full=True), planner.plan(paths, full=True))
-        for other in ("api/src/main/kotlin/Element.kt", "unknown-input"):
+        for other in ("api/src/main/kotlin/Element.kt", "mise.toml", "unknown-input"):
             for mixed in ([paths[0], other], [other, paths[0]]):
                 with self.subTest(paths=mixed):
                     result = planner.plan([other])
