@@ -88,7 +88,7 @@ import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservat
  * Proves exact native, Fabric-adapter, and headless pixels for the supported Minecraft release.
  *
  * The test runs on Fabric's client GameTest thread and performs all Minecraft and common-host operations on the client thread through [ClientGameTestContext].
- * It reads the active assets, font, and selected player skin, uses native [Button] and [PlayerFaceExtractor] rendering as the oracle, and writes only deterministic evidence below the configured build directory.
+ * It reads the active assets, font, and selected player skin, uses native [ConfirmScreen] and [PlayerFaceExtractor] rendering as the oracle, and writes only deterministic evidence below the configured build directory.
  */
 @Suppress("TooManyFunctions")
 public class StrataMinecraftClientGameTest : FabricClientGameTest {
@@ -482,12 +482,13 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 check(firstPreeditCalls == 1) { "Unchanged frames must not resubmit native preedit." }
                 val preedit = PreeditEvent("日🙂", 3, listOf("日", "🙂"), 1)
                 check(screen.preeditUpdated(preedit))
-                check(firstState.value == "A") { "Preedit unexpectedly committed text." }
+                assertTestValue("A", firstState.value, "Preedit unexpectedly committed text.")
                 screen.mouseClicked(MouseButtonEvent(4.0, 24.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
                 check(nativeTextInputEnabled(minecraft))
                 check(secondPreeditCalls == 1) { "Switching editable owners did not resubmit native preedit." }
                 check(screen.charTyped(CharacterEvent('한'.code)))
-                check(firstState.value == "A" && secondState.value == "한B")
+                assertTestValue("A", firstState.value, "Changing focus altered the previous editor.")
+                assertTestValue("한B", secondState.value, "Character input did not reach the focused editor.")
                 screen.mouseClicked(MouseButtonEvent(4.0, 44.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
                 check(nativeTextInputEnabled(minecraft).not()) { "A passive input observer enabled native text input." }
                 check(screen.preeditUpdated(preedit).not())
@@ -504,7 +505,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 check(nativeTextInputEnabled(minecraft))
-                check(firstState.value == "A" && secondState.value == "한B")
+                assertTestValue("A", firstState.value, "Reattaching the screen changed the first editor.")
+                assertTestValue("한B", secondState.value, "Reattaching the screen changed the second editor.")
                 check(screen.charTyped(CharacterEvent('X'.code)))
                 check(MinecraftClientScreenAccess.currentScreen(minecraft) === nativeParent)
                 check(nativeTextInputEnabled(minecraft)) { "Deferred Strata removal disabled the next native editor." }
