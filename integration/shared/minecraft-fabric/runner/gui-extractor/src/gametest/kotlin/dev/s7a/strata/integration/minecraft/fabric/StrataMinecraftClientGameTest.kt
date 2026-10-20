@@ -8,7 +8,6 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
-import dev.s7a.strata.component.PanZoomState
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
@@ -16,41 +15,37 @@ import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.VirtualList
 import dev.s7a.strata.component.VirtualListState
-import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.activeFabricScreen
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.assertCleanFabricFrameReuse
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.closeFabricScreen
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.readRenderWork
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.renderWork
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.renderHeadless
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireExactPixels
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireImageSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.initialFocus
-import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onCharacterInput
 import dev.s7a.strata.modifier.onPreedit
 import dev.s7a.strata.modifier.onTextInput
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.headless.HeadlessImage
-import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
-import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
-import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.state.StateRevision
-import dev.s7a.strata.state.StateSnapshot
-import dev.s7a.strata.state.StateSource
-import dev.s7a.strata.state.StateSubscription
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -85,11 +80,8 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Predicate
 import kotlin.io.path.inputStream
-import dev.s7a.strata.component.Button as StrataButton
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
@@ -698,69 +690,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         return headless
     }
 
-    private fun closeFabricScreen(context: ClientGameTestContext) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                if (current is FabricMinecraftScreen) {
-                    MinecraftClientScreenAccess.setScreen(minecraft, null)
-                    assertFabricPresentationReleased(current)
-                    current.onClose()
-                }
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() })
-    }
-
-    private fun assertFabricPresentationReleased(screen: FabricMinecraftScreen) {
-        val fields = FabricMinecraftScreen::class.java.declaredFields.associateBy { field -> field.name }
-
-        fun retained(name: String): Any? {
-            val field = fields[name] ?: error("Fabric presentation field is missing: $name")
-            check(field.trySetAccessible()) { "Fabric presentation field is inaccessible: $name" }
-            return field.get(screen)
-        }
-
-        val portableFrames = checkNotNull(retained("portableFrames"))
-        val portableCurrent = portableFrames.javaClass.getDeclaredField("current")
-        check(portableCurrent.trySetAccessible()) { "The portable presentation cache is inaccessible." }
-        require(portableCurrent.get(portableFrames) == null) { "A detached Fabric screen retained portable drawing or texture ownership." }
-        require(retained("preparedCommands") == null) { "A detached Fabric screen retained its display list." }
-        require(retained("preparedViewport") == null) { "A detached Fabric screen retained its prepared viewport." }
-        require(retained("preparedInputs") == null) { "A detached Fabric screen retained prepared layers." }
-        require(retained("pointerPosition") == null) { "A detached Fabric screen retained its native pointer position." }
-        require(retained("pointerFrameCommands") == null) { "A detached Fabric screen retained pointer display-list ownership." }
-    }
-
-    private fun assertCleanFabricFrameReuse(context: ClientGameTestContext) {
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val state = readRenderWork(minecraft)
-                0L < state.renderExtractions && state.inputs != null
-            },
-        )
-        val before = renderWork(context)
-        context.waitFor(Predicate<Minecraft> { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions })
-        val after = renderWork(context)
-        require(before.commands === after.commands && before.inputs === after.inputs) { "Clean presentation must retain its exact prepared inputs." }
-        require(before.pointerCommands === after.pointerCommands) { "A stationary pointer must retain its extracted display-list identity." }
-        require(before.samePortable(after) && before.sameSources(after)) { "Clean presentation must retain all actual native texture owners." }
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val screen = activeFabricScreen(minecraft)
-                val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
-                check(commandsField.trySetAccessible())
-                val commands = commandsField.get(screen) as List<*>
-                commandsField.set(screen, ArrayList(commands))
-            },
-        )
-        val changed = renderWork(context)
-        context.waitFor(Predicate<Minecraft> { minecraft -> changed.renderExtractions < readRenderWork(minecraft).renderExtractions })
-        val equivalent = renderWork(context)
-        require(equivalent.inputs !== before.inputs) { "A different display-list snapshot must refresh preparation." }
-        require(equivalent.samePortable(before) && equivalent.sameSources(before)) { "Equivalent commands must retain the actual texture owners." }
-    }
-
     private fun requireSampledImageParityWork(
         observed: RenderWork,
         scene: SampledParityScene,
@@ -769,303 +698,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val requested = MinecraftPresentationObservation.member(checkNotNull(observed.inputs), "sampled") as List<*>
         require(requested.all { image -> observed.sourceImages.any { it === image } }) { "Every admitted sampled source must have actual native ownership: $scene" }
     }
-
-    private fun renderWork(context: ClientGameTestContext): RenderWork =
-        context.computeOnClient(
-            FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft -> readRenderWork(minecraft) },
-        )
-
-    private fun readRenderWork(minecraft: Minecraft): RenderWork = MinecraftPresentationObservation.read(activeFabricScreen(minecraft))
-
-    private fun activeFabricScreen(minecraft: Minecraft): FabricMinecraftScreen {
-        val activeScreen = MinecraftClientScreenAccess.currentScreen(minecraft)
-        return activeScreen as? FabricMinecraftScreen ?: error("The Fabric performance screen is not active.")
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun renderHeadless(
-        profile: MinecraftUiProfile,
-        definition: ScreenDefinition,
-        viewport: IntSize,
-        pointerPosition: IntOffset = pointer,
-        frameTime: FrameTime? = null,
-        scale: Int = 1,
-    ): HeadlessImage =
-        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
-            host.attach()
-            if (frameTime == null) host.frame(viewport) else host.frame(viewport, FrameTime(0L))
-            host.dispatchPointer(PointerEvent.Move(pointerPosition))
-            val frame = if (frameTime == null) host.frame(viewport) else host.frame(viewport, frameTime)
-            val framebufferClear =
-                DrawCommand.FillRectangle(
-                    IntRect(0, 0, frame.size.width, frame.size.height),
-                    ArgbColor(opaqueBlack),
-                )
-            rasterizeHeadless(listOf(framebufferClear) + frame.drawCommands, frame.size, scale)
-        }
-
-    private fun hasExactPixels(
-        native: NativeImage,
-        headless: HeadlessImage,
-    ): Boolean {
-        val expected = IntSize(native.getWidth(), native.getHeight())
-        if (headless.size != expected) return false
-        for (y in 0 until expected.height) {
-            for (x in 0 until expected.width) {
-                if (headless.argbAt(x, y) != native.getPixel(x, y)) return false
-            }
-        }
-        return true
-    }
-
-    private fun requireImageSize(
-        image: NativeImage,
-        expected: IntSize,
-    ) {
-        if (image.getWidth() == expected.width && image.getHeight() == expected.height) return
-        throw AssertionError("Native screenshot size was ${image.getWidth()}x${image.getHeight()}, expected ${expected.width}x${expected.height}.")
-    }
-
-    private fun requireExactPixels(
-        native: NativeImage,
-        headless: HeadlessImage,
-    ) {
-        val expected = IntSize(native.getWidth(), native.getHeight())
-        if ((headless.size == expected).not()) {
-            throw AssertionError("Headless size was ${headless.size}, expected $expected.")
-        }
-        for (y in 0 until expected.height) {
-            for (x in 0 until expected.width) {
-                val expected = native.getPixel(x, y)
-                val actual = headless.argbAt(x, y)
-                if (actual == expected) continue
-                throw AssertionError(
-                    "Headless pixel at ($x,$y) was 0x${actual.toUInt().toString(16)}, expected native 0x${expected.toUInt().toString(16)}.",
-                )
-            }
-        }
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    @Suppress("LongMethod")
-    private fun runComponentShowcaseParity(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-        output: Path,
-    ): Map<ComponentShowcase, ComponentShowcaseFrame> {
-        val assets =
-            context.computeOnClient(
-                FailableFunction<Minecraft, ComponentShowcaseAssets, RuntimeException> {
-                    ComponentShowcaseAssets(
-                        image =
-                            ImageSource.Pixels(
-                                loadMinecraftUiImage(
-                                    ResourceId(
-                                        "strata_test",
-                                        "textures/gui/coal_generator.png",
-                                    ),
-                                ),
-                            ),
-                        playerSkin =
-                            PlayerSkinSource.Pixels(
-                                loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png")),
-                            ),
-                    )
-                },
-            )
-        val imageDirectory = output.resolve("components")
-        Files.createDirectories(imageDirectory)
-        val frames = LinkedHashMap<ComponentShowcase, ComponentShowcaseFrame>()
-        for (showcase in ComponentShowcase.entries) {
-            closeFabricScreen(context)
-            val physicalSize = showcase.physicalSize
-            resizeMinecraftTestWindow(context, IntSize(physicalSize.width, physicalSize.height))
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    minecraft.options.guiScale().set(showcase.scale)
-                    minecraft.resizeGui()
-                    // Minimal component viewports are smaller than the options menu's 320 by 240 scale-selection floor.
-                    minecraft.window.setGuiScale(showcase.scale)
-                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
-                },
-            )
-            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
-            val headless =
-                context.computeOnClient(
-                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                        renderHeadless(
-                            profile,
-                            createComponentShowcaseScreenDefinition(showcase, assets),
-                            showcase.viewport,
-                            showcase.pointer,
-                            frameTime = FrameTime(0L),
-                            scale = showcase.scale,
-                        )
-                    },
-                )
-            if (showcase === ComponentShowcase.Canvas) requireCanvasKnownPixels(headless)
-            val png = headless.encodePng()
-            val imagePath = imageDirectory.resolve("${showcase.slug}.png")
-            Files.write(imagePath, png)
-
-            val tiledNavigation = AtomicReference<PanZoomState?>()
-            val tiledMarker = AtomicReference<TiledImageMarkerSource?>()
-            context.setScreen {
-                val definition =
-                    if (showcase === ComponentShowcase.TiledImage) {
-                        val navigation = PanZoomState()
-                        val marker = TiledImageMarkerSource(DoubleOffset(32.0, 24.0))
-                        tiledNavigation.set(navigation)
-                        tiledMarker.set(marker)
-                        createTiledImageShowcaseScreenDefinition(navigation, marker)
-                    } else {
-                        createComponentShowcaseScreenDefinition(showcase, assets)
-                    }
-                createMinecraftScreen(
-                    definition,
-                    profile,
-                    parent = null,
-                )
-            }
-            context.waitForScreen(FabricMinecraftScreen::class.java)
-            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
-            context.waitTicks(2)
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    check(minecraft.window.guiScale == showcase.scale) { "The component capture lost its actual GUI density." }
-                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
-                },
-            )
-            val fabricPath =
-                context.takeScreenshot(
-                    TestScreenshotOptions
-                        .of("strata-component-${showcase.slug}-fabric")
-                        .disableCounterPrefix()
-                        .withSize(physicalSize.width, physicalSize.height)
-                        .withDestinationDir(output),
-                )
-            NativeImage.read(fabricPath.inputStream()).use { fabric ->
-                requireImageSize(fabric, physicalSize)
-                if (showcase.animationFrameTimes.isEmpty()) {
-                    requireExactPixels(fabric, headless)
-                } else {
-                    val matched =
-                        showcase.animationFrameTimes.any { frameTime ->
-                            val candidate =
-                                context.computeOnClient(
-                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                        renderHeadless(
-                                            profile,
-                                            createComponentShowcaseScreenDefinition(showcase, assets),
-                                            showcase.viewport,
-                                            showcase.pointer,
-                                            frameTime,
-                                            showcase.scale,
-                                        )
-                                    },
-                                )
-                            hasExactPixels(fabric, candidate)
-                        }
-                    if (matched.not()) {
-                        throw AssertionError(
-                            "Fabric ${showcase.slug} pixels did not match any complete headless animation frame.",
-                        )
-                    }
-                }
-            }
-            if (showcase === ComponentShowcase.TiledImage) {
-                verifyTiledImageTextureReuse(context, checkNotNull(tiledNavigation.get()), checkNotNull(tiledMarker.get()))
-            }
-            frames[showcase] = ComponentShowcaseFrame(headless, png)
-        }
-        closeFabricScreen(context)
-        return frames
-    }
-
-    @Suppress("LongMethod") // One loaded sequence distinguishes stable tile uploads from navigation and independent marker-overlay updates.
-    private fun verifyTiledImageTextureReuse(
-        context: ClientGameTestContext,
-        navigation: PanZoomState,
-        marker: TiledImageMarkerSource,
-    ) {
-        val beforeZoom = renderWork(context)
-        require(beforeZoom.sources.isNotEmpty() && beforeZoom.rasterTextures.isNotEmpty()) { "Tiled-image reuse must observe real source entries and CPU texture owners." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { navigation.zoomTo(2.0) })
-        context.waitFor(Predicate<Minecraft> { minecraft -> beforeZoom.inputs !== readRenderWork(minecraft).inputs })
-        val afterZoom = renderWork(context)
-        require(beforeZoom.sameSources(afterZoom)) { "Zoom must reuse actual tile source entries." }
-        require(beforeZoom.sameRaster(afterZoom)) { "Zoom must reuse actual localized CPU texture owners." }
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> {
-                val previous = navigation.metrics.center
-                check(previous != navigation.panBy(DoubleOffset(4.0, 0.0)))
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> afterZoom.inputs !== readRenderWork(minecraft).inputs })
-        val afterPan = renderWork(context)
-        require(afterZoom.sameSources(afterPan)) { "Pan must reuse actual tile source entries." }
-        require(afterZoom.sameRaster(afterPan)) { "Pan must reuse actual localized CPU texture owners." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { marker.publish(DoubleOffset(40.0, 24.0)) })
-        context.waitFor(Predicate<Minecraft> { minecraft -> afterPan.inputs !== readRenderWork(minecraft).inputs })
-        val afterMarker = renderWork(context)
-        require(afterPan.sameSources(afterMarker)) { "Marker updates must reuse actual tile source entries." }
-        require(afterPan.sameRaster(afterMarker)) { "Marker updates must reuse actual localized CPU texture owners." }
-    }
-
-    private fun requireCanvasKnownPixels(image: HeadlessImage) {
-        val expected =
-            intArrayOf(
-                0xFF4CC9F0.toInt(),
-                0xFF4361EE.toInt(),
-                0xFF7209B7.toInt(),
-                0xFFF72585.toInt(),
-                0xFF90BE6D.toInt(),
-                0xFFF9C74F.toInt(),
-                0xFFF8961E.toInt(),
-                0xFF7D2122.toInt(),
-            )
-        require(image.argbAt(0, 0) == 0xFF000000.toInt()) { "The Canvas showcase background differs from opaque black." }
-        expected.indices.forEach { index ->
-            val x = 24 + (index % 4) * 16
-            val y = 24 + (index / 4) * 16
-            if (image.argbAt(x, y) != expected[index]) {
-                throw AssertionError("Canvas source texel $index differs from its independent expected straight-alpha color.")
-            }
-        }
-    }
-
-    private fun createComponentShowcaseScreenDefinition(
-        showcase: ComponentShowcase,
-        assets: ComponentShowcaseAssets,
-    ): ScreenDefinition =
-        when (showcase) {
-            ComponentShowcase.Row -> createRowShowcaseScreenDefinition()
-            ComponentShowcase.FlowRow -> createFlowRowShowcaseScreenDefinition()
-            ComponentShowcase.Column -> createColumnShowcaseScreenDefinition()
-            ComponentShowcase.Stack -> createStackShowcaseScreenDefinition()
-            ComponentShowcase.Grid -> createGridShowcaseScreenDefinition()
-            ComponentShowcase.Spacer -> createSpacerShowcaseScreenDefinition()
-            ComponentShowcase.Text -> createTextShowcaseScreenDefinition()
-            ComponentShowcase.Observe -> createObserveShowcaseScreenDefinition()
-            ComponentShowcase.TextField -> createTextFieldShowcaseScreenDefinition()
-            ComponentShowcase.TextArea -> createTextAreaShowcaseScreenDefinition()
-            ComponentShowcase.Button -> createButtonShowcaseScreenDefinition()
-            ComponentShowcase.Checkbox -> createCheckboxShowcaseScreenDefinition()
-            ComponentShowcase.CycleButton -> createCycleButtonShowcaseScreenDefinition()
-            ComponentShowcase.Slider -> createSliderShowcaseScreenDefinition()
-            ComponentShowcase.Tab -> createTabShowcaseScreenDefinition()
-            ComponentShowcase.ScrollArea -> createScrollAreaShowcaseScreenDefinition()
-            ComponentShowcase.Scrollbar -> createScrollbarShowcaseScreenDefinition()
-            ComponentShowcase.VirtualList -> createVirtualListShowcaseScreenDefinition()
-            ComponentShowcase.SelectionList -> createSelectionListShowcaseScreenDefinition()
-            ComponentShowcase.Image -> createImageShowcaseScreenDefinition(assets.image)
-            ComponentShowcase.Canvas -> createCanvasShowcaseScreenDefinition()
-            ComponentShowcase.TiledImage -> createTiledImageShowcaseScreenDefinition()
-            ComponentShowcase.Slot -> createSlotShowcaseScreenDefinition()
-            ComponentShowcase.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
-            ComponentShowcase.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
-            ComponentShowcase.ProgressBar -> createProgressBarShowcaseScreenDefinition()
-        }
 
     @Suppress("LongMethod", "LongParameterList")
     private fun writeParityEvidence(
@@ -1342,7 +974,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     val playerHead = runPlayerHeadParity(context, profile, output)
                     val social = MinecraftSocialParity.run(context, profile, output)
                     val progress = MinecraftProgressParity.run(context, profile, output)
-                    val componentShowcases = runComponentShowcaseParity(context, profile, output)
+                    val componentShowcases = MinecraftComponentShowcaseParity(context, profile, output).run()
                     writeParityEvidence(
                         output,
                         confirm,
@@ -1713,91 +1345,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         private val resourceImageSourceRegion = IntRect(0, 0, 16, 16)
         private val resourceImageSize = IntSize(16, 16)
         private val playerHeadViewport = IntSize(64, 64)
-    }
-
-    private data class ComponentShowcaseAssets(
-        val image: ImageSource,
-        val playerSkin: PlayerSkinSource,
-    )
-
-    private class ComponentShowcaseFrame(
-        val image: HeadlessImage,
-        val png: ByteArray,
-    )
-
-    private class TiledImageMarkerSource(
-        initial: DoubleOffset,
-    ) : StateSource<DoubleOffset> {
-        private val monitor = Any()
-        private var snapshot = StateSnapshot(StateRevision(0L), initial)
-        private val observers: MutableSet<(StateSnapshot<DoubleOffset>) -> Unit> = LinkedHashSet()
-
-        override fun subscribe(observer: (StateSnapshot<DoubleOffset>) -> Unit): StateSubscription<DoubleOffset> {
-            val initialSnapshot =
-                synchronized(monitor) {
-                    observers.add(observer)
-                    snapshot
-                }
-            return StateSubscription(initialSnapshot) {
-                synchronized(monitor) { observers.remove(observer) }
-            }
-        }
-
-        fun publish(position: DoubleOffset) {
-            val notification =
-                synchronized(monitor) {
-                    snapshot = StateSnapshot(StateRevision(Math.incrementExact(snapshot.revision.value)), position)
-                    snapshot to observers.toList()
-                }
-            notification.second.forEach { observer -> observer(notification.first) }
-        }
-    }
-
-    private enum class ComponentShowcase(
-        val slug: String,
-        val viewport: IntSize,
-        val pointer: IntOffset = IntOffset.Zero,
-        val animationFrameTimes: List<FrameTime> = emptyList(),
-        val scale: Int = 1,
-    ) {
-        Row("row", IntSize(136, 64)),
-        FlowRow("flow-row", IntSize(168, 60)),
-        Column("column", IntSize(120, 64)),
-        Stack("stack", IntSize(64, 64)),
-        Grid("grid", IntSize(64, 64)),
-        Spacer("spacer", IntSize(160, 64)),
-        Observe("observe", IntSize(160, 48)),
-        Text("text", IntSize(192, 88), scale = 2),
-        TextField("text-field", IntSize(216, 64), scale = 2),
-        TextArea("text-area", IntSize(226, 80), scale = 2),
-        Button("button", IntSize(166, 64)),
-        Checkbox("checkbox", IntSize(166, 36)),
-        CycleButton("cycle-button", IntSize(166, 36)),
-        Slider("slider", IntSize(166, 36)),
-        Tab("tab", IntSize(160, 64)),
-        ScrollArea("scroll-area", IntSize(120, 48)),
-        Scrollbar("scrollbar", IntSize(94, 48)),
-        VirtualList("virtual-list", IntSize(120, 48)),
-        SelectionList("selection-list", IntSize(120, 48)),
-        Image("image", IntSize(64, 64)),
-        Canvas("canvas", IntSize(96, 64)),
-        TiledImage("tiled-image", IntSize(112, 88)),
-        Slot("slot", IntSize(64, 64), IntOffset(32, 32)),
-        PlayerHead("player-head", IntSize(64, 64)),
-        LoadingIndicator(
-            "loading-indicator",
-            IntSize(32, 24),
-            animationFrameTimes =
-                listOf(
-                    FrameTime(0L),
-                    FrameTime(300_000_000L),
-                    FrameTime(600_000_000L),
-                ),
-        ),
-        ProgressBar("progress-bar", IntSize(116, 28)),
-        ;
-
-        val physicalSize: IntSize = IntSize(Math.multiplyExact(viewport.width, scale), Math.multiplyExact(viewport.height, scale))
     }
 
     private enum class SampledParityScene(
