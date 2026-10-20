@@ -13,7 +13,7 @@ public sealed interface TextInputEvent {
         public val codePoint: Int,
     ) : TextInputEvent {
         init {
-            require(0 <= codePoint && codePoint <= 0x10FFFF) { "Text input requires a valid Unicode code point." }
+            require(codePoint in 0..0x10FFFF) { "Text input requires a valid Unicode code point." }
             require((codePoint in 0xD800..0xDFFF).not()) { "Text input cannot contain an isolated surrogate." }
         }
 

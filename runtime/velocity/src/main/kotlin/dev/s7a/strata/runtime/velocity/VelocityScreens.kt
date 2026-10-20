@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility entry delegates to the common UI service.
-
 package dev.s7a.strata.runtime.velocity
 
 import com.velocitypowered.api.proxy.Player
@@ -24,6 +22,7 @@ public object VelocityScreens {
      * Unavailable clients and declarations return a terminal handle with a typed failure.
      */
     @Deprecated("Use Strata.open with a UiDefinition factory. Scheduled for removal in 1.0.0.")
+    @Suppress("DEPRECATION")
     public fun open(
         ownerPlugin: Any,
         player: Player,

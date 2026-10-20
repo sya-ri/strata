@@ -1,5 +1,4 @@
 @file:JvmName("FabricMinecraftScreens")
-@file:Suppress("DEPRECATION", "MatchingDeclarationName", "ktlint:standard:filename")
 
 package dev.s7a.strata.runtime.minecraft.fabric
 
@@ -40,7 +39,7 @@ import net.minecraft.client.input.KeyEvent as MinecraftKeyEvent
 /**
  * Fabric client screen backed by one common Minecraft UI host.
  *
- * The host is created by transferring the one-shot [ScreenDefinition] and is confined to the Minecraft client thread.
+ * The host is created by transferring the one-shot [UiDefinition] and is confined to the Minecraft client thread.
  * Added and removed screen callbacks attach and detach the retained tree; removal is transient and never closes the screen.
  * Terminal close releases the host and every transient dynamic texture layer. A caller that permanently abandons a removed or never-presented instance must close it on the client thread.
  * The optional parent is retained for navigation but is never owned or closed.
@@ -686,6 +685,7 @@ private fun currentMinecraftScreen(): Screen? {
  * Compatibility factory sharing the common UI host path.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun createMinecraftScreen(
     definition: ScreenDefinition,
     profile: MinecraftUiProfile,

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 @file:JvmName("MinecraftRuntimeFactories")
 
 package dev.s7a.strata.runtime.minecraft
@@ -25,6 +23,7 @@ import dev.s7a.strata.ui.UiSession
  * @throws IllegalStateException when profile validation succeeds but [definition] was already transferred or closed.
  */
 @InternalStrataRuntimeApi
+@Suppress("DEPRECATION")
 public fun createMinecraftUiHost(
     definition: ScreenDefinition,
     profile: MinecraftUiProfile,
@@ -48,6 +47,7 @@ public fun createMinecraftUiHost(
  * @throws Throwable when construction fails; [platform] remains caller-owned unless host construction completes.
  */
 @InternalStrataRuntimeApi
+@Suppress("DEPRECATION")
 public fun createMinecraftUiHost(
     definition: ScreenDefinition,
     profile: MinecraftUiProfile,
@@ -71,6 +71,7 @@ public fun createMinecraftUiHost(
  * @throws Throwable when transfer or font initialization fails; opened native resources are released.
  */
 @InternalStrataRuntimeApi
+@Suppress("DEPRECATION")
 public fun createMinecraftUiHost(
     definition: ScreenDefinition,
     profile: MinecraftUiProfile,
@@ -95,6 +96,7 @@ public fun createMinecraftUiHost(
  * @throws Throwable when transfer or font initialization fails; opened font resources are released.
  */
 @InternalStrataRuntimeApi
+@Suppress("DEPRECATION")
 public fun createMinecraftUiHost(
     definition: ScreenDefinition,
     profile: MinecraftUiProfile,

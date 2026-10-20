@@ -41,7 +41,7 @@ public data class IntRect(
      * @param point the coordinate to test.
      * @return true only for coordinates on or after the inclusive edges and before the exclusive edges.
      */
-    public operator fun contains(point: IntOffset): Boolean = left <= point.x && point.x < right && top <= point.y && point.y < bottom
+    public operator fun contains(point: IntOffset): Boolean = point.x in left..<right && point.y in top..<bottom
 
     /**
      * Translates this rectangle with checked coordinate arithmetic.

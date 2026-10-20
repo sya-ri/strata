@@ -1,11 +1,9 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.geometry.IntSize
 
 /**
- * Immutable metadata connecting one documented component to its dedicated minimal ScreenDefinition, verified full-frame dimensions, and complete component tree.
+ * Immutable metadata connecting one documented component to its dedicated minimal UI definition, verified full-frame dimensions, and complete component tree.
  *
  * Constructor inputs are snapshotted by their owning value types and are read synchronously by the documentation pipeline.
  */
