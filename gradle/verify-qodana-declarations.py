@@ -379,7 +379,10 @@ def verify_compiler_sdks(root, inventory, model, sdk_model):
         fail("compiler SDK receipt differs from the selected Gradle declarations")
     table = ET.parse(root / "build/qodana/ide-config/options/jdk.table.xml").getroot()
     generated = table.findall("./component[@name='ProjectJdkTable']/jdk")
-    if table.tag != "application" or collections.Counter(entry.find("name").attrib["value"] for entry in generated) != collections.Counter(expected.keys()):
+    # The running IDE also registers its own SDK for root or empty modules.
+    # Every declared compiler must retain exactly one original entry and its exact module bindings.
+    names = collections.Counter(entry.find("name").attrib["value"] for entry in generated)
+    if table.tag != "application" or any(names[name] != 1 for name in expected):
         fail("generated compiler SDK table differs from Gradle declarations")
     for name, sdk in expected.items():
         generated_sdk = next(entry for entry in generated if entry.find("name").attrib["value"] == name)

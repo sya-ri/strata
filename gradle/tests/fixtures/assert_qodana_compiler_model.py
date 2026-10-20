@@ -137,6 +137,28 @@ if production_owner is not None:
             model_path.write_bytes(original_model)
 sdk_model = dict(sdks=sdk_entries)
 sdk_owner = next(owner["module"] for owner in inventory["projects"] if owner.get("iml") and owner["compilerToolchain"])
+sdk_table_path = root / "build/qodana/ide-config/options/jdk.table.xml"
+original_sdk_table = sdk_table_path.read_bytes()
+for mutation in ("additional-ide-sdk", "duplicate-compiler-sdk", "missing-compiler-sdk"):
+    changed_table = ET.fromstring(original_sdk_table)
+    table_entries = changed_table.find("./component[@name='ProjectJdkTable']")
+    compiler_sdk = table_entries.find("jdk")
+    if mutation == "missing-compiler-sdk":
+        table_entries.remove(compiler_sdk)
+    else:
+        additional = copy.deepcopy(compiler_sdk)
+        if mutation == "additional-ide-sdk":
+            additional.find("name").attrib["value"] = "fixture-ide-sdk"
+        table_entries.append(additional)
+    sdk_table_path.write_bytes(ET.tostring(changed_table))
+    try:
+        checker.verify_compiler_sdks(root, inventory, dict(modules=modules), sdk_model)
+    except ValueError as failure:
+        assert mutation != "additional-ide-sdk" and "compiler SDK" in str(failure), (mutation, failure)
+    else:
+        assert mutation == "additional-ide-sdk", f"Accepted invalid generated compiler SDK control: {mutation}"
+    finally:
+        sdk_table_path.write_bytes(original_sdk_table)
 for mutation in ("inherited-project-sdk", "missing-module-sdk", "wrong-sdk-version", "missing-java-base"):
     changed_model = copy.deepcopy(dict(modules=modules))
     changed_sdks = copy.deepcopy(sdk_model)
