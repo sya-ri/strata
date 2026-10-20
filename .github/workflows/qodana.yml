@@ -116,6 +116,17 @@ jobs:
       if: always()
       run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" "$GITHUB_WORKSPACE"
         /data/project
+    - name: Profile current model verification
+      if: github.event_name == 'workflow_dispatch'
+      shell: bash
+      run: |
+        python3 -m cProfile -o "${{ runner.temp }}/qodana/results/model-verifier.prof" gradle/verify-qodana-declarations.py "$GITHUB_WORKSPACE" "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" /data/project "${{ runner.temp }}/qodana/results/projectStructure/Java.json"
+        python3 - "${{ runner.temp }}/qodana/results/model-verifier.prof" <<'PY'
+        import pstats
+        import sys
+
+        pstats.Stats(sys.argv[1]).strip_dirs().sort_stats("cumulative").print_stats(35)
+        PY
     - name: Measure Qodana cache
       if: always()
       run: |
