@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // The shipped showcase factories exercise compatibility entry points alongside the common public API.
-
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.component.ImageSource
@@ -33,7 +31,6 @@ import dev.s7a.strata.integration.minecraft.fabric.createTextShowcaseScreenDefin
 import dev.s7a.strata.integration.minecraft.fabric.createTiledImageShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createVirtualListShowcaseScreenDefinition
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 
@@ -188,7 +185,7 @@ public enum class ComponentWorkload {
      * Creates a fresh one-shot declaration; no host or previous frame is shared between lifetimes.
      */
     @Suppress("CyclomaticComplexMethod") // Exhaustive dispatch keeps additions reviewable rather than hiding missing fixtures behind reflection.
-    public fun definition(): ScreenDefinition =
+    public fun definition(): UiDefinition =
         when (this) {
             Row -> createRowShowcaseScreenDefinition()
             FlowRow -> createFlowRowShowcaseScreenDefinition()

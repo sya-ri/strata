@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:inventory-screen
@@ -20,7 +18,7 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a generic chest-shaped screen whose lower 36 Slots are bound to the active player's inventory.
@@ -35,8 +33,8 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createInventorySlotScreenDefinition(
     primaryPlayerBinding: SlotBinding = Slots.playerInventory(0),
     primaryContainerBinding: SlotBinding? = null,
-): ScreenDefinition =
-    ScreenDefinition("Synchronized inventory") {
+): UiDefinition =
+    UiDefinition("Synchronized inventory") {
         Stack(
             modifier =
                 Modifier

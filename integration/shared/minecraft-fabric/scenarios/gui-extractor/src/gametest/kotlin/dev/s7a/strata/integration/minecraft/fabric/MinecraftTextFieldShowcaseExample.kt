@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:text-field
@@ -11,7 +9,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained TextField showcase from one caller-selected initial value.
@@ -22,9 +20,9 @@ import dev.s7a.strata.screen.ScreenDefinition
  */
 internal fun createTextFieldShowcaseScreenDefinition(
     initialValue: String = "play.example.net",
-): ScreenDefinition {
+): UiDefinition {
     val state = TextFieldState(initialValue, maxLength = 128)
-    return ScreenDefinition("TextField showcase") {
+    return UiDefinition("TextField showcase") {
         Stack(
             modifier =
                 Modifier

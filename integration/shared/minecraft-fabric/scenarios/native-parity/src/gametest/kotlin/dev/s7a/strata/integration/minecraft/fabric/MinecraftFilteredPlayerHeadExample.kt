@@ -8,7 +8,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the loaded Fabric parity case for the deprecated arbitrary-size compatibility path.
@@ -19,8 +19,8 @@ import dev.s7a.strata.screen.ScreenDefinition
 @Suppress("DEPRECATION")
 internal fun createFilteredPlayerHeadScreenDefinition(
     skin: PlayerSkinSource,
-): ScreenDefinition =
-    ScreenDefinition("Filtered player head") {
+): UiDefinition =
+    UiDefinition("Filtered player head") {
         Stack(
             modifier = Modifier.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:scroll-screen
@@ -15,16 +13,16 @@ import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the deterministic Minecraft selection-list screen used by the native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native list viewport, row geometry, separators, scrollbar, and text.
  */
-internal fun createScrollScreenDefinition(): ScreenDefinition {
+internal fun createScrollScreenDefinition(): UiDefinition {
     val state = ScrollState()
-    return ScreenDefinition("Strata Scroll parity") {
+    return UiDefinition("Strata Scroll parity") {
         Stack(modifier = Modifier.size(320, 180).menuBackground()) {
             // Native ObjectSelectionList geometry reserves distinct 33-pixel header and 53-pixel footer bands.
             ScrollArea(

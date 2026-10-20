@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:image
@@ -12,7 +10,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Image showcase from caller-provided deterministic pixels or an active resource.
@@ -20,8 +18,8 @@ import dev.s7a.strata.screen.ScreenDefinition
  * @param source immutable pixel snapshot or resource-pack identifier rendered by the Image component itself.
  * @return one-shot definition containing the complete 32 by 32 nearest-sampled image inside a minimal canvas.
  */
-internal fun createImageShowcaseScreenDefinition(source: ImageSource): ScreenDefinition =
-    ScreenDefinition("Image showcase") {
+internal fun createImageShowcaseScreenDefinition(source: ImageSource): UiDefinition =
+    UiDefinition("Image showcase") {
         Stack(
             modifier =
                 Modifier
