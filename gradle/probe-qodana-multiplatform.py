@@ -147,11 +147,15 @@ def export():
         "no-self-output": ("mpp", False, False),
         "multiplatform-option": ("mpp", True, True),
         "multiplatform-no-self": ("mpp", False, True),
+        "split-legacy": ("mpp", False, True),
+        "split-hmpp": ("mpp", False, True),
     }
     evidence = {}
     for name, (compiled, own_output, multi_platform) in cases.items():
         model = plain if compiled == "plain" else metadata
         source_sets = ["main"] if compiled == "plain" else ["commonMain", "jvmMain"]
+        if name.startswith("split-"):
+            source_sets = ["jvmMain"]
         module = ET.Element("module", type="JAVA_MODULE", version="4")
         manager = ET.SubElement(module, "component", name="NewModuleRootManager", LANGUAGE_LEVEL="JDK_17")
         hashes = {}
@@ -183,6 +187,42 @@ def export():
         if multi_platform:
             ET.SubElement(arguments, "option", name="multiPlatform", value="true")
             ET.SubElement(arguments, "option", name="expectActualClasses", value="true")
+        if name.startswith("split-"):
+            common_name = name + "-common"
+            common_view = fixture / "analysis" / common_name / "commonMain"
+            shutil.copytree(fixture / "mpp/src/commonMain/kotlin", common_view, dirs_exist_ok=True)
+            common_module = ET.Element("module", type="JAVA_MODULE", version="4")
+            common_manager = ET.SubElement(common_module, "component", name="NewModuleRootManager")
+            common_url = "file://" + common_view.as_posix()
+            ET.SubElement(ET.SubElement(common_manager, "content", url=common_url), "sourceFolder", url=common_url, isTestSource="false")
+            ET.SubElement(common_manager, "orderEntry", type="sourceFolder", forTests="false")
+            ET.SubElement(common_manager, "orderEntry", type="jdk", jdkName=sdk_name, jdkType="JavaSDK")
+            for entry in manager.findall("orderEntry[@type='module-library']"):
+                import copy
+                common_manager.append(copy.deepcopy(entry))
+            common_facet = ET.SubElement(ET.SubElement(common_module, "component", name="FacetManager"), "facet", type="kotlin-language", name="Kotlin")
+            common_configuration = ET.SubElement(common_facet, "configuration", version="3", platform="Common (experimental) ", useProjectSettings="false")
+            common_arguments = ET.SubElement(common_configuration, "compilerArguments")
+            ET.SubElement(common_arguments, "option", name="moduleName", value=common_name)
+            ET.SubElement(common_arguments, "option", name="multiPlatform", value="true")
+            ET.SubElement(manager, "orderEntry", type="module", **{"module-name": common_name})
+            if name == "split-legacy":
+                ET.SubElement(ET.SubElement(configuration, "implements"), "implement").text = common_name
+            else:
+                ET.SubElement(ET.SubElement(configuration, "dependsOnModuleNames"), "dependsOn").text = common_name
+                for config, kind, source_set, view in (
+                    (common_configuration, "SOURCE_SET_HOLDER", "commonMain", common_view),
+                    (configuration, "COMPILATION_AND_SOURCE_SET_HOLDER", "jvmMain", fixture / "analysis" / name / "jvmMain"),
+                ):
+                    config.set("isHmppProject", "true")
+                    config.set("externalProjectId", name)
+                    config.set("pureKotlinSourceFolders", view.as_posix())
+                    ET.SubElement(config, "newMppModelJpsModuleKind").text = kind
+                    ET.SubElement(ET.SubElement(config, "sourceSets"), "sourceSet").text = source_set
+            common_iml = fixture / (common_name + ".iml")
+            write(common_iml.name, ET.tostring(common_module, encoding="unicode"))
+            ET.SubElement(registrations, "module", fileurl="file://" + common_iml.as_posix(), filepath=common_iml.as_posix())
+            evidence[common_name] = dict(sourceHashes={path.relative_to(common_view).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in common_view.rglob("*.kt")})
         iml = fixture / (name + ".iml")
         write(iml.name, ET.tostring(module, encoding="unicode"))
         ET.SubElement(registrations, "module", fileurl="file://" + iml.as_posix(), filepath=iml.as_posix())
@@ -196,7 +236,7 @@ def export():
     write(".idea/misc.xml", ET.tostring(misc, encoding="unicode"))
     linter = next(line for line in (repository / "qodana.yaml").read_text().splitlines() if line.startswith("linter:"))
     write("probe.yaml", 'version: "1.0"\n' + linter + '\nrootJavaProjects:\n  - .idea\nprofile:\n  base:\n    name: qodana.recommended\nfailThreshold: 0\n')
-    assert len({json.dumps(row["sourceHashes"], sort_keys=True) for name, row in evidence.items() if name != "plain"}) == 1
+    assert len({json.dumps(row["sourceHashes"], sort_keys=True) for name, row in evidence.items() if name != "plain" and not name.startswith("split-")}) == 1
     write("expected.json", json.dumps(evidence, indent=2) + "\n")
 
 
@@ -214,7 +254,8 @@ def inspect(results):
     write("observed.json", json.dumps(rows, indent=2) + "\n")
     for name in json.loads((fixture / "expected.json").read_text()):
         selected = [row for row in rows if row["path"].startswith("analysis/" + name + "/")]
-        assert any("unusedActualCanary" in row["message"] for row in selected), (name, selected)
+        canary = "unusedCommonCanary" if name.endswith("-common") else "unusedActualCanary"
+        assert any(canary in row["message"] for row in selected), (name, selected)
         print(name, json.dumps(selected))
 
 
