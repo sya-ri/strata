@@ -101,6 +101,8 @@ The following distinctions describe implementation ownership, not cross-version 
 Versioned `runtime/minecraft-fabric-<version>` and `integration/minecraft-fabric-<version>` directories own Gradle projects, distributions, and exact-target verification.
 Shared runtime sources live under `runtime/shared/minecraft-fabric/`; matching verification sources live under `integration/shared/minecraft-fabric/`.
 Game-independent font comparison sources live under `integration/shared/font-parity/`.
+Shared component workloads use the complete `quality/component-benchmarks/src/workload/kotlin` root in both JMH and loaded-client verification.
+Component-only consumers import the complete API-only example root; documentation and compatible native targets also import the separate complete-screen source root.
 These shared directories are source roots, not Gradle projects or published libraries.
 The [generated shared-source matrix](minecraft-shared-sources.md) shows the runtime roots compiled by each target, with purpose-specific Canvas and input tables comparing alternative adapters separately from the roots used together.
 

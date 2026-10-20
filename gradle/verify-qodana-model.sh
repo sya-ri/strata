@@ -478,7 +478,7 @@ classify_target_source_path() {
   elif [[ "$repository_relative_path" == 'examples/paper/src/main/kotlin' ]]; then
     target_source_allowed_owners='integration,paper-example'
     target_source_root='examples/paper'
-  elif [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' ]]; then
+  elif [[ "$repository_relative_path" == 'quality/component-benchmarks/src/workload/kotlin' ]]; then
     target_source_allowed_owners='integration'
     target_source_root='quality/component-benchmarks'
   elif [[ "$repository_relative_path" == 'runtime/minecraft-fonts-lwjgl/'* ]]; then
@@ -491,7 +491,8 @@ classify_target_source_path() {
   elif [[ "$repository_relative_path" =~ ^((runtime|integration)/shared/minecraft-fabric/[a-z0-9/-]+)/src(/|$) ]]; then
     target_source_allowed_owners=${BASH_REMATCH[2]}
     target_source_root=${BASH_REMATCH[1]}
-    if [[ "$repository_relative_path" == 'integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' ]]; then
+    if [[ "$repository_relative_path" == 'integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' || \
+      "$repository_relative_path" == 'integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin' ]]; then
       target_source_allowed_owners='integration,docs'
     fi
   elif [[ "$repository_relative_path" =~ ^(integration/shared/font-parity)(/|$) ]]; then
@@ -898,7 +899,7 @@ for version in "${expected_versions[@]}"; do
     fi
     if [[ "$expected_owner" == 'integration' && \
       "$expected_version" == "$version" && \
-      "$expected_path" == 'file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin' ]]; then
+      "$expected_path" == 'file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin' ]]; then
       ((integration_component_root_count += 1))
       if [[ "$expected_type" == 'TestSource' ]]; then
         ((integration_component_source_count += 1))

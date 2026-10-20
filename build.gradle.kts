@@ -2286,15 +2286,8 @@ subprojects {
             val profileCacheTests = rootProject.file("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/profile-cache/kotlin")
             val continuousInputTests = rootProject.file("integration/shared/minecraft-fabric/input/fabric-client-gametest/src/continuous-input/kotlin")
             val renderMonitoringTests = rootProject.file("integration/shared/minecraft-fabric/scenarios/fabric-client-gametest/src/render-monitoring/kotlin")
-            val nativeComponentCases = objects.sourceDirectorySet("nativeComponentCases", "Canonical performance component cases").apply {
-                srcDir(rootProject.file("quality/component-benchmarks/src/jmh/kotlin"))
-                include("**/ComponentWorkload.kt")
-            }
-            val nativeShowcase = objects.sourceDirectorySet("nativePerformanceShowcase", "Compiled API-only showcase definitions").apply {
-                srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
-                include("**/*Example.kt")
-                exclude("**/MinecraftSocialExample.kt")
-            }
+            val nativeComponentCases = rootProject.file("quality/component-benchmarks/src/workload/kotlin")
+            val nativeShowcase = rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
             val continuousScrollTests =
                 rootProject.file(
                     if (target.version in legacyScrollTargets) {
@@ -2306,8 +2299,8 @@ subprojects {
             extensions.configure<KotlinJvmProjectExtension> {
                 sourceSets.matching { sourceSet -> sourceSet.name == "gametest" }.configureEach {
                     kotlin.srcDir(profileCacheTests)
-                    kotlin.source(nativeComponentCases)
-                    if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) kotlin.source(nativeShowcase)
+                    kotlin.srcDir(nativeComponentCases)
+                    if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) kotlin.srcDir(nativeShowcase)
                     kotlin.srcDir(continuousInputTests)
                     kotlin.srcDir(renderMonitoringTests)
                     kotlin.srcDir(continuousScrollTests)

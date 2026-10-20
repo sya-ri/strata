@@ -119,7 +119,7 @@ extensions.add("documentationSourceInputs", files(nativeInventoryExample))
 val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources")
 val showcaseExampleSources = objects.sourceDirectorySet("showcaseExamples", "API-only showcase examples").apply {
     srcDir(showcaseSources)
-    include("**/*Example.kt")
+    srcDir(rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin"))
 }
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("main") {
