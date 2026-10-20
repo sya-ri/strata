@@ -4,53 +4,24 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.InputConstants
 import com.mojang.blaze3d.platform.NativeImage
-import dev.s7a.strata.component.Column
-import dev.s7a.strata.component.Image
-import dev.s7a.strata.component.ImageScale
-import dev.s7a.strata.component.ImageSource
-import dev.s7a.strata.component.PanZoomState
-import dev.s7a.strata.component.PlayerSkinSource
-import dev.s7a.strata.component.Spacer
-import dev.s7a.strata.component.Stack
-import dev.s7a.strata.component.TextField
-import dev.s7a.strata.component.TextFieldState
-import dev.s7a.strata.component.VirtualList
-import dev.s7a.strata.component.VirtualListState
-import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.input.InputResult
-import dev.s7a.strata.input.PointerEvent
-import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.imageBackground
-import dev.s7a.strata.modifier.initialFocus
-import dev.s7a.strata.modifier.onActivate
-import dev.s7a.strata.modifier.onCharacterInput
-import dev.s7a.strata.modifier.onPreedit
-import dev.s7a.strata.modifier.onTextInput
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.activeFabricScreen
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.assertCleanFabricFrameReuse
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.closeFabricScreen
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.readRenderWork
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.renderWork
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.renderHeadless
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireExactPixels
+import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireImageSize
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.headless.HeadlessImage
-import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
-import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
-import dev.s7a.strata.runtime.minecraft.fabric.loadCurrentMinecraftPlayerSkin
-import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
-import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
-import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.state.StateRevision
-import dev.s7a.strata.state.StateSnapshot
-import dev.s7a.strata.state.StateSource
-import dev.s7a.strata.state.StateSubscription
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -60,22 +31,16 @@ import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptio
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.ObjectSelectionList
-import net.minecraft.client.gui.components.PlayerFaceExtractor
 import net.minecraft.client.gui.screens.ConfirmScreen
-import net.minecraft.client.gui.screens.DirectJoinServerScreen
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.inventory.ContainerScreen
-import net.minecraft.client.input.CharacterEvent
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.input.MouseButtonInfo
-import net.minecraft.client.input.PreeditEvent
-import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.locale.Language
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
-import net.minecraft.world.entity.player.PlayerSkin
 import net.minecraft.world.inventory.ChestMenu
 import org.apache.commons.lang3.function.FailableConsumer
 import org.apache.commons.lang3.function.FailableFunction
@@ -85,18 +50,15 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Predicate
 import kotlin.io.path.inputStream
-import dev.s7a.strata.component.Button as StrataButton
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
  * Proves exact native, Fabric-adapter, and headless pixels for the supported Minecraft release.
  *
  * The test runs on Fabric's client GameTest thread and performs all Minecraft and common-host operations on the client thread through [ClientGameTestContext].
- * It reads the active assets, font, and selected player skin, uses native [Button] and [PlayerFaceExtractor] rendering as the oracle, and writes only deterministic evidence below the configured build directory.
+ * It reads the active assets, font, and selected player skin, uses native screens as the oracle, and writes only deterministic evidence below the configured build directory.
  */
 @Suppress("TooManyFunctions")
 public class StrataMinecraftClientGameTest : FabricClientGameTest {
@@ -149,12 +111,12 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
         verifyProfileCache(context, output)
         MinecraftKeyboardTransitionGameTest(createMinecraftCanvasTestContext(context, output), profile).run()
-        assertNativeTextInputFocus(context, profile)
+        MinecraftNativeTextInputGameTest(context, profile, directJoinAddress).run()
         verifyContinuousInput(context, profile, output)
         verifyReactiveRendering(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
         runSampledImagePixelParity(context, profile, output)
-        verifyResourceImageMemoization(context, profile)
+        MinecraftResourceImageMemoizationGameTest.run(context, profile)
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
@@ -319,446 +281,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     requireExactPixels(fabric, headless)
                 }
             }
-        val cleanup = runCatching { closeFabricScreen(context) }.exceptionOrNull()
-        val primary = presentation.exceptionOrNull()
-        if (primary != null) {
-            if (cleanup != null && primary !== cleanup) primary.addSuppressed(cleanup)
-            throw primary
-        }
-        if (cleanup != null) throw cleanup
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun verifyResourceImageMemoization(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-    ) {
-        closeFabricScreen(context)
-        val first = captureResourceImageIdentity(context, profile)
-        val second = captureResourceImageIdentity(context, profile)
-        require(second !== first) {
-            "The Fabric resource bridge did not decode a new image snapshot for the new host."
-        }
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun captureResourceImageIdentity(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-    ): DrawImage {
-        val presentation =
-            runCatching {
-                context.setScreen {
-                    createMinecraftScreen(
-                        resourceImageMemoizationDefinition(),
-                        profile,
-                        parent = null,
-                    )
-                }
-                context.waitForScreen(FabricMinecraftScreen::class.java)
-                context.waitFor(
-                    Predicate<Minecraft> { minecraft ->
-                        val work = readRenderWork(minecraft)
-                        0L < work.renderExtractions && work.sources.isNotEmpty() && work.portableTextures.isNotEmpty()
-                    },
-                )
-                context.computeOnClient(
-                    FailableFunction<Minecraft, DrawImage, RuntimeException> { minecraft ->
-                        val screen = activeFabricScreen(minecraft)
-                        requireResourceImageMemoizationWork(readRenderWork(minecraft))
-                        resourceImageIdentity(screen)
-                    },
-                )
-            }
-        val cleanup = runCatching { closeFabricScreen(context) }.exceptionOrNull()
-        val identity =
-            presentation.getOrElse { failure ->
-                cleanup?.let { if (it !== failure) failure.addSuppressed(it) }
-                throw failure
-            }
-        if (cleanup != null) throw cleanup
-        return identity
-    }
-
-    private fun requireResourceImageMemoizationWork(observed: RenderWork) {
-        require(observed.sources.size == 1 && 0L < observed.sourceBytes) { "Equal resource Images must share one actual native source entry: $observed" }
-        require(observed.portableTextures.isNotEmpty()) { "The ImageBackground must retain its real portable texture." }
-    }
-
-    private fun resourceImageIdentity(screen: FabricMinecraftScreen): DrawImage {
-        val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
-        check(commandsField.trySetAccessible()) { "The Fabric prepared command cache is inaccessible." }
-        val commands = commandsField.get(screen) as? List<*> ?: error("The Fabric screen has no prepared command list.")
-        val sampled = commands.filterIsInstance<DrawCommand.SampledImage>()
-        val backgrounds = commands.filterIsInstance<DrawCommand.BlitImage>()
-        require(sampled.size == 2 && backgrounds.size == 1) {
-            "The resource memoization scene must contain two deferred VirtualList Images and one ImageBackground."
-        }
-        val resolved = sampled.first().image
-        require(sampled.all { command -> command.image === resolved } && backgrounds.all { command -> command.image === resolved }) {
-            "Equal resource identifiers resolved to different image identities within one Minecraft host."
-        }
-        return resolved
-    }
-
-    private fun resourceImageMemoizationDefinition(): ScreenDefinition {
-        val state = VirtualListState<Int>()
-        val viewportSize = IntSize(resourceImageSize.width, resourceImageSize.height * 2)
-        return ScreenDefinition("Resource image memoization") {
-            Stack(
-                modifier =
-                    Modifier
-                        .size(viewportSize.width, viewportSize.height)
-                        .imageBackground(resourceImageSource(), ImageScale.Stretch),
-            ) {
-                VirtualList(listOf(0, 1), { item -> item }, state, viewportSize, rowHeight = resourceImageSize.height) {
-                    Image(resourceImageSource(), resourceImageSourceRegion, resourceImageSize)
-                }
-            }
-        }
-    }
-
-    private fun resourceImageSource(): ImageSource =
-        ImageSource.Resource(
-            ResourceId(
-                "strata_test",
-                "textures/gui/coal_generator.png",
-            ),
-        )
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    @Suppress("LongMethod")
-    private fun assertNativeTextInputFocus(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-    ) {
-        lateinit var firstState: TextFieldState
-        lateinit var secondState: TextFieldState
-        lateinit var screen: FabricMinecraftScreen
-        lateinit var nativeParent: DeterministicDirectJoinScreen
-        var firstPreeditCalls = 0
-        var secondPreeditCalls = 0
-        context.setScreen {
-            firstState = TextFieldState("A")
-            secondState = TextFieldState("B")
-            nativeParent = DeterministicDirectJoinScreen()
-            val definition =
-                ScreenDefinition("native input focus") {
-                    Column {
-                        TextField(
-                            firstState,
-                            modifier =
-                                Modifier
-                                    .initialFocus()
-                                    .onPreedit {
-                                        firstPreeditCalls += 1
-                                        InputResult.Ignored
-                                    }.onCharacterInput { event ->
-                                        if (event.codePoint == 'X'.code) {
-                                            MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), nativeParent)
-                                            InputResult.Consumed
-                                        } else {
-                                            InputResult.Ignored
-                                        }
-                                    },
-                        )
-                        TextField(
-                            secondState,
-                            modifier =
-                                Modifier.onPreedit {
-                                    secondPreeditCalls += 1
-                                    InputResult.Ignored
-                                },
-                        )
-                        Spacer(modifier = Modifier.size(200, 20).onTextInput { InputResult.Ignored })
-                    }
-                }
-            screen = createMinecraftScreen(definition, profile, parent = null)
-            screen
-        }
-        context.waitForScreen(FabricMinecraftScreen::class.java)
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                MinecraftClientScreenAccess.currentScreen(minecraft) === screen &&
-                    readRenderWork(minecraft).inputs != null && nativeTextInputEnabled(minecraft)
-            },
-        )
-        context.waitTicks(2)
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                check(nativeTextInputEnabled(minecraft)) { "Initial editable focus did not enable native text input." }
-                check(firstPreeditCalls == 1) { "Unchanged frames must not resubmit native preedit." }
-                val preedit = PreeditEvent("日🙂", 3, listOf("日", "🙂"), 1)
-                check(screen.preeditUpdated(preedit))
-                check(firstState.value == "A") { "Preedit unexpectedly committed text." }
-                screen.mouseClicked(MouseButtonEvent(4.0, 24.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
-                check(nativeTextInputEnabled(minecraft))
-                check(secondPreeditCalls == 1) { "Switching editable owners did not resubmit native preedit." }
-                check(screen.charTyped(CharacterEvent('한'.code)))
-                check(firstState.value == "A" && secondState.value == "한B")
-                screen.mouseClicked(MouseButtonEvent(4.0, 44.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
-                check(nativeTextInputEnabled(minecraft).not()) { "A passive input observer enabled native text input." }
-                check(screen.preeditUpdated(preedit).not())
-                screen.mouseClicked(MouseButtonEvent(4.0, 4.0, MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)
-                check(nativeTextInputEnabled(minecraft))
-                MinecraftClientScreenAccess.setScreen(minecraft, null)
-                check(nativeTextInputEnabled(minecraft).not()) { "Detaching a screen retained native text-input focus." }
-                check(screen.preeditUpdated(preedit).not())
-                MinecraftClientScreenAccess.setScreen(minecraft, screen)
-                check(nativeTextInputEnabled(minecraft).not()) { "Reattachment enabled text input before a committed frame." }
-            },
-        )
-        context.waitTicks(2)
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                check(nativeTextInputEnabled(minecraft))
-                check(firstState.value == "A" && secondState.value == "한B")
-                check(screen.charTyped(CharacterEvent('X'.code)))
-                check(MinecraftClientScreenAccess.currentScreen(minecraft) === nativeParent)
-                check(nativeTextInputEnabled(minecraft)) { "Deferred Strata removal disabled the next native editor." }
-                screen.close()
-                check(nativeTextInputEnabled(minecraft)) { "Closing a detached screen disabled the active native editor." }
-                nativeParent.setFocused(null)
-                MinecraftClientScreenAccess.setScreen(minecraft, null)
-                check(nativeTextInputEnabled(minecraft).not())
-            },
-        )
-    }
-
-    private fun nativeTextInputEnabled(minecraft: Minecraft): Boolean {
-        val manager = minecraft.textInputManager()
-        val enabled = manager.javaClass.getDeclaredField("textInputEnabled")
-        check(enabled.trySetAccessible()) { "Native text-input state is inaccessible to the loaded test." }
-        return enabled.getBoolean(manager)
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun runIndustrialAssetParity(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-        output: Path,
-    ): HeadlessImage {
-        val panel =
-            context.computeOnClient(
-                FailableFunction<Minecraft, DrawImage, RuntimeException> {
-                    loadMinecraftUiImage(
-                        ResourceId(
-                            "strata_test",
-                            "textures/gui/coal_generator.png",
-                        ),
-                    )
-                },
-            )
-        require(panel.size == industrialAssetSize) { "The test Mod industrial resource has an unexpected size." }
-        resizeMinecraftTestWindow(context, IntSize(industrialViewport.width, industrialViewport.height))
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
-        )
-        val headless =
-            context.computeOnClient(
-                FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                    renderHeadless(
-                        profile,
-                        createIndustrialScreenDefinition(
-                            panel = ImageSource.Pixels(panel),
-                            fuelBinding = null,
-                            chargeBinding = null,
-                            playerInventory = { null },
-                        ),
-                        industrialViewport,
-                        industrialPointer,
-                    )
-                },
-            )
-        val headlessPath = output.resolve("strata-industrial-headless.png")
-        Files.write(headlessPath, headless.encodePng())
-        context.input.setCursorPos(industrialPointer.x.toDouble(), industrialPointer.y.toDouble())
-        context.setScreen {
-            createMinecraftScreen(
-                createIndustrialScreenDefinition(
-                    fuelBinding = null,
-                    chargeBinding = null,
-                    playerInventory = { null },
-                ),
-                profile,
-                parent = null,
-            )
-        }
-        context.waitForScreen(FabricMinecraftScreen::class.java)
-        context.input.setCursorPos(industrialPointer.x.toDouble(), industrialPointer.y.toDouble())
-        context.waitTicks(2)
-        NativeImage.read(headlessPath.inputStream()).use { expected ->
-            context.assertScreenshotEquals(
-                TestScreenshotComparisonOptions
-                    .of(expected)
-                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                    .saveWithFileName("strata-industrial-fabric")
-                    .disableCounterPrefix()
-                    .withSize(industrialViewport.width, industrialViewport.height)
-                    .withDestinationDir(output),
-            )
-        }
-        closeFabricScreen(context)
-        return headless
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun runPlayerHeadParity(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-        output: Path,
-    ): HeadlessImage {
-        val skin =
-            context.computeOnClient(
-                FailableFunction<Minecraft, DrawImage, RuntimeException> { loadCurrentMinecraftPlayerSkin() },
-            )
-        resizeMinecraftTestWindow(context, IntSize(playerHeadViewport.width, playerHeadViewport.height))
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
-        )
-        context.input.setCursorPos(0.0, 0.0)
-        context.setScreen { DeterministicPlayerHeadScreen(checkNotNull(Minecraft.getInstance().player).skin) }
-        context.waitForScreen(DeterministicPlayerHeadScreen::class.java)
-        context.waitTicks(2)
-        val nativePath =
-            context.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-player-head-native")
-                    .disableCounterPrefix()
-                    .withSize(playerHeadViewport.width, playerHeadViewport.height)
-                    .withDestinationDir(output),
-            )
-        val headless =
-            NativeImage.read(nativePath.inputStream()).use { native ->
-                requireImageSize(native, playerHeadViewport)
-                val rendered =
-                    context.computeOnClient(
-                        FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                            renderHeadless(
-                                profile,
-                                createPlayerHeadShowcaseScreenDefinition(PlayerSkinSource.Pixels(skin)),
-                                playerHeadViewport,
-                            )
-                        },
-                    )
-                Files.write(output.resolve("strata-player-head-headless.png"), rendered.encodePng())
-                requireExactPixels(native, rendered)
-
-                context.setScreen {
-                    createMinecraftScreen(
-                        createPlayerHeadShowcaseScreenDefinition(PlayerSkinSource.Pixels(skin)),
-                        profile,
-                        parent = null,
-                    )
-                }
-                context.waitForScreen(FabricMinecraftScreen::class.java)
-                context.waitTicks(2)
-                context.assertScreenshotEquals(
-                    TestScreenshotComparisonOptions
-                        .of(native)
-                        .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                        .saveWithFileName("strata-player-head-fabric")
-                        .disableCounterPrefix()
-                        .withSize(playerHeadViewport.width, playerHeadViewport.height)
-                        .withDestinationDir(output),
-                )
-                closeFabricScreen(context)
-
-                val filteredDefinition = createFilteredPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin))
-                val filtered =
-                    context.computeOnClient(
-                        FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                            renderHeadless(profile, filteredDefinition, playerHeadViewport)
-                        },
-                    )
-                Files.write(output.resolve("strata-player-head-filtered-headless.png"), filtered.encodePng())
-                context.setScreen {
-                    createMinecraftScreen(
-                        createFilteredPlayerHeadScreenDefinition(PlayerSkinSource.Pixels(skin)),
-                        profile,
-                        parent = null,
-                    )
-                }
-                context.waitForScreen(FabricMinecraftScreen::class.java)
-                context.waitTicks(2)
-                NativeImage.read(output.resolve("strata-player-head-filtered-headless.png").inputStream()).use { expected ->
-                    context.assertScreenshotEquals(
-                        TestScreenshotComparisonOptions
-                            .of(expected)
-                            .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                            .saveWithFileName("strata-player-head-filtered-fabric")
-                            .disableCounterPrefix()
-                            .withSize(playerHeadViewport.width, playerHeadViewport.height)
-                            .withDestinationDir(output),
-                    )
-                }
-                rendered
-            }
-        closeFabricScreen(context)
-        return headless
-    }
-
-    private fun closeFabricScreen(context: ClientGameTestContext) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                if (current is FabricMinecraftScreen) {
-                    MinecraftClientScreenAccess.setScreen(minecraft, null)
-                    assertFabricPresentationReleased(current)
-                    current.onClose()
-                }
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() })
-    }
-
-    private fun assertFabricPresentationReleased(screen: FabricMinecraftScreen) {
-        val fields = FabricMinecraftScreen::class.java.declaredFields.associateBy { field -> field.name }
-
-        fun retained(name: String): Any? {
-            val field = fields[name] ?: error("Fabric presentation field is missing: $name")
-            check(field.trySetAccessible()) { "Fabric presentation field is inaccessible: $name" }
-            return field.get(screen)
-        }
-
-        val portableFrames = checkNotNull(retained("portableFrames"))
-        val portableCurrent = portableFrames.javaClass.getDeclaredField("current")
-        check(portableCurrent.trySetAccessible()) { "The portable presentation cache is inaccessible." }
-        require(portableCurrent.get(portableFrames) == null) { "A detached Fabric screen retained portable drawing or texture ownership." }
-        require(retained("preparedCommands") == null) { "A detached Fabric screen retained its display list." }
-        require(retained("preparedViewport") == null) { "A detached Fabric screen retained its prepared viewport." }
-        require(retained("preparedInputs") == null) { "A detached Fabric screen retained prepared layers." }
-        require(retained("pointerPosition") == null) { "A detached Fabric screen retained its native pointer position." }
-        require(retained("pointerFrameCommands") == null) { "A detached Fabric screen retained pointer display-list ownership." }
-    }
-
-    private fun assertCleanFabricFrameReuse(context: ClientGameTestContext) {
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val state = readRenderWork(minecraft)
-                0L < state.renderExtractions && state.inputs != null
-            },
-        )
-        val before = renderWork(context)
-        context.waitFor(Predicate<Minecraft> { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions })
-        val after = renderWork(context)
-        require(before.commands === after.commands && before.inputs === after.inputs) { "Clean presentation must retain its exact prepared inputs." }
-        require(before.pointerCommands === after.pointerCommands) { "A stationary pointer must retain its extracted display-list identity." }
-        require(before.samePortable(after) && before.sameSources(after)) { "Clean presentation must retain all actual native texture owners." }
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val screen = activeFabricScreen(minecraft)
-                val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
-                check(commandsField.trySetAccessible())
-                val commands = commandsField.get(screen) as List<*>
-                commandsField.set(screen, ArrayList(commands))
-            },
-        )
-        val changed = renderWork(context)
-        context.waitFor(Predicate<Minecraft> { minecraft -> changed.renderExtractions < readRenderWork(minecraft).renderExtractions })
-        val equivalent = renderWork(context)
-        require(equivalent.inputs !== before.inputs) { "A different display-list snapshot must refresh preparation." }
-        require(equivalent.samePortable(before) && equivalent.sameSources(before)) { "Equivalent commands must retain the actual texture owners." }
+        runCanvasTestCleanup(presentation.exceptionOrNull(), { closeFabricScreen(context) })
+        presentation.getOrThrow()
     }
 
     private fun requireSampledImageParityWork(
@@ -770,308 +294,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(requested.all { image -> observed.sourceImages.any { it === image } }) { "Every admitted sampled source must have actual native ownership: $scene" }
     }
 
-    private fun renderWork(context: ClientGameTestContext): RenderWork =
-        context.computeOnClient(
-            FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft -> readRenderWork(minecraft) },
-        )
-
-    private fun readRenderWork(minecraft: Minecraft): RenderWork = MinecraftPresentationObservation.read(activeFabricScreen(minecraft))
-
-    private fun activeFabricScreen(minecraft: Minecraft): FabricMinecraftScreen {
-        val activeScreen = MinecraftClientScreenAccess.currentScreen(minecraft)
-        return activeScreen as? FabricMinecraftScreen ?: error("The Fabric performance screen is not active.")
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    private fun renderHeadless(
-        profile: MinecraftUiProfile,
-        definition: ScreenDefinition,
-        viewport: IntSize,
-        pointerPosition: IntOffset = pointer,
-        frameTime: FrameTime? = null,
-        scale: Int = 1,
-    ): HeadlessImage {
-        val host = createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory)
-        host.attach()
-        return try {
-            if (frameTime == null) host.frame(viewport) else host.frame(viewport, FrameTime(0L))
-            host.dispatchPointer(PointerEvent.Move(pointerPosition))
-            val frame = if (frameTime == null) host.frame(viewport) else host.frame(viewport, frameTime)
-            val framebufferClear =
-                DrawCommand.FillRectangle(
-                    IntRect(0, 0, frame.size.width, frame.size.height),
-                    ArgbColor(opaqueBlack),
-                )
-            rasterizeHeadless(listOf(framebufferClear) + frame.drawCommands, frame.size, scale)
-        } finally {
-            host.close()
-        }
-    }
-
-    private fun hasExactPixels(
-        native: NativeImage,
-        headless: HeadlessImage,
-    ): Boolean {
-        val expected = IntSize(native.getWidth(), native.getHeight())
-        if (headless.size != expected) return false
-        for (y in 0 until expected.height) {
-            for (x in 0 until expected.width) {
-                if (headless.argbAt(x, y) != native.getPixel(x, y)) return false
-            }
-        }
-        return true
-    }
-
-    private fun requireImageSize(
-        image: NativeImage,
-        expected: IntSize,
-    ) {
-        if (image.getWidth() == expected.width && image.getHeight() == expected.height) return
-        throw AssertionError("Native screenshot size was ${image.getWidth()}x${image.getHeight()}, expected ${expected.width}x${expected.height}.")
-    }
-
-    private fun requireExactPixels(
-        native: NativeImage,
-        headless: HeadlessImage,
-    ) {
-        val expected = IntSize(native.getWidth(), native.getHeight())
-        if ((headless.size == expected).not()) {
-            throw AssertionError("Headless size was ${headless.size}, expected $expected.")
-        }
-        for (y in 0 until expected.height) {
-            for (x in 0 until expected.width) {
-                val expected = native.getPixel(x, y)
-                val actual = headless.argbAt(x, y)
-                if (actual == expected) continue
-                throw AssertionError(
-                    "Headless pixel at ($x,$y) was 0x${actual.toUInt().toString(16)}, expected native 0x${expected.toUInt().toString(16)}.",
-                )
-            }
-        }
-    }
-
-    @OptIn(InternalStrataRuntimeApi::class)
-    @Suppress("LongMethod")
-    private fun runComponentShowcaseParity(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-        output: Path,
-    ): Map<ComponentShowcase, ComponentShowcaseFrame> {
-        val assets =
-            context.computeOnClient(
-                FailableFunction<Minecraft, ComponentShowcaseAssets, RuntimeException> {
-                    ComponentShowcaseAssets(
-                        image =
-                            ImageSource.Pixels(
-                                loadMinecraftUiImage(
-                                    ResourceId(
-                                        "strata_test",
-                                        "textures/gui/coal_generator.png",
-                                    ),
-                                ),
-                            ),
-                        playerSkin =
-                            PlayerSkinSource.Pixels(
-                                loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png")),
-                            ),
-                    )
-                },
-            )
-        val imageDirectory = output.resolve("components")
-        Files.createDirectories(imageDirectory)
-        val frames = LinkedHashMap<ComponentShowcase, ComponentShowcaseFrame>()
-        for (showcase in ComponentShowcase.entries) {
-            closeFabricScreen(context)
-            val physicalSize = showcase.physicalSize
-            resizeMinecraftTestWindow(context, IntSize(physicalSize.width, physicalSize.height))
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    minecraft.options.guiScale().set(showcase.scale)
-                    minecraft.resizeGui()
-                    // Minimal component viewports are smaller than the options menu's 320 by 240 scale-selection floor.
-                    minecraft.window.setGuiScale(showcase.scale)
-                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
-                },
-            )
-            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
-            val headless =
-                context.computeOnClient(
-                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                        renderHeadless(
-                            profile,
-                            createComponentShowcaseScreenDefinition(showcase, assets),
-                            showcase.viewport,
-                            showcase.pointer,
-                            frameTime = FrameTime(0L),
-                            scale = showcase.scale,
-                        )
-                    },
-                )
-            if (showcase === ComponentShowcase.Canvas) requireCanvasKnownPixels(headless)
-            val png = headless.encodePng()
-            val imagePath = imageDirectory.resolve("${showcase.slug}.png")
-            Files.write(imagePath, png)
-
-            val tiledNavigation = AtomicReference<PanZoomState?>()
-            val tiledMarker = AtomicReference<TiledImageMarkerSource?>()
-            context.setScreen {
-                val definition =
-                    if (showcase === ComponentShowcase.TiledImage) {
-                        val navigation = PanZoomState()
-                        val marker = TiledImageMarkerSource(DoubleOffset(32.0, 24.0))
-                        tiledNavigation.set(navigation)
-                        tiledMarker.set(marker)
-                        createTiledImageShowcaseScreenDefinition(navigation, marker)
-                    } else {
-                        createComponentShowcaseScreenDefinition(showcase, assets)
-                    }
-                createMinecraftScreen(
-                    definition,
-                    profile,
-                    parent = null,
-                )
-            }
-            context.waitForScreen(FabricMinecraftScreen::class.java)
-            context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
-            context.waitTicks(2)
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    check(minecraft.window.guiScale == showcase.scale) { "The component capture lost its actual GUI density." }
-                    check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
-                },
-            )
-            val fabricPath =
-                context.takeScreenshot(
-                    TestScreenshotOptions
-                        .of("strata-component-${showcase.slug}-fabric")
-                        .disableCounterPrefix()
-                        .withSize(physicalSize.width, physicalSize.height)
-                        .withDestinationDir(output),
-                )
-            NativeImage.read(fabricPath.inputStream()).use { fabric ->
-                requireImageSize(fabric, physicalSize)
-                if (showcase.animationFrameTimes.isEmpty()) {
-                    requireExactPixels(fabric, headless)
-                } else {
-                    val matched =
-                        showcase.animationFrameTimes.any { frameTime ->
-                            val candidate =
-                                context.computeOnClient(
-                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                        renderHeadless(
-                                            profile,
-                                            createComponentShowcaseScreenDefinition(showcase, assets),
-                                            showcase.viewport,
-                                            showcase.pointer,
-                                            frameTime,
-                                            showcase.scale,
-                                        )
-                                    },
-                                )
-                            hasExactPixels(fabric, candidate)
-                        }
-                    if (matched.not()) {
-                        throw AssertionError(
-                            "Fabric ${showcase.slug} pixels did not match any complete headless animation frame.",
-                        )
-                    }
-                }
-            }
-            if (showcase === ComponentShowcase.TiledImage) {
-                verifyTiledImageTextureReuse(context, checkNotNull(tiledNavigation.get()), checkNotNull(tiledMarker.get()))
-            }
-            frames[showcase] = ComponentShowcaseFrame(headless, png)
-        }
-        closeFabricScreen(context)
-        return frames
-    }
-
-    @Suppress("LongMethod") // One loaded sequence distinguishes stable tile uploads from navigation and independent marker-overlay updates.
-    private fun verifyTiledImageTextureReuse(
-        context: ClientGameTestContext,
-        navigation: PanZoomState,
-        marker: TiledImageMarkerSource,
-    ) {
-        val beforeZoom = renderWork(context)
-        require(beforeZoom.sources.isNotEmpty() && beforeZoom.rasterTextures.isNotEmpty()) { "Tiled-image reuse must observe real source entries and CPU texture owners." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { navigation.zoomTo(2.0) })
-        context.waitFor(Predicate<Minecraft> { minecraft -> beforeZoom.inputs !== readRenderWork(minecraft).inputs })
-        val afterZoom = renderWork(context)
-        require(beforeZoom.sameSources(afterZoom)) { "Zoom must reuse actual tile source entries." }
-        require(beforeZoom.sameRaster(afterZoom)) { "Zoom must reuse actual localized CPU texture owners." }
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> {
-                val previous = navigation.metrics.center
-                check(previous != navigation.panBy(DoubleOffset(4.0, 0.0)))
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> afterZoom.inputs !== readRenderWork(minecraft).inputs })
-        val afterPan = renderWork(context)
-        require(afterZoom.sameSources(afterPan)) { "Pan must reuse actual tile source entries." }
-        require(afterZoom.sameRaster(afterPan)) { "Pan must reuse actual localized CPU texture owners." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { marker.publish(DoubleOffset(40.0, 24.0)) })
-        context.waitFor(Predicate<Minecraft> { minecraft -> afterPan.inputs !== readRenderWork(minecraft).inputs })
-        val afterMarker = renderWork(context)
-        require(afterPan.sameSources(afterMarker)) { "Marker updates must reuse actual tile source entries." }
-        require(afterPan.sameRaster(afterMarker)) { "Marker updates must reuse actual localized CPU texture owners." }
-    }
-
-    private fun requireCanvasKnownPixels(image: HeadlessImage) {
-        val expected =
-            intArrayOf(
-                0xFF4CC9F0.toInt(),
-                0xFF4361EE.toInt(),
-                0xFF7209B7.toInt(),
-                0xFFF72585.toInt(),
-                0xFF90BE6D.toInt(),
-                0xFFF9C74F.toInt(),
-                0xFFF8961E.toInt(),
-                0xFF7D2122.toInt(),
-            )
-        require(image.argbAt(0, 0) == 0xFF000000.toInt()) { "The Canvas showcase background differs from opaque black." }
-        expected.indices.forEach { index ->
-            val x = 24 + (index % 4) * 16
-            val y = 24 + (index / 4) * 16
-            if (image.argbAt(x, y) != expected[index]) {
-                throw AssertionError("Canvas source texel $index differs from its independent expected straight-alpha color.")
-            }
-        }
-    }
-
-    private fun createComponentShowcaseScreenDefinition(
-        showcase: ComponentShowcase,
-        assets: ComponentShowcaseAssets,
-    ): ScreenDefinition =
-        when (showcase) {
-            ComponentShowcase.Row -> createRowShowcaseScreenDefinition()
-            ComponentShowcase.FlowRow -> createFlowRowShowcaseScreenDefinition()
-            ComponentShowcase.Column -> createColumnShowcaseScreenDefinition()
-            ComponentShowcase.Stack -> createStackShowcaseScreenDefinition()
-            ComponentShowcase.Grid -> createGridShowcaseScreenDefinition()
-            ComponentShowcase.Spacer -> createSpacerShowcaseScreenDefinition()
-            ComponentShowcase.Text -> createTextShowcaseScreenDefinition()
-            ComponentShowcase.Observe -> createObserveShowcaseScreenDefinition()
-            ComponentShowcase.TextField -> createTextFieldShowcaseScreenDefinition()
-            ComponentShowcase.TextArea -> createTextAreaShowcaseScreenDefinition()
-            ComponentShowcase.Button -> createButtonShowcaseScreenDefinition()
-            ComponentShowcase.Checkbox -> createCheckboxShowcaseScreenDefinition()
-            ComponentShowcase.CycleButton -> createCycleButtonShowcaseScreenDefinition()
-            ComponentShowcase.Slider -> createSliderShowcaseScreenDefinition()
-            ComponentShowcase.Tab -> createTabShowcaseScreenDefinition()
-            ComponentShowcase.ScrollArea -> createScrollAreaShowcaseScreenDefinition()
-            ComponentShowcase.Scrollbar -> createScrollbarShowcaseScreenDefinition()
-            ComponentShowcase.VirtualList -> createVirtualListShowcaseScreenDefinition()
-            ComponentShowcase.SelectionList -> createSelectionListShowcaseScreenDefinition()
-            ComponentShowcase.Image -> createImageShowcaseScreenDefinition(assets.image)
-            ComponentShowcase.Canvas -> createCanvasShowcaseScreenDefinition()
-            ComponentShowcase.TiledImage -> createTiledImageShowcaseScreenDefinition()
-            ComponentShowcase.Slot -> createSlotShowcaseScreenDefinition()
-            ComponentShowcase.PlayerHead -> createPlayerHeadShowcaseScreenDefinition(assets.playerSkin)
-            ComponentShowcase.LoadingIndicator -> createLoadingIndicatorShowcaseScreenDefinition()
-            ComponentShowcase.ProgressBar -> createProgressBarShowcaseScreenDefinition()
-        }
-
-    @Suppress("LongMethod", "LongParameterList")
+    @Suppress("LongParameterList")
     private fun writeParityEvidence(
         output: Path,
         confirm: HeadlessImage,
@@ -1103,77 +326,31 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             }
         val receipt =
             buildString {
-                append("minecraft.version=")
-                append(minecraftVersion())
-                append('\n')
-                append("viewport.width=320\n")
-                append("viewport.height=180\n")
-                append("gui.scale=1\n")
-                append("locale=en_us\n")
-                append("native.fabric.headless.argb.sha256=")
-                append(sha256Argb(confirm))
-                append('\n')
-                append("native.fabric.headless.scroll.argb.sha256=")
-                append(sha256Argb(scroll))
-                append('\n')
-                append("native.fabric.headless.direct-join.argb.sha256=")
-                append(sha256Argb(directJoin))
-                append('\n')
-                append("native.fabric.headless.container-background.argb.sha256=")
-                append(sha256Argb(containerBackground))
-                append('\n')
-                append("native.fabric.headless.slot.argb.sha256=")
-                append(sha256Argb(slot))
-                append('\n')
-                append("fabric.headless.industrial.argb.sha256=")
-                append(sha256Argb(industrial))
-                append('\n')
-                append("native.fabric.headless.player-head.argb.sha256=")
-                append(sha256Argb(playerHead))
-                append('\n')
-                append("native.fabric.headless.social.argb.sha256=")
-                append(sha256Argb(social))
-                append('\n')
-                append("fabric.headless.progress.argb.sha256=")
-                append(sha256Argb(progress))
-                append('\n')
-                append("component.overview.png.sha256=")
-                append(sha256(overviewPng))
-                append('\n')
+                appendLine("minecraft.version=${minecraftVersion()}")
+                appendLine("viewport.width=320")
+                appendLine("viewport.height=180")
+                appendLine("gui.scale=1")
+                appendLine("locale=en_us")
+                appendLine("native.fabric.headless.argb.sha256=${sha256Argb(confirm)}")
+                appendLine("native.fabric.headless.scroll.argb.sha256=${sha256Argb(scroll)}")
+                appendLine("native.fabric.headless.direct-join.argb.sha256=${sha256Argb(directJoin)}")
+                appendLine("native.fabric.headless.container-background.argb.sha256=${sha256Argb(containerBackground)}")
+                appendLine("native.fabric.headless.slot.argb.sha256=${sha256Argb(slot)}")
+                appendLine("fabric.headless.industrial.argb.sha256=${sha256Argb(industrial)}")
+                appendLine("native.fabric.headless.player-head.argb.sha256=${sha256Argb(playerHead)}")
+                appendLine("native.fabric.headless.social.argb.sha256=${sha256Argb(social)}")
+                appendLine("fabric.headless.progress.argb.sha256=${sha256Argb(progress)}")
+                appendLine("component.overview.png.sha256=${sha256(overviewPng)}")
                 ComponentShowcase.entries.forEach { showcase ->
                     val frame = componentShowcases.getValue(showcase)
-                    append("component.")
-                    append(showcase.slug)
-                    append(".viewport.width=")
-                    append(showcase.viewport.width)
-                    append('\n')
-                    append("component.")
-                    append(showcase.slug)
-                    append(".viewport.height=")
-                    append(showcase.viewport.height)
-                    append('\n')
-                    append("component.")
-                    append(showcase.slug)
-                    append(".gui.scale=")
-                    append(showcase.scale)
-                    append('\n')
-                    append("component.")
-                    append(showcase.slug)
-                    append(".fabric.headless.argb.sha256=")
-                    append(sha256Argb(frame.image))
-                    append('\n')
-                    append("component.")
-                    append(showcase.slug)
-                    append(".png.sha256=")
-                    append(sha256(frame.png))
-                    append('\n')
+                    appendLine("component.${showcase.slug}.viewport.width=${showcase.viewport.width}")
+                    appendLine("component.${showcase.slug}.viewport.height=${showcase.viewport.height}")
+                    appendLine("component.${showcase.slug}.gui.scale=${showcase.scale}")
+                    appendLine("component.${showcase.slug}.fabric.headless.argb.sha256=${sha256Argb(frame.image)}")
+                    appendLine("component.${showcase.slug}.png.sha256=${sha256(frame.png)}")
                 }
                 ParityScreen.entries.forEach { screen ->
-                    append("screen.")
-                    append(screen.slug)
-                    append(".png.sha256=")
-                    append(screenPngHashes.getValue(screen))
-                    append('\n')
+                    appendLine("screen.${screen.slug}.png.sha256=${screenPngHashes.getValue(screen)}")
                 }
             }
         Files.write(output.resolve("receipt.properties"), receipt.toByteArray(StandardCharsets.UTF_8))
@@ -1196,7 +373,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             },
         )
         context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
-        context.setScreen { DeterministicDirectJoinScreen() }
+        context.setScreen { DeterministicDirectJoinScreen(directJoinAddress) }
         context.waitForScreen(DeterministicDirectJoinScreen::class.java)
         context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
         context.runOnClient(
@@ -1254,118 +431,120 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     ) {
         closeFabricScreen(context)
         val world = context.worldBuilder().setUseConsistentSettings(true).create()
-        try {
-            resizeMinecraftTestWindow(context, IntSize(containerViewport.width, containerViewport.height))
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    minecraft.resizeGui()
-                },
-            )
-            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-            context.setScreen {
-                val inventory = checkNotNull(Minecraft.getInstance().player).inventory
-                inventory.clearContent()
-                DeterministicContainerScreen(inventory)
-            }
-            context.waitForScreen(DeterministicContainerScreen::class.java)
-            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-            context.waitTicks(2)
-            val backgroundNativePath =
-                context.takeScreenshot(
-                    TestScreenshotOptions
-                        .of("strata-container-background-native")
-                        .disableCounterPrefix()
-                        .withSize(containerViewport.width, containerViewport.height)
-                        .withDestinationDir(output),
+        val result =
+            runCatching {
+                resizeMinecraftTestWindow(context, IntSize(containerViewport.width, containerViewport.height))
+                context.runOnClient(
+                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                        minecraft.resizeGui()
+                    },
                 )
-            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
-            context.waitTicks(2)
-            val slotNativePath =
-                context.takeScreenshot(
-                    TestScreenshotOptions
-                        .of("strata-slot-native")
-                        .disableCounterPrefix()
-                        .withSize(containerViewport.width, containerViewport.height)
-                        .withDestinationDir(output),
-                )
-
-            NativeImage.read(backgroundNativePath.inputStream()).use { backgroundNative ->
-                NativeImage.read(slotNativePath.inputStream()).use { slotNative ->
-                    requireImageSize(backgroundNative, containerViewport)
-                    requireImageSize(slotNative, containerViewport)
-                    val containerBackground =
-                        context.computeOnClient(
-                            FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                renderHeadless(profile, createContainerBackgroundScreenDefinition(), containerViewport, containerOutsidePointer)
-                            },
-                        )
-                    val slot =
-                        context.computeOnClient(
-                            FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                renderHeadless(profile, createSlotScreenDefinition(), containerViewport, containerPointer)
-                            },
-                        )
-                    Files.write(output.resolve("strata-container-background-headless.png"), containerBackground.encodePng())
-                    Files.write(output.resolve("strata-slot-headless.png"), slot.encodePng())
-                    requireExactPixels(backgroundNative, containerBackground)
-                    requireExactPixels(slotNative, slot)
-
-                    context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-                    context.setScreen { createMinecraftScreen(createContainerBackgroundScreenDefinition(), profile, parent = null) }
-                    context.waitForScreen(FabricMinecraftScreen::class.java)
-                    context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
-                    context.waitTicks(2)
-                    context.assertScreenshotEquals(
-                        TestScreenshotComparisonOptions
-                            .of(backgroundNative)
-                            .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                            .saveWithFileName("strata-container-background-fabric")
-                            .disableCounterPrefix()
-                            .withSize(containerViewport.width, containerViewport.height)
-                            .withDestinationDir(output),
-                    )
-                    closeFabricScreen(context)
-
-                    context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
-                    context.setScreen { createMinecraftScreen(createSlotScreenDefinition(), profile, parent = null) }
-                    context.waitForScreen(FabricMinecraftScreen::class.java)
-                    context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
-                    context.waitTicks(2)
-                    context.assertScreenshotEquals(
-                        TestScreenshotComparisonOptions
-                            .of(slotNative)
-                            .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                            .saveWithFileName("strata-slot-fabric")
-                            .disableCounterPrefix()
-                            .withSize(containerViewport.width, containerViewport.height)
-                            .withDestinationDir(output),
-                    )
-                    InventorySlotSynchronizationGameTest.run(context, profile, output)
-                    closeFabricScreen(context)
-                    val industrial = runIndustrialAssetParity(context, profile, output)
-                    val playerHead = runPlayerHeadParity(context, profile, output)
-                    val social = MinecraftSocialParity.run(context, profile, output)
-                    val progress = MinecraftProgressParity.run(context, profile, output)
-                    val componentShowcases = runComponentShowcaseParity(context, profile, output)
-                    writeParityEvidence(
-                        output,
-                        confirm,
-                        scroll,
-                        directJoin,
-                        containerBackground,
-                        slot,
-                        industrial,
-                        playerHead,
-                        social,
-                        progress,
-                        componentShowcases,
-                    )
+                context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                context.setScreen {
+                    val inventory = checkNotNull(Minecraft.getInstance().player).inventory
+                    inventory.clearContent()
+                    DeterministicContainerScreen(inventory)
                 }
+                context.waitForScreen(DeterministicContainerScreen::class.java)
+                context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                context.waitTicks(2)
+                val backgroundNativePath =
+                    context.takeScreenshot(
+                        TestScreenshotOptions
+                            .of("strata-container-background-native")
+                            .disableCounterPrefix()
+                            .withSize(containerViewport.width, containerViewport.height)
+                            .withDestinationDir(output),
+                    )
+                context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                context.waitTicks(2)
+                val slotNativePath =
+                    context.takeScreenshot(
+                        TestScreenshotOptions
+                            .of("strata-slot-native")
+                            .disableCounterPrefix()
+                            .withSize(containerViewport.width, containerViewport.height)
+                            .withDestinationDir(output),
+                    )
+
+                val (containerBackground, slot) =
+                    NativeImage.read(backgroundNativePath.inputStream()).use { backgroundNative ->
+                        NativeImage.read(slotNativePath.inputStream()).use { slotNative ->
+                            requireImageSize(backgroundNative, containerViewport)
+                            requireImageSize(slotNative, containerViewport)
+                            val containerBackground =
+                                context.computeOnClient(
+                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                                        renderHeadless(profile, createContainerBackgroundScreenDefinition(), containerViewport, containerOutsidePointer)
+                                    },
+                                )
+                            val slot =
+                                context.computeOnClient(
+                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
+                                        renderHeadless(profile, createSlotScreenDefinition(), containerViewport, containerPointer)
+                                    },
+                                )
+                            Files.write(output.resolve("strata-container-background-headless.png"), containerBackground.encodePng())
+                            Files.write(output.resolve("strata-slot-headless.png"), slot.encodePng())
+                            requireExactPixels(backgroundNative, containerBackground)
+                            requireExactPixels(slotNative, slot)
+
+                            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                            context.setScreen { createMinecraftScreen(createContainerBackgroundScreenDefinition(), profile, parent = null) }
+                            context.waitForScreen(FabricMinecraftScreen::class.java)
+                            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                            context.waitTicks(2)
+                            context.assertScreenshotEquals(
+                                TestScreenshotComparisonOptions
+                                    .of(backgroundNative)
+                                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
+                                    .saveWithFileName("strata-container-background-fabric")
+                                    .disableCounterPrefix()
+                                    .withSize(containerViewport.width, containerViewport.height)
+                                    .withDestinationDir(output),
+                            )
+                            closeFabricScreen(context)
+
+                            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                            context.setScreen { createMinecraftScreen(createSlotScreenDefinition(), profile, parent = null) }
+                            context.waitForScreen(FabricMinecraftScreen::class.java)
+                            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                            context.waitTicks(2)
+                            context.assertScreenshotEquals(
+                                TestScreenshotComparisonOptions
+                                    .of(slotNative)
+                                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
+                                    .saveWithFileName("strata-slot-fabric")
+                                    .disableCounterPrefix()
+                                    .withSize(containerViewport.width, containerViewport.height)
+                                    .withDestinationDir(output),
+                            )
+                            containerBackground to slot
+                        }
+                    }
+                InventorySlotSynchronizationGameTest.run(context, profile, output)
+                closeFabricScreen(context)
+                val industrial = MinecraftIndustrialParity.run(context, profile, output)
+                val playerHead = MinecraftPlayerHeadParity.run(context, profile, output)
+                val social = MinecraftSocialParity.run(context, profile, output)
+                val progress = MinecraftProgressParity.run(context, profile, output)
+                val componentShowcases = MinecraftComponentShowcaseParity(context, profile, output).run()
+                writeParityEvidence(
+                    output,
+                    confirm,
+                    scroll,
+                    directJoin,
+                    containerBackground,
+                    slot,
+                    industrial,
+                    playerHead,
+                    social,
+                    progress,
+                    componentShowcases,
+                )
             }
-            closeFabricScreen(context)
-        } finally {
-            world.close()
-        }
+        runCanvasTestCleanup(result.exceptionOrNull(), { closeFabricScreen(context) }, world::close)
+        result.getOrThrow()
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
@@ -1541,22 +720,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
     }
 
-    private class DeterministicDirectJoinScreen :
-        DirectJoinServerScreen(
-            EmptyParentScreen(),
-            BooleanConsumer { _ -> },
-            ServerData("Strata parity", directJoinAddress, ServerData.Type.OTHER),
-        ) {
-        override fun extractBackground(
-            graphics: GuiGraphicsExtractor,
-            mouseX: Int,
-            mouseY: Int,
-            partialTick: Float,
-        ) {
-            extractMenuBackground(graphics)
-        }
-    }
-
     private class DeterministicContainerScreen(
         inventory: Inventory,
     ) : ContainerScreen(
@@ -1610,30 +773,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 256,
                 256,
             )
-        }
-    }
-
-    private class EmptyParentScreen : Screen(Component.empty())
-
-    private class DeterministicPlayerHeadScreen(
-        private val skin: PlayerSkin,
-    ) : Screen(Component.literal("Player head parity")) {
-        override fun extractBackground(
-            graphics: GuiGraphicsExtractor,
-            mouseX: Int,
-            mouseY: Int,
-            partialTick: Float,
-        ) {
-            graphics.fill(0, 0, width, height, opaqueBlack)
-        }
-
-        override fun extractRenderState(
-            graphics: GuiGraphicsExtractor,
-            mouseX: Int,
-            mouseY: Int,
-            partialTick: Float,
-        ) {
-            PlayerFaceExtractor.extractRenderState(graphics, skin, 20, 20, 24)
         }
     }
 
@@ -1711,97 +850,6 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         private val opaqueBlack = 0xFF000000.toInt()
         private val hexFormat: HexFormat = HexFormat.of()
         private val containerBackgroundIdentifier = Identifier.withDefaultNamespace("textures/gui/container/generic_54.png")
-        private val industrialViewport = IntSize(320, 180)
-        private val industrialPointer = IntOffset.Zero
-        private val industrialAssetSize = IntSize(1229, 1280)
-        private val resourceImageSourceRegion = IntRect(0, 0, 16, 16)
-        private val resourceImageSize = IntSize(16, 16)
-        private val playerHeadViewport = IntSize(64, 64)
-    }
-
-    private data class ComponentShowcaseAssets(
-        val image: ImageSource,
-        val playerSkin: PlayerSkinSource,
-    )
-
-    private class ComponentShowcaseFrame(
-        val image: HeadlessImage,
-        val png: ByteArray,
-    )
-
-    private class TiledImageMarkerSource(
-        initial: DoubleOffset,
-    ) : StateSource<DoubleOffset> {
-        private val monitor = Any()
-        private var snapshot = StateSnapshot(StateRevision(0L), initial)
-        private val observers: MutableSet<(StateSnapshot<DoubleOffset>) -> Unit> = LinkedHashSet()
-
-        override fun subscribe(observer: (StateSnapshot<DoubleOffset>) -> Unit): StateSubscription<DoubleOffset> {
-            val initialSnapshot =
-                synchronized(monitor) {
-                    observers.add(observer)
-                    snapshot
-                }
-            return StateSubscription(initialSnapshot) {
-                synchronized(monitor) { observers.remove(observer) }
-            }
-        }
-
-        fun publish(position: DoubleOffset) {
-            val notification =
-                synchronized(monitor) {
-                    snapshot = StateSnapshot(StateRevision(Math.incrementExact(snapshot.revision.value)), position)
-                    snapshot to observers.toList()
-                }
-            notification.second.forEach { observer -> observer(notification.first) }
-        }
-    }
-
-    private enum class ComponentShowcase(
-        val slug: String,
-        val viewport: IntSize,
-        val pointer: IntOffset = IntOffset.Zero,
-        val animationFrameTimes: List<FrameTime> = emptyList(),
-        val scale: Int = 1,
-    ) {
-        Row("row", IntSize(136, 64)),
-        FlowRow("flow-row", IntSize(168, 60)),
-        Column("column", IntSize(120, 64)),
-        Stack("stack", IntSize(64, 64)),
-        Grid("grid", IntSize(64, 64)),
-        Spacer("spacer", IntSize(160, 64)),
-        Observe("observe", IntSize(160, 48)),
-        Text("text", IntSize(192, 88), scale = 2),
-        TextField("text-field", IntSize(216, 64), scale = 2),
-        TextArea("text-area", IntSize(226, 80), scale = 2),
-        Button("button", IntSize(166, 64)),
-        Checkbox("checkbox", IntSize(166, 36)),
-        CycleButton("cycle-button", IntSize(166, 36)),
-        Slider("slider", IntSize(166, 36)),
-        Tab("tab", IntSize(160, 64)),
-        ScrollArea("scroll-area", IntSize(120, 48)),
-        Scrollbar("scrollbar", IntSize(94, 48)),
-        VirtualList("virtual-list", IntSize(120, 48)),
-        SelectionList("selection-list", IntSize(120, 48)),
-        Image("image", IntSize(64, 64)),
-        Canvas("canvas", IntSize(96, 64)),
-        TiledImage("tiled-image", IntSize(112, 88)),
-        Slot("slot", IntSize(64, 64), IntOffset(32, 32)),
-        PlayerHead("player-head", IntSize(64, 64)),
-        LoadingIndicator(
-            "loading-indicator",
-            IntSize(32, 24),
-            animationFrameTimes =
-                listOf(
-                    FrameTime(0L),
-                    FrameTime(300_000_000L),
-                    FrameTime(600_000_000L),
-                ),
-        ),
-        ProgressBar("progress-bar", IntSize(116, 28)),
-        ;
-
-        val physicalSize: IntSize = IntSize(Math.multiplyExact(viewport.width, scale), Math.multiplyExact(viewport.height, scale))
     }
 
     private enum class SampledParityScene(
