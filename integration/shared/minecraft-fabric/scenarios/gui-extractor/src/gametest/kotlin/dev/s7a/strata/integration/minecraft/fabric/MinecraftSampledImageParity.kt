@@ -38,36 +38,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
     require(viewport == IntSize(320, 180)) {
         "Sampled-image parity requires the 320 by 180 fractional-scale viewport."
     }
-    val sampled =
-        createDrawImage(
-            IntSize(6, 4),
-            intArrayOf(
-                0xFFFF0000.toInt(),
-                0x8000FF00.toInt(),
-                0xFF0000FF.toInt(),
-                0x40FFFF00,
-                0xC000FFFF.toInt(),
-                0xFFFF00FF.toInt(),
-                0x800000FF.toInt(),
-                0xFFFF0000.toInt(),
-                0xC000FF00.toInt(),
-                0x80FFFFFF.toInt(),
-                0xFF00FFFF.toInt(),
-                0x40FF00FF,
-                0xFFFFFF00.toInt(),
-                0x8000FFFF.toInt(),
-                0xFFFF00FF.toInt(),
-                0xC0FFFFFF.toInt(),
-                0xFF00FF00.toInt(),
-                0x80000000.toInt(),
-                0xC0FF0000.toInt(),
-                0xFF00FF00.toInt(),
-                0x800000FF.toInt(),
-                0x40FFFFFF,
-                0xFFFFFF00.toInt(),
-                0xFF00FFFF.toInt(),
-            ),
-        )
+    val sampled = createSampledParityImage()
     val reflected = createReflectedSampledParityImage()
     val blitted =
         createDrawImage(
@@ -195,6 +166,37 @@ private fun PaintScope.paintExactSampledEffects(image: DrawImage) {
         }
     }
 }
+
+private fun createSampledParityImage(): DrawImage =
+    createDrawImage(
+        IntSize(6, 4),
+        intArrayOf(
+            0xFFFF0000.toInt(),
+            0x8000FF00.toInt(),
+            0xFF0000FF.toInt(),
+            0x40FFFF00,
+            0xC000FFFF.toInt(),
+            0xFFFF00FF.toInt(),
+            0x800000FF.toInt(),
+            0xFFFF0000.toInt(),
+            0xC000FF00.toInt(),
+            0x80FFFFFF.toInt(),
+            0xFF00FFFF.toInt(),
+            0x40FF00FF,
+            0xFFFFFF00.toInt(),
+            0x8000FFFF.toInt(),
+            0xFFFF00FF.toInt(),
+            0xC0FFFFFF.toInt(),
+            0xFF00FF00.toInt(),
+            0x80000000.toInt(),
+            0xC0FF0000.toInt(),
+            0xFF00FF00.toInt(),
+            0x800000FF.toInt(),
+            0x40FFFFFF,
+            0xFFFFFF00.toInt(),
+            0xFF00FFFF.toInt(),
+        ),
+    )
 
 private fun createReflectedSampledParityImage(): DrawImage =
     createDrawImage(

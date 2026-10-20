@@ -11,6 +11,7 @@ import dev.s7a.strata.component.Slots
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
@@ -68,32 +69,39 @@ internal fun createInventorySlotScreenDefinition(
                             }
                         }
                     }
-                    Column {
-                        Text(
-                            "Inventory",
-                            style = TextStyle.ContainerLabel,
-                            modifier = Modifier.padding(left = 1),
-                        )
-                        Grid(columns = 9, modifier = Modifier.padding(top = 1)) {
-                            repeat(27) { index ->
-                                Slot(bind = Slots.playerInventory(9 + index))
-                            }
-                        }
-                        Grid(columns = 9, modifier = Modifier.padding(top = 4)) {
-                            repeat(9) { index ->
-                                Slot(
-                                    bind =
-                                        if (index == 0) {
-                                            primaryPlayerBinding
-                                        } else {
-                                            Slots.playerInventory(index)
-                                        },
-                                )
-                            }
-                        }
-                    }
+                    playerInventorySection(primaryPlayerBinding)
                 }
             }
         }
     }
+
+/**
+ * Composes the player's main inventory and hotbar with the caller's first-cell binding.
+ */
+private fun UiScope.playerInventorySection(primaryPlayerBinding: SlotBinding) {
+    Column {
+        Text(
+            "Inventory",
+            style = TextStyle.ContainerLabel,
+            modifier = Modifier.padding(left = 1),
+        )
+        Grid(columns = 9, modifier = Modifier.padding(top = 1)) {
+            repeat(27) { index ->
+                Slot(bind = Slots.playerInventory(9 + index))
+            }
+        }
+        Grid(columns = 9, modifier = Modifier.padding(top = 4)) {
+            repeat(9) { index ->
+                Slot(
+                    bind =
+                        if (index == 0) {
+                            primaryPlayerBinding
+                        } else {
+                            Slots.playerInventory(index)
+                        },
+                )
+            }
+        }
+    }
+}
 // showcase-source-end:inventory-screen

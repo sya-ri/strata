@@ -94,16 +94,12 @@ internal object MinecraftProgressParity {
     private fun renderHeadless(
         profile: MinecraftUiProfile,
         assets: ProgressAssets,
-    ): HeadlessImage {
-        val host = createMinecraftUiHost(definition(assets), profile, LwjglMinecraftFontBackendFactory)
-        return try {
+    ): HeadlessImage =
+        createMinecraftUiHost(definition(assets), profile, LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             val frame = host.frame(viewport)
             rasterizeHeadless(frame.drawCommands, viewport)
-        } finally {
-            host.close()
         }
-    }
 
     private fun definition(assets: ProgressAssets) =
         createProgressScreenDefinition(
