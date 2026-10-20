@@ -134,7 +134,7 @@ import kotlin.properties.ReadOnlyProperty
 /** Exercises [Pair], [AutoCloseable], [ReadOnlyProperty] and coroutine metadata. */
 @JvmSynthetic
 internal fun commonMetadataValue(): Int {
-    val resource = object : AutoCloseable { override fun close() {} }
+    val resource = AutoCloseable {}
     resource.close()
     val number by ReadOnlyProperty<Any?, Int> { _, _ -> MutableStateFlow(12).value }
     val (first, second) = Pair(MetadataId(number).value, (ceil(1.5) - floor(1.5)).toInt())
@@ -254,7 +254,7 @@ def export():
                     common_manager.remove(entry)
                 for path in model["commonClasspath"]:
                     assert pathlib.Path(path).is_file() and path.endswith(".klib"), path
-                    if name.startswith("split-jvm-view"):
+                    if name.startswith("split-project-metadata"):
                         copied = fixture / "project-libraries" / pathlib.Path(path).name
                         copied.parent.mkdir(exist_ok=True)
                         shutil.copyfile(path, copied)
