@@ -313,10 +313,10 @@ jobs:
         cache-read-only: false
         gradle-home-cache-strict-match: false
         gradle-home-cache-excludes: caches/fabric-loom
-    - name: Check release shell syntax
+    - name: Check shell syntax
       shell: bash
       run: |
-        for script in release/*.sh release/tests/*.sh; do
+        for script in gradle/*.sh release/*.sh release/tests/*.sh; do
           bash -n "$script"
         done
     - name: Test distribution publication
@@ -331,7 +331,6 @@ jobs:
       run: bash release/tests/verify-java-toolchain-inventory.sh
     - name: Test CI project model guards
       run: |
-        bash -n gradle/plan-minecraft-ci.sh gradle/verify-minecraft-ci-plan-fixtures.sh gradle/prepare-qodana-idea-model.sh gradle/verify-qodana-model.sh gradle/verify-qodana-model-fixtures.sh gradle/verify-qodana-bootstrap-fixtures.sh
         bash gradle/verify-minecraft-ci-plan-fixtures.sh
         bash gradle/verify-qodana-model-fixtures.sh
         bash gradle/verify-qodana-bootstrap-fixtures.sh

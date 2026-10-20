@@ -150,7 +150,7 @@ for version in "${fixture_versions[@]}"; do
     'TestSource;../shared/minecraft-fabric/transport/verification/src/gametest/kotlin'
     'TestSource;../shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin'
     'TestSource;../../examples/paper/src/main/kotlin'
-    'TestSource;../../quality/component-benchmarks/src/jmh/kotlin'
+    'TestSource;../../quality/component-benchmarks/src/workload/kotlin'
     'TestSource;../shared/minecraft-fabric/canvas/fixture-probe/src/gametest/kotlin'
     'TestSource;../shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin'
     'TestResource;../shared/font-parity/src/gametest/resources'
@@ -214,6 +214,7 @@ write_iml \
   "$docs_directory/docs.iml" \
   'Source;src/main/kotlin' \
   'Source;../shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' \
+  'Source;../shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin' \
   'TestSource;src/test/kotlin'
 
 font_backend_directory="$fixture_project/runtime/minecraft-fonts-lwjgl"
@@ -283,7 +284,7 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/verification/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/examples/paper/src/main/kotlin"},
-      {type: "TestSource", path: "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/canvas/fixture-probe/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin"},
       {type: "TestResource", path: "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources"},
@@ -318,7 +319,8 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
         {type: "TestSource", path: "file://$PROJECT_DIR$/integration/docs/src/test/kotlin"}
       ];
       [
-        {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"}
+        {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"},
+        {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin"}
       ]
     )]
     + [projectModule(
@@ -331,7 +333,7 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
     )]
     + [projectModule(
       "component-benchmarks";
-      [{type: "Source", path: "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"}];
+      [{type: "Source", path: "file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin"}];
       []
     )]
     + [projectModule(
@@ -384,7 +386,7 @@ model_path = pathlib.Path(sys.argv[2])
 temporary = pathlib.Path(sys.argv[3]).relative_to(root).as_posix()
 model = json.loads(model_path.read_text())
 declarations = [
-    ("quality/component-benchmarks", "component-benchmarks", "src/jmh"),
+    ("quality/component-benchmarks", "component-benchmarks", "src/workload"),
     ("quality/benchmarks", "benchmarks", "src/jmh"),
     (temporary, "custom-" + pathlib.PurePosixPath(temporary).name, "authored/custom-inputs"),
 ]
@@ -497,7 +499,7 @@ revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=
 tracked = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
 projects = [dict(project=owner["project"], module=owner["module"], directory=owner["directory"], roots=[dict(kind=entry["kind"], path=entry["path"]) for entry in owner["roots"]], jmh=True) for owner in owners]
 projects.append(dict(project=":integration:docs", module="docs", directory="integration/docs", roots=[dict(kind=entry["kind"], path=entry["path"]) for entry in auxiliary_roots], jmh=False))
-projects.extend(dict(project=":integration:minecraft-fabric-" + version, module="integration-minecraft-fabric-" + version, directory="integration/minecraft-fabric-" + version, roots=[dict(kind="TestSource", path="quality/component-benchmarks/src/jmh/kotlin")], jmh=False) for version in sys.argv[5:])
+projects.extend(dict(project=":integration:minecraft-fabric-" + version, module="integration-minecraft-fabric-" + version, directory="integration/minecraft-fabric-" + version, roots=[dict(kind="TestSource", path="quality/component-benchmarks/src/workload/kotlin")], jmh=False) for version in sys.argv[5:])
 for declaration in projects:
     declaration["auxiliarySourceSets"] = ["verification"] if declaration["module"] == "docs" else []
 inventory = dict(revision=revision, tracked={name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in tracked if name}, projects=projects, owners=owners, auxiliary=[auxiliary])
@@ -513,11 +515,11 @@ analysis_logs.mkdir(exist_ok=True)
 validator = pathlib.Path(sys.argv[4])
 
 
-def validate(candidate, rejected=False):
+def validate(candidate, rejected=False, context=""):
     result = subprocess.run([sys.executable, str(validator), str(root), str(candidate), "/data/project", str(model_path.with_name("Java.json"))], capture_output=True, text=True)
     if rejected:
         if result.returncode == 0 or "Qodana declaration completeness" not in result.stderr:
-            raise SystemExit(f"Declaration mutation was accepted or failed at the wrong boundary: {result.stdout} {result.stderr}")
+            raise SystemExit(f"Declaration mutation {context or candidate.name} was accepted or failed at the wrong boundary: {result.stdout} {result.stderr}")
     elif result.returncode:
         raise SystemExit(result.stderr)
 
@@ -613,7 +615,7 @@ for mutation in ("paired-omission", "generated-omission", "imported-omission", "
     (root / "build/qodana/declarations.json").write_text(json.dumps(candidate_inventory))
     invalid = model_path.with_name("auxiliary-invalid.json")
     invalid.write_text(json.dumps(candidate))
-    validate(invalid, rejected=True)
+    validate(invalid, rejected=True, context=mutation)
     docs_iml_path.write_bytes(original_docs_iml)
     (root / "build/qodana/declarations.json").write_bytes(original_inventory)
 validate(model_path)
@@ -876,7 +878,7 @@ for component_name in quality-component-benchmarks strata.quality.component-benc
 done
 
 assert_rejected '(.modules[] | select(.name == "component-benchmarks")).name = "unrelated-benchmarks"'
-assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"))'
+assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin"))'
 
 assert_rejected '.modules |= map(select(.name != "integration-minecraft-fabric-1.10"))'
 assert_rejected '.modules |= map(select(.name != "runtime-minecraft-fabric-1.10"))'
@@ -1009,24 +1011,24 @@ for component_mutation in missing wrong-kind duplicate broader-root; do
   cp -- "$fixture_component_iml_backup" "$fixture_component_iml"
   case "$component_mutation" in
     missing)
-      sed -i '\#quality/component-benchmarks/src/jmh/kotlin#d' "$fixture_component_iml"
-      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"))' \
+      sed -i '\#quality/component-benchmarks/src/workload/kotlin#d' "$fixture_component_iml"
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin"))' \
         "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
       ;;
     wrong-kind)
-      sed -i '/quality\/component-benchmarks\/src\/jmh\/kotlin/s/isTestSource="true"/isTestSource="false"/' "$fixture_component_iml"
-      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin")).type = "Source"' \
+      sed -i '/quality\/component-benchmarks\/src\/workload\/kotlin/s/isTestSource="true"/isTestSource="false"/' "$fixture_component_iml"
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin")).type = "Source"' \
         "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
       ;;
     duplicate)
-      component_source_line=$(grep -F 'quality/component-benchmarks/src/jmh/kotlin' "$fixture_component_iml")
+      component_source_line=$(grep -F 'quality/component-benchmarks/src/workload/kotlin' "$fixture_component_iml")
       sed -i '/<\/content>/i\'"$component_source_line" "$fixture_component_iml"
-      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) += [{type:"TestSource",path:"file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"}]' \
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) += [{type:"TestSource",path:"file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin"}]' \
         "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
       ;;
     broader-root)
-      sed -i 's#quality/component-benchmarks/src/jmh/kotlin#quality/component-benchmarks/src/jmh#' "$fixture_component_iml"
-      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin")).path = "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh"' \
+      sed -i 's#quality/component-benchmarks/src/workload/kotlin#quality/component-benchmarks/src/workload#' "$fixture_component_iml"
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin")).path = "file://$PROJECT_DIR$/quality/component-benchmarks/src/workload"' \
         "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
       ;;
   esac
@@ -1580,54 +1582,44 @@ fixture_docs_iml="$fixture_project/integration/docs/docs.iml"
 fixture_docs_iml_backup="$fixture_root/docs.iml"
 cp -- "$fixture_docs_iml" "$fixture_docs_iml_backup"
 
-sed -i '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/d' "$fixture_docs_iml"
-portable_jq '
-  (
-    .modules[]
-    | select(.name == "docs")
-    | .contentEntries[0].sourceFolders
-  ) |= map(select(.path != "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
-' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
-assert_project_rejected 'paired IDEA and Qodana removal of the required documentation showcase Source' "$fixture_root/invalid.json"
-grep -Fq 'must link exactly one showcase Source and no other target source root: source=0 total=0' "$fixture_root/invalid.log" || {
-  echo 'The paired removal of the documentation showcase Source was rejected for the wrong reason.' >&2
-  exit 1
-}
-cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
-
-sed -i \
-  '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/s/isTestSource="false"/isTestSource="true"/' \
-  "$fixture_docs_iml"
-portable_jq '
-  (
-    .modules[]
-    | select(.name == "docs")
-    | .contentEntries[0].sourceFolders[]
-    | select(.path == "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
-  ).type = "TestSource"
-' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
-assert_project_rejected 'paired IDEA and Qodana source-kind corruption of the required documentation showcase Source' "$fixture_root/invalid.json"
-grep -Fq 'must link exactly one showcase Source and no other target source root: source=0 total=1' "$fixture_root/invalid.log" || {
-  echo 'The paired source-kind corruption of the documentation showcase Source was rejected for the wrong reason.' >&2
-  exit 1
-}
-cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
-
-sed -i '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/p' "$fixture_docs_iml"
-portable_jq '
-  (
-    .modules[]
-    | select(.name == "docs")
-    | .contentEntries[0].sourceFolders
-  ) += [
-      {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"}
-    ]
-' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
-assert_project_rejected 'paired IDEA and Qodana duplication of the required documentation showcase Source' "$fixture_root/invalid.json"
-grep -Fq 'must link exactly one showcase Source and no other target source root: source=2 total=2' "$fixture_root/invalid.log" || {
-  echo 'The paired duplication of the documentation showcase Source was rejected for the wrong reason.' >&2
-  exit 1
-}
+for docs_source_set in gametest screen-examples; do
+  docs_source_suffix="shared/minecraft-fabric/scenarios/gui-extractor/src/$docs_source_set/kotlin"
+  docs_source_path='file://$PROJECT_DIR$/integration/'"$docs_source_suffix"
+  for docs_mutation in missing wrong-kind duplicate; do
+    cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
+    case "$docs_mutation" in
+      missing)
+        sed -i "\#$docs_source_suffix#d" "$fixture_docs_iml"
+        portable_jq --arg sourcePath "$docs_source_path" '
+          (.modules[] | select(.name == "docs").contentEntries[0].sourceFolders) |= map(select(.path != $sourcePath))
+        ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+        docs_source_count=0
+        docs_root_count=1
+        ;;
+      wrong-kind)
+        sed -i "\#$docs_source_suffix#s/isTestSource=\"false\"/isTestSource=\"true\"/" "$fixture_docs_iml"
+        portable_jq --arg sourcePath "$docs_source_path" '
+          (.modules[] | select(.name == "docs").contentEntries[0].sourceFolders[] | select(.path == $sourcePath)).type = "TestSource"
+        ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+        docs_source_count=0
+        docs_root_count=2
+        ;;
+      duplicate)
+        sed -i "\#$docs_source_suffix#p" "$fixture_docs_iml"
+        portable_jq --arg sourcePath "$docs_source_path" '
+          (.modules[] | select(.name == "docs").contentEntries[0].sourceFolders) += [{type: "Source", path: $sourcePath}]
+        ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+        docs_source_count=2
+        docs_root_count=3
+        ;;
+    esac
+    assert_project_rejected "paired IDEA and Qodana $docs_mutation of the required documentation $docs_source_set Source" "$fixture_root/invalid.json"
+    grep -Fq "must link exactly one showcase Source for each compiled root: path=$docs_source_path source=$docs_source_count total=$docs_root_count" "$fixture_root/invalid.log" || {
+      echo "The paired documentation $docs_source_set $docs_mutation was rejected for the wrong reason." >&2
+      exit 1
+    }
+  done
+done
 cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
 
 sed -i \
