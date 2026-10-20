@@ -821,9 +821,9 @@ def validate_pipeline(candidate, boundary=None):
     result = subprocess.run([os.environ["STRATA_FIXTURE_BASH"], str(validator.with_name("verify-qodana-model.sh")), str(candidate), str(root), "/data/project"], capture_output=True, text=True)
     if boundary is None:
         if result.returncode:
-            raise SystemExit(f"Declared native shared root failed the full verifier: {result.stdout} {result.stderr}")
+            raise SystemExit(f"Declared native shared root failed the full verifier with exit code {result.returncode}: {result.stdout} {result.stderr}")
     elif result.returncode == 0 or boundary not in result.stderr:
-        raise SystemExit(f"Native shared-root mutation was accepted or rejected at the wrong boundary: {result.stdout} {result.stderr}")
+        raise SystemExit(f"Native shared-root mutation was accepted or rejected at the wrong boundary with exit code {result.returncode}: {result.stdout} {result.stderr}")
 
 
 validate_pipeline(native_candidate)

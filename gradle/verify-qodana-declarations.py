@@ -535,7 +535,7 @@ def verify_model(root, model_path, container_root, java_path):
         fail("JMH owner identity differs from the complete configured project model")
     if len(set(names)) != len(names) or len(set(projects)) != len(projects):
         fail("duplicate declared owner identity")
-    projected = analysis_owners(inventory) if any("commonSourceSets" in entry for entry in declared_projects) else [entry for entry in declared_projects if entry.get("iml")]
+    projected = analysis_owners(inventory) if any("commonSourceSets" in entry for entry in declared_projects) else [entry for entry in declared_projects if entry.get("module")]
     declarations_by_module = {entry["module"]: entry for entry in projected}
     if len(declarations_by_module) != len(projected):
         fail("duplicate configured module identity")
