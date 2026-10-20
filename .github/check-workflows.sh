@@ -6,7 +6,7 @@ repository_root=$(git rev-parse --show-toplevel)
 cd "$repository_root"
 tool_root=$(mktemp -d)
 trap 'rm -rf "$tool_root"' EXIT
-versions=$(python3 -c 'import tomllib; from pathlib import Path; v = tomllib.loads(Path("gradle/libs.versions.toml").read_text())["versions"]; print(v["actionlint"], v["shellcheck"], v["pyflakes"])')
+versions=$(python3 -B gradle/catalog-versions.py --keys actionlint shellcheck pyflakes)
 read -r actionlint_version shellcheck_version pyflakes_version <<< "$versions"
 curl_options=(--fail --silent --show-error --location --retry 2 --connect-timeout 10 --max-time 120)
 
