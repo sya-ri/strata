@@ -100,7 +100,7 @@
   <div class="breadcrumbs"><a href="../../index.html">core</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime.spi</a><span class="delimiter">/</span><span class="current">RuntimeUiSession</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Runtime</span><wbr><span>Ui</span><wbr><span><span>Session</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">interface </span><a href="index.html">RuntimeUiSession</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-auto-closeable/index.html">AutoCloseable</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/spi/RuntimeUiSession.kt#L25">source</a>)</span></span></div><p class="paragraph">Narrow owner-thread bridge for a retained runtime UI session.</p><p class="paragraph">The construction thread owns this session, and lifecycle and frame operations are synchronous on that thread. Operations reject reentrancy except that recursive <a href="close.html">close</a> from its own cleanup is an idempotent no-op. The first successful <a href="frame.html">frame</a> gates pointer dispatch. This synchronous bridge does not expose local-state declarations, source bindings, or task launch. Its content is evaluated during the first <a href="attach.html">attach</a> and reevaluated before a later <a href="frame.html">frame</a> when caller-owned observed state changes. The bridge retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after failure or close.</p><p class="paragraph">Content, reconciliation, pipeline, input, and cleanup failures preserve the exact primary <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a> and suppression order defined by the core session. A failed session has already performed cleanup; closing it records the closed terminal state without repeating cleanup.</p></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">interface </span><a href="index.html">RuntimeUiSession</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-auto-closeable/index.html">AutoCloseable</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/spi/RuntimeUiSession.kt#L28">source</a>)</span></span></div><p class="paragraph">Narrow owner-thread bridge for a retained runtime UI session.</p><p class="paragraph">The construction thread owns this session, and lifecycle and frame operations are synchronous on that thread. Operations reject reentrancy except that recursive <a href="close.html">close</a> from its own cleanup is an idempotent no-op. The first successful <a href="frame.html">frame</a> gates pointer dispatch. This synchronous bridge does not expose local-state declarations, source bindings, or task launch. Its content is evaluated during the first <a href="attach.html">attach</a> and reevaluated before a later <a href="frame.html">frame</a> when caller-owned observed state changes. The bridge retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after failure or close.</p><p class="paragraph">Content, reconciliation, pipeline, input, and cleanup failures preserve the exact primary <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a> and suppression order defined by the core session. A failed session has already performed cleanup; closing it records the closed terminal state without repeating cleanup.</p></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
@@ -216,6 +216,21 @@
               </div>
             </div>
           </div>
+<a data-name="-1964027239%2FFunctions%2F-1714708404" anchor-label="dispatchPointerGesture" id="-1964027239%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="dispatch-pointer-gesture.html"><span>dispatch</span><wbr><span>Pointer</span><wbr><span><span>Gesture</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1964027239%2FFunctions%2F-1714708404"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="dispatch-pointer-gesture.html"><span class="token function">dispatchPointerGesture</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">gesture<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-pointer-gesture/index.html">PointerGesture</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-input-result/index.html">InputResult</a></div><div class="brief "><p class="paragraph">Delivers adapter-recognized navigation without a press, activation or focus transition. Uses the committed attached tree and ordinary pointer input ownership and failure rules.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
 <a data-name="1682543227%2FFunctions%2F-1714708404" anchor-label="dispatchTextInput" id="1682543227%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
           <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
             <div class="main-subrow keyValue ">
@@ -227,6 +242,36 @@
               <div>
                 <div class="title">
                   <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="dispatch-text-input.html"><span class="token function">dispatchTextInput</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">event<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-text-input-event/index.html">TextInputEvent</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-input-result/index.html">InputResult</a></div><div class="brief "><p class="paragraph">Dispatches one committed-character or preedit event synchronously to the focused component in the most recently committed frame. Pending geometry uses the same pre-input synchronization as <a href="dispatch-pointer.html">dispatchPointer</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1831532226%2FFunctions%2F-1714708404" anchor-label="focusAt" id="-1831532226%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="focus-at.html"><span>focus</span><wbr><span><span>At</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1831532226%2FFunctions%2F-1714708404"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="focus-at.html"><span class="token function">focusAt</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">position<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Synchronizes native focus at committed coordinates without activation. Ownership, geometry preparation and failure rules follow dispatchPointer.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-455063658%2FFunctions%2F-1714708404" anchor-label="focusSemantics" id="-455063658%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="focus-semantics.html"><span>focus</span><wbr><span><span>Semantics</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-455063658%2FFunctions%2F-1714708404"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="focus-semantics.html"><span class="token function">focusSemantics</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-input-result/index.html">InputResult</a></div><div class="brief "><p class="paragraph">Acquires a visible semantic owner from the committed frame without activation. Stale, hidden or nonaccepting identities return Ignored; dispatchPointer owns failure rules.</p></div></div></div>
                 </div>
               </div>
             </div>

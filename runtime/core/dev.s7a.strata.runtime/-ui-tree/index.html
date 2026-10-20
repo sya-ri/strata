@@ -100,7 +100,7 @@
   <div class="breadcrumbs"><a href="../../index.html">core</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime</a><span class="delimiter">/</span><span class="current">UiTree</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Ui</span><wbr><span><span>Tree</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">UiTree</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">eventSession<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-auto-closeable/index.html">AutoCloseable</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiTree.kt#L40">source</a>)</span></span></div><p class="paragraph">A retained, platform-neutral UI tree.</p><p class="paragraph">Every operation is confined to the execution owner that creates this tree. Operational methods and <a href="close.html">close</a> are not reentrant. The <a href="state.html">state</a> property may be read under the execution owner during an active callback. An empty tree measures to <a href="../../../../api/dev.s7a.strata.geometry/-int-size/-companion/-zero.html">IntSize.Zero</a>. An empty tree performs no layout work and returns empty paint, input, and semantics results. A complete description is validated before mutation. Structural validation and local validation-hook failures leave an active tree unchanged and available for retry. Any failure after validation begins reconciliation, lifecycle work, or a pipeline operation poisons the tree. The tree clears retained ownership and attempts cleanup. Cleanup preserves the primary <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a> instance and suppresses later distinct failures on it.</p></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">UiTree</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">eventSession<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-auto-closeable/index.html">AutoCloseable</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/master/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiTree.kt#L42">source</a>)</span></span></div><p class="paragraph">A retained, platform-neutral UI tree.</p><p class="paragraph">Every operation is confined to the execution owner that creates this tree. Operational methods and <a href="close.html">close</a> are not reentrant. The <a href="state.html">state</a> property may be read under the execution owner during an active callback. An empty tree measures to <a href="../../../../api/dev.s7a.strata.geometry/-int-size/-companion/-zero.html">IntSize.Zero</a>. An empty tree performs no layout work and returns empty paint, input, and semantics results. A complete description is validated before mutation. Structural validation and local validation-hook failures leave an active tree unchanged and available for retry. Any failure after validation begins reconciliation, lifecycle work, or a pipeline operation poisons the tree. The tree clears retained ownership and attempts cleanup. Cleanup preserves the primary <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a> instance and suppresses later distinct failures on it.</p></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
@@ -190,6 +190,21 @@
               </div>
             </div>
           </div>
+<a data-name="-1663727373%2FFunctions%2F-1714708404" anchor-label="dispatchPointerGesture" id="-1663727373%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="dispatch-pointer-gesture.html"><span>dispatch</span><wbr><span>Pointer</span><wbr><span><span>Gesture</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1663727373%2FFunctions%2F-1714708404"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="dispatch-pointer-gesture.html"><span class="token function">dispatchPointerGesture</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">gesture<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-pointer-gesture/index.html">PointerGesture</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-input-result/index.html">InputResult</a></div><div class="brief "><p class="paragraph">Dispatches navigation to the deepest, topmost accepting hit node without synthesizing activation. Geometry, clipping, owner-thread, failure and cleanup contracts follow dispatchPointer. No gesture target is retained between deliveries; the adapter owns the physical sequence.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
 <a data-name="350047201%2FFunctions%2F-1714708404" anchor-label="dispatchTextInput" id="350047201%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
           <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
             <div class="main-subrow keyValue ">
@@ -201,6 +216,36 @@
               <div>
                 <div class="title">
                   <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="dispatch-text-input.html"><span class="token function">dispatchTextInput</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">event<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-text-input-event/index.html">TextInputEvent</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-input-result/index.html">InputResult</a></div><div class="brief "><p class="paragraph">Dispatches <a href="dispatch-text-input.html">event</a> to the currently focused logical component.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2024330332%2FFunctions%2F-1714708404" anchor-label="focusAt" id="-2024330332%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="focus-at.html"><span>focus</span><wbr><span><span>At</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2024330332%2FFunctions%2F-1714708404"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="focus-at.html"><span class="token function">focusAt</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">position<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Synchronizes native focus without synthesizing a press, under dispatchPointer's geometry and failure contract. A missing accepting owner clears focus; pointer capture is unchanged.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="149317104%2FFunctions%2F-1714708404" anchor-label="focusSemantics" id="149317104%2FFunctions%2F-1714708404" data-filterable-set=":runtime:core/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/commonMain" data-filterable-set=":runtime:core/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="focus-semantics.html"><span>focus</span><wbr><span><span>Semantics</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="149317104%2FFunctions%2F-1714708404"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="focus-semantics.html"><span class="token function">focusSemantics</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.input/-input-result/index.html">InputResult</a></div><div class="brief "><p class="paragraph">Acquires a visible semantic owner by its frame identity without activation. Ownership, geometry and failure contracts follow <a href="dispatch-pointer.html">dispatchPointer</a>.</p></div></div></div>
                 </div>
               </div>
             </div>
