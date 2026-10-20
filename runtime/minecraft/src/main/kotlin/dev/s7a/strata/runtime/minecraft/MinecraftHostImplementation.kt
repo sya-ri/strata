@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.UiScope
@@ -42,6 +40,7 @@ internal object MinecraftHostImplementation {
      * @throws Throwable when font initialization fails before definition transfer or later host construction fails; opened fonts are released and [platform] remains caller-owned.
      */
     @JvmSynthetic
+    @Suppress("DEPRECATION")
     fun create(
         definition: ScreenDefinition,
         profile: MinecraftUiProfile,

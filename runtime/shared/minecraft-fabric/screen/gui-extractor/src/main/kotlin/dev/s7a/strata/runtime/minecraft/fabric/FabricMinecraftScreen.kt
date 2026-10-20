@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 @file:JvmName("FabricMinecraftScreens")
 
 package dev.s7a.strata.runtime.minecraft.fabric
@@ -44,7 +42,7 @@ import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
 /**
  * Fabric client screen backed by one common Minecraft UI host.
  *
- * The host is created by transferring the one-shot [ScreenDefinition] and is confined to the Minecraft client thread.
+ * The host is created by transferring the one-shot [UiDefinition] and is confined to the Minecraft client thread.
  * Added and removed screen callbacks attach and detach the retained tree; removal is transient and never closes the screen.
  * Terminal close releases the host and screen-owned texture references; the independent device retires queued layers after their GUI-consumption fences. A caller that permanently abandons a removed or never-presented instance must close it on the client thread.
  * The optional parent is retained for navigation but is never owned or closed.
@@ -891,6 +889,7 @@ private fun currentMinecraftScreen(): Screen? {
  * Compatibility factory sharing the common UI host path.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun createMinecraftScreen(
     definition: ScreenDefinition,
     profile: MinecraftUiProfile,

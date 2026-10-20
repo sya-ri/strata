@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.Constraints
@@ -212,6 +210,7 @@ internal fun createWebHost(
  * Compatibility overload retaining the same common UI session and browser ownership.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun mountWeb(
     definition: ScreenDefinition,
     root: HTMLElement,
@@ -222,6 +221,7 @@ public fun mountWeb(
  * Compatibility overload for deterministic HTML generation.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 internal fun createWebHost(
     definition: ScreenDefinition,
     root: HTMLElement,
@@ -232,6 +232,7 @@ internal fun createWebHost(
  * Compatibility overload for mounting a themed screen.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("DEPRECATION")
 public fun mountWeb(
     definition: ScreenDefinition,
     root: HTMLElement,

@@ -1,4 +1,3 @@
-@file:Suppress("DEPRECATION")
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.runtime.paper
@@ -32,6 +31,7 @@ public object PaperScreens {
      * On Folia, create captured mutable state through [execute], or use the definition-factory overload.
      */
     @Deprecated("Use UiDefinition.open(ownerPlugin, player). Scheduled for removal in 1.0.0.")
+    @Suppress("DEPRECATION")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,
@@ -44,6 +44,7 @@ public object PaperScreens {
      * The factory runs synchronously once, before retained screen evaluation; handlers run on that player's region.
      */
     @Deprecated("Use Strata.open(ownerPlugin, player) with a UiDefinition factory. Scheduled for removal in 1.0.0.")
+    @Suppress("DEPRECATION")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,
