@@ -56,4 +56,46 @@ internal class BodyQualifiedNameRuleTest {
 
         assertEquals(0, BodyQualifiedNameRule(Config.empty).lint(source).size)
     }
+
+    /**
+     * Keeps class literals and call-result member chains distinct from package roots.
+     */
+    @Test
+    internal fun ignoresMemberChainsWithNonNameReceivers() {
+        val source =
+            """
+            fun location() = String::class.java.protectionDomain.codeSource.location.toURI()
+            fun value() = factory().java.value.name
+            """.trimIndent()
+
+        assertEquals(0, BodyQualifiedNameRule(Config.empty).lint(source).size)
+    }
+
+    /**
+     * Includes the called name when checking fully qualified constructors and functions.
+     */
+    @Test
+    internal fun reportsQualifiedConstructorsAndFunctions() {
+        val source =
+            """
+            fun create() = java.io.File("fixture")
+            fun values() = kotlin.collections.listOf("value")
+            """.trimIndent()
+
+        assertEquals(2, BodyQualifiedNameRule(Config.empty).lint(source).size)
+    }
+
+    /**
+     * Retains the qualified package prefix before a subsequent ordinary call.
+     */
+    @Test
+    internal fun reportsQualifiedCallsBeforeMemberChains() {
+        val source =
+            """
+            fun create() = java.util.UUID.randomUUID().toString()
+            fun platformClass() = java.lang.String::class.java.name
+            """.trimIndent()
+
+        assertEquals(2, BodyQualifiedNameRule(Config.empty).lint(source).size)
+    }
 }

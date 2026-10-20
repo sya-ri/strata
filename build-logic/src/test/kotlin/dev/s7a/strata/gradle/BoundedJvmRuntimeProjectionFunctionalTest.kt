@@ -12,7 +12,9 @@ import java.util.Properties
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 
-/** Exercises the production runtime replacement action with real resolved project JARs and a loaded probe. */
+/**
+ * Exercises the production runtime replacement action with real resolved project JARs and a loaded probe.
+ */
 internal class BoundedJvmRuntimeProjectionFunctionalTest {
     @TempDir
     lateinit var directory: Path
@@ -29,65 +31,11 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
                 .substringBefore("                rootProject.providers.gradleProperty(\"strata.performance.operationRequest\")")
                 .substringBefore("                if (rootProject.providers.gradleProperty(\"strata.paired.classpath\").isPresent")
         write("settings.gradle.kts", "rootProject.name = \"runtime-projection\"\ninclude(${(runtimes + "support").joinToString { "\"$it\"" }})\n")
-        write(
-            "build.gradle.kts",
-            """
-            import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-            import org.gradle.api.attributes.LibraryElements
-            import org.gradle.api.attributes.Usage
-            import java.io.File
-            import java.util.Properties
-            plugins { java }
-            subprojects { apply(plugin = "java-library") }
-            val jmhRuntimeClasspath = configurations.create("jmhRuntimeClasspath") {
-                isCanBeConsumed = false
-                attributes {
-                    attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-                    attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.JAR))
-                }
-            }
-            val selected = providers.gradleProperty("fixture.runtimes").get().split(',')
-            (selected + "support").forEach { dependencies.add(jmhRuntimeClasspath.name, dependencies.project(":${'$'}it")) }
-            tasks.register<JavaExec>("verifyProjection") {
-                dependsOn("classes", jmhRuntimeClasspath)
-                classpath = sourceSets["main"].runtimeClasspath + jmhRuntimeClasspath
-                mainClass.set("fixture.Probe")
-                args(selected + "support")
-                maxHeapSize = "64m"
-                doFirst {
-                    val reportRequest: Map<*, *>? = null
-                    val requested = rootProject.providers.gradleProperty("strata.paired.runtime").orNull
-            $replacement
-                }
-            }
-            """.trimIndent(),
-        )
-        write(
-            "src/main/java/fixture/Probe.java",
-            """
-            package fixture;
-            import java.io.InputStream;
-            import java.nio.charset.StandardCharsets;
-            public class Probe {
-                public static void main(String[] names) throws Exception {
-                    for (String name : names) {
-                        try (InputStream input = Probe.class.getResourceAsStream("/" + name + ".txt")) {
-                            if (input == null) throw new IllegalStateException("Missing runtime resource: " + name);
-                            String expected = name.equals("support") ? "untouched" : "candidate";
-                            if (expected.equals(new String(input.readAllBytes(), StandardCharsets.UTF_8))) {
-                                System.out.println("loaded-" + name);
-                            } else {
-                                throw new IllegalStateException("Wrong runtime resource: " + name);
-                            }
-                        }
-                    }
-                }
-            }
-            """.trimIndent(),
-        )
-        (runtimes + "support").forEach { name ->
+        writeBuild(replacement)
+        writeProbe()
+        (runtimes.associateWith { "baseline" } + ("support" to "untouched")).forEach { (name, content) ->
             write("$name/build.gradle.kts", "")
-            write("$name/src/main/resources/$name.txt", if (name == "support") "untouched" else "baseline")
+            write("$name/src/main/resources/$name.txt", content)
         }
         val archives =
             runtimes.associate { name ->
@@ -122,14 +70,86 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
         }
     }
 
-    /** Retains the whole global archive mapping for every independently selected owner. */
+    /**
+     * Executes the current production replacement action against real resolved project JARs.
+     */
+    private fun writeBuild(replacement: String) {
+        write(
+            "build.gradle.kts",
+            """
+            import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+            import org.gradle.api.attributes.LibraryElements
+            import org.gradle.api.attributes.Usage
+            import java.io.File
+            import java.util.Properties
+            plugins { java }
+            subprojects { apply(plugin = "java-library") }
+            val jmhRuntimeClasspath = configurations.create("jmhRuntimeClasspath") {
+                isCanBeConsumed = false
+                attributes {
+                    attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+                    attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.JAR))
+                }
+            }
+            val selected = providers.gradleProperty("fixture.runtimes").get().split(',')
+            (selected + "support").forEach { dependencies.add(jmhRuntimeClasspath.name, dependencies.project(":${'$'}it")) }
+            tasks.register<JavaExec>("verifyProjection") {
+                dependsOn("classes", jmhRuntimeClasspath)
+                classpath = sourceSets["main"].runtimeClasspath + jmhRuntimeClasspath
+                mainClass.set("fixture.Probe")
+                args(selected + "support")
+                maxHeapSize = "64m"
+                doFirst {
+                    val reportRequest: Map<*, *>? = null
+                    val requested = rootProject.providers.gradleProperty("strata.paired.runtime").orNull
+            $replacement
+                }
+            }
+            """.trimIndent(),
+        )
+    }
+
+    /**
+     * Loads actual resources from the selected runtime subset in a child JVM.
+     */
+    private fun writeProbe() {
+        write(
+            "src/main/java/fixture/Probe.java",
+            """
+            package fixture;
+            import java.io.InputStream;
+            import java.nio.charset.StandardCharsets;
+            public class Probe {
+                public static void main(String[] names) throws Exception {
+                    for (String name : names) {
+                        try (InputStream input = Probe.class.getResourceAsStream("/" + name + ".txt")) {
+                            if (input == null) throw new IllegalStateException("Missing runtime resource: " + name);
+                            String expected = name.equals("support") ? "untouched" : "candidate";
+                            if (expected.equals(new String(input.readAllBytes(), StandardCharsets.UTF_8))) {
+                                System.out.println("loaded-" + name);
+                            } else {
+                                throw new IllegalStateException("Wrong runtime resource: " + name);
+                            }
+                        }
+                    }
+                }
+            }
+            """.trimIndent(),
+        )
+    }
+
+    /**
+     * Retains the whole global archive mapping for every independently selected owner.
+     */
     private fun manifest(archives: Map<String, Path>) {
         Files.newBufferedWriter(directory.resolve("runtime.properties")).use { output ->
             Properties().apply { archives.forEach { (name, path) -> setProperty(name, path.toString()) } }.store(output, "Frozen runtime union")
         }
     }
 
-    /** Writes only synthetic working Java resources and their consumer before running the production action. */
+    /**
+     * Writes only synthetic working Java resources and their consumer before running the production action.
+     */
     private fun write(
         relative: String,
         text: String,
@@ -139,7 +159,9 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
         Files.writeString(target, text)
     }
 
-    /** Bounds the real dependency and JavaExec fixture without loading Minecraft or creating measurement evidence. */
+    /**
+     * Bounds the real dependency and JavaExec fixture without loading Minecraft or creating measurement evidence.
+     */
     private fun runner(selected: List<String>): GradleRunner =
         GradleRunner.create().withProjectDir(directory.toFile()).withArguments(
             "verifyProjection",

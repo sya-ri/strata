@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
-/** Verifies that the stable Maven artifact inventory resolves exactly one requested release version. */
+/**
+ * Verifies that the stable Maven artifact inventory resolves exactly one requested release version.
+ */
 internal class MavenReleaseCoordinatesTest {
     @Test
     fun `canonicalizes versionless artifacts in declaration order`() {

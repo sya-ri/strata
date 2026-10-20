@@ -1277,7 +1277,10 @@ dependencies {
 extensions.configure<DetektExtension> {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))
-    source.setFrom(layout.projectDirectory.dir("build-logic/src/main/kotlin"))
+    source.setFrom(
+        layout.projectDirectory.dir("build-logic/src/main/kotlin"),
+        layout.projectDirectory.dir("build-logic/src/test/kotlin"),
+    )
 }
 
 private val minecraftClientTaskNames =
