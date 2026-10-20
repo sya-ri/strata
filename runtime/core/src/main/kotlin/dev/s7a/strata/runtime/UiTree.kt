@@ -2,10 +2,12 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.StateObserverNode
@@ -375,6 +377,29 @@ public class UiTree(
             val retainedRoot = root ?: return@pipelineOperation InputResult.Ignored
             pipeline.requirePlacedRoot(retainedRoot)
             pipeline.dispatch(retainedRoot, event)
+        }
+
+    /**
+     * Dispatches navigation to the deepest, topmost accepting hit node without synthesizing activation.
+     * Geometry, clipping, owner-thread, failure and cleanup contracts follow dispatchPointer.
+     * No gesture target is retained between deliveries; the adapter owns the physical sequence.
+     */
+    public fun dispatchPointerGesture(gesture: PointerGesture): InputResult =
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation InputResult.Ignored
+            pipeline.requirePlacedRoot(retainedRoot)
+            pipeline.dispatchGesture(retainedRoot, gesture)
+        }
+
+    /**
+     * Synchronizes native focus without synthesizing a press, under dispatchPointer's geometry and failure contract.
+     * A missing accepting owner clears focus; pointer capture is unchanged.
+     */
+    public fun focusAt(position: IntOffset): Unit =
+        pipelineOperation {
+            val retainedRoot = root ?: return@pipelineOperation
+            pipeline.requirePlacedRoot(retainedRoot)
+            pipeline.focusAt(retainedRoot, position)
         }
 
     /**

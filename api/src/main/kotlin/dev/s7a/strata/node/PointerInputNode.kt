@@ -3,6 +3,7 @@ package dev.s7a.strata.node
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 
 /**
  * A node that receives pointer events in its local coordinate space.
@@ -11,6 +12,16 @@ import dev.s7a.strata.input.PointerEvent
  * Returning [InputResult.Ignored] allows bubbling to continue, while [InputResult.Consumed] stops dispatch.
  */
 public interface PointerInputNode {
+    /**
+     * Handles an adapter-recognized navigation gesture under the same hit and clipping rules as pointer input.
+     * Ignoring preserves compatibility for tap-only nodes; no press, activation or focus transition is synthesized.
+     * Pan deltas use receiver-local logical units, while zoom factors are dimensionless.
+     */
+    public fun onPointerGesture(
+        gesture: PointerGesture,
+        localPosition: IntOffset,
+    ): InputResult = InputResult.Ignored
+
     /**
      * Handles a pointer event after layout hit testing.
      *

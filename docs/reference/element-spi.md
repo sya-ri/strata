@@ -120,9 +120,12 @@ A backend compiled against a smaller variant set can fail on a new command; ordi
 See [Source compatibility](#source-compatibility) for the corresponding `UiText.WithFont` visitor contract.
 Portable primitive nodes emit only platform-neutral fill and image commands.
 An opt-in version adapter may instead pass an immutable opaque `PlatformDrawCommand` through `PaintScope.drawPlatform`; core maps its declared bounds and preserves its opaque payload, clip, and draw order for execution by the matching adapter.
-Current frame painting accepts that command only when its accumulated transform is an exact integer translation.
+An exact integer translation preserves the payload by reference.
+For fractional placement or scale, core asks `PlatformDrawCommand.transformed` for an immutable backend-owned snapshot carrying the exact transformed edges, and places that result inside enclosing integer bounds.
+The default returns null and preserves explicit rejection for opaque backends that cannot transform their native presentation.
+Web text and editors implement this contract using native CSS geometry without replacing their DOM identity.
 The Minecraft presenter also rejects an opaque payload whose bounds cross an active fractional clip before submitting any frame layers; a payload wholly inside that clip remains supported.
-A non-unit scale or fractional translation throws `UnsupportedOperationException` during frame paint before any adapter output, because core cannot generically transform the opaque payload or safely produce a partial frame.
+A payload that declines transformation causes `UnsupportedOperationException` during frame paint before adapter output.
 `RootOverlayPaintNode` receives the node's outward-projected root-coordinate `anchorBounds`, but every command it emits is already in root coordinates and is not scaled or translated again by the node's accumulated child transform.
 Nodes without `ClipChildrenNode` preserve valid local and descendant paint overflow.
 Use `UiText` in semantics without resolving it.

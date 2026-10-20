@@ -31,6 +31,7 @@ internal object WebImageRasterizer {
         tint: ArgbColor,
         cutoff: Float,
         orientation: SampledImageOrientation,
+        physicalSampling: Boolean = true,
     ) {
         val scale = window.devicePixelRatio.coerceAtLeast(1.0)
         val left = floor(bounds.left * scale).toInt()
@@ -54,8 +55,10 @@ internal object WebImageRasterizer {
                 val py = (top + y + 0.5) / scale
                 if (px < destination.left || destination.right <= px || py < destination.top || destination.bottom <= py) continue
                 if (clip != null && (px < clip.left || clip.right <= px || py < clip.top || clip.bottom <= py)) continue
-                val fx = (px - destination.left) / destination.width
-                val fy = (py - destination.top) / destination.height
+                val sampleX = if (physicalSampling) px else floor(px) + 0.5
+                val sampleY = if (physicalSampling) py else floor(py) + 0.5
+                val fx = (sampleX - destination.left) / destination.width
+                val fy = (sampleY - destination.top) / destination.height
                 val sx = floor(if (reverseX) source.right - fx * source.width else source.left + fx * source.width).toInt().coerceIn(floor(source.left).toInt(), ceil(source.right).toInt() - 1)
                 val sy = floor(if (reverseY) source.bottom - fy * source.height else source.top + fy * source.height).toInt().coerceIn(floor(source.top).toInt(), ceil(source.bottom).toInt() - 1)
                 val argb = image.argbAt(sx, sy)

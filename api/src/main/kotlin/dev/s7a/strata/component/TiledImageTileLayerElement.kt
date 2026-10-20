@@ -421,8 +421,8 @@ internal class TiledImageTileLayerElement(
             while (iterator.hasNext()) {
                 val entry = iterator.next()
                 if (entry.key in required) continue
-                iterator.remove()
                 removed.add(entry.value)
+                iterator.remove()
             }
             closeEntries(removed)
             requiredIds.forEach { id ->

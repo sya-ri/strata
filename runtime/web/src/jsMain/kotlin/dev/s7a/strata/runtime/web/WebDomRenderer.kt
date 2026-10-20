@@ -33,6 +33,7 @@ internal class WebDomRenderer(
     private var resources: WebUiResources? = WebUiResources(),
 ) : AutoCloseable {
     private var nodes = emptyMap<String, HTMLElement>()
+    private val owned = LinkedHashSet<HTMLElement>()
     private var initialized = false
     private var stylesheet: HTMLElement? = null
     private val originalTheme = root.getAttribute("data-strata-theme-root")
@@ -53,7 +54,7 @@ internal class WebDomRenderer(
         root.style.height = "${frame.size.height}px"
         root.setAttribute("data-strata-theme-root", theme.token)
         var cursor = root.firstChild
-        entries.forEach { entry ->
+        entries.forEachIndexed { index, entry ->
             val previous = nodes[entry.identity]
             val element =
                 if (previous?.tagName?.lowercase() == entry.tag) {
@@ -62,13 +63,20 @@ internal class WebDomRenderer(
                     root.ownerDocument?.createElement(entry.tag) as HTMLElement
                 }
             element.setAttribute("data-strata-node", entry.identity)
+            owned.add(element)
             element.setAttribute("data-strata-theme", theme.token)
             update(element, entry)
-            if (element !== cursor) root.insertBefore(element, cursor) else cursor = cursor.nextSibling
+            element.style.zIndex = index.toString()
+            val activeEditor = entry.editor != null && (root.ownerDocument?.activeElement === element || element.hasAttribute("data-strata-composing"))
+            if (element === cursor) {
+                cursor = cursor.nextSibling
+            } else if (activeEditor.not() || element.parentNode !== root) {
+                root.insertBefore(element, cursor)
+            }
             next[entry.identity] = element
         }
         nodes.forEach { (identity, element) ->
-            if (next[identity] !== element) element.parentNode?.removeChild(element)
+            if (next[identity] !== element) release(element)
         }
         nodes = next
         entries.firstOrNull { it.editor?.focused == true || it.presentation?.focused == true }?.let { entry ->
@@ -78,7 +86,7 @@ internal class WebDomRenderer(
     }
 
     override fun close() {
-        nodes.values.forEach { element -> element.parentNode?.removeChild(element) }
+        owned.toList().forEach(::release)
         nodes = emptyMap()
         stylesheet?.let { it.parentNode?.removeChild(it) }
         stylesheet = null
@@ -86,6 +94,15 @@ internal class WebDomRenderer(
         if (initialized) {
             if (originalTheme == null) root.removeAttribute("data-strata-theme-root") else root.setAttribute("data-strata-theme-root", originalTheme)
         }
+    }
+
+    private fun release(element: HTMLElement) {
+        owned.remove(element)
+        if (element is HTMLCanvasElement) {
+            element.width = 0
+            element.height = 0
+        }
+        element.parentNode?.removeChild(element)
     }
 
     @Suppress("CyclomaticComplexMethod") // Validate every native kind before mutating generated markup.
@@ -135,6 +152,7 @@ internal class WebDomRenderer(
         }
         initial.filter { (it is HTMLElement).not() }.forEach { root.removeChild(it) }
         nodes = adopted
+        owned.addAll(adopted.values)
     }
 
     private fun update(
@@ -152,6 +170,19 @@ internal class WebDomRenderer(
         style.font = theme.font
         style.whiteSpace = "pre"
         style.setProperty("clip-path", clipPath(bounds, entry.clip))
+        style.transform = ""
+        entry.scaled?.let { scaled ->
+            val destination = scaled.destination
+            val sx = destination.width / scaled.source.width
+            val sy = destination.height / scaled.source.height
+            style.left = "${destination.left}px"
+            style.top = "${destination.top}px"
+            style.width = "${scaled.source.width}px"
+            style.height = "${scaled.source.height}px"
+            style.transformOrigin = "0 0"
+            style.transform = "scale($sx,$sy)"
+            style.setProperty("clip-path", scaledClipPath(scaled, entry.clip))
+        }
         style.backgroundColor = entry.background
         val presentation = entry.presentation
         if (presentation?.font != null) style.font = presentation.font
@@ -204,11 +235,7 @@ internal class WebDomRenderer(
                 }
 
                 is DrawCommand.Platform -> {
-                    when (val presentation = command.command) {
-                        is WebPresentation -> entries.add(Entry("n${presentation.identity}", presentation.kind.tag, command.bounds, clips.lastOrNull(), "", presentation))
-                        is WebEditorPresentation -> entries.add(Entry("n${presentation.identity}", if (presentation.multiline) "textarea" else "input", command.bounds, clips.lastOrNull(), "", null, presentation))
-                        else -> throw UnsupportedOperationException("The web renderer does not recognize this platform payload.")
-                    }
+                    entries.add(nativeEntry(command, clips.lastOrNull()))
                 }
 
                 is DrawCommand.BlitImage -> {
@@ -264,11 +291,36 @@ internal class WebDomRenderer(
         val presentation: WebPresentation?,
         val editor: WebEditorPresentation? = null,
         val image: DrawCommand? = null,
+        val scaled: WebScaledPresentation? = null,
     )
 
     private fun floating(bounds: IntRect): FloatRect = FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat())
 
     private fun enclosing(bounds: FloatRect): IntRect = IntRect(floor(bounds.left).toInt(), floor(bounds.top).toInt(), ceil(bounds.right).toInt(), ceil(bounds.bottom).toInt())
+
+    private fun nativeEntry(
+        command: DrawCommand.Platform,
+        clip: FloatRect?,
+    ): Entry {
+        val scaled = command.command as? WebScaledPresentation
+        return when (val presentation = scaled?.presentation ?: command.command) {
+            is WebPresentation -> Entry("n${presentation.identity}", presentation.kind.tag, command.bounds, clip, "", presentation, scaled = scaled)
+            is WebEditorPresentation -> Entry("n${presentation.identity}", if (presentation.multiline) "textarea" else "input", command.bounds, clip, "", null, presentation, scaled = scaled)
+            else -> throw UnsupportedOperationException("The web renderer does not recognize this platform payload.")
+        }
+    }
+
+    private fun scaledClipPath(
+        scaled: WebScaledPresentation,
+        clip: FloatRect?,
+    ): String {
+        if (clip == null) return "none"
+        val bounds = scaled.destination
+        val visible = intersect(bounds, clip)
+        val sx = bounds.width / scaled.source.width
+        val sy = bounds.height / scaled.source.height
+        return "inset(${(visible.top - bounds.top) / sy}px ${maxOf(0f, bounds.right - visible.right) / sx}px ${maxOf(0f, bounds.bottom - visible.bottom) / sy}px ${(visible.left - bounds.left) / sx}px)"
+    }
 
     private fun paintImage(
         canvas: HTMLCanvasElement,
@@ -280,7 +332,7 @@ internal class WebDomRenderer(
         canvas.style.setProperty("clip-path", "none")
         when (image) {
             is DrawCommand.SampledImage -> WebImageRasterizer.draw(canvas, image.image, image.source, image.destination, bounds, clip, image.tint, image.alphaCutoff, image.orientation)
-            is DrawCommand.BlitImage -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
+            is DrawCommand.BlitImage -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal, physicalSampling = false)
             is DrawCommand.BlitImagePixels -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
             else -> error("Unexpected web image command.")
         }

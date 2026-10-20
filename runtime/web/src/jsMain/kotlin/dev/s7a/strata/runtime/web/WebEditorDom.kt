@@ -26,7 +26,8 @@ internal object WebEditorDom {
         style.resize = "none"
         style.whiteSpace = if (editor.wrap) "pre-wrap" else "pre"
         style.overflowWrap = if (editor.wrap) "anywhere" else "normal"
-        style.color = cssColor(editor.style.color.value)
+        val foreground = if (editor.enabled) editor.style.color else editor.style.disabledColor ?: editor.style.color
+        style.color = cssColor(foreground.value)
         style.setProperty("pointer-events", "auto")
         element.setAttribute("data-strata-editor", editor.identity.toString())
         val composing = element.hasAttribute("data-strata-composing")

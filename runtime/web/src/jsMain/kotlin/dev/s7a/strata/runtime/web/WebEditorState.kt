@@ -68,7 +68,7 @@ internal sealed class WebEditorState {
      * Filters unsupported native input before writing the public state contract.
      */
     fun commit(nativeValue: String) {
-        val normalized = if (this is Area) nativeValue.replace("\r\n", "\n").replace('\r', '\n') else nativeValue
+        val normalized = if (this is Area) nativeValue.replace("\r\n", "\n").replace(Regex("[\r\u000B\u000C\u0085\u2028\u2029]"), "\n") else nativeValue
         val accepted = StringBuilder()
         var index = 0
         while (index < normalized.length) {

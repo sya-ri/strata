@@ -2,6 +2,8 @@ package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.component.TextInputAppearance
 import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.geometry.FloatRect
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -22,4 +24,9 @@ internal data class WebEditorPresentation(
     val wrap: Boolean,
     val lineSpacing: Int,
     val scrollOffset: Double,
-) : PlatformDrawCommand
+) : PlatformDrawCommand {
+    override fun transformed(
+        source: IntRect,
+        destination: FloatRect,
+    ): PlatformDrawCommand = WebScaledPresentation(this, source, destination)
+}

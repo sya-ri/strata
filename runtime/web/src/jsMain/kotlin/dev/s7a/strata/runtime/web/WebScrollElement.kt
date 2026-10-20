@@ -14,6 +14,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
@@ -52,6 +53,17 @@ internal class WebScrollElement(
         private var observer: ScrollStateObserver? = null
         private var rate = initial.rate
         private var dragging = false
+
+        override fun onPointerGesture(
+            gesture: PointerGesture,
+            localPosition: IntOffset,
+        ): InputResult =
+            if (gesture is PointerGesture.Pan) {
+                move(-gesture.deltaY)
+                InputResult.Consumed
+            } else {
+                InputResult.Ignored
+            }
 
         override fun measure(
             scope: MeasureScope,
@@ -111,7 +123,7 @@ internal class WebScrollElement(
         }
 
         override fun attach() {
-            observe()
+            observer = checkNotNull(state).observe { invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)) }
         }
 
         override fun detach() {
@@ -131,14 +143,10 @@ internal class WebScrollElement(
             if (state !== element.state) {
                 observer?.close()
                 state = element.state
-                observe()
+                attach()
             }
             rate = element.rate
             return DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Layout)
-        }
-
-        private fun observe() {
-            observer = checkNotNull(state).observe { invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)) }
         }
 
         private fun move(delta: Double) {

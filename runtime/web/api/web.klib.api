@@ -46,6 +46,7 @@ sealed interface dev.s7a.strata.runtime.web/WebPlayerSkin { // dev.s7a.strata.ru
 
 final class dev.s7a.strata.runtime.web/WebFont : kotlin/AutoCloseable { // dev.s7a.strata.runtime.web/WebFont|null[0]
     final fun close() // dev.s7a.strata.runtime.web/WebFont.close|close(){}[0]
+    final fun measure(kotlin/String): kotlin/Int // dev.s7a.strata.runtime.web/WebFont.measure|measure(kotlin.String){}[0]
 
     final object Companion { // dev.s7a.strata.runtime.web/WebFont.Companion|null[0]
         final suspend fun load(kotlin/String, kotlin/String, kotlin/Int = ...): dev.s7a.strata.runtime.web/WebFont // dev.s7a.strata.runtime.web/WebFont.Companion.load|load(kotlin.String;kotlin.String;kotlin.Int){}[0]

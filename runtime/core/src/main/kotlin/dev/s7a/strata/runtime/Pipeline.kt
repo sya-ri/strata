@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
@@ -95,6 +96,24 @@ internal class Pipeline(
         root: RetainedNode,
         event: PointerEvent,
     ): InputResult = inputPipeline.dispatch(root, event)
+
+    /**
+     * Dispatches recognized navigation without changing pointer focus or capture.
+     */
+    fun dispatchGesture(
+        root: RetainedNode,
+        gesture: PointerGesture,
+    ): InputResult = inputPipeline.dispatchGesture(root, gesture)
+
+    /**
+     * Acquires native focus at committed coordinates without pointer activation.
+     */
+    fun focusAt(
+        root: RetainedNode,
+        position: IntOffset,
+    ) {
+        focusedInputPipeline.acquireFromPointer(root, position)
+    }
 
     /**
      * Dispatches [event] through the focused logical component and applies ignored Tab traversal.

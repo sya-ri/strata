@@ -45,6 +45,7 @@ public class WebUiHost internal constructor(
     private var request: Int? = null
     private var closed = false
     private var rendering = false
+    private var pixelRatio = window.devicePixelRatio
     private val events =
         WebInputEvents(root, session, runtime) { action ->
             if (rendering.not() && closed.not()) {
@@ -87,7 +88,8 @@ public class WebUiHost internal constructor(
         this.viewport = viewport
         guarded {
             val frame = session.frame(Constraints.fixed(viewport.width, viewport.height))
-            if (frame !== lastFrame) {
+            if (frame !== lastFrame || pixelRatio != window.devicePixelRatio) {
+                pixelRatio = window.devicePixelRatio
                 rendering = true
                 try {
                     renderer.render(frame)

@@ -1,9 +1,11 @@
 package dev.s7a.strata.runtime.spi
 
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -22,6 +24,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * A failed session has already performed cleanup; closing it records the closed terminal state without repeating cleanup.
  */
 @InternalStrataRuntimeApi
+@Suppress("TooManyFunctions") // One bridge owns lifecycle, frames and all committed input protocols.
 public sealed interface RuntimeUiSession : AutoCloseable {
     /**
      * Commits the shared declaration cutoff and calls [project] without measuring or painting.
@@ -116,6 +119,18 @@ public sealed interface RuntimeUiSession : AutoCloseable {
      * @throws Throwable when pointer dispatch or cleanup fails; the first failure remains primary with later distinct failures suppressed.
      */
     public fun dispatchPointer(event: PointerEvent): InputResult
+
+    /**
+     * Delivers adapter-recognized navigation without a press, activation or focus transition.
+     * Uses the committed attached tree and ordinary pointer input ownership and failure rules.
+     */
+    public fun dispatchPointerGesture(gesture: PointerGesture): InputResult
+
+    /**
+     * Synchronizes native focus at committed coordinates without activation.
+     * Ownership, geometry preparation and failure rules follow dispatchPointer.
+     */
+    public fun focusAt(position: IntOffset)
 
     /**
      * Dispatches one keyboard event synchronously to the focused component in the most recently committed frame.

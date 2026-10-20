@@ -2,9 +2,11 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.platform.currentThread
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
@@ -413,6 +415,21 @@ internal class UiSession(
      * @throws Throwable when focused keyboard dispatch fails.
      */
     internal fun dispatchKeyboard(event: KeyboardEvent): InputResult = dispatchFocusedInput { retainedTree -> retainedTree.dispatchKeyboard(event) }
+
+    /**
+     * Dispatches recognized navigation against the committed tree under ordinary input failure ownership.
+     */
+    internal fun dispatchPointerGesture(gesture: PointerGesture): InputResult = dispatchFocusedInput { it.dispatchPointerGesture(gesture) }
+
+    /**
+     * Synchronizes native focus against committed geometry without application pointer actions.
+     */
+    internal fun focusAt(position: IntOffset) {
+        dispatchFocusedInput {
+            it.focusAt(position)
+            InputResult.Consumed
+        }
+    }
 
     /**
      * Dispatches one text-input event through the most recently committed attached tree.

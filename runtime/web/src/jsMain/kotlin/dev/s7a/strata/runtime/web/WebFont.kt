@@ -2,7 +2,10 @@ package dev.s7a.strata.runtime.web
 
 import kotlinx.browser.document
 import kotlinx.coroutines.await
+import org.w3c.dom.CanvasRenderingContext2D
+import org.w3c.dom.HTMLCanvasElement
 import kotlin.js.Promise
+import kotlin.math.ceil
 
 /**
  * One explicitly loaded browser font and its logical size.
@@ -17,6 +20,19 @@ public class WebFont private constructor(
     internal val css: String get() {
         check(closed.not()) { "The prepared Web font is closed." }
         return fontCss
+    }
+
+    /**
+     * Measures one string in logical pixels with this prepared face on the browser agent.
+     * The result rounds up, matching retained native text measurement; closed fonts reject access.
+     */
+    public fun measure(text: String): Int {
+        val canvas = document.createElement("canvas") as HTMLCanvasElement
+        val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
+        context.font = css
+        val width = ceil(context.measureText(text).width)
+        require(width.isFinite() && 0.0 <= width && width <= Int.MAX_VALUE) { "Web text width is not representable." }
+        return width.toInt()
     }
 
     override fun close() {

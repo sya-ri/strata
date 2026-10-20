@@ -18,6 +18,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
@@ -222,6 +223,16 @@ internal class VirtualListElement(
                 requestBoundaryItems(delta)
                 invalidate(DirtyMask.of(DirtyPhase.Measure))
                 InputResult.Consumed
+            } else {
+                InputResult.Ignored
+            }
+
+        override fun onPointerGesture(
+            gesture: PointerGesture,
+            localPosition: IntOffset,
+        ): InputResult =
+            if (gesture is PointerGesture.Pan) {
+                onPointerEvent(PointerEvent.Scroll(gesture.position, 0.0, -gesture.deltaY / scrollRate), localPosition)
             } else {
                 InputResult.Ignored
             }

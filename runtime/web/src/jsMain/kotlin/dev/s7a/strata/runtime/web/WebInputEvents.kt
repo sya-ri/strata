@@ -40,6 +40,19 @@ internal class WebInputEvents(
     private var pressed: PointerButton? = null
     private var previous: IntOffset? = null
     private val blur = EventListener { transaction { reset() } }
+    private val windowFocus =
+        EventListener {
+            transaction {
+                val target = root.ownerDocument?.activeElement as? HTMLElement
+                if (target?.hasAttribute("data-strata-editor") == true) focusEditor(target)
+            }
+        }
+    private val touch =
+        WebTouchGestures(root, session) { position ->
+            root.focus()
+            session.dispatchPointer(PointerEvent.Press(position, PointerButton.Primary))
+            session.dispatchPointer(PointerEvent.Release(position, PointerButton.Primary))
+        }
 
     /**
      * Installs only after initial markup has been validated and painted.
@@ -56,6 +69,7 @@ internal class WebInputEvents(
         listen(WebDomEvent.KeyDown, ::keyboard)
         listen(WebDomEvent.KeyUp, ::keyboard)
         listen(WebDomEvent.Input, ::input)
+        listen(WebDomEvent.BeforeInput, ::beforeInput)
         listen(WebDomEvent.CompositionStart, ::composition)
         listen(WebDomEvent.CompositionUpdate, ::composition)
         listen(WebDomEvent.CompositionEnd, ::composition)
@@ -66,17 +80,20 @@ internal class WebInputEvents(
         })
         listen(WebDomEvent.Scroll, ::scroll, capture = true)
         window.addEventListener("blur", blur)
+        window.addEventListener("focus", windowFocus)
     }
 
     override fun close() {
         listeners.forEach { (type, listener) -> root.removeEventListener(type.nativeName, listener, type == WebDomEvent.Scroll) }
         listeners.clear()
         window.removeEventListener("blur", blur)
+        window.removeEventListener("focus", windowFocus)
         if (originalTabIndex == null) root.removeAttribute("tabindex") else root.setAttribute("tabindex", originalTabIndex)
         root.style.setProperty("touch-action", originalTouchAction)
         pressed = null
         previous = null
         runtime = null
+        touch.close()
     }
 
     /**
@@ -110,6 +127,7 @@ internal class WebInputEvents(
     private fun pointer(event: Event) {
         val mouse = event as? MouseEvent ?: return
         val at = position(mouse)
+        if (editor(event) == null && touch.handle(event, at)) return
         val button =
             when (val code = mouse.button.toInt()) {
                 0 -> PointerButton.Primary
@@ -178,11 +196,27 @@ internal class WebInputEvents(
 
     private fun focus(event: Event) {
         val target = editor(event) ?: return
+        focusEditor(target)
+    }
+
+    private fun focusEditor(target: HTMLElement) {
+        if (node(target)?.isFocused == true) return
         val bounds = target.getBoundingClientRect()
         val outer = root.getBoundingClientRect()
         val at = IntOffset((bounds.left - outer.left + bounds.width / 2).toInt(), (bounds.top - outer.top + bounds.height / 2).toInt())
-        session.dispatchPointer(PointerEvent.Press(at, PointerButton.Primary))
-        session.dispatchPointer(PointerEvent.Release(at, PointerButton.Primary))
+        session.focusAt(at)
+    }
+
+    private fun beforeInput(event: Event) {
+        val target = editor(event) ?: return
+        target.removeAttribute("data-strata-beforeinput")
+        if (target.hasAttribute("data-strata-composing")) return
+        val text = event.asDynamic().data as? String ?: return
+        if (committedWebText("", text).any { session.dispatchTextInput(it) == InputResult.Consumed }) {
+            event.preventDefault()
+        } else {
+            target.setAttribute("data-strata-beforeinput", "")
+        }
     }
 
     private fun input(event: Event) {
@@ -198,7 +232,8 @@ internal class WebInputEvents(
             }
         session.dispatchAction { node.state.commit(value) }
         val after = node.state.value
-        committedWebText(before, after).forEach(session::dispatchTextInput)
+        if (target.hasAttribute("data-strata-beforeinput").not()) committedWebText(before, after).forEach(session::dispatchTextInput)
+        target.removeAttribute("data-strata-beforeinput")
         scroll(event)
     }
 
@@ -228,6 +263,7 @@ internal class WebInputEvents(
     private fun reset() {
         pressed = null
         previous = null
+        touch.close()
         session.resetInputState()
     }
 }

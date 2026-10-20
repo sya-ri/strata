@@ -1,10 +1,12 @@
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -41,6 +43,8 @@ internal class RuntimeUiSessionBridgeApiContractTest {
                 "frame",
                 "frame",
                 "dispatchPointer",
+                "dispatchPointerGesture",
+                "focusAt",
                 "dispatchKeyboard",
                 "dispatchTextInput",
                 "projectDeclarations",
@@ -160,6 +164,8 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         assertEquals(listOf(Function1::class.java), byName.getValue("projectDeclarations").parameterTypes.toList())
         assertEquals(Void.TYPE, byName.getValue("dispatchAction").returnType)
         assertEquals(listOf(Function0::class.java), byName.getValue("dispatchAction").parameterTypes.toList())
+        assertEquals(Void.TYPE, byName.getValue("focusAt").returnType)
+        assertEquals(listOf(IntOffset::class.java), byName.getValue("focusAt").parameterTypes.toList())
         val attach = byName.getValue("attach")
         val close = byName.getValue("close")
         val detach = byName.getValue("detach")
@@ -185,6 +191,7 @@ internal class RuntimeUiSessionBridgeApiContractTest {
         mapOf(
             "dispatchKeyboard" to KeyboardEvent::class.java,
             "dispatchPointer" to PointerEvent::class.java,
+            "dispatchPointerGesture" to PointerGesture::class.java,
             "dispatchTextInput" to TextInputEvent::class.java,
         ).forEach { (name, parameter) ->
             val input = byName.getValue(name)

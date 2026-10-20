@@ -221,9 +221,11 @@ internal class PaintPipeline(
             }
 
             is LocalDrawCommand.Platform -> {
-                throw UnsupportedOperationException(
-                    "Platform draw commands require an exact integer-translation child transform.",
-                )
+                val destination = transform.mapFractional(command.bounds)
+                val payload =
+                    command.command.transformed(command.bounds, destination)
+                        ?: throw UnsupportedOperationException("Platform draw commands require an exact integer-translation child transform.")
+                DrawCommand.Platform(payload, transform.enclosing(command.bounds))
             }
         }
     }

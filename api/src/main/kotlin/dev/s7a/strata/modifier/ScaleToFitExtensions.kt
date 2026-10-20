@@ -12,7 +12,7 @@ import dev.s7a.strata.layout.Alignment
  * When [allowUpscaling] is true and an outer modifier fills the viewport, the fit tracks viewport growth and shrinkage; on a fixed physical window this compensates for host GUI-density changes and keeps approximately the same physical proportions.
  * Earlier modifiers operate in outer coordinates, while later modifiers and the component subtree operate in the fixed content coordinates.
  * The same transform applies to descendant geometry, portable painting, clipping, input, focus visibility, and semantics; root-overlay commands remain in root coordinates and use only the transformed anchor.
- * Opaque platform draw commands currently require an exact integer translation and fail during painting under a non-unit scale or fractional translation because their payload cannot be transformed generically.
+ * Opaque platform commands require an exact integer translation unless their payload explicitly supplies an immutable transformed presentation through PlatformDrawCommand.
  * When either constrained outer dimension is zero, the virtual child remains measured but is not placed, excluding its subtree from later phases.
  * Child paint overflow is transformed but not implicitly clipped.
  *
@@ -24,7 +24,7 @@ import dev.s7a.strata.layout.Alignment
  * @param allowUpscaling whether a fitting scale greater than one may enlarge the content.
  * @return this chain with one appended active scale-to-fit modifier.
  * @throws IllegalArgumentException when either content dimension is zero.
- * @throws UnsupportedOperationException during painting when the transformed subtree emits an opaque platform draw command under a non-unit scale or fractional translation.
+ * @throws UnsupportedOperationException during painting when an opaque payload declines a requested non-unit scale or fractional translation.
  */
 public fun Modifier.scaleToFit(
     contentSize: IntSize,

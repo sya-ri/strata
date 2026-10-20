@@ -61,6 +61,11 @@ internal class WebEditorElement(
         private var subscription: AutoCloseable? = null
         private var scrollObserver: ScrollStateObserver? = null
         private var focused = false
+
+        /**
+         * Committed logical focus used to avoid redundant native acquisition.
+         */
+        val isFocused: Boolean get() = focused
         val state: WebEditorState get() = checkNotNull(element).state
         override val acceptsFocus: Boolean get() = element?.enabled == true
         override val requiresTextInput: Boolean get() = true

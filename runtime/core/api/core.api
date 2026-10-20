@@ -29,7 +29,9 @@ public final class dev/s7a/strata/runtime/UiTree : java/lang/AutoCloseable {
 	public fun close ()V
 	public final fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public final fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public final fun dispatchPointerGesture (Ldev/s7a/strata/input/PointerGesture;)Ldev/s7a/strata/input/InputResult;
 	public final fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
+	public final fun focusAt (Ldev/s7a/strata/geometry/IntOffset;)V
 	public final fun getState ()Ldev/s7a/strata/runtime/TreeState;
 	public final fun layout ()V
 	public final fun measure (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
@@ -236,7 +238,9 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : ja
 	public abstract fun dispatchAction (Lkotlin/jvm/functions/Function0;)V
 	public abstract fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun dispatchPointerGesture (Ldev/s7a/strata/input/PointerGesture;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun focusAt (Ldev/s7a/strata/geometry/IntOffset;)V
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;Ldev/s7a/strata/runtime/FrameTime;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;

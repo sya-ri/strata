@@ -1,5 +1,7 @@
 package dev.s7a.strata.render
 
+import dev.s7a.strata.geometry.FloatRect
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -10,4 +12,15 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * A backend that does not recognize an implementation must fail before producing partial output.
  */
 @InternalStrataRuntimeApi
-public interface PlatformDrawCommand
+public interface PlatformDrawCommand {
+    /**
+     * Optionally returns an immutable payload for fractional placement or scale.
+     * Source contains the original local bounds; destination preserves exact transformed edges.
+     * Core passes the result to the same backend inside enclosing integer bounds without interpreting it.
+     * Null preserves explicit rejection for backends that cannot transform their native presentation.
+     */
+    public fun transformed(
+        source: IntRect,
+        destination: FloatRect,
+    ): PlatformDrawCommand? = null
+}

@@ -13,6 +13,7 @@ import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.TabSelectionIndicator
 import dev.s7a.strata.component.TextAreaState
 import dev.s7a.strata.component.TextAreaViewport
@@ -142,7 +143,7 @@ internal class WebComponentRuntime(
         style: TextStyle,
         modifier: Modifier,
         key: ElementKey<*>?,
-    ): Element = editor(WebEditorState.Field(state), size, enabled, style, TextInputAppearance.Default, resources.defaultFont?.css ?: theme.font, false, 0, modifier, key)
+    ): Element = editor(WebEditorState.Field(state), size, enabled, style, TextInputAppearance.Default, editingFont, false, 0, modifier, key)
 
     override fun textField(
         state: TextFieldState,
@@ -159,7 +160,7 @@ internal class WebComponentRuntime(
             enabled,
             style,
             appearance,
-            resources.defaultFont?.css ?: theme.font,
+            editingFont,
             false,
             0,
             modifier,
@@ -227,7 +228,7 @@ internal class WebComponentRuntime(
             enabled,
             style,
             TextInputAppearance.Default,
-            resources.defaultFont?.css ?: theme.font,
+            editingFont,
             wrap != TextWrap.None,
             lineSpacing,
             modifier,
@@ -251,7 +252,7 @@ internal class WebComponentRuntime(
             enabled,
             style,
             appearance,
-            resources.defaultFont?.css ?: theme.font,
+            editingFont,
             wrap != TextWrap.None,
             lineSpacing,
             modifier,
@@ -403,6 +404,16 @@ internal class WebComponentRuntime(
             key: ElementKey<*>?,
         ): Element {
             require(image.size == IntSize(64, 64)) { "PlayerHead requires a normalized 64 by 64 skin." }
+            if (size % 8 != 0) {
+                val face = sampleWebHeadRegion(image, IntRect(8, 8, 16, 16), size)
+                val hat = if (showHat) sampleWebHeadRegion(image, IntRect(40, 8, 48, 16), size) else null
+                return evaluateComponentTree {
+                    Stack(modifier, key = key) {
+                        element(WebImageElement(face, IntRect(0, 0, size, size), IntSize(size, size), false, Modifier, null))
+                        if (hat != null) element(WebImageElement(hat, IntRect(0, 0, size, size), IntSize(size, size), false, Modifier, null))
+                    }
+                }
+            }
             return WebImageElement(image, IntRect(8, 8, 16, 16), IntSize(size, size), showHat, modifier, key)
         }
         if (source is PlayerSkinSource.Pixels) return head(source.skin, modifier, key)
@@ -440,6 +451,8 @@ internal class WebComponentRuntime(
         rows: Int,
     ): Modifier = throw UnsupportedOperationException("Web capability is unavailable: containerBackground")
 
+    private val editingFont: String get() = resources.defaultFont?.css ?: theme.font.replace("16px", "9px")
+
     private var nextIdentity = 0
 
     private fun primitive(
@@ -456,7 +469,17 @@ internal class WebComponentRuntime(
         val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
         context.font = font
         val measured = ceil(context.measureText(label).width).toInt()
-        val size = IntSize(width ?: measured, if (kind == WebPresentation.Kind.Button) 32 else 24)
+        val size =
+            IntSize(
+                width ?: measured,
+                if (kind == WebPresentation.Kind.Button) {
+                    32
+                } else if (resources.defaultFont != null) {
+                    9
+                } else {
+                    24
+                },
+            )
         return WebPrimitiveElement(WebPresentation(0, kind, label, enabled, style, font = font), size, ::allocateIdentity, modifier, key)
     }
 

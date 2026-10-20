@@ -15,6 +15,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
@@ -52,6 +53,18 @@ internal class WebScrollbarElement(
         private var anchor = 0
         private var start = 0.0
         private var captured = false
+
+        override fun onPointerGesture(
+            gesture: PointerGesture,
+            localPosition: IntOffset,
+        ): InputResult {
+            if (gesture !is PointerGesture.Pan || height <= thumbHeight) return InputResult.Ignored
+            val metrics = checkNotNull(state).metrics
+            checkNotNull(state).scrollBy(gesture.deltaY * metrics.maximumOffset / (height - thumbHeight), checkNotNull(observer))
+            invalidate(DirtyMask.of(DirtyPhase.Paint))
+            return InputResult.Consumed
+        }
+
         private val thumbHeight: Int get() {
             val metrics = checkNotNull(state).metrics
             return if (metrics.contentExtent == 0) height else maxOf(12, (height.toLong() * metrics.viewportExtent / metrics.contentExtent).toInt()).coerceAtMost(height)
