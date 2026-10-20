@@ -22,6 +22,7 @@ import java.util.function.Predicate
 /**
  * Borrows one loaded client and integrated-server player for a single inventory verification invocation.
  * Call methods from the Fabric coordinator; client and server work stays on its existing owner thread.
+ * Fixed native fixture inputs belong to this invocation.
  * The caller retains the world lifetime and is responsible for restoring scenario state.
  */
 @OptIn(InternalStrataRuntimeApi::class)
@@ -144,23 +145,20 @@ internal class InventorySlotTestContext(
         button: Int,
     ): MouseButtonEvent = MouseButtonEvent(pointer.x.toDouble(), pointer.y.toDouble(), MouseButtonInfo(button, 0))
 
-    /**
-     * Shares the fixed slot indices and client coordinates used by synchronization and native gesture scenarios.
-     */
-    internal companion object {
-        internal const val FUEL_SLOT_INDEX: Int = 0
-        internal const val CHARGE_SLOT_INDEX: Int = 1
-        internal const val CONTAINER_SIZE: Int = 27
-        internal const val ITEM_COUNT: Int = 7
-        internal val industrialFuelPointer: IntOffset = IntOffset(90, 49)
-        internal val industrialChargePointer: IntOffset = IntOffset(223, 49)
+    internal val playerInventoryIndex: Int = 0
+    internal val containerSlotIndex: Int = 0
+    internal val fuelSlotIndex: Int = 0
+    internal val chargeSlotIndex: Int = 1
+    internal val containerSize: Int = 27
+    internal val itemCount: Int = 7
+    internal val industrialFuelPointer: IntOffset = IntOffset(90, 49)
+    internal val industrialChargePointer: IntOffset = IntOffset(223, 49)
 
-        /**
-         * Matches the fixture's item and count without replacing component-sensitive native oracle comparisons.
-         */
-        internal fun stackMatches(
-            stack: ItemStack,
-            item: Item,
-        ): Boolean = stack.`is`(item) && stack.count == ITEM_COUNT
-    }
+    /**
+     * Matches this invocation's seeded item count without replacing component-sensitive native oracle comparisons.
+     */
+    internal fun stackMatches(
+        stack: ItemStack,
+        item: Item,
+    ): Boolean = stack.`is`(item) && stack.count == itemCount
 }

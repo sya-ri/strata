@@ -4,13 +4,6 @@ import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Slots
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.CHARGE_SLOT_INDEX
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.CONTAINER_SIZE
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.FUEL_SLOT_INDEX
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.ITEM_COUNT
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.industrialChargePointer
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.industrialFuelPointer
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.stackMatches
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
@@ -19,7 +12,6 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.Container
 import net.minecraft.world.SimpleContainer
 import net.minecraft.world.SimpleMenuProvider
@@ -62,12 +54,12 @@ internal object InventorySlotSynchronizationGameTest {
         val result =
             runCatching {
                 test.onServer { player ->
-                    previous.set(player.inventory.getItem(PLAYER_INVENTORY_INDEX).copy())
-                    player.inventory.setItem(PLAYER_INVENTORY_INDEX, ItemStack(Items.DIRT, ITEM_COUNT))
+                    previous.set(player.inventory.getItem(test.playerInventoryIndex).copy())
+                    player.inventory.setItem(test.playerInventoryIndex, ItemStack(Items.DIRT, test.itemCount))
                     player.inventoryMenu.broadcastChanges()
                 }
-                test.waitForPlayerItem(PLAYER_INVENTORY_INDEX, Items.DIRT)
-                runMinecraftCanvasSlotTest(context, profile, output, PLAYER_INVENTORY_INDEX)
+                test.waitForPlayerItem(test.playerInventoryIndex, Items.DIRT)
+                runMinecraftCanvasSlotTest(context, profile, output, test.playerInventoryIndex)
             }
         runCanvasTestCleanup(
             result.exceptionOrNull(),
@@ -75,7 +67,7 @@ internal object InventorySlotSynchronizationGameTest {
             {
                 previous.get()?.let { original ->
                     test.onServer { player ->
-                        player.inventory.setItem(PLAYER_INVENTORY_INDEX, original)
+                        player.inventory.setItem(test.playerInventoryIndex, original)
                         player.inventoryMenu.broadcastChanges()
                     }
                 }
@@ -114,10 +106,10 @@ internal object InventorySlotSynchronizationGameTest {
     ) {
         val containerReference = AtomicReference<SimpleContainer>()
         test.onServer { player ->
-            val container = SimpleContainer(CONTAINER_SIZE)
+            val container = SimpleContainer(test.containerSize)
             containerReference.set(container)
-            container.setItem(FUEL_SLOT_INDEX, ItemStack(Items.COAL, ITEM_COUNT))
-            container.setItem(CHARGE_SLOT_INDEX, ItemStack(Items.REDSTONE, ITEM_COUNT))
+            container.setItem(test.fuelSlotIndex, ItemStack(Items.COAL, test.itemCount))
+            container.setItem(test.chargeSlotIndex, ItemStack(Items.REDSTONE, test.itemCount))
             val provider =
                 SimpleMenuProvider(
                     MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
@@ -129,11 +121,11 @@ internal object InventorySlotSynchronizationGameTest {
             Predicate<Minecraft> { minecraft ->
                 val menu = minecraft.player?.containerMenu ?: return@Predicate false
                 menu is ChestMenu &&
-                    stackMatches(menu.getSlot(FUEL_SLOT_INDEX).item, Items.COAL) &&
-                    stackMatches(menu.getSlot(CHARGE_SLOT_INDEX).item, Items.REDSTONE)
+                    test.stackMatches(menu.getSlot(test.fuelSlotIndex).item, Items.COAL) &&
+                    test.stackMatches(menu.getSlot(test.chargeSlotIndex).item, Items.REDSTONE)
             },
         )
-        resizeMinecraftTestWindow(test.client, IntSize(INDUSTRIAL_VIEWPORT_WIDTH, INDUSTRIAL_VIEWPORT_HEIGHT))
+        resizeMinecraftTestWindow(test.client, industrialViewport)
         test.client.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
         test.client.setScreen { createMinecraftScreen(createIndustrialScreenDefinition(), profile, parent = null) }
         test.client.waitForScreen(FabricMinecraftScreen::class.java)
@@ -142,26 +134,26 @@ internal object InventorySlotSynchronizationGameTest {
             TestScreenshotOptions
                 .of("strata-industrial-synchronized-fabric")
                 .disableCounterPrefix()
-                .withSize(INDUSTRIAL_VIEWPORT_WIDTH, INDUSTRIAL_VIEWPORT_HEIGHT)
+                .withSize(industrialViewport.width, industrialViewport.height)
                 .withDestinationDir(output),
         )
 
-        test.clickSlot(industrialFuelPointer)
+        test.clickSlot(test.industrialFuelPointer)
         test.waitForServer { player ->
-            containerReference.get().getItem(FUEL_SLOT_INDEX).isEmpty && carriedMatches(player, Items.COAL)
+            containerReference.get().getItem(test.fuelSlotIndex).isEmpty && test.stackMatches(player.containerMenu.carried, Items.COAL)
         }
-        test.clickSlot(industrialFuelPointer)
+        test.clickSlot(test.industrialFuelPointer)
         test.waitForServer { player ->
-            stackMatches(containerReference.get().getItem(FUEL_SLOT_INDEX), Items.COAL) && player.containerMenu.carried.isEmpty
+            test.stackMatches(containerReference.get().getItem(test.fuelSlotIndex), Items.COAL) && player.containerMenu.carried.isEmpty
         }
 
-        test.clickSlot(industrialChargePointer)
+        test.clickSlot(test.industrialChargePointer)
         test.waitForServer { player ->
-            containerReference.get().getItem(CHARGE_SLOT_INDEX).isEmpty && carriedMatches(player, Items.REDSTONE)
+            containerReference.get().getItem(test.chargeSlotIndex).isEmpty && test.stackMatches(player.containerMenu.carried, Items.REDSTONE)
         }
-        test.clickSlot(industrialChargePointer)
+        test.clickSlot(test.industrialChargePointer)
         test.waitForServer { player ->
-            stackMatches(containerReference.get().getItem(CHARGE_SLOT_INDEX), Items.REDSTONE) && player.containerMenu.carried.isEmpty
+            test.stackMatches(containerReference.get().getItem(test.chargeSlotIndex), Items.REDSTONE) && player.containerMenu.carried.isEmpty
         }
         InventorySlotGestureParity.runIndustrial(test, containerReference.get())
         test.closeScreen()
@@ -176,41 +168,41 @@ internal object InventorySlotSynchronizationGameTest {
         val previous = AtomicReference<ItemStack>()
         test.onServer { player ->
             val inventory = player.inventory
-            previous.set(inventory.getItem(PLAYER_INVENTORY_INDEX).copy())
-            inventory.setItem(PLAYER_INVENTORY_INDEX, ItemStack(Items.DIRT, ITEM_COUNT))
+            previous.set(inventory.getItem(test.playerInventoryIndex).copy())
+            inventory.setItem(test.playerInventoryIndex, ItemStack(Items.DIRT, test.itemCount))
             player.inventoryMenu.broadcastChanges()
         }
-        test.waitForPlayerItem(PLAYER_INVENTORY_INDEX, Items.DIRT)
+        test.waitForPlayerItem(test.playerInventoryIndex, Items.DIRT)
         runMinecraftUiSessionTest(test.client, output)
-        runMinecraftCanvasSlotTest(test.client, profile, output, PLAYER_INVENTORY_INDEX)
-        runMinecraftSlotTooltipTest(test.client, profile, output, PLAYER_INVENTORY_INDEX) { fixture ->
+        runMinecraftCanvasSlotTest(test.client, profile, output, test.playerInventoryIndex)
+        runMinecraftSlotTooltipTest(test.client, profile, output, test.playerInventoryIndex) { fixture ->
             replaceTooltipFixture(test, fixture)
         }
         test.onServer { player ->
-            player.inventory.setItem(PLAYER_INVENTORY_INDEX, ItemStack(Items.DIRT, ITEM_COUNT))
+            player.inventory.setItem(test.playerInventoryIndex, ItemStack(Items.DIRT, test.itemCount))
             player.inventoryMenu.broadcastChanges()
         }
-        test.waitForPlayerItem(PLAYER_INVENTORY_INDEX, Items.DIRT)
-        showBoundScreen(test, profile, Slots.playerInventory(PLAYER_INVENTORY_INDEX))
+        test.waitForPlayerItem(test.playerInventoryIndex, Items.DIRT)
+        showBoundScreen(test, profile, Slots.playerInventory(test.playerInventoryIndex))
         test.client.takeScreenshot(
             TestScreenshotOptions
                 .of("strata-inventory-slot-fabric")
                 .disableCounterPrefix()
-                .withSize(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
+                .withSize(viewport.width, viewport.height)
                 .withDestinationDir(output),
         )
 
         test.clickSlot(playerSlotPointer)
         test.waitForServer { player ->
-            player.inventory.getItem(PLAYER_INVENTORY_INDEX).isEmpty && carriedMatches(player, Items.DIRT)
+            player.inventory.getItem(test.playerInventoryIndex).isEmpty && test.stackMatches(player.containerMenu.carried, Items.DIRT)
         }
         test.clickSlot(playerSlotPointer)
         test.waitForServer { player ->
-            stackMatches(player.inventory.getItem(PLAYER_INVENTORY_INDEX), Items.DIRT) && player.inventoryMenu.carried.isEmpty
+            test.stackMatches(player.inventory.getItem(test.playerInventoryIndex), Items.DIRT) && player.inventoryMenu.carried.isEmpty
         }
         test.closeScreen()
         test.onServer { player ->
-            player.inventory.setItem(PLAYER_INVENTORY_INDEX, previous.get())
+            player.inventory.setItem(test.playerInventoryIndex, previous.get())
             player.inventoryMenu.broadcastChanges()
         }
     }
@@ -226,12 +218,12 @@ internal object InventorySlotSynchronizationGameTest {
         test.onServer { player ->
             val container =
                 when (scenario) {
-                    ContainerScenario.Custom -> SimpleContainer(CONTAINER_SIZE)
+                    ContainerScenario.Custom -> SimpleContainer(test.containerSize)
                     ContainerScenario.EnderChest -> player.enderChestInventory
                 }
             containerReference.set(container)
-            previous.set(container.getItem(CONTAINER_SLOT_INDEX).copy())
-            container.setItem(CONTAINER_SLOT_INDEX, ItemStack(scenario.item, ITEM_COUNT))
+            previous.set(container.getItem(test.containerSlotIndex).copy())
+            container.setItem(test.containerSlotIndex, ItemStack(scenario.item, test.itemCount))
             val provider =
                 SimpleMenuProvider(
                     MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
@@ -242,14 +234,14 @@ internal object InventorySlotSynchronizationGameTest {
         test.client.waitFor(
             Predicate<Minecraft> { minecraft ->
                 val player = minecraft.player
-                player != null && player.containerMenu is ChestMenu && stackMatches(player.containerMenu.getSlot(0).item, scenario.item)
+                player != null && player.containerMenu is ChestMenu && test.stackMatches(player.containerMenu.getSlot(0).item, scenario.item)
             },
         )
 
         showBoundScreen(
             test,
             profile,
-            Slots.playerInventory(PLAYER_INVENTORY_INDEX),
+            Slots.playerInventory(test.playerInventoryIndex),
             scenario.binding,
         )
         if (scenario == ContainerScenario.Custom) {
@@ -257,21 +249,21 @@ internal object InventorySlotSynchronizationGameTest {
                 TestScreenshotOptions
                     .of("strata-custom-container-slot-fabric")
                     .disableCounterPrefix()
-                    .withSize(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
+                    .withSize(viewport.width, viewport.height)
                     .withDestinationDir(output),
             )
         }
         test.clickSlot(containerSlotPointer)
         test.waitForServer { player ->
-            containerReference.get().getItem(CONTAINER_SLOT_INDEX).isEmpty && carriedMatches(player, scenario.item)
+            containerReference.get().getItem(test.containerSlotIndex).isEmpty && test.stackMatches(player.containerMenu.carried, scenario.item)
         }
         test.clickSlot(containerSlotPointer)
         test.waitForServer { player ->
-            stackMatches(containerReference.get().getItem(CONTAINER_SLOT_INDEX), scenario.item) && player.containerMenu.carried.isEmpty
+            test.stackMatches(containerReference.get().getItem(test.containerSlotIndex), scenario.item) && player.containerMenu.carried.isEmpty
         }
         test.closeScreen()
         test.onServer { player ->
-            containerReference.get().setItem(CONTAINER_SLOT_INDEX, previous.get())
+            containerReference.get().setItem(test.containerSlotIndex, previous.get())
             player.closeContainer()
         }
     }
@@ -284,8 +276,8 @@ internal object InventorySlotSynchronizationGameTest {
         test.onServer { player ->
             val stack = MinecraftSlotTooltipTestStack.create(test.server.registryAccess(), fixture)
             val carried =
-                if (fixture == MinecraftSlotTooltipFixture.CarriedSword || fixture == MinecraftSlotTooltipFixture.CarriedBundle) ItemStack(Items.DIRT, ITEM_COUNT) else ItemStack.EMPTY
-            player.inventory.setItem(PLAYER_INVENTORY_INDEX, stack)
+                if (fixture == MinecraftSlotTooltipFixture.CarriedSword || fixture == MinecraftSlotTooltipFixture.CarriedBundle) ItemStack(Items.DIRT, test.itemCount) else ItemStack.EMPTY
+            player.inventory.setItem(test.playerInventoryIndex, stack)
             player.inventoryMenu.carried = carried
             player.inventoryMenu.broadcastChanges()
             expected.set(Pair(stack.copy(), carried.copy()))
@@ -294,7 +286,7 @@ internal object InventorySlotSynchronizationGameTest {
             Predicate<Minecraft> { minecraft ->
                 val player = minecraft.player
                 val snapshot = expected.get()
-                player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(PLAYER_INVENTORY_INDEX), snapshot.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, snapshot.second)
+                player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(test.playerInventoryIndex), snapshot.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, snapshot.second)
             },
         )
     }
@@ -318,26 +310,17 @@ internal object InventorySlotSynchronizationGameTest {
         test.client.waitTicks(2)
     }
 
-    private fun carriedMatches(
-        player: ServerPlayer,
-        item: Item,
-    ): Boolean = stackMatches(player.containerMenu.carried, item)
-
     private enum class ContainerScenario(
         val title: String,
         val item: Item,
         val binding: SlotBinding,
     ) {
-        Custom("Custom storage", Items.PAPER, Slots.container(CONTAINER_SLOT_INDEX)),
-        EnderChest("Ender Chest", Items.FEATHER, Slots.activeMenu(CONTAINER_SLOT_INDEX)),
+        Custom("Custom storage", Items.PAPER, Slots.container(0)),
+        EnderChest("Ender Chest", Items.FEATHER, Slots.activeMenu(0)),
     }
 
     private val playerSlotPointer = IntOffset(82, 181)
     private val containerSlotPointer = IntOffset(82, 56)
-    private const val PLAYER_INVENTORY_INDEX: Int = 0
-    private const val CONTAINER_SLOT_INDEX: Int = 0
-    private const val VIEWPORT_WIDTH: Int = 320
-    private const val VIEWPORT_HEIGHT: Int = 240
-    private const val INDUSTRIAL_VIEWPORT_WIDTH: Int = 320
-    private const val INDUSTRIAL_VIEWPORT_HEIGHT: Int = 180
+    private val viewport = IntSize(320, 240)
+    private val industrialViewport = IntSize(320, 180)
 }

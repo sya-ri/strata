@@ -2,12 +2,6 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.CHARGE_SLOT_INDEX
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.CONTAINER_SIZE
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.FUEL_SLOT_INDEX
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.industrialChargePointer
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.industrialFuelPointer
-import dev.s7a.strata.integration.minecraft.fabric.InventorySlotTestContext.Companion.stackMatches
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
@@ -66,7 +60,7 @@ internal object InventorySlotGestureParity {
                     player.setGameMode(GameType.CREATIVE)
                     player.containerMenu.carried = ItemStack(Items.DIRT, 1)
                     player.containerMenu.broadcastChanges()
-                    expected.set(nativeCreativeOutcome(player, container, drag = false))
+                    expected.set(nativeCreativeOutcome(test, player, container, drag = false))
                 }
                 test.client.waitFor(
                     Predicate<Minecraft> { minecraft ->
@@ -82,12 +76,12 @@ internal object InventorySlotGestureParity {
                     container.clearContent()
                     player.containerMenu.carried = ItemStack(Items.DIRT, 1)
                     player.containerMenu.broadcastChanges()
-                    expected.set(nativeCreativeOutcome(player, container, drag = true))
+                    expected.set(nativeCreativeOutcome(test, player, container, drag = true))
                 }
                 test.client.waitFor(
                     Predicate<Minecraft> { minecraft ->
                         val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                        menu.getSlot(FUEL_SLOT_INDEX).item.isEmpty && menu.getSlot(CHARGE_SLOT_INDEX).item.isEmpty && menu.carried.`is`(Items.DIRT)
+                        menu.getSlot(test.fuelSlotIndex).item.isEmpty && menu.getSlot(test.chargeSlotIndex).item.isEmpty && menu.carried.`is`(Items.DIRT)
                     },
                 )
                 sendPickInput(test, drag = true)
@@ -110,21 +104,22 @@ internal object InventorySlotGestureParity {
      * Computes the reference on the server thread through an independent native menu with copied storage and cursor state.
      */
     private fun nativeCreativeOutcome(
+        test: InventorySlotTestContext,
         player: ServerPlayer,
         container: SimpleContainer,
         drag: Boolean,
     ): NativeInventoryOutcome =
-        nativeInventoryOutcome(player, container) { menu ->
+        nativeInventoryOutcome(test, player, container) { menu ->
             if (drag) {
                 val mode = AbstractContainerMenu.QUICKCRAFT_TYPE_CLONE
                 menu.clicked(AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_START, mode), ContainerInput.QUICK_CRAFT, player)
-                for (index in listOf(FUEL_SLOT_INDEX, CHARGE_SLOT_INDEX)) {
+                for (index in listOf(test.fuelSlotIndex, test.chargeSlotIndex)) {
                     menu.clicked(index, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_CONTINUE, mode), ContainerInput.QUICK_CRAFT, player)
                 }
                 menu.clicked(AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_END, mode), ContainerInput.QUICK_CRAFT, player)
-                check(listOf(FUEL_SLOT_INDEX, CHARGE_SLOT_INDEX).all { index -> menu.getSlot(index).item.count == menu.getSlot(index).item.maxStackSize }) { "The native oracle must fill both creative drag slots." }
+                check(listOf(test.fuelSlotIndex, test.chargeSlotIndex).all { index -> menu.getSlot(index).item.count == menu.getSlot(index).item.maxStackSize }) { "The native oracle must fill both creative drag slots." }
             } else {
-                menu.clicked(FUEL_SLOT_INDEX, InputConstants.MOUSE_BUTTON_MIDDLE, ContainerInput.CLONE, player)
+                menu.clicked(test.fuelSlotIndex, InputConstants.MOUSE_BUTTON_MIDDLE, ContainerInput.CLONE, player)
             }
         }
 
@@ -132,16 +127,23 @@ internal object InventorySlotGestureParity {
      * Applies independent native menu operations to copied storage on the server thread without attaching another live menu.
      */
     private fun nativeInventoryOutcome(
+        test: InventorySlotTestContext,
         player: ServerPlayer,
         container: SimpleContainer,
         operation: (ChestMenu) -> Unit,
     ): NativeInventoryOutcome {
-        val storage = SimpleContainer(CONTAINER_SIZE)
-        for (index in 0 until CONTAINER_SIZE) storage.setItem(index, container.getItem(index).copy())
+        val storage = SimpleContainer(container.containerSize)
+        for (index in 0 until container.containerSize) storage.setItem(index, container.getItem(index).copy())
         val menu = ChestMenu.threeRows(0, player.inventory, storage)
         menu.carried = player.containerMenu.carried.copy()
         operation(menu)
-        return NativeInventoryOutcome(storage.getItem(FUEL_SLOT_INDEX).copy(), storage.getItem(CHARGE_SLOT_INDEX).copy(), menu.carried.copy())
+        return NativeInventoryOutcome(
+            firstSlot = storage.getItem(test.fuelSlotIndex).copy(),
+            secondSlot = storage.getItem(test.chargeSlotIndex).copy(),
+            carried = menu.carried.copy(),
+            firstSlotIndex = test.fuelSlotIndex,
+            secondSlotIndex = test.chargeSlotIndex,
+        )
     }
 
     /**
@@ -153,28 +155,28 @@ internal object InventorySlotGestureParity {
     ) {
         val expected = AtomicReference<NativeInventoryOutcome>()
         test.onServer { player ->
-            container.setItem(FUEL_SLOT_INDEX, ItemStack(Items.DIRT, itemCount))
-            container.setItem(CHARGE_SLOT_INDEX, ItemStack(Items.DIRT, itemCount))
+            container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, itemCount))
+            container.setItem(test.chargeSlotIndex, ItemStack(Items.DIRT, itemCount))
             player.containerMenu.carried = ItemStack.EMPTY
             player.containerMenu.broadcastChanges()
             expected.set(
-                nativeInventoryOutcome(player, container) { menu ->
-                    menu.clicked(FUEL_SLOT_INDEX, 0, ContainerInput.PICKUP, player)
-                    menu.clicked(CHARGE_SLOT_INDEX, 0, ContainerInput.PICKUP, player)
+                nativeInventoryOutcome(test, player, container) { menu ->
+                    menu.clicked(test.fuelSlotIndex, 0, ContainerInput.PICKUP, player)
+                    menu.clicked(test.chargeSlotIndex, 0, ContainerInput.PICKUP, player)
                 },
             )
         }
         test.client.waitFor(
             Predicate<Minecraft> { minecraft ->
                 val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                stackMatches(menu.getSlot(FUEL_SLOT_INDEX).item, Items.DIRT) && stackMatches(menu.getSlot(CHARGE_SLOT_INDEX).item, Items.DIRT) && menu.carried.isEmpty
+                test.stackMatches(menu.getSlot(test.fuelSlotIndex).item, Items.DIRT) && test.stackMatches(menu.getSlot(test.chargeSlotIndex).item, Items.DIRT) && menu.carried.isEmpty
             },
         )
         test.client.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as FabricMinecraftScreen
-                val first = test.mouseEvent(industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT)
-                val second = test.mouseEvent(industrialChargePointer, InputConstants.MOUSE_BUTTON_LEFT)
+                val first = test.mouseEvent(test.industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT)
+                val second = test.mouseEvent(test.industrialChargePointer, InputConstants.MOUSE_BUTTON_LEFT)
                 check(screen.mouseClicked(first, false) && screen.mouseReleased(first)) { "The first slot must accept a complete click." }
                 check(screen.mouseClicked(second, true) && screen.mouseReleased(second)) { "A double-click marker on another slot must remain an ordinary click." }
             },
@@ -191,21 +193,21 @@ internal object InventorySlotGestureParity {
     ) {
         val expected = AtomicReference<NativeInventoryOutcome>()
         test.onServer { player ->
-            container.setItem(FUEL_SLOT_INDEX, ItemStack(Items.DIRT, itemCount))
-            container.setItem(CHARGE_SLOT_INDEX, ItemStack.EMPTY)
+            container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, itemCount))
+            container.setItem(test.chargeSlotIndex, ItemStack.EMPTY)
             player.containerMenu.carried = ItemStack.EMPTY
             player.containerMenu.broadcastChanges()
             expected.set(
-                nativeInventoryOutcome(player, container) { menu ->
-                    menu.clicked(FUEL_SLOT_INDEX, 0, ContainerInput.PICKUP, player)
-                    menu.clicked(FUEL_SLOT_INDEX, 1, ContainerInput.PICKUP, player)
+                nativeInventoryOutcome(test, player, container) { menu ->
+                    menu.clicked(test.fuelSlotIndex, 0, ContainerInput.PICKUP, player)
+                    menu.clicked(test.fuelSlotIndex, 1, ContainerInput.PICKUP, player)
                 },
             )
         }
         test.client.waitFor(
             Predicate<Minecraft> { minecraft ->
                 val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                stackMatches(menu.getSlot(FUEL_SLOT_INDEX).item, Items.DIRT) && menu.getSlot(CHARGE_SLOT_INDEX).item.isEmpty && menu.carried.isEmpty
+                test.stackMatches(menu.getSlot(test.fuelSlotIndex).item, Items.DIRT) && menu.getSlot(test.chargeSlotIndex).item.isEmpty && menu.carried.isEmpty
             },
         )
         val result =
@@ -213,8 +215,8 @@ internal object InventorySlotGestureParity {
                 test.client.runOnClient(
                     FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                         val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as FabricMinecraftScreen
-                        check(screen.mouseClicked(test.mouseEvent(industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT), false))
-                        val secondary = test.mouseEvent(industrialFuelPointer, InputConstants.MOUSE_BUTTON_RIGHT)
+                        check(screen.mouseClicked(test.mouseEvent(test.industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT), false))
+                        val secondary = test.mouseEvent(test.industrialFuelPointer, InputConstants.MOUSE_BUTTON_RIGHT)
                         check(screen.mouseClicked(secondary, false) && screen.mouseReleased(secondary))
                     },
                 )
@@ -224,12 +226,12 @@ internal object InventorySlotGestureParity {
             test.client.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen
-                    screen?.mouseReleased(test.mouseEvent(industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT))
+                    screen?.mouseReleased(test.mouseEvent(test.industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT))
                 },
             )
         })
         result.getOrThrow()
-        test.waitForServer { player -> stackMatches(container.getItem(FUEL_SLOT_INDEX), Items.DIRT) && player.containerMenu.carried.isEmpty }
+        test.waitForServer { player -> test.stackMatches(container.getItem(test.fuelSlotIndex), Items.DIRT) && player.containerMenu.carried.isEmpty }
     }
 
     /**
@@ -248,27 +250,27 @@ internal object InventorySlotGestureParity {
                     previous.set((0 until inventory.containerSize).filter { index -> inventory.getItem(index).`is`(Items.DIRT) }.map { index -> index to inventory.getItem(index).copy() })
                     for ((index, _) in previous.get()) inventory.setItem(index, ItemStack.EMPTY)
                     container.clearContent()
-                    container.setItem(FUEL_SLOT_INDEX, ItemStack(Items.DIRT, itemCount))
-                    container.setItem(CHARGE_SLOT_INDEX, ItemStack(Items.DIRT, itemCount))
+                    container.setItem(test.fuelSlotIndex, ItemStack(Items.DIRT, itemCount))
+                    container.setItem(test.chargeSlotIndex, ItemStack(Items.DIRT, itemCount))
                     player.containerMenu.carried = ItemStack.EMPTY
                     player.containerMenu.broadcastChanges()
                     expected.set(
-                        nativeInventoryOutcome(player, container) { menu ->
-                            menu.clicked(FUEL_SLOT_INDEX, 0, ContainerInput.PICKUP, player)
-                            menu.clicked(FUEL_SLOT_INDEX, 0, ContainerInput.PICKUP_ALL, player)
+                        nativeInventoryOutcome(test, player, container) { menu ->
+                            menu.clicked(test.fuelSlotIndex, 0, ContainerInput.PICKUP, player)
+                            menu.clicked(test.fuelSlotIndex, 0, ContainerInput.PICKUP_ALL, player)
                         },
                     )
                 }
                 test.client.waitFor(
                     Predicate<Minecraft> { minecraft ->
                         val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                        stackMatches(menu.getSlot(FUEL_SLOT_INDEX).item, Items.DIRT) && stackMatches(menu.getSlot(CHARGE_SLOT_INDEX).item, Items.DIRT) && menu.carried.isEmpty
+                        test.stackMatches(menu.getSlot(test.fuelSlotIndex).item, Items.DIRT) && test.stackMatches(menu.getSlot(test.chargeSlotIndex).item, Items.DIRT) && menu.carried.isEmpty
                     },
                 )
                 test.client.runOnClient(
                     FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                         val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as FabricMinecraftScreen
-                        val mouse = test.mouseEvent(industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT)
+                        val mouse = test.mouseEvent(test.industrialFuelPointer, InputConstants.MOUSE_BUTTON_LEFT)
                         check(screen.mouseClicked(mouse, false) && screen.mouseReleased(mouse))
                         check(screen.mouseClicked(mouse, true) && screen.mouseReleased(mouse))
                     },
@@ -300,7 +302,7 @@ internal object InventorySlotGestureParity {
                     test.onServer { player ->
                         player.containerMenu.carried = ItemStack.EMPTY
                         player.containerMenu.broadcastChanges()
-                        expected.set(nativeCreativeOutcome(player, container, drag = false))
+                        expected.set(nativeCreativeOutcome(test, player, container, drag = false))
                     }
                     test.client.waitFor(
                         Predicate<Minecraft> { minecraft ->
@@ -352,7 +354,7 @@ internal object InventorySlotGestureParity {
         val result =
             runCatching {
                 test.onServer { player ->
-                    val container = SimpleContainer(CONTAINER_SIZE)
+                    val container = SimpleContainer(test.containerSize)
                     storage.set(container)
                     val provider =
                         SimpleMenuProvider(
@@ -363,10 +365,10 @@ internal object InventorySlotGestureParity {
                     player.containerMenu.carried = ItemStack(Items.DIRT, 2)
                     player.containerMenu.broadcastChanges()
                     expected.set(
-                        nativeInventoryOutcome(player, container) { menu ->
+                        nativeInventoryOutcome(test, player, container) { menu ->
                             val mode = AbstractContainerMenu.QUICKCRAFT_TYPE_CHARITABLE
                             menu.clicked(AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_START, mode), ContainerInput.QUICK_CRAFT, player)
-                            for (index in listOf(FUEL_SLOT_INDEX, CHARGE_SLOT_INDEX)) {
+                            for (index in listOf(test.fuelSlotIndex, test.chargeSlotIndex)) {
                                 menu.clicked(index, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_CONTINUE, mode), ContainerInput.QUICK_CRAFT, player)
                             }
                             menu.clicked(AbstractContainerMenu.SLOT_CLICKED_OUTSIDE, AbstractContainerMenu.getQuickcraftMask(AbstractContainerMenu.QUICKCRAFT_HEADER_END, mode), ContainerInput.QUICK_CRAFT, player)
@@ -376,7 +378,7 @@ internal object InventorySlotGestureParity {
                 test.client.waitFor(
                     Predicate<Minecraft> { minecraft ->
                         val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                        menu is ChestMenu && menu.getSlot(FUEL_SLOT_INDEX).item.isEmpty && menu.getSlot(CHARGE_SLOT_INDEX).item.isEmpty && menu.carried.count == 2
+                        menu is ChestMenu && menu.getSlot(test.fuelSlotIndex).item.isEmpty && menu.getSlot(test.chargeSlotIndex).item.isEmpty && menu.carried.count == 2
                     },
                 )
                 test.client.setScreen { createMinecraftScreen(createInventoryMirrorDefinition(), profile, parent = null) }
@@ -419,7 +421,7 @@ internal object InventorySlotGestureParity {
         test.client.waitFor(
             Predicate<Minecraft> { minecraft ->
                 val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                menu.getSlot(FUEL_SLOT_INDEX).item.isEmpty && menu.getSlot(CHARGE_SLOT_INDEX).item.isEmpty && menu.carried.count == 2
+                menu.getSlot(test.fuelSlotIndex).item.isEmpty && menu.getSlot(test.chargeSlotIndex).item.isEmpty && menu.carried.count == 2
             },
         )
         test.client.runOnClient(
@@ -435,11 +437,11 @@ internal object InventorySlotGestureParity {
                 check(screen.mouseReleased(other)) { "An unrelated release must cancel the active native drag." }
                 check(screen.mouseReleased(second))
                 val menu = checkNotNull(minecraft.player).containerMenu
-                check(menu.getSlot(FUEL_SLOT_INDEX).item.isEmpty && menu.getSlot(CHARGE_SLOT_INDEX).item.isEmpty && menu.carried.count == 2) { "A cancelled native drag must preserve predicted client inventory state." }
+                check(menu.getSlot(test.fuelSlotIndex).item.isEmpty && menu.getSlot(test.chargeSlotIndex).item.isEmpty && menu.carried.count == 2) { "A cancelled native drag must preserve predicted client inventory state." }
             },
         )
         test.waitForServer { player ->
-            container.getItem(FUEL_SLOT_INDEX).isEmpty && container.getItem(CHARGE_SLOT_INDEX).isEmpty && player.containerMenu.carried.count == 2
+            container.getItem(test.fuelSlotIndex).isEmpty && container.getItem(test.chargeSlotIndex).isEmpty && player.containerMenu.carried.count == 2
         }
     }
 
@@ -453,14 +455,14 @@ internal object InventorySlotGestureParity {
         test.client.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen ?: error("The synchronized Slot screen is not active.")
-                val press = MouseButtonEvent(industrialFuelPointer.x.toDouble(), industrialFuelPointer.y.toDouble(), MouseButtonInfo(InputConstants.MOUSE_BUTTON_MIDDLE, 0))
+                val press = MouseButtonEvent(test.industrialFuelPointer.x.toDouble(), test.industrialFuelPointer.y.toDouble(), MouseButtonInfo(InputConstants.MOUSE_BUTTON_MIDDLE, 0))
                 check(minecraft.options.keyPickItem.matchesMouse(press)) { "The native middle button must retain the fixture's pick-item binding." }
                 check(screen.mouseClicked(press, false)) { "The synchronized Slot must consume a creative pick press." }
                 val release =
                     if (drag) {
                         check(screen.mouseDragged(press, 0.0, 0.0)) { "The first creative drag slot must consume input." }
-                        val next = MouseButtonEvent(industrialChargePointer.x.toDouble(), industrialChargePointer.y.toDouble(), press.buttonInfo())
-                        check(screen.mouseDragged(next, (industrialChargePointer.x - industrialFuelPointer.x).toDouble(), 0.0)) { "The second creative drag slot must consume input." }
+                        val next = MouseButtonEvent(test.industrialChargePointer.x.toDouble(), test.industrialChargePointer.y.toDouble(), press.buttonInfo())
+                        check(screen.mouseDragged(next, (test.industrialChargePointer.x - test.industrialFuelPointer.x).toDouble(), 0.0)) { "The second creative drag slot must consume input." }
                         next
                     } else {
                         press
@@ -497,13 +499,15 @@ internal object InventorySlotGestureParity {
         val firstSlot: ItemStack,
         val secondSlot: ItemStack,
         val carried: ItemStack,
+        val firstSlotIndex: Int,
+        val secondSlotIndex: Int,
     ) {
         /**
          * Compares the server-owned menu with the native reference result, including item components and counts.
          */
         fun matches(menu: AbstractContainerMenu): Boolean =
-            ItemStack.matches(firstSlot, menu.getSlot(FUEL_SLOT_INDEX).item) &&
-                ItemStack.matches(secondSlot, menu.getSlot(CHARGE_SLOT_INDEX).item) &&
+            ItemStack.matches(firstSlot, menu.getSlot(firstSlotIndex).item) &&
+                ItemStack.matches(secondSlot, menu.getSlot(secondSlotIndex).item) &&
                 ItemStack.matches(carried, menu.carried)
     }
 
