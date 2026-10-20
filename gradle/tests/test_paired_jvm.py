@@ -607,6 +607,8 @@ class PairedJvmTest(unittest.TestCase):
 
     def selector_repository(self):
         self.selector_git("init", "--quiet")
+        # Detached maintenance must not recreate metadata during temporary cleanup.
+        self.selector_git("config", "maintenance.auto", "false")
         self.selector_git("config", "core.autocrlf", "false")
         self.selector_git("config", "core.longpaths", "true")
         (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
