@@ -223,7 +223,7 @@ async function verifyInteractions(browser, engine, touch) {
         assert.ok(await page.locator('canvas').count() > 0);
         const family = await page.getByText('A日🙂', { exact: true }).evaluate(element => getComputedStyle(element).fontFamily);
         assert.ok(family.includes('StrataFixture'), 'The resource font must be the loaded fixture face');
-        assert.equal((await snapshot()).fontWidth, 21, 'Independent advance widths from the original OpenType fixture');
+        assert.equal((await snapshot()).fontWidth, 23, 'Original fixture advances (700 + 800 + 800) * 10 / 1000');
         assert.deepEqual(errors, []);
         await mkdir(resolve(build, 'parity'), { recursive: true });
         await page.screenshot({ path: resolve(build, 'parity', `${engine.name()}-interactions-${touch ? 'touch' : 'desktop'}.png`) });

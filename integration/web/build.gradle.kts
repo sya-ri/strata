@@ -36,6 +36,9 @@ kotlin.sourceSets.named("jsMain") {
 val installWebBrowsers = tasks.register<Exec>("installWebBrowsers") {
     dependsOn(rootProject.tasks.named("kotlinNpmInstall"))
     commandLine("node", rootProject.layout.buildDirectory.file("js/node_modules/playwright/cli.js").get().asFile, "install", "chromium", "firefox", "webkit")
+    if (providers.gradleProperty("strata.web.installSystemDependencies").map(String::toBooleanStrict).getOrElse(false)) {
+        args("--with-deps")
+    }
 }
 
 val buildWeb = tasks.register<Exec>("buildWeb") {

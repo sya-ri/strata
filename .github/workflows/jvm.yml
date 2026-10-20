@@ -335,8 +335,12 @@ jobs:
     needs: plan
     if: needs.plan.outputs.workflow == 'true' || needs.plan.outputs.common == 'true'
   web:
-    name: Web build and browser parity
-    runs-on: windows-latest
+    name: Web build and browser parity (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
     - name: Check out source
       uses: actions/checkout@v7
@@ -348,12 +352,15 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
-      run: .\gradlew.bat :integration:web:check
+      shell: bash
+      run: bash ./gradlew :integration:web:check -Pstrata.web.installSystemDependencies="$INSTALL_SYSTEM_DEPENDENCIES"
+      env:
+        INSTALL_SYSTEM_DEPENDENCIES: ${{ runner.os == 'Linux' }}
     - name: Upload browser evidence
       if: always()
       uses: actions/upload-artifact@v7
       with:
-        name: web-parity
+        name: web-parity-${{ matrix.os }}
         path: integration/web/build/parity
     needs: plan
     if: needs.plan.outputs.web == 'true'
