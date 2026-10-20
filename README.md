@@ -176,8 +176,8 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
 
 ## Build a web screen from source
 
-The experimental browser runtime renders supported Strata components into native browser DOM.
-See the [web build guide](docs/development/build.md#initial-web-documents) for the shared example, supported features, and build instructions.
+The experimental browser runtime renders shared Strata definitions with retained native text editors, scroll and virtualized content, portable images, and map navigation.
+See [sharing a UI with the browser](docs/guides/web.md) for resource preparation and host ownership, and the [web build guide](docs/development/build.md#initial-web-documents) for executable examples and verification.
 
 ## Choose modules
 

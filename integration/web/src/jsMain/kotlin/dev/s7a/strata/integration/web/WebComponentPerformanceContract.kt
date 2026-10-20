@@ -84,12 +84,13 @@ internal object WebComponentPerformanceContract {
             ComponentWorkload.Row, ComponentWorkload.FlowRow, ComponentWorkload.Column, ComponentWorkload.Stack,
             ComponentWorkload.Grid, ComponentWorkload.Spacer, ComponentWorkload.Observe, ComponentWorkload.Button,
             ComponentWorkload.VirtualList, ComponentWorkload.SelectionList, ComponentWorkload.ProgressBar,
+            ComponentWorkload.Text, ComponentWorkload.TextField, ComponentWorkload.TextArea, ComponentWorkload.ScrollArea,
+            ComponentWorkload.Image, ComponentWorkload.Canvas, ComponentWorkload.TiledImage, ComponentWorkload.PlayerHead,
+            ComponentWorkload.Scrollbar,
             -> true
 
-            ComponentWorkload.Text, ComponentWorkload.TextField, ComponentWorkload.TextArea, ComponentWorkload.Checkbox,
-            ComponentWorkload.CycleButton, ComponentWorkload.Slider, ComponentWorkload.Tab, ComponentWorkload.ScrollArea,
-            ComponentWorkload.Scrollbar, ComponentWorkload.Image, ComponentWorkload.Canvas, ComponentWorkload.TiledImage,
-            ComponentWorkload.Slot, ComponentWorkload.PlayerHead, ComponentWorkload.LoadingIndicator,
+            ComponentWorkload.Checkbox, ComponentWorkload.CycleButton, ComponentWorkload.Slider, ComponentWorkload.Tab,
+            ComponentWorkload.Slot, ComponentWorkload.LoadingIndicator,
             -> false
         }
 }

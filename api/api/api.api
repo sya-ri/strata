@@ -1401,6 +1401,38 @@ public final class dev/s7a/strata/input/PointerEvent$Scroll : dev/s7a/strata/inp
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class dev/s7a/strata/input/PointerGesture {
+	public abstract fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+}
+
+public final class dev/s7a/strata/input/PointerGesture$Pan : dev/s7a/strata/input/PointerGesture {
+	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;DD)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
+	public final fun component2 ()D
+	public final fun component3 ()D
+	public final fun copy (Ldev/s7a/strata/geometry/IntOffset;DD)Ldev/s7a/strata/input/PointerGesture$Pan;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerGesture$Pan;Ldev/s7a/strata/geometry/IntOffset;DDILjava/lang/Object;)Ldev/s7a/strata/input/PointerGesture$Pan;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeltaX ()D
+	public final fun getDeltaY ()D
+	public fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/input/PointerGesture$Zoom : dev/s7a/strata/input/PointerGesture {
+	public fun <init> (Ldev/s7a/strata/geometry/IntOffset;D)V
+	public final fun component1 ()Ldev/s7a/strata/geometry/IntOffset;
+	public final fun component2 ()D
+	public final fun copy (Ldev/s7a/strata/geometry/IntOffset;D)Ldev/s7a/strata/input/PointerGesture$Zoom;
+	public static synthetic fun copy$default (Ldev/s7a/strata/input/PointerGesture$Zoom;Ldev/s7a/strata/geometry/IntOffset;DILjava/lang/Object;)Ldev/s7a/strata/input/PointerGesture$Zoom;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFactor ()D
+	public fun getPosition ()Ldev/s7a/strata/geometry/IntOffset;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/input/PointerHoverEvent : java/lang/Enum {
 	public static final field Enter Ldev/s7a/strata/input/PointerHoverEvent;
 	public static final field Exit Ldev/s7a/strata/input/PointerHoverEvent;
@@ -1840,6 +1872,7 @@ public abstract interface class dev/s7a/strata/node/PointerCaptureNode : dev/s7a
 
 public final class dev/s7a/strata/node/PointerCaptureNode$DefaultImpls {
 	public static fun onPointerCaptureAcquired (Ldev/s7a/strata/node/PointerCaptureNode;Ldev/s7a/strata/input/PointerButton;)V
+	public static fun onPointerGesture (Ldev/s7a/strata/node/PointerCaptureNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 }
 
 public abstract interface class dev/s7a/strata/node/PointerHoverNode {
@@ -1848,6 +1881,11 @@ public abstract interface class dev/s7a/strata/node/PointerHoverNode {
 
 public abstract interface class dev/s7a/strata/node/PointerInputNode {
 	public abstract fun onPointerEvent (Ldev/s7a/strata/input/PointerEvent;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
+	public fun onPointerGesture (Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
+}
+
+public final class dev/s7a/strata/node/PointerInputNode$DefaultImpls {
+	public static fun onPointerGesture (Ldev/s7a/strata/node/PointerInputNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 }
 
 public abstract interface class dev/s7a/strata/node/ReactiveContentNode : dev/s7a/strata/node/DeferredContentNode {
@@ -2140,6 +2178,11 @@ public final class dev/s7a/strata/render/PaintScope$DefaultImpls {
 }
 
 public abstract interface class dev/s7a/strata/render/PlatformDrawCommand {
+	public fun transformed (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+}
+
+public final class dev/s7a/strata/render/PlatformDrawCommand$DefaultImpls {
+	public static fun transformed (Ldev/s7a/strata/render/PlatformDrawCommand;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
 }
 
 public abstract interface class dev/s7a/strata/render/RootOverlayPaintScope : dev/s7a/strata/render/PaintScope {

@@ -11,6 +11,7 @@ kotlin {
             implementation(project(":runtime:web"))
             implementation(project(":performance-testkit"))
             implementation(libs.kotlinx.browser)
+            implementation(libs.kotlinx.coroutines.core)
         }
         jsTest.dependencies { implementation(npm("playwright", libs.versions.playwright.get())) }
         jvmTest.dependencies {

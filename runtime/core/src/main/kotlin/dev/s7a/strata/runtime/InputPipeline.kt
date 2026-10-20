@@ -4,6 +4,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.node.PointerHoverNode
@@ -16,10 +17,44 @@ import dev.s7a.strata.node.PointerInputNode
  * Capture holds only its retained entry and starting button until release, cancellation, or terminal cleanup.
  * Callback failures propagate unchanged after the capture reference has been cleared when appropriate.
  */
+@Suppress("TooManyFunctions") // Pointer capture, gesture hit testing and cleanup share one retained input owner.
 internal class InputPipeline(
     private val focusedInputPipeline: FocusedInputPipeline,
 ) {
     private var capture: Capture? = null
+
+    /**
+     * Hit-tests one recognized navigation gesture without pointer activation or focus acquisition.
+     */
+    fun dispatchGesture(
+        root: RetainedNode,
+        gesture: PointerGesture,
+    ): InputResult = dispatchGestureNode(root.effectiveRoot, gesture, ancestorAllowsHit = true)
+
+    private fun dispatchGestureNode(
+        retained: RetainedEntry,
+        gesture: PointerGesture,
+        ancestorAllowsHit: Boolean,
+    ): InputResult {
+        val descendantsAllowHit = ancestorAllowsHit && ((retained.node is ClipChildrenNode).not() || retained.contains(gesture.position))
+        if (descendantsAllowHit) {
+            for (index in (0 until retained.effectiveChildCount).reversed()) {
+                val child = retained.effectiveChildAt(index)
+                if (child.placed) {
+                    val result = dispatchGestureNode(child, gesture, ancestorAllowsHit = true)
+                    if (result == InputResult.Consumed) return result
+                }
+            }
+        }
+        val input = retained.node as? PointerInputNode ?: return InputResult.Ignored
+        if (ancestorAllowsHit.not() || retained.contains(gesture.position).not()) return InputResult.Ignored
+        val localGesture =
+            when (gesture) {
+                is PointerGesture.Pan -> gesture.copy(deltaX = gesture.deltaX / retained.localToTree.scale, deltaY = gesture.deltaY / retained.localToTree.scale)
+                is PointerGesture.Zoom -> gesture
+            }
+        return input.onPointerGesture(localGesture, retained.localToTree.localPosition(gesture.position))
+    }
 
     /**
      * Dispatches [event] deepest and topmost first.

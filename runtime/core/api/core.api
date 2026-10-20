@@ -29,7 +29,10 @@ public final class dev/s7a/strata/runtime/UiTree : java/lang/AutoCloseable {
 	public fun close ()V
 	public final fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public final fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public final fun dispatchPointerGesture (Ldev/s7a/strata/input/PointerGesture;)Ldev/s7a/strata/input/InputResult;
 	public final fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
+	public final fun focusAt (Ldev/s7a/strata/geometry/IntOffset;)V
+	public final fun focusSemantics (J)Ldev/s7a/strata/input/InputResult;
 	public final fun getState ()Ldev/s7a/strata/runtime/TreeState;
 	public final fun layout ()V
 	public final fun measure (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
@@ -152,13 +155,36 @@ public final class dev/s7a/strata/runtime/render/DrawCommand$SampledImage : dev/
 
 public final class dev/s7a/strata/runtime/semantics/SemanticsEntry {
 	public fun <init> (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/semantics/Semantics;)V
+	public fun <init> (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/semantics/Semantics;Ldev/s7a/strata/runtime/semantics/SemanticsOwner;)V
 	public final fun component1 ()Ldev/s7a/strata/geometry/IntRect;
 	public final fun component2 ()Ldev/s7a/strata/semantics/Semantics;
 	public final fun copy (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/semantics/Semantics;)Ldev/s7a/strata/runtime/semantics/SemanticsEntry;
 	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/semantics/SemanticsEntry;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/semantics/Semantics;ILjava/lang/Object;)Ldev/s7a/strata/runtime/semantics/SemanticsEntry;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBounds ()Ldev/s7a/strata/geometry/IntRect;
+	public final fun getOwner ()Ldev/s7a/strata/runtime/semantics/SemanticsOwner;
 	public final fun getSemantics ()Ldev/s7a/strata/semantics/Semantics;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/semantics/SemanticsOwner {
+	public fun <init> (JZZIILdev/s7a/strata/geometry/IntRect;)V
+	public final fun component1 ()J
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()Ldev/s7a/strata/geometry/IntRect;
+	public final fun copy (JZZIILdev/s7a/strata/geometry/IntRect;)Ldev/s7a/strata/runtime/semantics/SemanticsOwner;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/semantics/SemanticsOwner;JZZIILdev/s7a/strata/geometry/IntRect;ILjava/lang/Object;)Ldev/s7a/strata/runtime/semantics/SemanticsOwner;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContentPaintOrder ()I
+	public final fun getFocusable ()Z
+	public final fun getFocused ()Z
+	public final fun getIdentity ()J
+	public final fun getPaintOrder ()I
+	public final fun getVisibleBounds ()Ldev/s7a/strata/geometry/IntRect;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -236,7 +262,10 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : ja
 	public abstract fun dispatchAction (Lkotlin/jvm/functions/Function0;)V
 	public abstract fun dispatchKeyboard (Ldev/s7a/strata/input/KeyboardEvent;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchPointer (Ldev/s7a/strata/input/PointerEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun dispatchPointerGesture (Ldev/s7a/strata/input/PointerGesture;)Ldev/s7a/strata/input/InputResult;
 	public abstract fun dispatchTextInput (Ldev/s7a/strata/input/TextInputEvent;)Ldev/s7a/strata/input/InputResult;
+	public abstract fun focusAt (Ldev/s7a/strata/geometry/IntOffset;)V
+	public abstract fun focusSemantics (J)Ldev/s7a/strata/input/InputResult;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun frame (Ldev/s7a/strata/geometry/Constraints;Ldev/s7a/strata/runtime/FrameTime;)Ldev/s7a/strata/runtime/spi/RuntimeUiFrame;
 	public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;

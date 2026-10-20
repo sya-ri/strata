@@ -4,9 +4,11 @@ package dev.s7a.strata.runtime.spi
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyboardEvent
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.UiSession
@@ -65,6 +67,12 @@ private class RuntimeUiSessionBridge(
     ): RuntimeUiFrame = session.frame(constraints, time)
 
     override fun dispatchPointer(event: PointerEvent): InputResult = session.dispatchPointer(event)
+
+    override fun dispatchPointerGesture(gesture: PointerGesture): InputResult = session.dispatchPointerGesture(gesture)
+
+    override fun focusAt(position: IntOffset): Unit = session.focusAt(position)
+
+    override fun focusSemantics(identity: Long): InputResult = session.focusSemantics(identity)
 
     override fun dispatchKeyboard(event: KeyboardEvent): InputResult = session.dispatchKeyboard(event)
 

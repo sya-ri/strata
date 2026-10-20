@@ -6,6 +6,7 @@ package dev.s7a.strata.integration.web
 internal enum class WebLaunchMode {
     Prerender,
     Mount,
+    Interactions,
     ;
 
     /**
@@ -15,6 +16,9 @@ internal enum class WebLaunchMode {
         /**
          * Interprets the complete native query string without retaining browser objects.
          */
-        fun decode(query: String): WebLaunchMode = mapOf("?strata-prerender" to Prerender)[query] ?: Mount
+        fun decode(
+            query: String,
+            path: String = "",
+        ): WebLaunchMode = mapOf("interactions.html" to Interactions)[path.substringAfterLast('/')] ?: mapOf("?strata-prerender" to Prerender)[query] ?: Mount
     }
 }
