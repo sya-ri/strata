@@ -170,6 +170,42 @@ class PlanCiTest(unittest.TestCase):
         self.assertEqual([], result.pop("minecraft"))
         self.assertTrue(all(result.values()))
 
+    def test_multiplatform_js_and_common_tests_keep_their_platform_checks(self):
+        paths = []
+        for module in ("api", "runtime/core", "performance-testkit"):
+            for source_set in ("jsMain", "jsTest", "commonTest"):
+                path = f"{module}/src/{source_set}/kotlin/Contract.kt"
+                paths.append(path)
+                expected = planner.plan([])
+                expected.update(common=True, web=True, qodana=True)
+                with self.subTest(path=path):
+                    self.assertEqual(expected, planner.plan([path]))
+                    self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
+        expected = planner.plan([])
+        expected.update(common=True, web=True, qodana=True)
+        self.assertEqual(expected, planner.plan(paths))
+
+    def test_multiplatform_inputs_do_not_narrow_other_changed_inputs(self):
+        for path in ("api/src/jsMain/kotlin/Implementation.kt", "runtime/core/src/commonTest/kotlin/Contract.kt"):
+            selected = planner.plan([path])
+            for other in ("runtime/minecraft/src/test/kotlin/Test.kt", "api/src/commonMain/kotlin/Element.kt",
+                          "runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/Canvas.kt",
+                          "runtime/core/src/jsTest/resources/fixture.json", "settings.gradle.kts", "unknown-input"):
+                expected = planner.plan([other])
+                expected = {key: (expected[key] or selected[key]) if type(expected[key]) is bool else expected[key] for key in expected}
+                for paths in ([path, other], [other, path]):
+                    with self.subTest(paths=paths):
+                        self.assertEqual(expected, planner.plan(paths))
+
+    def test_multiplatform_resources_and_unrecognized_source_roots_keep_platform_checks(self):
+        expected = planner.plan(["api/src/commonMain/kotlin/Element.kt"])
+        for path in ("api/src/jsMain/resources/image.png", "runtime/core/src/jsTest/resources/fixture.json",
+                     "performance-testkit/src/commonTest/resources/evidence.json", "api/src/webMain/kotlin/Implementation.kt",
+                     "runtime/future/src/jsTest/kotlin/Test.kt", "runtime/headless/src/commonTest/kotlin/Test.kt",
+                     "performance-testkit/src/jsMain/kotlin-fixtures/Fixture.kt", "api/src/jsTest/kotlin/Test.kt.disabled"):
+            with self.subTest(path=path):
+                self.assertEqual(expected, planner.plan([path]))
+
     def test_private_jvm_test_sources_keep_jvm_checks_coverage_and_analysis(self):
         expected = planner.plan([])
         expected.update(common=True, qodana=True)
@@ -195,11 +231,10 @@ class PlanCiTest(unittest.TestCase):
                 with self.subTest(paths=paths):
                     self.assertEqual(expected, planner.plan(paths))
 
-    def test_test_resources_common_sources_and_unknown_roots_keep_platform_checks(self):
+    def test_test_resources_and_unknown_roots_keep_platform_checks(self):
         expected = planner.plan(["api/src/main/kotlin/Component.kt"])
         for path in ("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf",
-                     "runtime/core/src/test/resources/fixture.json", "api/src/commonTest/kotlin/SharedTest.kt",
-                     "runtime/core/src/commonTest/kotlin/SharedTest.kt", "runtime/future/src/test/kotlin/Test.kt",
+                     "runtime/core/src/test/resources/fixture.json", "runtime/future/src/test/kotlin/Test.kt",
                      "runtime/remote/src/jvmTest/kotlin/Test.kt", "runtime/core/src/test/kotlin-fixtures/Test.kt",
                      "runtime/core/src/test/kotlin/Test.kt.disabled"):
             with self.subTest(path=path):
