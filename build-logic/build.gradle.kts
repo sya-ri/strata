@@ -50,6 +50,7 @@ tasks.test {
         "../settings.gradle.kts",
         "../gradle/libs.versions.toml",
         "../gradle/performance/bounded-jvm.init.gradle.kts",
+        "../gradle/verify-selected-clients.init.gradle.kts",
         "../integration/minecraft-fabric-published-runtime.gradle.kts",
         "../gradle/qodana-idea-model.gradle.kts",
         "../gradle/verify-qodana-declarations.py",

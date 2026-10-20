@@ -317,7 +317,7 @@ class PlanCiTest(unittest.TestCase):
                     result = json.loads(output.read_text())
                     self.assertEqual(expected, tuple(result[key] for key in ("source_model", "all_minecraft", "common")))
 
-    def test_selected_clients_bind_the_subject_and_declared_backend_contract(self):
+    def test_selected_clients_bind_the_subject_and_exact_target_directories(self):
         subject = "a" * 40
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -325,9 +325,8 @@ class PlanCiTest(unittest.TestCase):
                 for kind in ("runtime", "integration"):
                     directory = root / kind / f"minecraft-fabric-{version}"
                     directory.mkdir(parents=True)
-                    # Use the real build declarations, rather than inventing another backend inventory.
-                    source = Path(__file__).parents[2] / kind / f"minecraft-fabric-{version}" / "build.gradle.kts"
-                    (directory / "build.gradle.kts").write_bytes(source.read_bytes())
+                    # Gradle owns task admission; the planner must not parse build-script contents.
+                    (directory / "build.gradle.kts").write_text("// Task configuration is evaluated by Gradle.\n", encoding="utf-8")
             with patch.object(planner.subprocess, "check_output", side_effect=lambda args, **kwargs: subject + "\n" if args[1] == "rev-parse" else b""):
                 for backend in ("opengl", "vulkan"):
                     with self.subTest(backend=backend):
@@ -342,12 +341,6 @@ class PlanCiTest(unittest.TestCase):
                                              entry["gradle_arguments"].split())
                             self.assertFalse(entry["documentation"])
                 self.assertEqual(["26.3"], planner.client_plan(root, "26.3", "vulkan", subject)["minecraft"])
-                build_file = root / "integration/minecraft-fabric-26.3/build.gradle.kts"
-                build = build_file.read_text(encoding="utf-8")
-                build_file.write_text(build.replace('dependsOn("runClientGameTest", runProductionClientGameTest)', 'dependsOn("runClientGameTest")'), encoding="utf-8")
-                with self.assertRaisesRegex(ValueError, "does not declare"):
-                    planner.client_plan(root, "26.3", "vulkan", subject)
-                build_file.write_text(build, encoding="utf-8")
                 for versions, backend, ref in (("", "vulkan", subject), ("26.3,", "vulkan", subject),
                                                ("26.3,26.3", "vulkan", subject), ("26.3;whoami", "vulkan", subject),
                                                ("26.9", "vulkan", subject), ("26.3", "default", subject),
@@ -355,9 +348,6 @@ class PlanCiTest(unittest.TestCase):
                                                ("26.3", "vulkan", "b" * 40)):
                     with self.subTest(versions=versions, backend=backend, ref=ref), self.assertRaises(ValueError):
                         planner.client_plan(root, versions, backend, ref)
-                (root / "integration/minecraft-fabric-26.2/build.gradle.kts").write_text('tasks.named("runClientGameTest")')
-                with self.assertRaisesRegex(ValueError, "does not declare"):
-                    planner.client_plan(root, "26.2", "vulkan", subject)
                 with patch.object(planner.subprocess, "check_output", side_effect=[subject + "\n", b" M build.gradle.kts"]):
                     with self.assertRaisesRegex(ValueError, "modified tracked"):
                         planner.client_plan(root, "26.3", "vulkan", subject)

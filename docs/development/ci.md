@@ -109,7 +109,10 @@ The paired client confirms server-owned input, visible revisions, and two indepe
 Fresh logs and receipts are uploaded separately from build caches.
 
 For loaded client verification alone, dispatch `jvm.yml` with `minecraft_versions` as comma-separated exact paired targets, `minecraft_backend` as `opengl` or `vulkan`, and `subject_ref` as the full lowercase public commit SHA in this repository.
-The planner reads each selected subject's existing backend and full-suite declarations; targets without that contract fail admission.
+The planner binds the selected target directories to the immutable subject.
+Before client tasks execute, the driver's Gradle init script checks that the subject's execution graph includes both enabled client tasks with the requested backend and full-suite inputs.
+Admission reads configured tasks rather than Kotlin script text, so build-script formatting and indirect task dependencies do not affect it.
+This manual route disables configuration caching so admission runs for every invocation; ordinary CI commands retain their existing cache settings.
 Both `runClientGameTest` and `runProductionClientGameTest` run with `strata.canvas.scope=full`, retaining their pixel, input, lifecycle, terminal, and resource gates.
 The shared driver is independent of the subject revision, so an older open PR can be verified without copying workflow changes into it.
 The loaded-client artifact includes source/tree identity, a source-archive digest, built JAR digests and native origins, complete parity outputs, and the Gradle log, including failures.

@@ -489,6 +489,15 @@ jobs:
           git show --no-patch --format='commit=%H%ntree=%T' HEAD
           git archive --format=tar HEAD | sha256sum
         } | tee build/github-actions/client-source.txt
+    - name: Check out selected-client admission controller
+      if: needs.plan.outputs.subject_ref != ''
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ github.sha }}
+        path: .client-controller
+        sparse-checkout: gradle/verify-selected-clients.init.gradle.kts
+        sparse-checkout-cone-mode: false
+        persist-credentials: false
     - name: Set up Java
       uses: ./.github/actions/setup-strata-java
     - name: Set up Gradle
@@ -522,6 +531,9 @@ jobs:
       shell: bash
       run: |-
         args=()
+        if [[ -n "$SUBJECT" ]]; then
+          args+=(-I .client-controller/gradle/verify-selected-clients.init.gradle.kts --no-configuration-cache)
+        fi
         if [[ "$COMMON_CHECKS" == true ]]; then
           project=":runtime:minecraft-fabric-$MINECRAFT_VERSION"
           if grep -Fxq "$project" gradle/kover-jvm-projects.txt; then args+=(-x "$project:test"); fi
@@ -529,6 +541,7 @@ jobs:
         mkdir -p build/github-actions
         bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true 2>&1 | tee build/github-actions/minecraft-gradle.log
       env:
+        SUBJECT: ${{ needs.plan.outputs.subject_ref }}
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}
         MINECRAFT_VERSION: ${{ matrix.version }}
     - name: Verify dedicated Fabric server UI
