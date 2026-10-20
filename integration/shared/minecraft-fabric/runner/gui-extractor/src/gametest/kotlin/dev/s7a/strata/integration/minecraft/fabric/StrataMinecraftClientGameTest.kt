@@ -790,10 +790,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         pointerPosition: IntOffset = pointer,
         frameTime: FrameTime? = null,
         scale: Int = 1,
-    ): HeadlessImage {
-        val host = createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory)
-        host.attach()
-        return try {
+    ): HeadlessImage =
+        createMinecraftUiHost(definition, profile, LwjglMinecraftFontBackendFactory).use { host ->
+            host.attach()
             if (frameTime == null) host.frame(viewport) else host.frame(viewport, FrameTime(0L))
             host.dispatchPointer(PointerEvent.Move(pointerPosition))
             val frame = if (frameTime == null) host.frame(viewport) else host.frame(viewport, frameTime)
@@ -803,10 +802,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     ArgbColor(opaqueBlack),
                 )
             rasterizeHeadless(listOf(framebufferClear) + frame.drawCommands, frame.size, scale)
-        } finally {
-            host.close()
         }
-    }
 
     private fun hasExactPixels(
         native: NativeImage,

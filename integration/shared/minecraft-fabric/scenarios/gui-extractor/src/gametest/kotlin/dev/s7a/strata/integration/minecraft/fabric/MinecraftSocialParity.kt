@@ -120,9 +120,8 @@ internal object MinecraftSocialParity {
     private fun renderHeadless(
         profile: MinecraftUiProfile,
         assets: SocialAssets,
-    ): HeadlessImage {
-        val host = createMinecraftUiHost(definition(assets), profile, LwjglMinecraftFontBackendFactory)
-        return try {
+    ): HeadlessImage =
+        createMinecraftUiHost(definition(assets), profile, LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             val frame = host.frame(viewport)
             val expectedPlayerLabels =
@@ -135,10 +134,7 @@ internal object MinecraftSocialParity {
                 "The headless Social Interactions definition did not retain the active production profile name '${assets.playerName}'."
             }
             rasterizeHeadless(frame.drawCommands, viewport)
-        } finally {
-            host.close()
         }
-    }
 
     private fun definition(assets: SocialAssets) =
         createSocialScreenDefinition(
