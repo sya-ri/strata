@@ -188,6 +188,8 @@ def export():
         "plain": ("plain", True, False),
         "no-self-output": ("mpp", False, False),
         "split-hmpp": ("mpp", False, True),
+        "split-jvm-view": ("mpp", False, True),
+        "split-jvm-view-second": ("mpp", False, True),
         "split-metadata": ("mpp", False, True),
         "split-metadata-second": ("mpp", False, True),
         "split-project-metadata": ("mpp", False, True),
@@ -252,7 +254,7 @@ def export():
                     common_manager.remove(entry)
                 for path in model["commonClasspath"]:
                     assert pathlib.Path(path).is_file() and path.endswith(".klib"), path
-                    if name.startswith("split-project-metadata"):
+                    if name.startswith("split-jvm-view"):
                         copied = fixture / "project-libraries" / pathlib.Path(path).name
                         copied.parent.mkdir(exist_ok=True)
                         shutil.copyfile(path, copied)
@@ -268,8 +270,10 @@ def export():
                         url = "file://" + path if name.endswith("-file") else "jar://" + path + "!/"
                         ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url=url)
             common_facet = ET.SubElement(ET.SubElement(common_module, "component", name="FacetManager"), "facet", type="kotlin-language", name="Kotlin")
-            common_configuration = ET.SubElement(common_facet, "configuration", version="3", platform="Common (experimental) ", useProjectSettings="false")
+            common_configuration = ET.SubElement(common_facet, "configuration", version="3", platform="JVM 17" if name.startswith("split-jvm-view") else "Common (experimental) ", useProjectSettings="false")
             common_arguments = ET.SubElement(common_configuration, "compilerArguments")
+            if name.startswith("split-jvm-view"):
+                ET.SubElement(common_arguments, "option", name="jvmTarget", value="17")
             ET.SubElement(common_arguments, "option", name="explicitApi", value="strict")
             ET.SubElement(common_arguments, "option", name="moduleName", value="fixture-" + compiled)
             ET.SubElement(common_arguments, "option", name="multiPlatform", value="true")
@@ -328,12 +332,12 @@ def inspect(results):
         assert any(canary in row["message"] for row in selected), (name, selected)
         if name.startswith("split-"):
             assert all(row["rule"] != "UnusedSymbol" or "unused" in row["message"] for row in selected), (name, selected)
-        if name.startswith("split-project-metadata"):
+        if name.startswith("split-jvm-view"):
             assert selected and all(row["rule"] == "UnusedSymbol" and "unused" in row["message"] for row in selected), (name, selected)
             sanity = [item for run in report["runs"] for item in run.get("properties", {}).get("qodana.sanity.results", [])]
             assert all(not item["locations"][0]["physicalLocation"]["artifactLocation"]["uri"].startswith("analysis/" + name + "/") for item in sanity), (name, sanity)
         errors = [item for run in report["runs"] for invocation in run.get("invocations", []) for item in invocation.get("toolExecutionNotifications", []) if item.get("level") == "error" and any(location.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "").startswith("analysis/" + name + "/") for location in item.get("locations", []))]
-        if name.startswith("split-project-metadata"):
+        if name.startswith("split-jvm-view"):
             assert not errors, (name, [item["message"]["text"] for item in errors])
         print(name, "inspection errors", len(errors))
         if name == "split-metadata-file-common":
