@@ -55,6 +55,7 @@ tasks.test {
         "../integration/minecraft-fabric-published-runtime.gradle.kts",
         "../gradle/qodana-idea-model.gradle.kts",
         "../gradle/verify-qodana-declarations.py",
+        "../gradle/prepare-qodana-project.py",
         "../gradle/tests/fixtures/assert_qodana_compiler_model.py",
     ).withPropertyName("externalFixtureSources").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.files(

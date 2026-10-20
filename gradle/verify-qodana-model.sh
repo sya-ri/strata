@@ -314,6 +314,32 @@ resolve_iml_posix_absolute_source_path() {
     exit 1
   else
     resolved_path=$(realpath -m -- "$absolute_path")
+    if paths_equal "$absolute_path" "$resolved_path"; then
+      :
+    else
+      echo "The generated IDEA module contains a non-canonical absolute source URL: $source_url" >&2
+      exit 1
+    fi
+  fi
+}
+
+resolve_iml_windows_absolute_source_path() {
+  local native_path=$1
+  local source_url=$2
+  if $windows_paths; then
+    :
+  else
+    echo "The generated IDEA module contains a platform-incompatible source URL: $source_url" >&2
+    exit 1
+  fi
+  local absolute_path
+  absolute_path=$(cygpath -u -- "$native_path")
+  resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+  if paths_equal "$native_path" "$(cygpath -m -- "$resolved_path")"; then
+    :
+  else
+    echo "The generated IDEA module contains a non-canonical absolute source URL: $source_url" >&2
+    exit 1
   fi
 }
 
@@ -696,28 +722,17 @@ PY
         resolved_path=$(realpath -m -- "$module_directory/$relative_path")
         ;;
       file:///[A-Za-z]:/*)
-        absolute_path=${source_url#file:///}
-        if $windows_paths; then
-          absolute_path=$(cygpath -u -- "$absolute_path")
-        else
-          echo "The generated IDEA module contains a platform-incompatible source URL: $iml: $source_url" >&2
-          exit 1
-        fi
-        resolved_path=$(realpath -m -- "$absolute_path")
+        resolve_iml_windows_absolute_source_path "${source_url#file:///}" "$source_url"
+        relative_path=$(realpath -m --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file://[A-Za-z]:/*)
-        absolute_path=${source_url#file://}
-        if $windows_paths; then
-          absolute_path=$(cygpath -u -- "$absolute_path")
-        else
-          echo "The generated IDEA module contains a platform-incompatible source URL: $iml: $source_url" >&2
-          exit 1
-        fi
-        resolved_path=$(realpath -m -- "$absolute_path")
+        resolve_iml_windows_absolute_source_path "${source_url#file://}" "$source_url"
+        relative_path=$(realpath -m --relative-to="$module_directory" -- "$resolved_path")
         ;;
       file:///*)
         absolute_path=${source_url#file://}
         resolve_iml_posix_absolute_source_path "$absolute_path" "$source_url"
+        relative_path=$(realpath -m --relative-to="$module_directory" -- "$resolved_path")
         ;;
       *)
         echo "The generated IDEA module contains an unsupported source URL: $iml: $source_url" >&2
@@ -744,6 +759,13 @@ PY
     elif path_is_child_of "$resolved_path" "$project_root"; then
       repository_relative_path=$(relative_path_from_parent "$resolved_path" "$project_root")
       repository_relative_path=$(canonical_repository_relative_path "$repository_relative_path")
+      if $canonical_compiler_ownership && [[ "$repository_relative_path" =~ ^qodana-analysis-sources/[0-9a-f]{12}/[0-9a-f]{16}$ ]]; then
+        # The declaration verifier checks each generated view's exact module, origin, kind, membership and bytes.
+        [[ -d "$resolved_path" ]] || { echo "Missing generated compiler source view: $source_url" >&2; exit 1; }
+        printf '%s\t%s\t%s\tfile://$PROJECT_DIR$/%s\n' \
+          "$owner" "$version" "$source_type" "$repository_relative_path" >> "$expected_target_source_roots"
+        continue
+      fi
       classify_target_source_path "$repository_relative_path"
       if [[ -z "$target_source_allowed_owners" ]]; then
         echo "The generated IDEA module links an unapproved repository source root: $iml: $source_url" >&2
@@ -823,6 +845,7 @@ import json
 import pathlib
 import sys
 
+sys.stdout.reconfigure(newline="\n")
 inventory = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 for owner in inventory["projects"]:
     project = owner["project"]

@@ -9,6 +9,7 @@ trap 'rm -rf -- "$fixture_root"' EXIT
 mkdir -p "$fixture_root/gradle" "$fixture_root/runtime/minecraft-fabric-1.21" \
   "$fixture_root/integration/minecraft-fabric-1.21" "$fixture_root/integration/docs"
 cp "$project_root/gradle/prepare-qodana-idea-model.sh" \
+  "$project_root/gradle/prepare-qodana-project.py" \
   "$project_root/gradle/plan-minecraft-ci.sh" \
   "$project_root/gradle/list-java-toolchains.sh" "$fixture_root/gradle/"
 printf 'java-baseline = "17"\njava-current = "25"\n' > "$fixture_root/gradle/libs.versions.toml"
@@ -23,17 +24,28 @@ set -euo pipefail
 printf '%s\n' "$@" >> gradle-arguments.txt
 echo invocation >> gradle-invocations.txt
 [[ "${FAIL_COMPILATION:-false}" != true ]] || exit 23
-[[ "${OMIT_INVENTORY:-false}" == true ]] || printf '{"owners":[]}\n' > build/qodana/declarations.json
+if [[ "${OMIT_INVENTORY:-false}" != true ]]; then
+  cat > build/qodana/declarations.json <<'JSON'
+{"owners":[],"projects":[
+  {"directory":"runtime/minecraft-fabric-1.21","iml":"runtime/minecraft-fabric-1.21/runtime-minecraft-fabric-1.21.iml"},
+  {"directory":"integration/minecraft-fabric-1.21","iml":"integration/minecraft-fabric-1.21/integration-minecraft-fabric-1.21.iml"},
+  {"directory":"runtime/minecraft-fonts-lwjgl","iml":"runtime/minecraft-fonts-lwjgl/minecraft-fonts-lwjgl.iml"},
+  {"directory":"api","iml":"api/api.iml"}
+]}
+JSON
+fi
 cat > strata.ipr <<'XML'
 <project>
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/runtime/minecraft-fabric-1.21/runtime-minecraft-fabric-1.21.iml" />
-      <module fileurl="file://$PROJECT_DIR$/integration/minecraft-fabric-1.21/integration-minecraft-fabric-1.21.iml" />
-      <module fileurl="file://$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl/minecraft-fonts-lwjgl.iml" />
+      <module filepath="$PROJECT_DIR$/runtime/minecraft-fabric-1.21/runtime-minecraft-fabric-1.21.iml" fileurl="file://$PROJECT_DIR$/runtime/minecraft-fabric-1.21/runtime-minecraft-fabric-1.21.iml" />
+      <module filepath="$PROJECT_DIR$/integration/minecraft-fabric-1.21/integration-minecraft-fabric-1.21.iml" fileurl="file://$PROJECT_DIR$/integration/minecraft-fabric-1.21/integration-minecraft-fabric-1.21.iml" />
+      <module filepath="$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl/minecraft-fonts-lwjgl.iml" fileurl="file://$PROJECT_DIR$/runtime/minecraft-fonts-lwjgl/minecraft-fonts-lwjgl.iml" />
+      <module filepath="$PROJECT_DIR$/api/api.iml" fileurl="file://$PROJECT_DIR$/api/api.iml" />
+      <module filepath="$PROJECT_DIR$/api/api.commonMain.iml" fileurl="file://$PROJECT_DIR$/api/api.commonMain.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" languageLevel="JDK_25" />
+  <component languageLevel="JDK_25" name="ProjectRootManager" />
 </project>
 XML
 SH
@@ -50,6 +62,7 @@ done
 [[ -s "$fixture_root/build/qodana/declarations.json" && -f "$fixture_root/build/qodana/gradle.log" ]]
 grep -F 'runtime-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'integration-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
+grep -F 'api.commonMain.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'jbr-25' "$fixture_root/.idea/misc.xml" >/dev/null
 grep -F '<component name="EntryPointsManager">' "$fixture_root/.idea/misc.xml" >/dev/null
 grep -F 'itemvalue="org.spongepowered.asm.mixin.Mixin"' "$fixture_root/.idea/misc.xml" >/dev/null
@@ -80,4 +93,4 @@ status=0
 STRATA_QODANA_BOOTSTRAP=true FAIL_COMPILATION=true bash "$fixture_root/gradle/prepare-qodana-idea-model.sh" || status=$?
 [[ "$status" -eq 23 && ! -e "$fixture_root/.idea/modules.xml" && ! -e "$fixture_root/strata.ipr" ]]
 
-echo 'Verified one Qodana compilation/model invocation, daemon lifetime, local IDEA protection, and failure propagation.'
+echo 'Verified one Qodana bootstrap invocation, structured module preparation, daemon lifetime, local IDEA protection, and failure propagation.'

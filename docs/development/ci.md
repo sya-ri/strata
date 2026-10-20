@@ -120,26 +120,45 @@ Each run analyzes the complete selected revision once with a zero-problem thresh
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
 One `--no-daemon` Gradle invocation compiles `classes`, `gametestClasses`, and every discovered JMH owner's `jmhClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model and declaration inventory.
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
+The declaration export validates each JVM owner's configured toolchain against all of its Kotlin and Java compilation tasks, and the analysis module binds to that compiler SDK independently of the bytecode target or analysis JVM.
+The bootstrap registers the SDK's actual JRT modules in a disposable IDE configuration; verification checks the generated table, imported SDKs and each module binding against the fresh declarations.
+The IDE may register its own SDK for source-free modules; every declared compiler SDK still requires one unchanged table entry and its original module bindings.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
+Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM implementation and test roots remain in the owning JVM module.
+Each common source-set fragment uses the owning JVM main compilation's platform, binary libraries and project dependencies, with the original compile/runtime scopes and no test dependencies.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
-Canonical Kotlin source roots have one physical owner, while compiled variants remain on the relevant JVM classpaths.
-Each Kotlin owner's facet preserves its compiler module name, JVM target, friend paths, and explicit API mode.
+Each module retains its actual compiler's selected inputs, dependencies and Kotlin identity.
+Shared or filtered source roots use byte-identical per-module views under `qodana-analysis-sources/`, while the declaration inventory retains the authoritative original paths and hashes.
+Each execution recreates that owned directory, copies exactly the compiler-selected files and records the current revision in `build/qodana/source-views.json`.
+These analysis inputs are never published or committed and must remain outside Git and IDEA exclusions; Qodana's recommended profile ignores Git-ignored paths even when they remain registered as source roots.
+Completeness verification rejects hidden inputs, stale provenance, changed bytes, missing or extra files, collapsed contexts and tracked generated views.
+Source and compiled-library roots use resolved file URLs without directory suffixes, and declared output directories that were never produced are omitted from libraries.
+A module's compiled outputs remain acceptance evidence and are omitted from its own library entries.
+No synthetic fallback library or cross-variant friend relationship substitutes for a compiler's own sources.
+Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
+Every SARIF run must identify the selected revision and explicitly record successful analysis invocations.
+The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
+Kotlin facets retain the owning JVM compilation's module name, explicit API mode and bytecode target; common fragments identify their source set and declared refinement edges, while the owning JVM module retains its test friend paths.
 `UnusedSymbol` and `RedundantVisibilityModifier` remain enabled without path exclusions; Mixin annotations identify framework entry points.
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.
 The latter preserves mapped binaries without optional source remapping.
 The generated IDEA model assigns linked source roots, real compile/test/GameTest classpaths, and language levels to each owner; `rootJavaProjects` opens that model directly.
 Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
+Module registration and project SDK validation read XML structure rather than attribute order or line layout.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
 The shared JVM model exports configured auxiliary Java/Kotlin inputs and resources as `TestSource`/`TestResource` in their actual owner, including nondefault directories, and retains their real compile/runtime configurations in IDEA's TEST scope.
 Roots already admitted by production keep that ownership once.
 This IDE view is an analysis union; isolated Gradle compilations and `checkStrataSkillExampleClasspath` still enforce API-only skill dependencies.
 `qodanaDeclarationInventory` discovers owners from the configured Gradle plugin/source-set model and records actual module identities, Java requirements, source/resource declarations, file membership and hashes, and resolved project/library dependency identities independently of IML and Qodana JSON.
+After compilation finishes, the inventory shares directory membership and fingerprints only within its current task action; each execution reads them afresh.
+Each JVM project resolves its compiler and runtime configurations in its own export task, and the root inventory consumes those revision-bound outputs without resolving another project's configurations.
 The same inventory depends on working auxiliary compiler outputs, records their actual bytes, and rejects missing or changed outputs before accepting their generated/imported model roots.
 Nonexistent directories remain explicit declarations without becoming model roots; compiler and harness outputs are build intermediates, and authored JMH roots inside excluded build directories fail verification.
 The verifier compares the declaration inventory with both generated IML and imported Qodana roots, SDKs, language levels, and dependency closures.
+Production JVM compilations retain separate compile/runtime closures; a dependency present only in the TEST scope cannot satisfy either production closure.
 The selected Git revision, clean tracked bytes, authored membership, and SARIF revision must agree before declaration completeness can pass.
 Missing owners or roots, paired omission from both models, wrong kinds or owners, duplicate roots or dependencies, broader paths, changed source membership, and unresolved required libraries fail verification.
 Native consumers retain their exact canonical component `TestSource` links.

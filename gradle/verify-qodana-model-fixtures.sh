@@ -504,7 +504,11 @@ inventory = dict(revision=revision, tracked={name: hashlib.sha256((root / name).
 model_path.write_text(json.dumps(model))
 model_path.with_name("Java.json").write_text(json.dumps({"modules": [{"name": owner["module"], "languageLevel": owner["java"]} for owner in owners] + [{"name": "docs", "languageLevel": 17}]}))
 sarif_path = model_path.with_name("qodana.sarif.json")
-sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": revision}]}]}))
+sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": revision}], "invocations": [{"executionSuccessful": True}]}]}))
+analysis_logs = model_path.parent / "log"
+analysis_logs.mkdir(exist_ok=True)
+(analysis_logs / "idea.log").write_text("Synthetic resolved module evidence.\nJVM options: [-Dintellij.platform.shared.source.support=true, -Dbatch.inspections.inspect.all.code.insight.contexts=true]\n", encoding="utf-8")
+(analysis_logs / "qodana_inspections_summary.csv").write_text("Inspection Language;Times Inspection was Performed\nkotlin;1\n", encoding="utf-8")
 validator = pathlib.Path(sys.argv[4])
 
 
@@ -749,9 +753,40 @@ for mutation in ("stale-revision", "missing-owner", "omitted-owner-inventory", "
     inventory_path.write_bytes(original_inventory)
 validate(model_path)
 original_sarif = sarif_path.read_bytes()
-sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": "0" * 40}]}]}))
+sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": "0" * 40}], "invocations": [{"executionSuccessful": True}]}]}))
 validate(model_path, rejected=True)
 sarif_path.write_bytes(original_sarif)
+
+# Successful model import does not make an incomplete analysis acceptable.
+for invocation in (
+    {},
+    {"executionSuccessful": None},
+    {"executionSuccessful": 1},
+    {"executionSuccessful": False},
+    {"executionSuccessful": True, "toolExecutionNotifications": [{"level": "error", "message": {"text": "Unresolved compiler library."}}]},
+):
+    candidate = json.loads(original_sarif)
+    candidate["runs"][0]["invocations"] = [invocation]
+    sarif_path.write_text(json.dumps(candidate))
+    validate(model_path, rejected=True)
+candidate = json.loads(original_sarif)
+candidate["runs"][0]["invocations"] = [{"executionSuccessful": True, "toolExecutionNotifications": [{"level": "warning", "message": {"text": "Optional diagnostic."}}]}]
+sarif_path.write_text(json.dumps(candidate))
+validate(model_path)
+sarif_path.write_bytes(original_sarif)
+
+# Matching exported metadata must also have resolved sources and actual Kotlin inspection work.
+original_statistics = (analysis_logs / "qodana_inspections_summary.csv").read_bytes()
+(analysis_logs / "qodana_inspections_summary.csv").unlink()
+validate(model_path, rejected=True)
+(analysis_logs / "qodana_inspections_summary.csv").write_text("Inspection Language;Times Inspection was Performed\nkotlin;0\nJAVA;100\n", encoding="utf-8")
+validate(model_path, rejected=True)
+(analysis_logs / "qodana_inspections_summary.csv").write_bytes(original_statistics)
+original_idea_log = (analysis_logs / "idea.log").read_bytes()
+(analysis_logs / "idea.log").write_text(original_idea_log.decode("utf-8") + f"No source roots detected for module '{owners[0]['module']}'\n", encoding="utf-8")
+validate(model_path, rejected=True)
+(analysis_logs / "idea.log").write_bytes(original_idea_log)
+validate(model_path)
 
 # The full native stage must admit an exact declared shared root in an arbitrary working owner.
 native_path = "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"
@@ -786,9 +821,9 @@ def validate_pipeline(candidate, boundary=None):
     result = subprocess.run([os.environ["STRATA_FIXTURE_BASH"], str(validator.with_name("verify-qodana-model.sh")), str(candidate), str(root), "/data/project"], capture_output=True, text=True)
     if boundary is None:
         if result.returncode:
-            raise SystemExit(f"Declared native shared root failed the full verifier: {result.stdout} {result.stderr}")
+            raise SystemExit(f"Declared native shared root failed the full verifier with exit code {result.returncode}: {result.stdout} {result.stderr}")
     elif result.returncode == 0 or boundary not in result.stderr:
-        raise SystemExit(f"Native shared-root mutation was accepted or rejected at the wrong boundary: {result.stdout} {result.stderr}")
+        raise SystemExit(f"Native shared-root mutation was accepted or rejected at the wrong boundary with exit code {result.returncode}: {result.stdout} {result.stderr}")
 
 
 validate_pipeline(native_candidate)
@@ -1135,9 +1170,9 @@ grep -Fq 'linked source path outside the repository' "$fixture_root/invalid.log"
 }
 
 set_absolute_iml_link '/data/project/runtime/minecraft-fabric-1.2/src/main/kotlin'
-assert_project_rejected 'a container-absolute URL for a source root owned by its module'
-grep -Fq 'non-canonical owned source URL' "$fixture_root/invalid.log" || {
-  echo 'The container-absolute owned source root was rejected for the wrong reason.' >&2
+assert_project_rejected 'a duplicate owned source root replacing a required linked root'
+grep -Fq 'Qodana project modules do not exactly match' "$fixture_root/invalid.log" || {
+  echo 'The duplicate owned source root was rejected for the wrong reason.' >&2
   exit 1
 }
 
@@ -1392,7 +1427,25 @@ cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 sed -i \
   's#file://\$MODULE_DIR\$/src/main/kotlin#file://'"$fixture_project_file_path"'/runtime/minecraft-fabric-1.2/src/main/kotlin#' \
   "$fixture_runtime_iml"
-assert_project_rejected 'an absolute URL for a source root owned by its module'
+bash "$repository_root/gradle/verify-qodana-model.sh" \
+  "$fixture_root/Modules.json" "$fixture_project" "$qodana_container_project_root" > "$fixture_root/absolute-owned-source.log"
+cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
+
+sed -i \
+  's#file://\$MODULE_DIR\$/src/main/kotlin#file:///data/project/runtime/minecraft-fabric-1.2/src/main/kotlin#' \
+  "$fixture_runtime_iml"
+bash "$repository_root/gradle/verify-qodana-model.sh" \
+  "$fixture_root/Modules.json" "$fixture_project" "$qodana_container_project_root" > "$fixture_root/container-owned-source.log"
+cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
+
+sed -i \
+  's#file://\$MODULE_DIR\$/src/main/kotlin#file://'"$fixture_project_file_path"'/runtime/minecraft-fabric-1.2/src/./main/kotlin#' \
+  "$fixture_runtime_iml"
+assert_project_rejected 'a non-canonical absolute URL for an owned source root'
+grep -Fq 'non-canonical absolute source URL' "$fixture_root/invalid.log" || {
+  echo 'The aliased absolute owned source root was rejected for the wrong reason.' >&2
+  exit 1
+}
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
