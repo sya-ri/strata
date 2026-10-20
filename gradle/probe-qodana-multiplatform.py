@@ -29,12 +29,16 @@ import org.gradle.jvm.toolchain.JavaToolchainService
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
+import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinResolvedBinaryDependency
+import org.jetbrains.kotlin.gradle.plugin.ide.IdeMultiplatformImport
 
 plugins {
     kotlin("jvm") version "__KOTLIN__" apply false
     kotlin("multiplatform") version "__KOTLIN__" apply false
 }
 
+@OptIn(ExternalKotlinTargetApi::class)
 fun Project.registerControl(main: KotlinCompilation<*>) {
     val launcher = extensions.getByType<JavaToolchainService>().launcherFor {
         languageVersion.set(JavaLanguageVersion.of(17))
@@ -50,6 +54,11 @@ fun Project.registerControl(main: KotlinCompilation<*>) {
                 "java" to metadata.languageVersion.asInt(),
                 "runtimeVersion" to metadata.javaRuntimeVersion,
                 "installation" to metadata.installationPath.asFile.canonicalPath.replace(File.separatorChar, '/'),
+                "commonClasspath" to project.extensions.findByType<KotlinMultiplatformExtension>()?.let {
+                    IdeMultiplatformImport.instance(project).resolveDependencies("commonMain")
+                        .filterIsInstance<IdeaKotlinResolvedBinaryDependency>().flatMap { it.classpath }
+                        .map { it.canonicalFile.invariantSeparatorsPath }
+                },
                 "classpath" to main.compileDependencyFiles.files.map { it.canonicalPath.replace(File.separatorChar, '/') },
                 "outputs" to main.output.classesDirs.files.map { it.canonicalPath.replace(File.separatorChar, '/') },
             )))
@@ -69,11 +78,15 @@ project(":mpp") {
     val kotlin = extensions.getByType<KotlinMultiplatformExtension>()
     kotlin.jvmToolchain(17)
     kotlin.compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
+    kotlin.js().nodejs()
+    kotlin.sourceSets.getByName("commonMain").dependencies {
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:__COROUTINES__")
+    }
     val main = kotlin.jvm().compilations.getByName("main")
     main.compileTaskProvider.configure { compilerOptions.moduleName.set("fixture-mpp") }
     registerControl(main)
 }
-'''.replace("__KOTLIN__", versions["kotlin"]))
+'''.replace("__KOTLIN__", versions["kotlin"]).replace("__COROUTINES__", versions["kotlinx-coroutines"]))
     actual = '''package fixture
 
 /** Isolates context on the executing JVM thread. */
@@ -105,7 +118,31 @@ public fun main() {
     write("plain/src/main/kotlin/fixture/EvaluationContext.kt", actual.replace("ACTUAL", ""))
     write("plain/src/main/kotlin/fixture/Host.kt", host)
     write("mpp/src/jvmMain/kotlin/fixture/EvaluationContext.kt", actual.replace("ACTUAL", "actual "))
-    write("mpp/src/jvmMain/kotlin/fixture/Host.kt", host)
+    write("mpp/src/jvmMain/kotlin/fixture/Host.kt", host.replace('    context.current = "active"', '    check(commonMetadataValue() == 13)\n    context.current = "active"'))
+    write("mpp/src/jsMain/kotlin/fixture/EvaluationContext.kt", "package fixture\ninternal actual class EvaluationContext<T : Any> actual constructor() { actual var current: T? = null }\n")
+    write("mpp/src/commonMain/kotlin/fixture/CommonMetadata.kt", '''package fixture
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlin.jvm.JvmInline
+import kotlin.jvm.JvmSynthetic
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.properties.ReadOnlyProperty
+
+/** Exercises [Pair], [AutoCloseable], [ReadOnlyProperty] and coroutine metadata. */
+@JvmSynthetic
+internal fun commonMetadataValue(): Int {
+    val resource = object : AutoCloseable { override fun close() {} }
+    resource.close()
+    val number by ReadOnlyProperty<Any?, Int> { _, _ -> MutableStateFlow(12).value }
+    val (first, second) = Pair(MetadataId(number).value, (ceil(1.5) - floor(1.5)).toInt())
+    return first + second
+}
+
+/** Retains a common optional JVM annotation and its primitive value. */
+@JvmInline
+internal value class MetadataId(val value: Int)
+''')
     write("mpp/src/commonMain/kotlin/fixture/EvaluationContext.kt", '''package fixture
 
 /** Holds an optional platform-owned synchronous context. */
@@ -149,6 +186,8 @@ def export():
         "multiplatform-no-self": ("mpp", False, True),
         "split-legacy": ("mpp", False, True),
         "split-hmpp": ("mpp", False, True),
+        "split-metadata": ("mpp", False, True),
+        "split-metadata-file": ("mpp", False, True),
     }
     evidence = {}
     for name, (compiled, own_output, multi_platform) in cases.items():
@@ -200,6 +239,14 @@ def export():
             for entry in manager.findall("orderEntry[@type='module-library']"):
                 import copy
                 common_manager.append(copy.deepcopy(entry))
+            if name.startswith("split-metadata"):
+                for entry in common_manager.findall("orderEntry[@type='module-library']"):
+                    common_manager.remove(entry)
+                for path in model["commonClasspath"]:
+                    assert pathlib.Path(path).is_file() and path.endswith(".klib"), path
+                    library = ET.SubElement(ET.SubElement(common_manager, "orderEntry", type="module-library"), "library", type="kotlin.common")
+                    url = "file://" + path if name.endswith("-file") else "jar://" + path + "!/"
+                    ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url=url)
             common_facet = ET.SubElement(ET.SubElement(common_module, "component", name="FacetManager"), "facet", type="kotlin-language", name="Kotlin")
             common_configuration = ET.SubElement(common_facet, "configuration", version="3", platform="Common (experimental) ", useProjectSettings="false")
             common_arguments = ET.SubElement(common_configuration, "compilerArguments")
@@ -259,6 +306,8 @@ def inspect(results):
         assert any(canary in row["message"] for row in selected), (name, selected)
         if name.startswith("split-"):
             assert all(row["rule"] != "UnusedSymbol" or "unused" in row["message"] for row in selected), (name, selected)
+        if name.startswith("split-metadata"):
+            assert selected and all(row["rule"] == "UnusedSymbol" and "unused" in row["message"] for row in selected), (name, selected)
         print(name, json.dumps(selected))
 
 

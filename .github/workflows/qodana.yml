@@ -16,7 +16,7 @@ jobs:
       - name: Compile and execute plain and multiplatform controls
         run: |
           python3 -B gradle/probe-qodana-multiplatform.py prepare
-          ./gradlew -p qodana-multiplatform-analysis-fixture :plain:verifyFixture :mpp:verifyFixture --no-daemon --console=plain
+          ./gradlew -p qodana-multiplatform-analysis-fixture :plain:verifyFixture :mpp:verifyFixture :mpp:compileCommonMainKotlinMetadata :mpp:compileKotlinJs --no-daemon --console=plain
           python3 -B gradle/probe-qodana-multiplatform.py export
       - name: Inspect compiler and own-output controls
         continue-on-error: true
