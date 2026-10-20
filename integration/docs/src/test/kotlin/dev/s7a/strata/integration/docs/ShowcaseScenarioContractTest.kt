@@ -383,8 +383,13 @@ internal class ShowcaseScenarioContractTest {
         }
         ShowcaseScenarioCatalog.screens.forEach { scenario ->
             assertEquals(1, scenario.scale)
-            val sourceRoot = if (scenario.screen == DocumentedScreen.SynchronizedInventory) "screen/gui-extractor" else "scenarios/gui-extractor"
-            assertTrue(scenario.source.relativePath.startsWith("integration/shared/minecraft-fabric/$sourceRoot/src/gametest/kotlin/"))
+            val sourceRoot =
+                when (scenario.screen) {
+                    DocumentedScreen.SocialInteractions -> "scenarios/gui-extractor/src/screen-examples/kotlin"
+                    DocumentedScreen.SynchronizedInventory -> "screen/gui-extractor/src/gametest/kotlin"
+                    DocumentedScreen.IndustrialController, DocumentedScreen.PowerMilestones -> "scenarios/gui-extractor/src/gametest/kotlin"
+                }
+            assertTrue(scenario.source.relativePath.startsWith("integration/shared/minecraft-fabric/$sourceRoot/"))
         }
     }
 

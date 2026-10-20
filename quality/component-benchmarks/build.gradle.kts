@@ -1,7 +1,6 @@
 import dev.s7a.strata.gradle.performance.configureJmhEvidence
 import me.champeau.jmh.JmhBytecodeGeneratorTask
 import dev.detekt.gradle.Detekt
-import dev.detekt.gradle.extensions.DetektExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import org.gradle.api.tasks.bundling.Jar
@@ -11,8 +10,6 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 plugins {
     alias(libs.plugins.jmh)
 }
-
-extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
 
 dependencies {
     implementation(project(":performance-testkit"))
@@ -59,19 +56,11 @@ val componentLauncher = extensions.getByType<JavaToolchainService>().launcherFor
     languageVersion.set(JavaLanguageVersion.of(libs.versions.java.minecraft.get().toInt()))
 }
 
-val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped API-only component declarations").apply {
-    srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
-    include("**/*Example.kt")
-    // The complete social screen is not used by the portable component definitions.
-    exclude("**/MinecraftSocialExample.kt")
-}
 extensions.configure<KotlinJvmProjectExtension> {
-    sourceSets.named("jmh") { kotlin.source(showcaseSources) }
-}
-
-// Preserve the compiler's filtered shared sources instead of analysing their unfiltered parent directories.
-tasks.named<Detekt>("detektJmh") {
-    setSource(project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh").map { it.kotlin.asFileTree })
+    sourceSets.named("jmh") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
+        kotlin.srcDir("src/workload/kotlin")
+    }
 }
 
 jmh {

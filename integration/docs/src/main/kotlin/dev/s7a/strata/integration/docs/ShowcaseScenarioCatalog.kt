@@ -431,7 +431,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.SocialInteractions,
                 SourceReference(
-                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
+                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialExample.kt",
                     "social-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 240), 1),
