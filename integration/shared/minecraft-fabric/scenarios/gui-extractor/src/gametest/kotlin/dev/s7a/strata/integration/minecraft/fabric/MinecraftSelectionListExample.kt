@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:selection-list
@@ -13,15 +11,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a selected-row SelectionList showcase.
  */
-internal fun createSelectionListShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createSelectionListShowcaseScreenDefinition(): UiDefinition {
     val items = listOf("Friends", "Blocked", "Invites", "Recent")
     val state = SelectionListState(initialSelection = "Blocked")
-    return ScreenDefinition("SelectionList showcase") {
+    return UiDefinition("SelectionList showcase") {
         SelectionList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
             val color = if (state.selectedKey == item) ArgbColor(0xFF4A4A4A.toInt()) else ArgbColor(0xFF202020.toInt())
             Stack(

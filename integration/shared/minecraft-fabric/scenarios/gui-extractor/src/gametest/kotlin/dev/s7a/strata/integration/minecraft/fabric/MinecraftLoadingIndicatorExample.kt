@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:loading-indicator
@@ -10,13 +8,13 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the complete minimal LoadingIndicator showcase frame.
  */
-internal fun createLoadingIndicatorShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Loading indicator") {
+internal fun createLoadingIndicatorShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Loading indicator") {
         Stack(
             modifier = Modifier.size(32, 24).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,

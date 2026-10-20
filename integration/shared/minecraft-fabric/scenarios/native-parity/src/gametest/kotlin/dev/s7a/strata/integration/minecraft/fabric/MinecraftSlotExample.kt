@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:slot-screen
@@ -17,15 +15,15 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the empty three-row Minecraft chest screen used by native, Fabric, and headless parity paths.
  *
  * @return one-shot screen definition reproducing the generic container, labels, 63 Slot hit regions, and hovered highlight order.
  */
-internal fun createSlotScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Chest") {
+internal fun createSlotScreenDefinition(): UiDefinition =
+    UiDefinition("Chest") {
         Stack(
             modifier =
                 Modifier

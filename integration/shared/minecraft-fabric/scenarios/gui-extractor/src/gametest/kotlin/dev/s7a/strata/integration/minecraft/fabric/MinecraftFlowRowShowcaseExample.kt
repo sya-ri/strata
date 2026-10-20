@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:flow-row
@@ -12,15 +10,15 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained FlowRow showcase with four differently sized Minecraft-profile buttons.
  *
  * @return one-shot definition whose 168 by 60 root captures two independently centered rows without synthetic row parents.
  */
-internal fun createFlowRowShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("FlowRow showcase") {
+internal fun createFlowRowShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("FlowRow showcase") {
         FlowRow(
             modifier =
                 Modifier

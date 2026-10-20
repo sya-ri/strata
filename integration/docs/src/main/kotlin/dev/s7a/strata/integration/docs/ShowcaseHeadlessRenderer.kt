@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.component.ImageSource
@@ -45,7 +43,6 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 
@@ -88,7 +85,7 @@ internal object ShowcaseHeadlessRenderer {
     internal fun componentDefinition(
         scenario: ComponentScenario,
         assets: ShowcaseMinecraftAssets,
-    ): ScreenDefinition =
+    ): UiDefinition =
         when (scenario.component) {
             DocumentedComponent.Row -> createRowShowcaseScreenDefinition()
             DocumentedComponent.FlowRow -> createFlowRowShowcaseScreenDefinition()
@@ -168,17 +165,6 @@ internal object ShowcaseHeadlessRenderer {
      * Creates fresh commands and pixels at a fixed time, keeping logical layout independent of physical density.
      * The supplied definition is evaluated only inside this host and no mutable state escapes on success or failure.
      * Optional wheel input is delivered at [pointer] after the initial layout; zero leaves existing stills unchanged.
-     */
-    internal fun render(
-        profile: MinecraftUiProfile,
-        definition: ScreenDefinition,
-        viewport: ShowcaseViewport,
-        pointer: IntOffset = IntOffset.Zero,
-        wheelDelta: Double = 0.0,
-    ): ByteArray = render(profile, definition.asUiDefinition(), viewport, pointer, wheelDelta)
-
-    /**
-     * Transfers a common UI definition to the same renderer used by compatibility examples.
      */
     internal fun render(
         profile: MinecraftUiProfile,

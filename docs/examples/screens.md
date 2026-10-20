@@ -33,15 +33,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the deterministic Minecraft ConfirmScreen content used by the Fabric and headless parity paths.
  *
  * @return one-shot screen definition reproducing the native title, message, and button-row geometry.
  */
-internal fun createConfirmScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Strata parity") {
+internal fun createConfirmScreenDefinition(): UiDefinition =
+    UiDefinition("Strata parity") {
         Stack(
             modifier = Modifier.size(320, 180).menuBackground(),
             contentAlignment = Alignment.Center,
@@ -134,7 +134,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the deterministic one-player Minecraft Social Interactions screen from general-purpose primitives.
@@ -152,9 +152,9 @@ internal fun createSocialScreenDefinition(
     searchIcon: ImageSource = socialSearchIcon,
     playerSkin: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
     playerName: String = "Player0",
-): ScreenDefinition {
+): UiDefinition {
     val search = TextFieldState("", maxLength = 16)
-    return ScreenDefinition("Social Interactions") {
+    return UiDefinition("Social Interactions") {
         Stack(
             modifier =
                 Modifier
@@ -292,7 +292,7 @@ import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a generic chest-shaped screen whose lower 36 Slots are bound to the active player's inventory.
@@ -307,8 +307,8 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createInventorySlotScreenDefinition(
     primaryPlayerBinding: SlotBinding = Slots.playerInventory(0),
     primaryContainerBinding: SlotBinding? = null,
-): ScreenDefinition =
-    ScreenDefinition("Synchronized inventory") {
+): UiDefinition =
+    UiDefinition("Synchronized inventory") {
         Stack(
             modifier =
                 Modifier
@@ -423,7 +423,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a resource-pack-aware coal generator screen from general-purpose components.
@@ -442,8 +442,8 @@ internal fun createIndustrialScreenDefinition(
     fuelBinding: SlotBinding? = Slots.container(0),
     chargeBinding: SlotBinding? = Slots.container(1),
     playerInventory: (Int) -> SlotBinding? = Slots::playerInventory,
-): ScreenDefinition =
-    ScreenDefinition("Coal Generator") {
+): UiDefinition =
+    UiDefinition("Coal Generator") {
         Stack(
             modifier =
                 Modifier
@@ -565,7 +565,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds one advancement-inspired Mod screen from resource-pack sources and an application-owned component.
@@ -583,8 +583,8 @@ internal fun createProgressScreenDefinition(
     background: ImageSource = advancementBackground,
     obtained: ImageSource = obtainedTaskFrame,
     unobtained: ImageSource = unobtainedTaskFrame,
-): ScreenDefinition =
-    ScreenDefinition("Power milestones") {
+): UiDefinition =
+    UiDefinition("Power milestones") {
         Stack(
             modifier =
                 Modifier

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:observe
@@ -11,21 +9,21 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates a deterministic observed status region; live applications supply their own revisioned sources.
  */
-internal fun createObserveShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createObserveShowcaseScreenDefinition(): UiDefinition {
     val status =
         StateSource {
             StateSubscription(StateSnapshot(StateRevision(0), "Connected")) {}
         }
-    return ScreenDefinition("Observe showcase") {
+    return UiDefinition("Observe showcase") {
         Observe(
             status,
             modifier =

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:button
@@ -12,15 +10,15 @@ import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Button showcase with shared pointer and keyboard activation attached through its modifier.
  *
  * @return one-shot definition containing the complete normal Button frame and no surrounding application screen.
  */
-internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Button showcase") {
+internal fun createButtonShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Button showcase") {
         val enabled = true
         Stack(
             modifier =

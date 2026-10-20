@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:row
@@ -11,15 +9,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Row showcase whose complete frame demonstrates horizontal placement.
  *
  * @return one-shot definition containing two Minecraft-profile buttons centered by the Row itself.
  */
-internal fun createRowShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Row showcase") {
+internal fun createRowShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Row showcase") {
         Row(
             modifier =
                 Modifier

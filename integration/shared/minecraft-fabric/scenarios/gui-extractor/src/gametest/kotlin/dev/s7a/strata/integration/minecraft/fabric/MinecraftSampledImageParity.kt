@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 @file:OptIn(InternalStrataRuntimeApi::class)
 
 package dev.s7a.strata.integration.minecraft.fabric
@@ -19,8 +17,8 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds one loaded-client parity scene that interleaves portable and native sampled-image layers.
@@ -33,7 +31,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * @param viewport complete logical and physical frame size at GUI scale one.
  * @return one-shot definition covering the frame with deterministic pixels.
  */
-internal fun createSampledImageParityScreenDefinition(viewport: IntSize): ScreenDefinition {
+internal fun createSampledImageParityScreenDefinition(viewport: IntSize): UiDefinition {
     val contentSize = IntSize(256, 144)
     require(viewport == IntSize(320, 180)) {
         "Sampled-image parity requires the 320 by 180 fractional-scale viewport."
@@ -112,7 +110,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                 override fun close(): Unit = Unit
             }
         }
-    return ScreenDefinition("Sampled image pixel parity") {
+    return UiDefinition("Sampled image pixel parity") {
         Stack(
             modifier =
                 Modifier
@@ -129,7 +127,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
  * All eight masks must retain native presentation at each GUI density; the ordered fractional scene is verified separately.
  * The one-shot definition and its input-passive binding own only immutable fixture pixels and no external resource.
  */
-internal fun createSampledImageEffectsParityScreenDefinition(viewport: IntSize): ScreenDefinition {
+internal fun createSampledImageEffectsParityScreenDefinition(viewport: IntSize): UiDefinition {
     require(viewport == IntSize(320, 180)) { "Sampled effects parity requires the 320 by 180 viewport." }
     val image = createReflectedSampledParityImage()
     val source =
@@ -143,7 +141,7 @@ internal fun createSampledImageEffectsParityScreenDefinition(viewport: IntSize):
                 override fun close(): Unit = Unit
             }
         }
-    return ScreenDefinition("Sampled image effects parity") { Canvas(source, viewport) }
+    return UiDefinition("Sampled image effects parity") { Canvas(source, viewport) }
 }
 
 // Opaque source texels and binary RGB masks avoid native translucent blend rounding.

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:tiled-image
@@ -21,11 +19,11 @@ import dev.s7a.strata.modifier.panZoom
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a deterministic tiled raster from twelve independently reusable immutable images.
@@ -39,9 +37,9 @@ import dev.s7a.strata.state.StateSubscription
 internal fun createTiledImageShowcaseScreenDefinition(
     navigation: PanZoomState = PanZoomState(),
     markerPositions: StateSource<DoubleOffset> = fixedTiledImageShowcaseMarker(),
-): ScreenDefinition {
+): UiDefinition {
     val source = createTiledImageShowcaseSource()
-    return ScreenDefinition("Tiled image showcase") {
+    return UiDefinition("Tiled image showcase") {
         Stack(
             modifier = Modifier.size(112, 88).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,

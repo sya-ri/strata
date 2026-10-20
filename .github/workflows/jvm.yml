@@ -496,7 +496,7 @@ jobs:
       uses: actions/cache/restore@v6
       with:
         path: .gradle/loom-cache
-        key: loom-${{ runner.os }}-${{ matrix.id }}-${{ steps.loom_inputs.outputs.hash }}
+        key: loom-${{ runner.os }}-${{ matrix.version }}-${{ steps.loom_inputs.outputs.hash }}
     - name: Install EGL libraries
       run: |
         sudo apt-get update
