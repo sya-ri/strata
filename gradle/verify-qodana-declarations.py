@@ -857,7 +857,7 @@ def verify_model(root, model_path, container_root, java_path):
             foreign_contents = [{"path": url_path(root, foreign_iml.parent, item.attrib["url"], container_root, False).as_posix()} for item in foreign_manager.findall("content")]
             for folder in foreign_folders:
                 path = url_path(root, foreign_iml.parent, folder.attrib["url"], container_root)
-                if any(path == owned or path in owned.parents or owned in path.parents for _, owned in expected) and not declared_shared_root(foreign_iml.stem, foreign_contents, iml_kind(folder), path):
+                if any(pathlib.Path(os.path.commonpath((path, owned))) in (path, owned) for _, owned in expected) and not declared_shared_root(foreign_iml.stem, foreign_contents, iml_kind(folder), path):
                     fail(f"generated auxiliary root attributed to a foreign owner: {name}: {path}")
         for foreign_name, foreign_modules in modules.items():
             if foreign_name == name:
@@ -866,7 +866,7 @@ def verify_model(root, model_path, container_root, java_path):
                 for content in foreign.get("contentEntries", []):
                     for folder in content.get("sourceFolders", []):
                         path = url_path(root, directory, folder["path"])
-                        if any(path == owned or path in owned.parents or owned in path.parents for _, owned in expected) and not declared_shared_root(foreign_name, foreign.get("contentEntries", []), folder["type"], path):
+                        if any(pathlib.Path(os.path.commonpath((path, owned))) in (path, owned) for _, owned in expected) and not declared_shared_root(foreign_name, foreign.get("contentEntries", []), folder["type"], path):
                             fail(f"imported auxiliary root attributed to a foreign owner: {name}: {path}")
     print(f"Verified {len(owners)} declaration-derived JMH owners and {len(auxiliary)} working auxiliary compilations against IDEA and Qodana.")
     return model, report_directory
