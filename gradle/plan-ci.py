@@ -104,6 +104,20 @@ def client_plan(root, versions, backend, subject_ref):
     return result
 
 
+def check_results(jobs):
+    """Require exactly the selected successes and planned skips, including opt-in jobs."""
+    assert jobs["plan"]["result"] == "success", "CI planning failed"
+    outputs = jobs["plan"]["outputs"]
+    common, web, docs, full_docs, workflow = (outputs[key] == "true" for key in ("common", "web", "docs", "docs_full", "workflow"))
+    minecraft = outputs["all_minecraft"] == "true" or json.loads(outputs["minecraft"]) != [] or full_docs
+    expected = {"checks": common, "web-demos": web, "web": web, "workflow-checks": workflow or common,
+                "minecraft-matrix": minecraft, "minecraft": minecraft, "documentation": full_docs, "docs": docs and not full_docs,
+                "paired-jvm": outputs.get("paired_manifest", "") != "", "preflight-qualification": outputs.get("preflight", "false") == "true"}
+    for job, selected in expected.items():
+        required = "success" if selected else "skipped"
+        assert jobs[job]["result"] == required, f"{job}: expected {required}, got {jobs[job]['result']}"
+
+
 def main():
     """Write one machine-readable plan and matching GitHub job outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -112,6 +126,7 @@ def main():
     mode.add_argument("--full", action="store_true")
     mode.add_argument("--paired-manifest", help="Validate an explicit manual measurement input instead of ordinary verification")
     mode.add_argument("--subject-ref")
+    mode.add_argument("--check-results", action="store_true", help="Validate the completed jobs supplied in RESULTS")
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--model", type=Path)
     parser.add_argument("--minecraft-versions", default="")
@@ -119,6 +134,9 @@ def main():
     parser.add_argument("--subject-root", type=Path, default=Path("subject"))
     parser.add_argument("--output", type=Path, default=Path("build/github-actions/ci-plan.json"))
     args = parser.parse_args()
+    if args.check_results:
+        check_results(json.loads(os.environ["RESULTS"]))
+        return
     selected_client = bool(args.minecraft_versions or args.subject_ref is not None or args.minecraft_backend != "default")
     if selected_client and (args.paired_manifest is not None or args.base is not None or args.full or args.head != "HEAD" or args.model is not None):
         parser.error("--subject-ref requires an isolated loaded-client request without PR, paired or model arguments")

@@ -125,51 +125,19 @@ jobs:
         else
           echo 'Qodana did not create an IDE cache directory.'
         fi
-    - name: Retain declaration and generated model evidence
+    - name: Upload declaration and generated model evidence
       if: always()
-      shell: bash
-      env:
-        RESULTS: ${{ runner.temp }}/qodana/results
-      run: |
-        python3 - <<'PY'
-        import json
-        import os
-        import pathlib
-        import shutil
-        import xml.etree.ElementTree as ET
-        root = pathlib.Path.cwd()
-        destination = pathlib.Path(os.environ['RESULTS']) / 'modelEvidence'
-        missing = []
-        def retain_file(relative):
-            source = root / relative
-            if not source.is_file():
-                missing.append(str(relative))
-                return
-            target = destination / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
-        if (root / 'build/qodana').is_dir():
-            shutil.copytree(root / 'build/qodana', destination / 'build/qodana', dirs_exist_ok=True)
-        else:
-            missing.append('build/qodana')
-        for relative in ('.idea/modules.xml', '.idea/misc.xml', 'strata.ipr'):
-            retain_file(relative)
-        modules_file = root / '.idea/modules.xml'
-        modules = ET.parse(modules_file).getroot().findall('./component/modules/module') if modules_file.is_file() else []
-        for module in modules:
-            url = module.attrib['fileurl']
-            prefix = 'file://$PROJECT_DIR$/'
-            if not url.startswith(prefix):
-                raise SystemExit(f'Unsupported generated module URL: {url}')
-            relative = pathlib.PurePosixPath(url[len(prefix):])
-            if relative.is_absolute() or '..' in relative.parts:
-                raise SystemExit(f'Noncanonical generated module URL: {url}')
-            retain_file(relative)
-        destination.mkdir(parents=True, exist_ok=True)
-        (destination / 'collection.json').write_text(json.dumps({'missingFiles': missing}, indent=2) + '\n', encoding='utf-8')
-        if missing:
-            print(f'Unavailable model evidence after bootstrap: {missing}')
-        PY
+      uses: actions/upload-artifact@v7
+      with:
+        name: qodana-model-evidence
+        path: |-
+          build/qodana
+          .idea/modules.xml
+          .idea/misc.xml
+          strata.ipr
+          **/*.iml
+        if-no-files-found: warn
+        include-hidden-files: true
     - name: Upload Qodana report
       if: always()
       uses: actions/upload-artifact@v7

@@ -670,21 +670,10 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
     - name: Check planned job outcomes
-      run: |-
-        python3 - <<'PY'
-        import json, os
-        jobs = json.loads(os.environ['RESULTS'])
-        assert jobs['plan']['result'] == 'success', 'CI planning failed'
-        p = jobs['plan']['outputs']
-        common, web, docs, full_docs, workflow = (p[key] == 'true' for key in ('common', 'web', 'docs', 'docs_full', 'workflow'))
-        minecraft = p['all_minecraft'] == 'true' or json.loads(p['minecraft']) != [] or full_docs
-        expected = {'checks': common, 'web-demos': web, 'web': web, 'workflow-checks': workflow or common, 'minecraft-matrix': minecraft, 'minecraft': minecraft, 'documentation': full_docs, 'docs': docs and not full_docs}
-        expected['paired-jvm'] = p.get('paired_manifest', '') != ''
-        expected['preflight-qualification'] = p.get('preflight', 'false') == 'true'
-        for job, selected in expected.items():
-            required = 'success' if selected else 'skipped'
-            assert jobs[job]['result'] == required, f"{job}: expected {required}, got {jobs[job]['result']}"
-        PY
+      run: python3 gradle/plan-ci.py --check-results
       env:
         RESULTS: ${{ toJSON(needs) }}
