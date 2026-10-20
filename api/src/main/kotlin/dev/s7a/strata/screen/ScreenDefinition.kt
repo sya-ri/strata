@@ -1,9 +1,8 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.screen
 
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.ScreenPresenters
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiDefinition
 import kotlin.concurrent.atomics.AtomicReference
@@ -59,7 +58,7 @@ public class ScreenDefinition(
      * @throws Throwable when the installed runtime fails during presentation; the runtime preserves ownership and cleanup obligations after transfer.
      */
     public fun open() {
-        Screens.open(this)
+        ScreenPresenters.present(this)
     }
 
     /**

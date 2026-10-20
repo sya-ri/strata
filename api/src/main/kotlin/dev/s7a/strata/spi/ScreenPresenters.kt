@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.spi
 
 import dev.s7a.strata.screen.ScreenDefinition
@@ -39,6 +37,7 @@ public object ScreenPresenters {
      * @throws ScreenRuntimeUnavailableException when no presenter is installed; the definition remains caller-owned.
      * @throws Throwable when the presenter rejects or fails the operation.
      */
+    @Suppress("DEPRECATION")
     public fun present(definition: ScreenDefinition) {
         val presenter = current.load()?.presenter ?: throw ScreenRuntimeUnavailableException()
         presenter.present(definition)
