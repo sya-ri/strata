@@ -367,6 +367,7 @@ class PlanCiTest(unittest.TestCase):
                 return subprocess.check_output(["git", "-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", *args], cwd=root)
 
             git("init", "--quiet")
+            git("config", "maintenance.auto", "false")
             original = root / "runtime/shared/old/Native.kt"
             original.parent.mkdir(parents=True)
             original.write_text("// Retained source moves between shared families.\n" * 10)

@@ -490,6 +490,7 @@ auxiliary = dict(project=":integration:docs", directory="integration/docs", modu
                  roots=auxiliary_roots, outputs=auxiliary_outputs, classpaths={"compile": "verificationCompileClasspath", "runtime": "verificationRuntimeClasspath"},
                  dependencies={"verificationCompileClasspath": [auxiliary_dependency], "verificationRuntimeClasspath": [auxiliary_dependency]})
 subprocess.run(["git", "init", "-q", str(root)], check=True)
+subprocess.run(["git", "config", "maintenance.auto", "false"], cwd=root, check=True)
 subprocess.run(["git", "add", "--", "*.gradle.kts", "*.kt", "*.java", "*.txt"], cwd=root, check=True)
 subprocess.run(["git", "-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Create working declaration fixtures"], cwd=root, check=True)
 revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
