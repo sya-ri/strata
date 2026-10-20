@@ -15,6 +15,10 @@ import kotlin.js.Promise
  * Selects build rendering or interactive startup before creating any application state.
  */
 public fun main() {
+    if (WebLaunchMode.decode(window.location.search, window.location.pathname) == WebLaunchMode.Interactions) {
+        mountInteractionApplication()
+        return
+    }
     val theme = mapOf("minecraft.html" to WebTheme.Minecraft)[window.location.pathname.substringAfterLast('/')] ?: WebTheme.Native
     window.asDynamic().strataPerformanceInventory = { WebComponentPerformanceContract.inventory() }
     if (WebLaunchMode.decode(window.location.search) == WebLaunchMode.Prerender) {
