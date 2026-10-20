@@ -10,7 +10,6 @@ import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
-import dev.s7a.strata.ui.UiInputPolicy
 import dev.s7a.strata.ui.UiInteractionMode
 import dev.s7a.strata.ui.UiPresentation
 import dev.s7a.strata.ui.UiRejection
@@ -26,7 +25,7 @@ import org.w3c.dom.HTMLElement
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public class WebUiHost internal constructor(
-    private val root: HTMLElement,
+    root: HTMLElement,
     private val session: RuntimeUiSession,
     private var viewport: IntSize,
     private val controls: RuntimeUiController,
@@ -150,7 +149,6 @@ public class WebUiHost internal constructor(
  * @return mounted host owning its session, DOM children, listeners, and animation request.
  * @throws Throwable on transfer, content, layout, or rendering failure; partially mounted resources are released.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun mountWeb(
     definition: UiDefinition,
     root: HTMLElement,
@@ -161,7 +159,6 @@ public fun mountWeb(
  * Mounts a themed screen using the ownership and failure contract of [mountWeb].
  * The theme must match initial build rendering; mismatches fail before changing existing HTML.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun mountWeb(
     definition: UiDefinition,
     root: HTMLElement,

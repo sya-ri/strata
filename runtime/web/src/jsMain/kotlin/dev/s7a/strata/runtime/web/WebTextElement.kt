@@ -101,7 +101,7 @@ internal class WebTextElement(
             if (shown.isNotEmpty() && count < lines.size && element.layout.overflow == TextOverflow.Ellipsis) {
                 var last = shown.last()
                 while (last.isNotEmpty() && constraints.maxWidth < width(last + "…")) last = last.dropLast(if (last.last().isLowSurrogate()) 2 else 1)
-                shown[shown.lastIndex] = last + if (width("…") <= constraints.maxWidth) "…" else ""
+                shown[shown.lastIndex] = if (width("…") <= constraints.maxWidth) "$last…" else last
             }
             visible = shown.joinToString("\n")
             return constraints.constrain(IntSize(shown.maxOfOrNull(::width) ?: 0, maxOf(0, count * stride - spacing)))
