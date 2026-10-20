@@ -335,8 +335,12 @@ jobs:
     needs: plan
     if: needs.plan.outputs.workflow == 'true' || needs.plan.outputs.common == 'true'
   web:
-    name: Web build and browser parity
-    runs-on: windows-latest
+    name: Web build and browser parity (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
     steps:
     - name: Check out source
       uses: actions/checkout@v7
@@ -348,12 +352,21 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
+      if: runner.os == 'Windows'
+      shell: pwsh
       run: .\gradlew.bat :integration:web:check
+    - name: Verify Linux Web runtime and static build
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |-
+        bash ./gradlew kotlinNpmInstall
+        node build/js/node_modules/playwright/cli.js install --with-deps chromium firefox webkit
+        bash ./gradlew :integration:web:check
     - name: Upload browser evidence
       if: always()
       uses: actions/upload-artifact@v7
       with:
-        name: web-parity
+        name: web-parity-${{ matrix.os }}
         path: integration/web/build/parity
     needs: plan
     if: needs.plan.outputs.web == 'true'

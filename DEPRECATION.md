@@ -8,7 +8,7 @@ Deprecation warnings are enabled before removal; builds that treat warnings as e
 
 ### Modifier.Empty
 
-- **Deprecated in**: 0.3.0
+- **Deprecated in**: 0.3.1
 - **Scheduled for removal**: 1.0.0
 - **Replacement**: `Modifier`
 
@@ -29,7 +29,7 @@ val sized = Modifier.size(100, 40)
 val optional: Modifier = if (enabled) sized else Modifier
 ```
 
-The interface replaces the previous public class in 0.3.0.
+The interface replaces the previous public class in 0.3.1.
 Recompile consumers against the new API and keep all Strata artifacts on the same version; the old compiled class calls are not binary compatible.
 See the [modifier guide](docs/guides/modifiers.md) and [Modifier SPI](docs/reference/modifier-spi.md).
 
@@ -37,7 +37,7 @@ See the [modifier guide](docs/guides/modifiers.md) and [Modifier SPI](docs/refer
 
 ### TextStyle enum
 
-`TextStyle` changes from an enum to an immutable data class with independent foreground and shadow properties in 0.3.0.
+`TextStyle` changes from an enum to an immutable data class with independent foreground and shadow properties in 0.3.1.
 The four preset expressions remain available as companion values; for example, `TextStyle.Inactive.copy(shadow = null)` preserves the muted foreground and removes its shadow.
 Enum-specific operations such as `entries`, `values`, `valueOf`, `name`, and `ordinal`, and exhaustive enum `when` expressions must be migrated to application-owned choices or direct style properties.
 Recompile consumers and keep all Strata artifacts on the same version; enum bytecode is not binary compatible with the value type.
