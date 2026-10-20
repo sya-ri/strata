@@ -203,8 +203,9 @@ def export():
             common_facet = ET.SubElement(ET.SubElement(common_module, "component", name="FacetManager"), "facet", type="kotlin-language", name="Kotlin")
             common_configuration = ET.SubElement(common_facet, "configuration", version="3", platform="Common (experimental) ", useProjectSettings="false")
             common_arguments = ET.SubElement(common_configuration, "compilerArguments")
-            ET.SubElement(common_arguments, "option", name="moduleName", value=common_name)
+            ET.SubElement(common_arguments, "option", name="moduleName", value="fixture-" + compiled)
             ET.SubElement(common_arguments, "option", name="multiPlatform", value="true")
+            ET.SubElement(common_arguments, "option", name="expectActualClasses", value="true")
             ET.SubElement(manager, "orderEntry", type="module", **{"module-name": common_name})
             if name == "split-legacy":
                 ET.SubElement(ET.SubElement(configuration, "implements"), "implement").text = common_name
@@ -256,6 +257,8 @@ def inspect(results):
         selected = [row for row in rows if row["path"].startswith("analysis/" + name + "/")]
         canary = "unusedCommonCanary" if name.endswith("-common") else "unusedActualCanary"
         assert any(canary in row["message"] for row in selected), (name, selected)
+        if name.startswith("split-"):
+            assert all(row["rule"] != "UnusedSymbol" or "unused" in row["message"] for row in selected), (name, selected)
         print(name, json.dumps(selected))
 
 
