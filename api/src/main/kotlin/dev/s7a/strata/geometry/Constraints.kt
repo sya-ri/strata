@@ -43,9 +43,7 @@ public data class Constraints(
      * @param size the candidate size.
      * @return true when both extents lie within the inclusive ranges.
      */
-    public fun isSatisfiedBy(size: IntSize): Boolean =
-        minWidth <= size.width && size.width <= maxWidth &&
-            minHeight <= size.height && size.height <= maxHeight
+    public fun isSatisfiedBy(size: IntSize): Boolean = size.width in minWidth..maxWidth && size.height in minHeight..maxHeight
 
     /**
      * Provides constructors for common constraint sets.
