@@ -108,7 +108,7 @@ internal ACTUALclass EvaluationContext<T : Any> ACTUALconstructor() {
     host = '''package fixture
 
 /** Executes the compiled getter, setter and null release on the selected JVM. */
-public fun main(): Unit {
+fun main() {
     val context = EvaluationContext<String>()
     check(context.current == null)
     context.current = "active"
