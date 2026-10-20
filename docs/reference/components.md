@@ -100,15 +100,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Row showcase whose complete frame demonstrates horizontal placement.
  *
  * @return one-shot definition containing two Minecraft-profile buttons centered by the Row itself.
  */
-internal fun createRowShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Row showcase") {
+internal fun createRowShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Row showcase") {
         Row(
             modifier =
                 Modifier
@@ -176,15 +176,15 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained FlowRow showcase with four differently sized Minecraft-profile buttons.
  *
  * @return one-shot definition whose 168 by 60 root captures two independently centered rows without synthetic row parents.
  */
-internal fun createFlowRowShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("FlowRow showcase") {
+internal fun createFlowRowShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("FlowRow showcase") {
         FlowRow(
             modifier =
                 Modifier
@@ -257,15 +257,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Column showcase whose complete frame demonstrates vertical placement.
  *
  * @return one-shot definition containing two Minecraft-profile buttons centered by the Column itself.
  */
-internal fun createColumnShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Column showcase") {
+internal fun createColumnShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Column showcase") {
         Column(
             modifier =
                 Modifier
@@ -332,15 +332,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Stack showcase with a status badge painted over a Minecraft-profile button.
  *
  * @return one-shot definition demonstrating declaration-order painting from the button to the foreground badge.
  */
-internal fun createStackShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Stack showcase") {
+internal fun createStackShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Stack showcase") {
         Stack(
             modifier =
                 Modifier
@@ -409,15 +409,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Grid showcase with a complete three-by-three set of Minecraft-profile buttons.
  *
  * @return one-shot definition whose 64 by 64 root is also the complete captured frame.
  */
-internal fun createGridShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Grid showcase") {
+internal fun createGridShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Grid showcase") {
         Grid(
             columns = 3,
             modifier =
@@ -493,15 +493,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Spacer showcase that reserves visible space between two siblings.
  *
  * @return one-shot definition in which the Spacer, rather than parent spacing or child padding, owns the 16-pixel gap.
  */
-internal fun createSpacerShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Spacer showcase") {
+internal fun createSpacerShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Spacer showcase") {
         Row(
             modifier =
                 Modifier
@@ -569,21 +569,21 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Creates a deterministic observed status region; live applications supply their own revisioned sources.
  */
-internal fun createObserveShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createObserveShowcaseScreenDefinition(): UiDefinition {
     val status =
         StateSource {
             StateSubscription(StateSnapshot(StateRevision(0), "Connected")) {}
         }
-    return ScreenDefinition("Observe showcase") {
+    return UiDefinition("Observe showcase") {
         Observe(
             status,
             modifier =
@@ -653,10 +653,10 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextOverflow
 import dev.s7a.strata.text.TextWrap
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a complete resource-font Text showcase with explicit line breaks and bounded wrapping.
@@ -664,8 +664,8 @@ import dev.s7a.strata.text.TextWrap
  * The active profile must provide resource fonts for the illustrated Japanese, Korean, and emoji glyphs.
  * @return one-shot definition whose complete frame shows at most four lines without changing the original semantic label.
  */
-internal fun createTextShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Text showcase") {
+internal fun createTextShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Text showcase") {
         Stack(
             modifier =
                 Modifier
@@ -735,7 +735,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained TextField showcase from one caller-selected initial value.
@@ -746,9 +746,9 @@ import dev.s7a.strata.screen.ScreenDefinition
  */
 internal fun createTextFieldShowcaseScreenDefinition(
     initialValue: String = "play.example.net",
-): ScreenDefinition {
+): UiDefinition {
     val state = TextFieldState(initialValue, maxLength = 128)
-    return ScreenDefinition("TextField showcase") {
+    return UiDefinition("TextField showcase") {
         Stack(
             modifier =
                 Modifier
@@ -816,7 +816,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds one complete multiline editor frame with an independently placed scrollbar.
@@ -825,7 +825,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  * The resource-font profile supplies the illustrated Unicode glyphs, while soft wrapping leaves the stored value unchanged.
  * @return one-shot definition containing a 200 by 64 editor and its separately composed scrollbar.
  */
-internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createTextAreaShowcaseScreenDefinition(): UiDefinition {
     val size = IntSize(200, 64)
     val state =
         TextAreaState(
@@ -839,7 +839,7 @@ internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
                     "The original value keeps its newlines.",
             maxLength = 2048,
         )
-    return ScreenDefinition("TextArea showcase") {
+    return UiDefinition("TextArea showcase") {
         Row(
             modifier = Modifier.size(226, 80).background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,
@@ -905,15 +905,15 @@ import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Button showcase with shared pointer and keyboard activation attached through its modifier.
  *
  * @return one-shot definition containing the complete normal Button frame and no surrounding application screen.
  */
-internal fun createButtonShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Button showcase") {
+internal fun createButtonShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Button showcase") {
         val enabled = true
         Stack(
             modifier =
@@ -984,14 +984,14 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the complete minimal Checkbox showcase frame.
  */
-internal fun createCheckboxShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createCheckboxShowcaseScreenDefinition(): UiDefinition {
     val state = CheckboxState(initialChecked = true)
-    return ScreenDefinition("Checkbox showcase") {
+    return UiDefinition("Checkbox showcase") {
         Stack(
             modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -1052,7 +1052,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Difficulty options rendered by the typed CycleButton showcase.
@@ -1069,9 +1069,9 @@ private enum class Difficulty(
 /**
  * Builds the complete minimal CycleButton showcase frame.
  */
-internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createCycleButtonShowcaseScreenDefinition(): UiDefinition {
     val state = CycleButtonState(Difficulty.Normal) { value -> "Difficulty: ${value.label}" }
-    return ScreenDefinition("CycleButton showcase") {
+    return UiDefinition("CycleButton showcase") {
         Stack(
             modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -1132,14 +1132,14 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the complete minimal Slider showcase frame.
  */
-internal fun createSliderShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createSliderShowcaseScreenDefinition(): UiDefinition {
     val state = SliderState(initialValue = 0.65)
-    return ScreenDefinition("Slider showcase") {
+    return UiDefinition("Slider showcase") {
         Stack(
             modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -1202,15 +1202,15 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Tab showcase with selected and unselected states side by side.
  *
  * @return one-shot definition whose selected All tab displays the standard underline indicator.
  */
-internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Tab showcase") {
+internal fun createTabShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Tab showcase") {
         Row(
             modifier =
                 Modifier
@@ -1289,14 +1289,14 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a ScrollArea showcase without a scrollbar.
  */
-internal fun createScrollAreaShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createScrollAreaShowcaseScreenDefinition(): UiDefinition {
     val state = ScrollState()
-    return ScreenDefinition("ScrollArea showcase") {
+    return UiDefinition("ScrollArea showcase") {
         ScrollArea(
             state = state,
             modifier = Modifier.size(120, 48).background(ArgbColor(0xFF000000.toInt())),
@@ -1365,14 +1365,14 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a Scrollbar with the smallest linked viewport needed to establish its metrics.
  */
-internal fun createScrollbarShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createScrollbarShowcaseScreenDefinition(): UiDefinition {
     val state = ScrollState(initialOffset = 18.0)
-    return ScreenDefinition("Scrollbar showcase") {
+    return UiDefinition("Scrollbar showcase") {
         Row(
             spacing = 8,
             modifier = Modifier.size(94, 48).background(ArgbColor(0xFF000000.toInt())),
@@ -1448,15 +1448,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a finite VirtualList while materializing only visible rows.
  */
-internal fun createVirtualListShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createVirtualListShowcaseScreenDefinition(): UiDefinition {
     val items = (1..100).map { index -> "Log entry $index" }
     val state = VirtualListState<String>()
-    return ScreenDefinition("VirtualList showcase") {
+    return UiDefinition("VirtualList showcase") {
         VirtualList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
             Stack(
                 modifier = Modifier.size(120, 16).background(ArgbColor(0xFF202020.toInt())),
@@ -1520,15 +1520,15 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a selected-row SelectionList showcase.
  */
-internal fun createSelectionListShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createSelectionListShowcaseScreenDefinition(): UiDefinition {
     val items = listOf("Friends", "Blocked", "Invites", "Recent")
     val state = SelectionListState(initialSelection = "Blocked")
-    return ScreenDefinition("SelectionList showcase") {
+    return UiDefinition("SelectionList showcase") {
         SelectionList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
             val color = if (state.selectedKey == item) ArgbColor(0xFF4A4A4A.toInt()) else ArgbColor(0xFF202020.toInt())
             Stack(
@@ -1592,7 +1592,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained Image showcase from caller-provided deterministic pixels or an active resource.
@@ -1600,8 +1600,8 @@ import dev.s7a.strata.screen.ScreenDefinition
  * @param source immutable pixel snapshot or resource-pack identifier rendered by the Image component itself.
  * @return one-shot definition containing the complete 32 by 32 nearest-sampled image inside a minimal canvas.
  */
-internal fun createImageShowcaseScreenDefinition(source: ImageSource): ScreenDefinition =
-    ScreenDefinition("Image showcase") {
+internal fun createImageShowcaseScreenDefinition(source: ImageSource): UiDefinition =
+    UiDefinition("Image showcase") {
         Stack(
             modifier =
                 Modifier
@@ -1666,7 +1666,7 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained CPU Canvas showcase with immutable, independently known source texels.
@@ -1676,7 +1676,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  *
  * @return an unevaluated definition stretching a four-by-two CPU image into a 64 by 32 logical rectangle.
  */
-internal fun createCanvasShowcaseScreenDefinition(): ScreenDefinition {
+internal fun createCanvasShowcaseScreenDefinition(): UiDefinition {
     val image =
         createDrawImage(
             IntSize(4, 2),
@@ -1692,7 +1692,7 @@ internal fun createCanvasShowcaseScreenDefinition(): ScreenDefinition {
             ),
         )
     val source = canvasSource(image)
-    return ScreenDefinition("Canvas showcase") {
+    return UiDefinition("Canvas showcase") {
         Stack(
             modifier =
                 Modifier
@@ -1766,11 +1766,11 @@ import dev.s7a.strata.modifier.panZoom
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a deterministic tiled raster from twelve independently reusable immutable images.
@@ -1784,9 +1784,9 @@ import dev.s7a.strata.state.StateSubscription
 internal fun createTiledImageShowcaseScreenDefinition(
     navigation: PanZoomState = PanZoomState(),
     markerPositions: StateSource<DoubleOffset> = fixedTiledImageShowcaseMarker(),
-): ScreenDefinition {
+): UiDefinition {
     val source = createTiledImageShowcaseSource()
-    return ScreenDefinition("Tiled image showcase") {
+    return UiDefinition("Tiled image showcase") {
         Stack(
             modifier = Modifier.size(112, 88).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -1901,7 +1901,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a deterministic unbound Slot showcase without depending on a player or container menu.
@@ -1910,8 +1910,8 @@ import dev.s7a.strata.screen.ScreenDefinition
  *
  * @return one-shot definition containing one empty, highlightable Slot centered in the complete frame.
  */
-internal fun createSlotShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Slot showcase") {
+internal fun createSlotShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Slot showcase") {
         Stack(
             modifier =
                 Modifier
@@ -1975,7 +1975,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds a self-contained PlayerHead showcase from a caller-selected skin source.
@@ -1985,8 +1985,8 @@ import dev.s7a.strata.screen.ScreenDefinition
  */
 internal fun createPlayerHeadShowcaseScreenDefinition(
     skin: PlayerSkinSource,
-): ScreenDefinition =
-    ScreenDefinition("Player head") {
+): UiDefinition =
+    UiDefinition("Player head") {
         Stack(
             modifier = Modifier.size(64, 64).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -2045,13 +2045,13 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the complete minimal LoadingIndicator showcase frame.
  */
-internal fun createLoadingIndicatorShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Loading indicator") {
+internal fun createLoadingIndicatorShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Loading indicator") {
         Stack(
             modifier = Modifier.size(32, 24).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -2110,13 +2110,13 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Builds the complete minimal ProgressBar showcase frame.
  */
-internal fun createProgressBarShowcaseScreenDefinition(): ScreenDefinition =
-    ScreenDefinition("Progress bar") {
+internal fun createProgressBarShowcaseScreenDefinition(): UiDefinition =
+    UiDefinition("Progress bar") {
         Stack(
             modifier = Modifier.size(116, 28).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
