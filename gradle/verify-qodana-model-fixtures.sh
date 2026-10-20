@@ -214,6 +214,7 @@ write_iml \
   "$docs_directory/docs.iml" \
   'Source;src/main/kotlin' \
   'Source;../shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' \
+  'Source;../shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin' \
   'TestSource;src/test/kotlin'
 
 font_backend_directory="$fixture_project/runtime/minecraft-fonts-lwjgl"
@@ -318,7 +319,8 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
         {type: "TestSource", path: "file://$PROJECT_DIR$/integration/docs/src/test/kotlin"}
       ];
       [
-        {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"}
+        {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"},
+        {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin"}
       ]
     )]
     + [projectModule(
@@ -1580,54 +1582,44 @@ fixture_docs_iml="$fixture_project/integration/docs/docs.iml"
 fixture_docs_iml_backup="$fixture_root/docs.iml"
 cp -- "$fixture_docs_iml" "$fixture_docs_iml_backup"
 
-sed -i '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/d' "$fixture_docs_iml"
-portable_jq '
-  (
-    .modules[]
-    | select(.name == "docs")
-    | .contentEntries[0].sourceFolders
-  ) |= map(select(.path != "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
-' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
-assert_project_rejected 'paired IDEA and Qodana removal of the required documentation showcase Source' "$fixture_root/invalid.json"
-grep -Fq 'must link exactly one showcase Source and no other target source root: source=0 total=0' "$fixture_root/invalid.log" || {
-  echo 'The paired removal of the documentation showcase Source was rejected for the wrong reason.' >&2
-  exit 1
-}
-cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
-
-sed -i \
-  '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/s/isTestSource="false"/isTestSource="true"/' \
-  "$fixture_docs_iml"
-portable_jq '
-  (
-    .modules[]
-    | select(.name == "docs")
-    | .contentEntries[0].sourceFolders[]
-    | select(.path == "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
-  ).type = "TestSource"
-' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
-assert_project_rejected 'paired IDEA and Qodana source-kind corruption of the required documentation showcase Source' "$fixture_root/invalid.json"
-grep -Fq 'must link exactly one showcase Source and no other target source root: source=0 total=1' "$fixture_root/invalid.log" || {
-  echo 'The paired source-kind corruption of the documentation showcase Source was rejected for the wrong reason.' >&2
-  exit 1
-}
-cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
-
-sed -i '/shared\/minecraft-fabric\/scenarios\/gui-extractor\/src\/gametest\/kotlin/p' "$fixture_docs_iml"
-portable_jq '
-  (
-    .modules[]
-    | select(.name == "docs")
-    | .contentEntries[0].sourceFolders
-  ) += [
-      {type: "Source", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"}
-    ]
-' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
-assert_project_rejected 'paired IDEA and Qodana duplication of the required documentation showcase Source' "$fixture_root/invalid.json"
-grep -Fq 'must link exactly one showcase Source and no other target source root: source=2 total=2' "$fixture_root/invalid.log" || {
-  echo 'The paired duplication of the documentation showcase Source was rejected for the wrong reason.' >&2
-  exit 1
-}
+for docs_source_set in gametest screen-examples; do
+  docs_source_suffix="shared/minecraft-fabric/scenarios/gui-extractor/src/$docs_source_set/kotlin"
+  docs_source_path='file://$PROJECT_DIR$/integration/'"$docs_source_suffix"
+  for docs_mutation in missing wrong-kind duplicate; do
+    cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
+    case "$docs_mutation" in
+      missing)
+        sed -i "\#$docs_source_suffix#d" "$fixture_docs_iml"
+        portable_jq --arg sourcePath "$docs_source_path" '
+          (.modules[] | select(.name == "docs").contentEntries[0].sourceFolders) |= map(select(.path != $sourcePath))
+        ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+        docs_source_count=0
+        docs_root_count=1
+        ;;
+      wrong-kind)
+        sed -i "\#$docs_source_suffix#s/isTestSource=\"false\"/isTestSource=\"true\"/" "$fixture_docs_iml"
+        portable_jq --arg sourcePath "$docs_source_path" '
+          (.modules[] | select(.name == "docs").contentEntries[0].sourceFolders[] | select(.path == $sourcePath)).type = "TestSource"
+        ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+        docs_source_count=0
+        docs_root_count=2
+        ;;
+      duplicate)
+        sed -i "\#$docs_source_suffix#p" "$fixture_docs_iml"
+        portable_jq --arg sourcePath "$docs_source_path" '
+          (.modules[] | select(.name == "docs").contentEntries[0].sourceFolders) += [{type: "Source", path: $sourcePath}]
+        ' "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+        docs_source_count=2
+        docs_root_count=3
+        ;;
+    esac
+    assert_project_rejected "paired IDEA and Qodana $docs_mutation of the required documentation $docs_source_set Source" "$fixture_root/invalid.json"
+    grep -Fq "must link exactly one showcase Source for each compiled root: path=$docs_source_path source=$docs_source_count total=$docs_root_count" "$fixture_root/invalid.log" || {
+      echo "The paired documentation $docs_source_set $docs_mutation was rejected for the wrong reason." >&2
+      exit 1
+    }
+  done
+done
 cp -- "$fixture_docs_iml_backup" "$fixture_docs_iml"
 
 sed -i \
