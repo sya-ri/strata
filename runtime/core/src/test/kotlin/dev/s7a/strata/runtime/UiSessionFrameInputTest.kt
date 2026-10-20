@@ -261,7 +261,7 @@ internal class UiSessionFrameInputTest {
             InputResult.Ignored,
             session.dispatchPointer(PointerEvent.Move(IntOffset(0, 0))),
         )
-        val frame = session.frame(Constraints.fixed(2, 1))
+        session.frame(Constraints.fixed(2, 1))
         assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset(0, 0))))
         session.close()
     }
