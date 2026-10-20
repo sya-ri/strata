@@ -17,8 +17,18 @@ internal class CanvasVerificationTest {
 
     @Test
     fun `command selectors retain exact spellings`() {
-        CanvasVerification.Backend.entries.forEach { assertEquals(it, CanvasVerification.parseBackend(it.argument)) }
-        CanvasVerification.Scope.entries.forEach { assertEquals(it, CanvasVerification.parseScope(it.argument)) }
+        mapOf("opengl" to CanvasVerification.Backend.OpenGl, "vulkan" to CanvasVerification.Backend.Vulkan).forEach { (argument, backend) ->
+            assertEquals(backend, CanvasVerification.parseBackend(argument))
+            assertEquals(argument, backend.argument)
+        }
+        mapOf(
+            "full" to CanvasVerification.Scope.Full,
+            "canvas-only" to CanvasVerification.Scope.CanvasOnly,
+            "terminal-only" to CanvasVerification.Scope.TerminalOnly,
+        ).forEach { (argument, scope) ->
+            assertEquals(scope, CanvasVerification.parseScope(argument))
+            assertEquals(argument, scope.argument)
+        }
         listOf("", "OPENGL", "default").forEach { value ->
             assertThrows(IllegalArgumentException::class.java) { CanvasVerification.parseBackend(value) }
         }
