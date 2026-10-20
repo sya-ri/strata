@@ -8,6 +8,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import org.w3c.dom.Element
+import org.w3c.dom.Document
 
 /** One source or resource root in its actual compiler context. */
 data class AnalysisRoot(
@@ -41,6 +42,60 @@ fun compilerSdkName(toolchain: Map<*, *>): String {
     return "strata-compiler-${toolchain["java"]}-${analysisIdentity(identity).take(12)}"
 }
 
+/** Projects real production source-set refinements without creating additional Gradle projects. */
+fun analysisOwners(owner: Map<*, *>): List<Map<*, *>> {
+    val declarations = (owner["commonSourceSets"] as? List<*>).orEmpty().map { it as Map<*, *> }
+    val sources = (owner["roots"] as List<*>).map { it as Map<*, *> }
+    val nodes = declarations.associateBy { it["name"] as String }
+    require(nodes.size == declarations.size) { "Duplicate common source-set declaration: ${owner["module"]}" }
+    val assigned = declarations.associate { declaration ->
+        val sourcePaths = (declaration["kotlinRoots"] as List<*>).toSet()
+        val resourcePaths = (declaration["resourceRoots"] as List<*>).toSet()
+        val kotlinInputs = (declaration["kotlinInputs"] as List<*>).toSet()
+        val resourceInputs = (declaration["resourceInputs"] as List<*>).toSet()
+        declaration["name"] as String to sources.filter { source ->
+            (source["kind"] == "Source" && source["path"] in sourcePaths) || (source["kind"] == "Resource" && source["path"] in resourcePaths)
+        }.map { source ->
+            val selected = if (source["kind"] == "Source") kotlinInputs else resourceInputs
+            source + mapOf("inputs" to (source["inputs"] as List<*>).filter { it in selected })
+        }
+    }
+    val active = assigned.filterValues { roots -> roots.any { it["exists"] == true && it["generated"] == false && (it["inputs"] as List<*>).isNotEmpty() } }.keys
+    val reachable = mutableSetOf<String>()
+    fun refinements(names: List<*>, ancestors: Set<String> = emptySet()): List<String> = names.flatMap { value ->
+        val name = value as String
+        require(name in nodes && name !in ancestors) { "Unknown or cyclic common source-set refinement: $name" }
+        reachable.add(name)
+        val dependencies = nodes.getValue(name)["dependsOn"] as List<*>
+        if (name in active) {
+            refinements(dependencies, ancestors + name)
+            listOf(name)
+        } else refinements(dependencies, ancestors + name)
+    }.distinct().sorted()
+    val moved = assigned.values.flatten().groupBy { it["path"] }.mapValues { (_, roots) -> roots.flatMap { it["inputs"] as List<*> }.toSet() }
+    val retained = sources.mapNotNull { source ->
+        if (source["kind"] !in setOf("Source", "Resource") || source["path"] !in moved) source else {
+            val inputs = (source["inputs"] as List<*>).filter { it !in moved.getValue(source["path"]) }
+            if (inputs.isEmpty()) null else source + mapOf("inputs" to inputs)
+        }
+    }
+    val primaryRefinements = refinements((owner["sourceSetDependencies"] as? List<*>).orEmpty())
+    require(reachable == nodes.keys) { "Common source sets differ from the JVM compilation refinement graph: ${owner["module"]}" }
+    val original = owner + mapOf("roots" to retained, "common" to false, "templateIml" to owner["iml"],
+        "sourceSet" to owner["defaultSourceSet"], "refines" to primaryRefinements)
+    val fragments = declarations.filter { it["name"] in active }.map { declaration ->
+        val name = declaration["name"] as String
+        require(name !in setOf(".", "..") && name.none { it in "/\\:" }) { "Noncanonical common source-set name: $name" }
+        val module = "${owner["module"]}.$name"
+        val iml = File(owner["iml"] as String).resolveSibling("$module.iml").invariantSeparatorsPath
+        val compiler = owner["compiler"] as Map<*, *>
+        owner + mapOf("module" to module, "iml" to iml, "templateIml" to owner["iml"], "roots" to assigned.getValue(name),
+            "common" to true, "sourceSet" to name, "refines" to refinements(declaration["dependsOn"] as List<*>),
+            "compiler" to (compiler + mapOf("friends" to emptyList<Any>())))
+    }
+    return listOf(original) + fragments
+}
+
 val cleanQodanaSourceViews = tasks.register<Delete>("cleanQodanaSourceViews") {
     notCompatibleWithConfigurationCache("Recreates owned analysis source views for the selected revision.")
     val directory = rootProject.file("qodana-analysis-sources")
@@ -64,7 +119,12 @@ tasks.register("qodanaKotlinModel") {
     dependsOn("idea", "qodanaDeclarationInventory", cleanQodanaSourceViews)
     doLast {
         val inventory = JsonSlurper().parse(rootProject.file("build/qodana/declarations.json")) as Map<*, *>
-        val projects = (inventory["projects"] as List<*>).map { it as Map<*, *> }.filter { it["iml"] != null }
+        val configured = (inventory["projects"] as List<*>).map { it as Map<*, *> }.filter { it["iml"] != null }
+        val templates = configured.associate { owner ->
+            owner["iml"] as String to DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(rootProject.file(owner["iml"] as String))
+        }
+        val projects = configured.flatMap(::analysisOwners)
+        require(projects.map { it["module"] }.distinct().size == projects.size && projects.map { it["iml"] }.distinct().size == projects.size) { "Analysis source-set module identities collide." }
         val sdkDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
         val application = sdkDocument.createElement("application").also { sdkDocument.appendChild(it) }
         val sdkTable = application.element("component", mapOf("name" to "ProjectJdkTable"))
@@ -132,7 +192,7 @@ tasks.register("qodanaKotlinModel") {
         projects.forEach { owner ->
             val module = owner["module"] as String
             val output = rootProject.file(owner["iml"] as String)
-            val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(output)
+            val document = templates.getValue(owner["templateIml"] as String).cloneNode(true) as Document
             val root = document.documentElement
             val manager = root.children("component").single { it.getAttribute("name") == "NewModuleRootManager" }
             (owner["compilerToolchain"] as Map<*, *>?)?.let { toolchain ->
@@ -144,14 +204,17 @@ tasks.register("qodanaKotlinModel") {
             val primary = manager.children("content").single()
             require(primary.getAttribute("url") == "file://\$MODULE_DIR\$/") { "Unexpected primary IDEA content: $module" }
             primary.children("sourceFolder").forEach { primary.removeChild(it) }
+            val common = owner["common"] == true
+            if (common) manager.removeChild(primary)
             roots.filter { it.module == module }.sortedBy { it.path }.forEach { source ->
                 val path = views[source] ?: source.path
                 val url = "file://${rootProject.file(path).canonicalPath.replace(File.separatorChar, '/')}"
-                val content = if (source.directory != null && path.startsWith("${source.directory}/")) primary else manager.element("content", mapOf("url" to url))
+                val content = if (common.not() && source.directory != null && path.startsWith("${source.directory}/")) primary else manager.element("content", mapOf("url" to url))
                 val kind = if (source.resource) "type" to if (source.test) "java-test-resource" else "java-resource" else "isTestSource" to source.test.toString()
                 content.element("sourceFolder", mapOf("url" to url, kind))
             }
             // NO-SOURCE Java and resource tasks do not create every declared output directory.
+            val ownedOutputs = (owner["outputs"] as List<*>).map { declared -> rootProject.file((declared as Map<*, *>)["path"] as String).toPath().toAbsolutePath().normalize() }.toSet()
             manager.children("orderEntry").filter { it.getAttribute("type") == "module-library" }.forEach { entry ->
                 val classes = entry.children("library").flatMap { it.children("CLASSES") }.flatMap { it.children("root") }
                 val discardedRoots = classes.filter { classesRoot ->
@@ -161,7 +224,7 @@ tasks.register("qodanaKotlinModel") {
                         .replace("\$MODULE_DIR\$", output.parentFile.absolutePath.replace(File.separatorChar, '/'))
                     val path = File(url).toPath().toAbsolutePath().normalize()
                     if (original.startsWith("file://")) classesRoot.setAttribute("url", "file://${path.toFile().canonicalPath.replace(File.separatorChar, '/')}")
-                    path in absentOutputs
+                    path in absentOutputs || path in ownedOutputs
                 }
                 discardedRoots.forEach { it.parentNode.removeChild(it) }
                 if (discardedRoots.isNotEmpty() && entry.children("library").flatMap { it.children("CLASSES") }.all { it.children("root").isEmpty() }) manager.removeChild(entry)
@@ -172,10 +235,29 @@ tasks.register("qodanaKotlinModel") {
                 val facets = root.element("component", mapOf("name" to "FacetManager"))
                 val facet = facets.element("facet", mapOf("type" to "kotlin-language", "name" to "Kotlin"))
                 val target = compiler["jvmTarget"] as String
-                val configuration = facet.element("configuration", mapOf("version" to "3", "platform" to "JVM $target", "useProjectSettings" to "false"))
+                val refines = owner["refines"] as List<*>
+                val multiplatform = common || refines.isNotEmpty()
+                val configuration = facet.element("configuration", mapOf("version" to "3", "platform" to if (common) "Common (experimental) " else "JVM $target", "useProjectSettings" to "false"))
+                if (multiplatform) {
+                    configuration.setAttribute("isHmppProject", "true")
+                    configuration.setAttribute("externalProjectId", owner["project"] as String)
+                    configuration.element("newMppModelJpsModuleKind").textContent = if (common) "SOURCE_SET_HOLDER" else "COMPILATION_AND_SOURCE_SET_HOLDER"
+                    configuration.element("sourceSets").element("sourceSet").textContent = owner["sourceSet"] as String
+                    if (refines.isNotEmpty()) {
+                        val dependencies = configuration.element("dependsOnModuleNames")
+                        val base = configured.single { it["project"] == owner["project"] }["module"]
+                        refines.forEach { name ->
+                            val dependency = "$base.$name"
+                            dependencies.element("dependsOn").textContent = dependency
+                            manager.element("orderEntry", mapOf("type" to "module", "module-name" to dependency, "exported" to ""))
+                        }
+                    }
+                }
                 val arguments = configuration.element("compilerArguments")
                 arguments.element("option", mapOf("name" to "moduleName", "value" to compiler["moduleName"] as String))
-                arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))
+                if (common.not()) arguments.element("option", mapOf("name" to "jvmTarget", "value" to target))
+                if (multiplatform) arguments.element("option", mapOf("name" to "multiPlatform", "value" to "true"))
+                if (compiler["expectActualClasses"] == true) arguments.element("option", mapOf("name" to "expectActualClasses", "value" to "true"))
                 (compiler["explicitApi"] as String?)?.let { arguments.element("option", mapOf("name" to "explicitApi", "value" to it)) }
                 val friends = (compiler["friends"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == true }.map { it["path"] as String }
                 if (friends.isNotEmpty()) {
@@ -189,6 +271,14 @@ tasks.register("qodanaKotlinModel") {
             transformer.transform(DOMSource(document), StreamResult(text))
             output.writeText("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n$text\n")
         }
+        val projectOutput = rootProject.tasks.named("ideaProject").get().outputs.files.singleFile
+        val projectDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(projectOutput)
+        val moduleTable = projectDocument.documentElement.children("component").single { it.getAttribute("name") == "ProjectModuleManager" }.children("modules").single()
+        projects.filter { it["common"] == true }.forEach { owner ->
+            val path = "\$PROJECT_DIR\$/${owner["iml"]}"
+            moduleTable.element("module", mapOf("fileurl" to "file://$path", "filepath" to path))
+        }
+        TransformerFactory.newInstance().newTransformer().transform(DOMSource(projectDocument), StreamResult(projectOutput))
         val sdkOutput = rootProject.file("build/qodana/ide-config/options/jdk.table.xml")
         sdkOutput.parentFile.mkdirs()
         TransformerFactory.newInstance().newTransformer().transform(DOMSource(sdkDocument), StreamResult(sdkOutput))

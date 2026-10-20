@@ -122,7 +122,9 @@ One `--no-daemon` Gradle invocation compiles `classes`, `gametestClasses`, and e
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
 The declaration export validates each JVM owner's configured toolchain against all of its Kotlin and Java compilation tasks, and the analysis module binds to that compiler SDK independently of the bytecode target or analysis JVM.
 The bootstrap registers the SDK's actual JRT modules in a disposable IDE configuration; verification checks the generated table, imported SDKs and each module binding against the fresh declarations.
+The IDE may register its own SDK for source-free modules; every declared compiler SDK still requires one unchanged table entry and its original module bindings.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
+Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM implementation and test roots remain in the owning JVM module.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
@@ -132,11 +134,12 @@ Each execution recreates that owned directory, copies exactly the compiler-selec
 These analysis inputs are never published or committed and must remain outside Git and IDEA exclusions; Qodana's recommended profile ignores Git-ignored paths even when they remain registered as source roots.
 Completeness verification rejects hidden inputs, stale provenance, changed bytes, missing or extra files, collapsed contexts and tracked generated views.
 Source and compiled-library roots use resolved file URLs without directory suffixes, and declared output directories that were never produced are omitted from libraries.
+A module's compiled outputs remain acceptance evidence and are omitted from its own library entries.
 No synthetic fallback library or cross-variant friend relationship substitutes for a compiler's own sources.
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
 Every SARIF run must identify the selected revision and explicitly record successful analysis invocations.
 The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
-Each Kotlin owner's facet preserves its compiler module name, JVM target, friend paths, and explicit API mode.
+Kotlin facets retain the owning JVM compilation's module name and explicit API mode; JVM facets preserve the bytecode target and friend paths, while common facets identify their source set and declared refinement edges.
 `UnusedSymbol` and `RedundantVisibilityModifier` remain enabled without path exclusions; Mixin annotations identify framework entry points.
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.

@@ -169,6 +169,55 @@ class QodanaProjectionTest(unittest.TestCase):
         """Run only the additional checker; the existing verifier remains independently covered."""
         return DECLARATIONS.verify_source_ownership(self.root, self.inventory, self.model)[0]
 
+    def common_declaration(self):
+        """Give one compiled owner a production common source set with independently selected inputs."""
+        owner = self.inventory["projects"][0]
+        owner.update(defaultSourceSet="jvmMain", sourceSetDependencies=["commonMain"], commonSourceSets=[dict(
+            name="commonMain", dependsOn=[], kotlinRoots=["shared/kotlin"], resourceRoots=["shared/resources"],
+            kotlinInputs=["shared/kotlin/Value.kt"], resourceInputs=["shared/resources/value.txt"])])
+        return owner
+
+    def test_production_common_sources_retain_one_owner_and_real_compiler_outputs(self):
+        owner = self.common_declaration()
+        projected = DECLARATIONS.analysis_owners(self.inventory)
+        primary = next(item for item in projected if item["module"] == "alpha")
+        common = next(item for item in projected if item["module"] == "alpha.commonMain")
+        self.assertEqual(["commonMain"], primary["refines"])
+        self.assertEqual(["beta/src/main/kotlin"], [item["path"] for item in primary["roots"]])
+        self.assertEqual(["shared/kotlin", "shared/resources"], [item["path"] for item in common["roots"]])
+        self.assertEqual("alpha/alpha.commonMain.iml", common["iml"])
+        self.assertEqual(owner["outputs"], common["outputs"])
+        self.assertEqual(owner["compiler"]["moduleName"], common["compiler"]["moduleName"])
+        self.assertEqual([], common["compiler"]["friends"])
+
+    def test_invalid_common_source_set_graphs_and_selections_are_rejected(self):
+        owner = self.common_declaration()
+        original = copy.deepcopy(owner)
+        for mutation in ("duplicate", "cycle", "unknown", "unreachable", "default", "missing-default", "wrong-root", "wrong-selection", "duplicate-edge"):
+            with self.subTest(mutation=mutation):
+                owner.clear()
+                owner.update(copy.deepcopy(original))
+                source = owner["commonSourceSets"][0]
+                if mutation == "duplicate": owner["commonSourceSets"].append(copy.deepcopy(source))
+                elif mutation == "cycle": source["dependsOn"] = ["commonMain"]
+                elif mutation == "unknown": owner["sourceSetDependencies"] = ["foreign"]
+                elif mutation == "unreachable": owner["sourceSetDependencies"] = []
+                elif mutation == "default": owner["defaultSourceSet"] = "commonMain"
+                elif mutation == "missing-default": owner["defaultSourceSet"] = None
+                elif mutation == "wrong-root": source["kotlinRoots"] = ["foreign/kotlin"]
+                elif mutation == "wrong-selection": source["kotlinInputs"] = ["beta/src/main/kotlin/Screen.kt"]
+                elif mutation == "duplicate-edge": owner["sourceSetDependencies"] *= 2
+                with self.assertRaises(ValueError):
+                    DECLARATIONS.analysis_owners(self.inventory)
+
+    def test_empty_intermediate_source_sets_do_not_create_placeholder_modules(self):
+        owner = self.common_declaration()
+        owner["sourceSetDependencies"] = ["emptyMain"]
+        owner["commonSourceSets"].append(dict(name="emptyMain", dependsOn=["commonMain"], kotlinRoots=[], resourceRoots=[], kotlinInputs=[], resourceInputs=[]))
+        projected = DECLARATIONS.analysis_owners(self.inventory)
+        self.assertEqual(["alpha", "alpha.commonMain", "beta"], [item["module"] for item in projected])
+        self.assertEqual(["commonMain"], projected[0]["refines"])
+
     def test_directory_digest_matches_the_compilers_case_sensitive_relative_path_order(self):
         path = self.root / "directory-hash"
         metadata = path / "META-INF/module.kotlin_module"

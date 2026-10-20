@@ -134,11 +134,13 @@ internal class QodanaJmhModelFunctionalTest {
         write(
             "shared-kmp/build.gradle.kts",
             """
+            import org.gradle.jvm.toolchain.JavaToolchainService
             plugins { alias(libs.plugins.kotlin.multiplatform) }
             kotlin {
                 jvm()
                 jvmToolchain(17)
                 explicitApi()
+                compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
                 val sharedBaseMain = sourceSets.create("sharedBaseMain") {
                     dependsOn(sourceSets.getByName("commonMain"))
                 }
@@ -150,11 +152,20 @@ internal class QodanaJmhModelFunctionalTest {
             }
             val jvmMain = extensions.getByType<SourceSetContainer>().getByName("jvmMain")
             dependencies { add(jvmMain.runtimeOnlyConfigurationName, project(":support")) }
+            val main = kotlin.targets.getByName("jvm").compilations.getByName("main")
+            tasks.register<JavaExec>("verifyFixture") {
+                dependsOn(main.compileTaskProvider)
+                javaLauncher.set(project.extensions.getByType<JavaToolchainService>().launcherFor { languageVersion.set(JavaLanguageVersion.of(17)) })
+                classpath(main.output.allOutputs, requireNotNull(main.runtimeDependencyFiles))
+                mainClass.set("fixture.JvmValueKt")
+            }
             """.trimIndent(),
         )
         write("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt", "package fixture\npublic fun ownedValue(): Int = 13\n")
         write("shared-kmp/src/sharedBaseMain/kotlin/fixture/BaseValue.kt", "package fixture\npublic fun baseValue(): Int = ownedValue()\n")
-        write("shared-kmp/src/jvmMain/kotlin/fixture/JvmValue.kt", "package fixture\npublic fun jvmValue(): Int = baseValue()\n")
+        write("shared-kmp/src/commonMain/kotlin/fixture/FixtureContext.kt", "package fixture\ninternal expect class FixtureContext<T : Any>() { var current: T? }\n")
+        write("shared-kmp/src/jvmMain/kotlin/fixture/FixtureContext.kt", "package fixture\ninternal actual class FixtureContext<T : Any> actual constructor() { private val storage = ThreadLocal<T>(); actual var current: T? get() = storage.get(); set(value) { if (value == null) storage.remove() else storage.set(value) } }\n")
+        write("shared-kmp/src/jvmMain/kotlin/fixture/JvmValue.kt", "package fixture\npublic fun jvmValue(): Int { val context = FixtureContext<Int>(); context.current = baseValue(); val value = checkNotNull(context.current); context.current = null; check(context.current == null); return value }\npublic fun main() { check(jvmValue() == 13) }\n")
         writeAuxiliaryOwner()
         writeNativeVariants()
         owners.forEach { owner ->
@@ -261,6 +272,7 @@ internal class QodanaJmhModelFunctionalTest {
         assertEquals("strict", supportCompiler["explicitApi"])
         val sharedCompiler = projects.single { it["project"] == ":shared-kmp" }["compiler"] as Map<*, *>
         assertEquals("strict", sharedCompiler["explicitApi"])
+        assertEquals(true, sharedCompiler["expectActualClasses"])
         val sharedProject = projects.single { it["project"] == ":shared-kmp" }
         assertEquals("jvmMain", sharedProject["defaultSourceSet"])
         assertEquals(setOf("commonMain", "sharedBaseMain"), (sharedProject["sourceSetDependencies"] as List<*>).toSet())
@@ -269,7 +281,7 @@ internal class QodanaJmhModelFunctionalTest {
         val commonMain = commonSources.single { it["name"] == "commonMain" }
         assertEquals(emptyList<String>(), commonMain["dependsOn"])
         assertEquals(listOf("shared-kmp/src/commonMain/kotlin"), commonMain["kotlinRoots"])
-        assertEquals(listOf("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt"), commonMain["kotlinInputs"])
+        assertEquals(listOf("shared-kmp/src/commonMain/kotlin/fixture/FixtureContext.kt", "shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt"), commonMain["kotlinInputs"])
         val sharedBase = commonSources.single { it["name"] == "sharedBaseMain" }
         assertEquals(listOf("commonMain"), sharedBase["dependsOn"])
         assertEquals(listOf("shared-kmp/src/sharedBaseMain/kotlin/fixture/BaseValue.kt"), sharedBase["kotlinInputs"])
@@ -312,6 +324,7 @@ internal class QodanaJmhModelFunctionalTest {
         assertTrue(roots.any { it["kind"] == "TestResource" && it["path"] == "shared-inputs/resources" })
         assertTrue(roots.none { it["kind"] == "TestSource" && it["path"] == "shared-kmp/src/commonMain/kotlin" })
         assertEquals(TaskOutcome.SUCCESS, result.task(":shared-kmp:compileKotlinJvm")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":shared-kmp:verifyFixture")?.outcome)
         val auxiliary = (parsed["auxiliary"] as List<*>).map { it as Map<*, *> }.single()
         assertEquals(":auxiliary-owner", auxiliary["project"])
         assertEquals("verification", auxiliary["sourceSet"])
@@ -405,13 +418,23 @@ internal class QodanaJmhModelFunctionalTest {
 
     /** Verifies complete compiler contexts and physical containment, including shared roots outside module directories. */
     private fun assertDeclaredSourceContexts(projects: List<Map<*, *>>) {
+        fun sourceModule(
+            project: Map<*, *>,
+            source: Map<*, *>,
+        ): String {
+            if (source["kind"] !in setOf("Source", "Resource")) return project["module"] as String
+            val key = if (source["kind"] == "Source") "kotlinRoots" else "resourceRoots"
+            val common = (project["commonSourceSets"] as List<*>).map { it as Map<*, *> }.filter { source["path"] in it[key] as List<*> }
+            assertTrue(common.size <= 1, "The fixture uses distinct source directories for each refinement.")
+            return common.singleOrNull()?.let { "${project["module"]}.${it["name"]}" } ?: project["module"] as String
+        }
         val contexts =
             projects
                 .flatMap { project ->
                     (project["roots"] as List<*>)
                         .map { it as Map<*, *> }
                         .filter { it["exists"] == true && it["generated"] == false && it["kind"] in setOf("Source", "TestSource") }
-                        .map { it["path"] to project["module"] }
+                        .map { it["path"] to sourceModule(project, it) }
                 }.groupBy({ it.first }, { it.second })
                 .mapValues { (_, modules) -> modules.toSet() }
 
@@ -425,38 +448,44 @@ internal class QodanaJmhModelFunctionalTest {
                 .joinToString("") { "%02x".format(it) }
                 .take(length)
         projects.forEach { project ->
-            val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(project["iml"] as String).toFile())
-            val folders = model.getElementsByTagName("sourceFolder")
+            val declared = (project["roots"] as List<*>).map { it as Map<*, *> }.filter { it["exists"] == true && it["generated"] == false }
+            val moduleNames = (listOf(project["module"] as String) + declared.map { sourceModule(project, it) }).distinct()
             val moduleDirectory = directory.resolve(project["iml"] as String).parent
 
             fun path(url: String): Path = Path.of(url.removePrefix("file://").replace("\$PROJECT_DIR\$", directory.toString()).replace("\$MODULE_DIR\$", moduleDirectory.toString())).normalize()
             val observed =
-                (0 until folders.length).map { index ->
-                    val folder = folders.item(index) as Element
-                    val source = path(folder.getAttribute("url"))
-                    assertEquals("file://${source.toRealPath().toString().replace('\\', '/')}", folder.getAttribute("url"), "Source roots must use resolved IDEA URLs.")
-                    val content = path((folder.parentNode as Element).getAttribute("url"))
-                    assertTrue(source.startsWith(content), "Compiler source $source must belong to its direct content root $content.")
-                    val kind =
-                        when (folder.getAttribute("type")) {
-                            "java-resource" -> "Resource"
-                            "java-test-resource" -> "TestResource"
-                            else -> if (folder.getAttribute("isTestSource") == "true") "TestSource" else "Source"
-                        }
-                    source to kind
+                moduleNames.flatMap { module ->
+                    val iml = if (module == project["module"]) directory.resolve(project["iml"] as String) else moduleDirectory.resolve("$module.iml")
+                    val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(iml.toFile())
+                    val folders = model.getElementsByTagName("sourceFolder")
+                    (0 until folders.length).map { index ->
+                        val folder = folders.item(index) as Element
+                        val source = path(folder.getAttribute("url"))
+                        assertEquals("file://${source.toRealPath().toString().replace('\\', '/')}", folder.getAttribute("url"), "Source roots must use resolved IDEA URLs.")
+                        val content = path((folder.parentNode as Element).getAttribute("url"))
+                        assertTrue(source.startsWith(content), "Compiler source $source must belong to its direct content root $content.")
+                        val kind =
+                            when (folder.getAttribute("type")) {
+                                "java-resource" -> "Resource"
+                                "java-test-resource" -> "TestResource"
+                                else -> if (folder.getAttribute("isTestSource") == "true") "TestSource" else "Source"
+                            }
+                        Triple(module, source, kind)
+                    }
                 }
             val expected =
                 (project["roots"] as List<*>)
                     .map { it as Map<*, *> }
                     .filter { it["exists"] == true && it["generated"] == false }
                     .map { source ->
+                        val module = sourceModule(project, source)
                         val original = source["path"] as String
                         val kind = source["kind"] as String
                         val inputs = (source["inputs"] as List<*>).map { it as String }
                         val filtered = inputs.toSet() != (source["files"] as Map<*, *>).keys
                         val view =
                             if (kind in setOf("Source", "TestSource") && (filtered || 1 < contexts.getValue(original).size)) {
-                                directory.resolve("qodana-analysis-sources/${identity(project["module"] as String, 12)}/${identity(original, 16)}")
+                                directory.resolve("qodana-analysis-sources/${identity(module, 12)}/${identity(original, 16)}")
                             } else {
                                 directory.resolve(original)
                             }
@@ -467,7 +496,7 @@ internal class QodanaJmhModelFunctionalTest {
                                 assertTrue(Files.readAllBytes(directory.resolve(input)).contentEquals(Files.readAllBytes(view.resolve(input.removePrefix("$original/")))), "Analysis source bytes must match the working compiler input: $input")
                             }
                         }
-                        view.normalize() to kind
+                        Triple(module, view.normalize(), kind)
                     }
             assertEquals(expected.toSet(), observed.toSet(), "Every real compiler context must retain its declared roots.")
             assertEquals(observed.size, observed.toSet().size, "A compiler context must not repeat a root.")
@@ -571,7 +600,7 @@ internal class QodanaJmhModelFunctionalTest {
             "cleanIdea",
             "idea",
             "qodanaKotlinModel",
-            ":shared-kmp:compileKotlinJvm",
+            ":shared-kmp:verifyFixture",
             "--no-configure-on-demand",
             "--max-workers=2",
             "--parallel",

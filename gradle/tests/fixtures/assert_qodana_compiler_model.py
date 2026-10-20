@@ -29,11 +29,11 @@ misc.append(sdk)
 modules = []
 java = []
 library_edge_budget = collections.Counter()
-for owner in inventory["projects"]:
-    if not owner["iml"]:
-        continue
-    directory = root / owner["directory"] if owner["directory"] else root
-    document = ET.parse(root / owner["iml"]).getroot()
+for registration in project.findall("./component[@name='ProjectModuleManager']/modules/module"):
+    iml = checker.url_path(root, root, registration.attrib["fileurl"], source=False)
+    module_name = iml.stem
+    directory = iml.parent
+    document = ET.parse(iml).getroot()
     manager = document.find("./component[@name='NewModuleRootManager']")
     contents = []
     for content in manager.findall("content"):
@@ -54,8 +54,8 @@ for owner in inventory["projects"]:
                 for value in (url, name):
                     if value.endswith(".jar") or value.endswith(".jar!/"):
                         library_edge_budget[directory, value] += 1
-    modules.append(dict(name=owner["module"], contentEntries=contents, orderEntries=entries))
-    java.append(dict(name=owner["module"], languageLevel=int(manager.attrib.get("LANGUAGE_LEVEL", f"JDK_{project_java}")[4:])))
+    modules.append(dict(name=module_name, contentEntries=contents, orderEntries=entries))
+    java.append(dict(name=module_name, languageLevel=int(manager.attrib.get("LANGUAGE_LEVEL", f"JDK_{project_java}")[4:])))
 fixture = root / "build/qodana-import-fixture"
 fixture.mkdir(exist_ok=True)
 model_path = fixture / "Modules.json"
@@ -85,6 +85,71 @@ try:
 finally:
     checker.url_path = resolve_url
 assert library_resolutions and all(count <= library_edge_budget[edge] for edge, count in library_resolutions.items()), library_resolutions.most_common(5)
+common_parent = next((owner for owner in inventory["projects"] if owner["project"] == ":shared-kmp"), None)
+if common_parent is not None:
+    common_name = common_parent["module"] + ".commonMain"
+    primary_iml = root / common_parent["iml"]
+    common_iml = primary_iml.with_name(common_name + ".iml")
+    original_primary = primary_iml.read_bytes()
+    original_common = common_iml.read_bytes()
+    original_model = model_path.read_bytes()
+    own_output = next(output["path"] for output in common_parent["outputs"] if output["exists"] and output["production"] and output["classes"])
+    for mutation in ("missing-common", "wrong-common-source", "broader-common-content", "wrong-common-platform", "missing-refinement", "test-refinement", "unexported-refinement", "duplicate-refinement", "foreign-refinement", "extra-common-friend", "generated-own-output", "imported-own-output"):
+        changed_model = copy.deepcopy(dict(modules=modules))
+        primary_document = ET.fromstring(original_primary)
+        common_document = ET.fromstring(original_common)
+        manager = primary_document.find("./component[@name='NewModuleRootManager']")
+        configuration = primary_document.find(".//configuration")
+        primary_import = next(module for module in changed_model["modules"] if module["name"] == common_parent["module"])
+        common_import = next(module for module in changed_model["modules"] if module["name"] == common_name)
+        edge = manager.find(f"orderEntry[@type='module'][@module-name='{common_name}']")
+        expected = "refinement"
+        if mutation == "missing-common":
+            changed_model["modules"].remove(common_import)
+            expected = "imported modules differ"
+        elif mutation == "wrong-common-source":
+            common_import["contentEntries"][0]["sourceFolders"][0]["type"] = "TestSource"
+            expected = "compiler roots"
+        elif mutation == "broader-common-content":
+            common_import["contentEntries"][0]["path"] = "file://$PROJECT_DIR$/shared-kmp"
+            expected = "content ownership"
+        elif mutation == "wrong-common-platform":
+            common_document.find(".//configuration").set("platform", "JVM 17")
+            expected = "compiler identity"
+        elif mutation == "missing-refinement":
+            configuration.remove(configuration.find("dependsOnModuleNames"))
+        elif mutation == "test-refinement":
+            edge.set("scope", "TEST")
+        elif mutation == "unexported-refinement":
+            edge.attrib.pop("exported")
+        elif mutation == "duplicate-refinement":
+            manager.append(copy.deepcopy(edge))
+            primary_import["orderEntries"].append(dict(type="Module", name=common_name))
+        elif mutation == "foreign-refinement":
+            configuration.find("./dependsOnModuleNames/dependsOn").text = "support"
+        elif mutation == "extra-common-friend":
+            ET.SubElement(ET.SubElement(common_document.find(".//configuration"), "additionalVisibleModuleNames"), "friend").text = common_parent["module"]
+            expected = "undeclared source-owner friends"
+        elif mutation == "generated-own-output":
+            library = ET.SubElement(ET.SubElement(manager, "orderEntry", type="module-library", scope="TEST"), "library")
+            ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url="file://" + (root / own_output).as_posix())
+            expected = "sources duplicated by their compiled outputs"
+        elif mutation == "imported-own-output":
+            primary_import["orderEntries"].append(dict(type="Library", name=(root / own_output).as_posix()))
+            expected = "sources duplicated by their compiled outputs"
+        primary_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(primary_document))
+        common_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(common_document))
+        model_path.write_text(json.dumps(changed_model), encoding="utf-8")
+        try:
+            checker.verify_model(root, model_path, "", java_path)
+        except ValueError as failure:
+            assert expected in str(failure), (mutation, failure)
+        else:
+            raise AssertionError(f"Accepted an invalid common source-set context: {mutation}")
+        finally:
+            primary_iml.write_bytes(original_primary)
+            common_iml.write_bytes(original_common)
+            model_path.write_bytes(original_model)
 production_owner = next((owner for owner in inventory["projects"] if owner["project"] == ":auxiliary-owner"), None)
 if production_owner is not None:
     declaration_path = root / "build/qodana/declarations.json"

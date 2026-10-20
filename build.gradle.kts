@@ -1697,7 +1697,8 @@ if (completeIdeaModelActive) {
                     "defaultSourceSet" to main?.defaultSourceSet?.name,
                     "sourceSetDependencies" to main?.defaultSourceSet?.dependsOn.orEmpty().map { it.name }.sorted(),
                     "commonSourceSets" to commonSourceSets,
-                    "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends) },
+                    "compiler" to compiler?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target, "explicitApi" to explicitApi, "friends" to friends,
+                        "expectActualClasses" to it.compilerOptions.freeCompilerArgs.get().contains("-Xexpect-actual-classes")) },
                     "compilerToolchain" to compilerToolchain,
                     "productionCompilations" to sourceSets.orEmpty().filter { sourceSet ->
                         sourceSet.name == "main" || platformCompilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name }

@@ -128,9 +128,87 @@ def iml_kind(folder):
     fail(f"invalid generated source kind: {attributes}")
 
 
+def analysis_owners(inventory):
+    """Derive source-set ownership from Gradle declarations, independently of generated IDEA metadata."""
+    result = []
+    for owner in inventory["projects"]:
+        if not owner.get("iml"):
+            continue
+        source_sets = owner.get("commonSourceSets", [])
+        nodes = {source["name"]: source for source in source_sets}
+        if len(nodes) != len(source_sets) or owner.get("defaultSourceSet") in nodes:
+            fail(f"duplicate or default common source-set declaration: {owner['module']}")
+        if nodes and (not isinstance(owner.get("defaultSourceSet"), str) or not owner.get("compiler")):
+            fail(f"common source sets have no JVM compilation owner: {owner['module']}")
+        dependencies = owner.get("sourceSetDependencies", [])
+        if not isinstance(dependencies, list) or dependencies != sorted(set(dependencies)):
+            fail(f"noncanonical JVM source-set refinements: {owner['module']}")
+        assigned = {}
+        for source in source_sets:
+            for key in ("kotlinRoots", "resourceRoots", "kotlinInputs", "resourceInputs", "dependsOn"):
+                values = source[key]
+                if not isinstance(values, list) or values != sorted(set(values)):
+                    fail(f"noncanonical common source-set inputs: {owner['module']}: {source['name']}")
+            for kind, key in (("Source", "kotlinRoots"), ("Resource", "resourceRoots")):
+                if not set(source[key]).issubset(root["path"] for root in owner["roots"] if root["kind"] == kind):
+                    fail(f"common source-set root has no compiler declaration: {owner['module']}: {source['name']}")
+            roots = []
+            for root in owner["roots"]:
+                if root["kind"] == "Source" and root["path"] in source["kotlinRoots"]:
+                    selected = source["kotlinInputs"]
+                elif root["kind"] == "Resource" and root["path"] in source["resourceRoots"]:
+                    selected = source["resourceInputs"]
+                else:
+                    continue
+                roots.append(dict(root, inputs=sorted(set(root["inputs"]).intersection(selected))))
+            for kind, key in (("Source", "kotlinInputs"), ("Resource", "resourceInputs")):
+                if {value for root in roots if root["kind"] == kind for value in root["inputs"]} != set(source[key]):
+                    fail(f"common source-set selection differs from actual compiler inputs: {owner['module']}: {source['name']}")
+            assigned[source["name"]] = roots
+        active = {name for name, roots in assigned.items() if any(root["exists"] and not root["generated"] and root["inputs"] for root in roots)}
+        reached = set()
+
+        def resolve(names, ancestors=frozenset()):
+            values = set()
+            for name in names:
+                if name not in nodes or name in ancestors:
+                    fail(f"unknown or cyclic common source-set refinement: {owner['module']}: {name}")
+                reached.add(name)
+                inherited = resolve(nodes[name]["dependsOn"], ancestors | {name})
+                values.update({name} if name in active else inherited)
+            return sorted(values)
+
+        refines = resolve(dependencies)
+        if reached != set(nodes):
+            fail(f"common source sets differ from the JVM refinement graph: {owner['module']}")
+        moved = collections.defaultdict(set)
+        for roots in assigned.values():
+            for root in roots:
+                moved[root["path"]].update(root["inputs"])
+        retained = []
+        for root in owner["roots"]:
+            if root["kind"] not in {"Source", "Resource"} or root["path"] not in moved:
+                retained.append(root)
+            else:
+                remaining = sorted(set(root["inputs"]) - moved[root["path"]])
+                if remaining:
+                    retained.append(dict(root, inputs=remaining))
+        result.append(dict(owner, roots=retained, common=False, sourceSet=owner.get("defaultSourceSet"), refines=refines))
+        for name in sorted(active):
+            if name in {".", ".."} or any(char in name for char in "/\\:"):
+                fail(f"noncanonical common source-set identity: {name}")
+            module = owner["module"] + "." + name
+            iml = pathlib.PurePosixPath(owner["iml"]).with_name(module + ".iml").as_posix()
+            result.append(dict(owner, module=module, iml=iml, roots=assigned[name], common=True, sourceSet=name,
+                               refines=resolve(nodes[name]["dependsOn"]), compiler=dict(owner["compiler"], friends=[])))
+    if len({owner["module"] for owner in result}) != len(result) or len({owner["iml"] for owner in result}) != len(result):
+        fail("analysis source-set module identities collide")
+    return result
+
+
 def verify_source_views(root, inventory):
     """Require exact fresh compiler-selected bytes in a stable, distinct view for each shared or filtered root."""
-    sources = [(owner["module"], source) for owner in inventory["projects"] if owner.get("iml")
+    sources = [(owner["module"], source) for owner in analysis_owners(inventory)
                for source in owner["roots"] if source["exists"] and not source["generated"] and source["kind"] in {"Source", "TestSource"}]
     contexts = collections.defaultdict(set)
     selected = collections.defaultdict(set)
@@ -188,11 +266,11 @@ def verify_source_view_scope(root, views):
 
 def verify_source_ownership(root, inventory, model, container_root=""):
     """Verify exact source membership in every declared compiler context and its compiled bytes."""
-    declarations = [owner for owner in inventory["projects"] if owner.get("iml")]
+    declarations = analysis_owners(inventory)
     projects = {owner["module"]: owner for owner in declarations}
     modules = {module["name"]: module for module in model["modules"]}
     if len(projects) != len(declarations) or len(modules) != len(model["modules"]) or set(projects) != set(modules):
-        fail("imported modules differ from the complete configured Gradle model")
+        fail(f"imported modules differ from the complete configured Gradle model: missing={sorted(set(projects) - set(modules))}, extra={sorted(set(modules) - set(projects))}")
     membership = {}
 
     def files_at(path):
@@ -202,7 +280,10 @@ def verify_source_ownership(root, inventory, model, container_root=""):
         return membership[path]
 
     source_owners = collections.defaultdict(set)
-    for name, owner in projects.items():
+    for owner in inventory["projects"]:
+        if not owner.get("iml"):
+            continue
+        name = owner["module"]
         if type(owner["native"]) is not bool:
             fail(f"invalid platform ownership: {name}")
         paths = []
@@ -222,9 +303,12 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                 kind = source["kind"]
                 if kind not in {"Source", "TestSource", "Resource", "TestResource"}:
                     fail(f"unsupported compiler root kind: {kind}")
-                source_owners[path].add((name, kind))
         if len(paths) != len(set(paths)):
             fail(f"duplicate declared compiler root: {name}")
+    for name, owner in projects.items():
+        for source in owner["roots"]:
+            if source["exists"] and not source["generated"]:
+                source_owners[repository_path(root, source["path"])].add((name, source["kind"]))
     views = verify_source_views(root, inventory)
     entries = ET.parse(root / ".idea/modules.xml").getroot().findall("./component[@name='ProjectModuleManager']/modules/module")
     actual_imls = [url_path(root, root, entry.attrib["fileurl"], container_root, False) for entry in entries]
@@ -237,12 +321,13 @@ def verify_source_ownership(root, inventory, model, container_root=""):
         manager, folders = read_iml(iml, multiple_contents=True)
         expected = collections.Counter((kind, views.get((module, path.relative_to(root).as_posix()), path)) for path, owners in source_owners.items() for module, kind in owners if module == name)
         contents = manager.findall("content")
-        expected_contents = {directory} | {path for _, path in expected if directory not in path.parents}
+        common = owner.get("common", False)
+        expected_contents = {path for _, path in expected} if common else {directory} | {path for _, path in expected if directory not in path.parents}
         generated_paths = [url_path(root, directory, item.attrib["url"], container_root, False) for item in contents]
         imported = modules[name]
         imported_contents = imported.get("contentEntries", [])
         imported_paths = [url_path(root, directory, item["path"], source=False) for item in imported_contents]
-        if contents[0].attrib != {"url": "file://$MODULE_DIR$/"} or len(generated_paths) != len(expected_contents) or set(generated_paths) != expected_contents or len(imported_paths) != len(expected_contents) or set(imported_paths) != expected_contents:
+        if (not common and contents[0].attrib != {"url": "file://$MODULE_DIR$/"}) or len(generated_paths) != len(expected_contents) or set(generated_paths) != expected_contents or len(imported_paths) != len(expected_contents) or set(imported_paths) != expected_contents:
             fail(f"missing, duplicate, broader or wrong content ownership: {name}")
         generated = collections.Counter((iml_kind(folder), url_path(root, directory, folder.attrib["url"], container_root)) for folder in folders)
         actual = collections.Counter((folder["type"], url_path(root, directory, folder["path"])) for content in imported_contents for folder in content.get("sourceFolders", []))
@@ -291,8 +376,28 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             arguments = configuration.find("compilerArguments")
             options = arguments.findall("option") if arguments is not None else []
             values = {item.attrib["name"]: item.attrib.get("value") for item in options}
-            if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != compiler["jvmTarget"] or values.get("explicitApi") != compiler["explicitApi"] or configuration.attrib != {"version": "3", "platform": "JVM " + compiler["jvmTarget"], "useProjectSettings": "false"}:
+            refines = owner.get("refines", [])
+            multiplatform = common or bool(refines)
+            attributes = dict(version="3", platform="Common (experimental) " if common else "JVM " + compiler["jvmTarget"], useProjectSettings="false")
+            if multiplatform:
+                attributes.update(isHmppProject="true", externalProjectId=owner["project"])
+            if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != (None if common else compiler["jvmTarget"]) or values.get("explicitApi") != compiler["explicitApi"] or configuration.attrib != attributes:
                 fail(f"incorrect Kotlin compiler identity: {name}")
+            if values.get("multiPlatform") != ("true" if multiplatform else None) or values.get("expectActualClasses") != ("true" if compiler.get("expectActualClasses", False) else None):
+                fail(f"incorrect Kotlin multiplatform compiler options: {name}")
+            source_set = configuration.findtext("./sourceSets/sourceSet")
+            kind = configuration.findtext("newMppModelJpsModuleKind")
+            if source_set != (owner.get("sourceSet") if multiplatform else None) or kind != (("SOURCE_SET_HOLDER" if common else "COMPILATION_AND_SOURCE_SET_HOLDER") if multiplatform else None):
+                fail(f"incorrect Kotlin source-set context: {name}")
+            parent = next(declaration["module"] for declaration in inventory["projects"] if declaration["project"] == owner["project"])
+            expected_refinements = [parent + "." + source for source in refines]
+            if [entry.text for entry in configuration.findall("./dependsOnModuleNames/dependsOn")] != expected_refinements or configuration.findall("implements"):
+                fail(f"incorrect Kotlin source-set refinements: {name}")
+            common_modules = {declaration["module"] for declaration in declarations if declaration.get("common")}
+            generated_refinements = [entry for entry in manager.findall("orderEntry") if entry.attrib.get("type") == "module" and entry.attrib.get("module-name") in common_modules]
+            imported_refinements = [entry["name"] for entry in imported["orderEntries"] if entry.get("type") == "Module" and entry.get("name") in common_modules]
+            if collections.Counter(entry.attrib.get("module-name") for entry in generated_refinements) != collections.Counter(expected_refinements) or collections.Counter(imported_refinements) != collections.Counter(expected_refinements) or any(entry.attrib != {"type": "module", "module-name": entry.attrib["module-name"], "exported": ""} for entry in generated_refinements):
+                fail(f"missing, duplicate or wrong-scope Kotlin refinement edge: {name}")
             if configuration.findall("additionalVisibleModuleNames"):
                 fail(f"source contexts must not add undeclared source-owner friends: {name}")
             friends = set()
@@ -338,7 +443,7 @@ def verify_compiler_sdks(root, inventory, model, sdk_model):
     """Require each generated and imported JVM owner to use its independently declared compiler SDK."""
     bindings = {}
     expected = {}
-    for owner in inventory["projects"]:
+    for owner in analysis_owners(inventory):
         if not owner.get("iml"):
             continue
         toolchain = owner["compilerToolchain"]
@@ -430,8 +535,9 @@ def verify_model(root, model_path, container_root, java_path):
         fail("JMH owner identity differs from the complete configured project model")
     if len(set(names)) != len(names) or len(set(projects)) != len(projects):
         fail("duplicate declared owner identity")
-    declarations_by_module = {entry["module"]: entry for entry in declared_projects if entry["module"]}
-    if len(declarations_by_module) != sum(bool(entry["module"]) for entry in declared_projects):
+    projected = analysis_owners(inventory) if any("commonSourceSets" in entry for entry in declared_projects) else [entry for entry in declared_projects if entry.get("iml")]
+    declarations_by_module = {entry["module"]: entry for entry in projected}
+    if len(declarations_by_module) != len(projected):
         fail("duplicate configured module identity")
 
     ownership_fields = {"native" in entry for entry in declared_projects}
@@ -534,7 +640,7 @@ def verify_model(root, model_path, container_root, java_path):
                     fail(f"required dependency has an incompatible compile/runtime scope: {name}: {configuration}: {dependency['identity']}")
 
     if source_owners is not None:
-        for declaration in declared_projects:
+        for declaration in projected:
             if not declaration["iml"]:
                 continue
             name = declaration["module"]
@@ -546,6 +652,11 @@ def verify_model(root, model_path, container_root, java_path):
                 fail(f"production compiler outputs and dependency declarations differ: {name}")
             directory = root / declaration["directory"] if declaration["directory"] else root
             manager, _ = read_iml(repository_path(root, declaration["iml"]), multiple_contents=True)
+            generated_index, imported_index = dependency_index(name, manager, modules[name][0], directory)
+            for output in declaration["outputs"]:
+                path = repository_path(root, output["path"])
+                if generated_index["Library", path] or imported_index["Library", path]:
+                    fail(f"module sources duplicated by their compiled outputs: {name}: {output['path']}")
             for compilation in compilations:
                 verify_dependencies(dict(compilation, module=name), manager, modules[name][0], directory, production=True)
 
