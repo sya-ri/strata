@@ -145,6 +145,11 @@ def analysis_owners(inventory):
             fail(f"noncanonical JVM source-set refinements: {owner['module']}")
         assigned = {}
         for source in source_sets:
+            platforms = source["platforms"]
+            if not isinstance(platforms, list) or not platforms or platforms != sorted(set(platforms)) or "jvm" not in platforms or any(value not in {"jvm", "js", "native", "wasm", "androidJvm"} for value in platforms):
+                fail(f"invalid common source-set platforms: {owner['module']}: {source['name']}")
+            if not isinstance(source["dependencies"], list):
+                fail(f"missing common source-set dependencies: {owner['module']}: {source['name']}")
             for key in ("kotlinRoots", "resourceRoots", "kotlinInputs", "resourceInputs", "dependsOn"):
                 values = source[key]
                 if not isinstance(values, list) or values != sorted(set(values)):
@@ -200,6 +205,7 @@ def analysis_owners(inventory):
             module = owner["module"] + "." + name
             iml = pathlib.PurePosixPath(owner["iml"]).with_name(module + ".iml").as_posix()
             result.append(dict(owner, module=module, iml=iml, roots=assigned[name], common=True, sourceSet=name,
+                               platforms=nodes[name]["platforms"], sourceDependencies=nodes[name]["dependencies"],
                                refines=resolve(nodes[name]["dependsOn"]), compiler=dict(owner["compiler"], friends=[])))
     if len({owner["module"] for owner in result}) != len(result) or len({owner["iml"] for owner in result}) != len(result):
         fail("analysis source-set module identities collide")
@@ -378,10 +384,11 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             values = {item.attrib["name"]: item.attrib.get("value") for item in options}
             refines = owner.get("refines", [])
             multiplatform = common or bool(refines)
-            attributes = dict(version="3", platform="Common (experimental) " if common else "JVM " + compiler["jvmTarget"], useProjectSettings="false")
+            common_platform = common and owner["platforms"] != ["jvm"]
+            attributes = dict(version="3", platform="Common (experimental) " if common_platform else "JVM " + compiler["jvmTarget"], useProjectSettings="false")
             if multiplatform:
                 attributes.update(isHmppProject="true", externalProjectId=owner["project"])
-            if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != (None if common else compiler["jvmTarget"]) or values.get("explicitApi") != compiler["explicitApi"] or configuration.attrib != attributes:
+            if len(values) != len(options) or values.get("moduleName") != compiler["moduleName"] or values.get("jvmTarget") != (None if common_platform else compiler["jvmTarget"]) or values.get("explicitApi") != compiler["explicitApi"] or configuration.attrib != attributes:
                 fail(f"incorrect Kotlin compiler identity: {name}")
             if values.get("multiPlatform") != ("true" if multiplatform else None) or values.get("expectActualClasses") != ("true" if compiler.get("expectActualClasses", False) else None):
                 fail(f"incorrect Kotlin multiplatform compiler options: {name}")
@@ -394,9 +401,10 @@ def verify_source_ownership(root, inventory, model, container_root=""):
             if [entry.text for entry in configuration.findall("./dependsOnModuleNames/dependsOn")] != expected_refinements or configuration.findall("implements"):
                 fail(f"incorrect Kotlin source-set refinements: {name}")
             common_modules = {declaration["module"] for declaration in declarations if declaration.get("common")}
+            expected_common_edges = expected_refinements + [dependency["identity"] for dependency in owner.get("sourceDependencies", []) if dependency["kind"] == "Module" and dependency["identity"] in common_modules]
             generated_refinements = [entry for entry in manager.findall("orderEntry") if entry.attrib.get("type") == "module" and entry.attrib.get("module-name") in common_modules]
             imported_refinements = [entry["name"] for entry in imported["orderEntries"] if entry.get("type") == "Module" and entry.get("name") in common_modules]
-            if collections.Counter(entry.attrib.get("module-name") for entry in generated_refinements) != collections.Counter(expected_refinements) or collections.Counter(imported_refinements) != collections.Counter(expected_refinements) or any(entry.attrib != {"type": "module", "module-name": entry.attrib["module-name"], "exported": ""} for entry in generated_refinements):
+            if collections.Counter(entry.attrib.get("module-name") for entry in generated_refinements) != collections.Counter(expected_common_edges) or collections.Counter(imported_refinements) != collections.Counter(expected_common_edges) or any(entry.attrib != {"type": "module", "module-name": entry.attrib["module-name"], "exported": ""} for entry in generated_refinements):
                 fail(f"missing, duplicate or wrong-scope Kotlin refinement edge: {name}")
             if configuration.findall("additionalVisibleModuleNames"):
                 fail(f"source contexts must not add undeclared source-owner friends: {name}")
@@ -598,7 +606,8 @@ def verify_model(root, model_path, container_root, java_path):
         name = owner["module"]
         dependencies = owner["dependencies"]
         classpaths = owner["classpaths"]
-        if set(classpaths) != {"compile", "runtime"} or set(dependencies) != set(classpaths.values()) or ("sourceSet" not in owner and any(not closure for closure in dependencies.values())):
+        common = owner.get("common", False)
+        if set(classpaths) != ({"compile"} if common else {"compile", "runtime"}) or set(dependencies) != set(classpaths.values()) or ("sourceSet" not in owner and any(not closure for closure in dependencies.values())):
             fail(f"missing compile/runtime dependency closure: {name}")
         generated_index, imported_index = dependency_index(name, manager, imported, directory)
         for configuration, closure in dependencies.items():
@@ -606,7 +615,9 @@ def verify_model(root, model_path, container_root, java_path):
                 if dependency["kind"] == "Module":
                     identity = dependency["identity"]
                     required_project = declarations_by_project.get(dependency["project"])
-                    if not required_project or required_project["module"] != identity or len(modules[identity]) != 1:
+                    common_source = common and "sourceSet" in dependency
+                    required_identity = required_project["module"] + "." + dependency["sourceSet"] if required_project and common_source else required_project["module"] if required_project else None
+                    if required_identity != identity or len(modules[identity]) != 1 or (common_source and not any(item["module"] == identity and item.get("common") for item in projected)) or (common and not common_source and owner["platforms"] != ["jvm"]):
                         fail(f"unresolved required project dependency: {name}: {identity}")
                     generated_dependencies = generated_index["Module", identity]
                     imported_dependencies = imported_index["Module", identity]
@@ -621,6 +632,10 @@ def verify_model(root, model_path, container_root, java_path):
                         fail(f"unresolved or changed required library: {name}: {dependency['identity']}")
                     generated_dependencies = generated_index["Library", library]
                     imported_dependencies = imported_index["Library", library]
+                    if common:
+                        kind = "kotlin.common" if owner["platforms"] != ["jvm"] else None
+                        if any(entry.find("library").attrib.get("type") != kind or entry.find("library").attrib.get("name") != dependency["identity"] for entry in generated_dependencies):
+                            fail(f"incorrect common library identity or kind: {name}: {dependency['identity']}")
                 else:
                     fail(f"unsupported dependency kind: {dependency['kind']}")
                 scopes = {"COMPILE", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "RUNTIME"}
@@ -644,6 +659,20 @@ def verify_model(root, model_path, container_root, java_path):
             if not declaration["iml"]:
                 continue
             name = declaration["module"]
+            if declaration.get("common"):
+                if declaration["project"] + ":qodanaDependencyInventory" not in inventory["taskGraph"]:
+                    fail(f"missing project-owned dependency export task: {name}")
+                directory = root / declaration["directory"]
+                manager, _ = read_iml(repository_path(root, declaration["iml"]), multiple_contents=True)
+                dependencies = declaration["sourceDependencies"]
+                verify_dependencies(dict(declaration, classpaths={"compile": declaration["sourceSet"]}, dependencies={declaration["sourceSet"]: dependencies}), manager, modules[name][0], directory, production=True)
+                generated_index, imported_index = dependency_index(name, manager, modules[name][0], directory)
+                expected = collections.Counter((item["kind"], pathlib.Path(item["path"]) if item["kind"] == "Library" else item["identity"]) for item in dependencies)
+                parent = declarations_by_project[declaration["project"]]["module"]
+                expected.update(("Module", parent + "." + source) for source in declaration["refines"])
+                if any(collections.Counter({key: len(entries) for key, entries in index.items() if entries}) != expected for index in (generated_index, imported_index)):
+                    fail(f"common dependency closure differs from Kotlin IDE declarations: {name}")
+                continue
             compilations = declaration["productionCompilations"]
             if compilations and declaration["project"] + ":qodanaDependencyInventory" not in inventory["taskGraph"]:
                 fail(f"missing project-owned dependency export task: {name}")

@@ -89,7 +89,7 @@ if common_parent is not None:
     original_common = common_iml.read_bytes()
     original_model = model_path.read_bytes()
     own_output = next(output["path"] for output in common_parent["outputs"] if output["exists"] and output["production"] and output["classes"])
-    for mutation in ("missing-common", "wrong-common-source", "broader-common-content", "wrong-common-platform", "missing-refinement", "test-refinement", "unexported-refinement", "duplicate-refinement", "foreign-refinement", "extra-common-friend", "generated-own-output", "imported-own-output"):
+    for mutation in ("missing-common", "wrong-common-source", "broader-common-content", "wrong-common-platform", "missing-refinement", "test-refinement", "unexported-refinement", "duplicate-refinement", "foreign-refinement", "extra-common-friend", "generated-own-output", "imported-own-output", "missing-common-library", "wrong-common-library-kind", "jvm-common-project", "extra-common-library", "test-common-library"):
         changed_model = copy.deepcopy(dict(modules=modules))
         primary_document = ET.fromstring(original_primary)
         common_document = ET.fromstring(original_common)
@@ -132,6 +132,32 @@ if common_parent is not None:
         elif mutation == "imported-own-output":
             primary_import["orderEntries"].append(dict(type="Library", name=(root / own_output).as_posix()))
             expected = "sources duplicated by their compiled outputs"
+        elif mutation in {"missing-common-library", "wrong-common-library-kind", "extra-common-library", "test-common-library"}:
+            common_manager = common_document.find("./component[@name='NewModuleRootManager']")
+            library = common_manager.find("orderEntry[@type='module-library']")
+            path = checker.url_path(root, common_iml.parent, library.find("./library/CLASSES/root").attrib["url"], source=False)
+            imported_library = next(entry for entry in common_import["orderEntries"] if entry.get("type") == "Library" and checker.url_path(root, common_iml.parent, entry["name"], source=False) == path)
+            if mutation == "missing-common-library":
+                common_manager.remove(library)
+                common_import["orderEntries"].remove(imported_library)
+                expected = "compilation dependency"
+            elif mutation == "wrong-common-library-kind":
+                library.find("library").attrib.pop("type")
+                expected = "common library identity or kind"
+            elif mutation == "test-common-library":
+                library.attrib["scope"] = "TEST"
+                expected = "incompatible compile/runtime scope"
+            else:
+                extra = ET.SubElement(common_manager, "orderEntry", type="module-library")
+                classes = ET.SubElement(ET.SubElement(extra, "library"), "CLASSES")
+                ET.SubElement(classes, "root", url="file://" + (root / own_output).as_posix())
+                common_import["orderEntries"].append(dict(type="Library", name=(root / own_output).as_posix()))
+                expected = "common dependency closure"
+        elif mutation == "jvm-common-project":
+            edge = common_document.find("./component[@name='NewModuleRootManager']/orderEntry[@type='module'][@module-name='common-support.commonMain']")
+            edge.attrib["module-name"] = "common-support"
+            next(entry for entry in common_import["orderEntries"] if entry.get("type") == "Module" and entry.get("name") == "common-support.commonMain")["name"] = "common-support"
+            expected = "refinement edge"
         primary_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(primary_document))
         common_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(common_document))
         model_path.write_text(json.dumps(changed_model), encoding="utf-8")

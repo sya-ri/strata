@@ -125,6 +125,8 @@ The bootstrap registers the SDK's actual JRT modules in a disposable IDE configu
 The IDE may register its own SDK for source-free modules; every declared compiler SDK still requires one unchanged table entry and its original module bindings.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
 Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM implementation and test roots remain in the owning JVM module.
+Each common module resolves its own binary metadata and project source-set dependencies through the configured Kotlin IDE import API, instead of inheriting JVM libraries or test dependencies.
+Source sets used only by JVM compilations retain their JVM platform and project artifacts; shared source sets use common-library kinds and common project edges.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
