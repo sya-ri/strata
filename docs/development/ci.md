@@ -146,6 +146,7 @@ Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` p
 The latter preserves mapped binaries without optional source remapping.
 The generated IDEA model assigns linked source roots, real compile/test/GameTest classpaths, and language levels to each owner; `rootJavaProjects` opens that model directly.
 Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
+Module registration and project SDK validation read XML structure rather than attribute order or line layout.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
 The shared JVM model exports configured auxiliary Java/Kotlin inputs and resources as `TestSource`/`TestResource` in their actual owner, including nondefault directories, and retains their real compile/runtime configurations in IDEA's TEST scope.
 Roots already admitted by production keep that ownership once.

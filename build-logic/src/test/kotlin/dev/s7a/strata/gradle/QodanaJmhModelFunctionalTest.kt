@@ -29,6 +29,7 @@ internal class QodanaJmhModelFunctionalTest {
         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
         Files.copy(repository.resolve("gradle/qodana-idea-model.gradle.kts"), directory.resolve("gradle/qodana-idea-model.gradle.kts"))
         Files.copy(repository.resolve("gradle/verify-qodana-declarations.py"), directory.resolve("gradle/verify-qodana-declarations.py"))
+        Files.copy(repository.resolve("gradle/prepare-qodana-project.py"), directory.resolve("gradle/prepare-qodana-project.py"))
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)

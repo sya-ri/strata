@@ -15,17 +15,12 @@ spec.loader.exec_module(checker)
 inventory = checker.read_json(root / "build/qodana/declarations.json")
 project_file, = root.glob("*.ipr")
 project = ET.parse(project_file).getroot()
-idea = root / ".idea"
-idea.mkdir(exist_ok=True)
-modules_project = ET.Element("project")
-modules_project.append(copy.deepcopy(project.find("./component[@name='ProjectModuleManager']")))
-(idea / "modules.xml").write_text(ET.tostring(modules_project, encoding="unicode"), encoding="utf-8")
-sdk = copy.deepcopy(project.find("./component[@name='ProjectRootManager']"))
-sdk_name = sdk.attrib.setdefault("project-jdk-name", "fixture-jdk")
-project_java = int(sdk.attrib["languageLevel"][4:])
-misc = ET.Element("project")
-misc.append(sdk)
-(idea / "misc.xml").write_text(ET.tostring(misc, encoding="unicode"), encoding="utf-8")
+project_java = int(project.find("./component[@name='ProjectRootManager']").attrib["languageLevel"][4:])
+preparation_spec = importlib.util.spec_from_file_location("preparation", root / "gradle/prepare-qodana-project.py")
+preparation = importlib.util.module_from_spec(preparation_spec)
+preparation_spec.loader.exec_module(preparation)
+preparation.write_project_metadata(root, project, project_java)
+sdk_name = ET.parse(root / ".idea/misc.xml").getroot().find("./component[@name='ProjectRootManager']").attrib["project-jdk-name"]
 modules = []
 java = []
 library_edge_budget = collections.Counter()

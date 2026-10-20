@@ -13,12 +13,19 @@ fi
 inventory_directory=$(mktemp -d)
 trap 'rm -rf -- "$inventory_directory"' EXIT
 bash gradle/plan-minecraft-ci.sh "$project_root" "$inventory_directory" >/dev/null
-mapfile -t expected_runtime_versions < <(sed -n 's#^runtime/minecraft-fabric-##p' "$inventory_directory/minecraft-loom-projects.txt")
-mapfile -t expected_integration_versions < <(sed -n 's#^integration/minecraft-fabric-##p' "$inventory_directory/minecraft-loom-projects.txt")
 
 mapfile -t java_toolchains < <(bash gradle/list-java-toolchains.sh gradle/libs.versions.toml)
 project_jdk=${java_toolchains[${#java_toolchains[@]} - 1]}
-project_language_level="JDK_$project_jdk"
+
+qodana_python=''
+for python_candidate in python3 python; do
+  if command -v "$python_candidate" >/dev/null 2>&1 && \
+    "$python_candidate" -c 'import sys; raise SystemExit(sys.version_info < (3, 8))' >/dev/null 2>&1; then
+    qodana_python=$python_candidate
+    break
+  fi
+done
+[[ -n "$qodana_python" ]] || { echo 'Qodana IDEA preparation requires Python 3.8 or newer.' >&2; exit 1; }
 
 # Recreate the selected revision's source roots even when the IDE reuses indexes from an earlier scan.
 mkdir -p build/qodana
@@ -38,85 +45,4 @@ bash ./gradlew \
   exit 1
 }
 
-verify_generated_projects() {
-  local owner=$1
-  local -n expected_versions=$2
-  local -a generated_versions
-  local expected_display
-  local generated_display
-
-  mapfile -t generated_versions < <(
-    sed -nE "s#.*module fileurl=.*$owner/minecraft-fabric-([^/]+)/$owner-minecraft-fabric-[^\"]+\\.iml.*#\\1#p" strata.ipr |
-      LC_ALL=C sort -V
-  )
-  expected_display=$(IFS=,; printf '%s' "${expected_versions[*]}")
-  generated_display=$(IFS=,; printf '%s' "${generated_versions[*]}")
-  if [[ "$generated_display" != "$expected_display" ]]; then
-    echo "Expected Minecraft $owner modules for [$expected_display] but generated [$generated_display]." >&2
-    exit 1
-  fi
-}
-
-verify_generated_projects runtime expected_runtime_versions
-verify_generated_projects integration expected_integration_versions
-runtime_count=${#expected_runtime_versions[@]}
-integration_count=${#expected_integration_versions[@]}
-
-font_backend_count=$(awk '/module fileurl=.*runtime\/minecraft-fonts-lwjgl\/minecraft-fonts-lwjgl\.iml/ { count++ } END { print count + 0 }' strata.ipr)
-if [[ "$font_backend_count" -ne 1 ]]; then
-  echo "Expected one CPU font backend module but generated $font_backend_count." >&2
-  exit 1
-fi
-
-mkdir -p .idea
-{
-  printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>'
-  printf '%s\n' '<project version="4">'
-  awk '/  <component name="ProjectModuleManager">/,/  <\/component>/' strata.ipr
-  printf '%s\n' '</project>'
-} > .idea/modules.xml
-
-if grep -q "<component name=\"ProjectRootManager\".*languageLevel=\"$project_language_level\"" strata.ipr; then
-  :
-else
-  echo "The generated IDEA project does not declare the catalog's required Java $project_jdk project SDK." >&2
-  exit 1
-fi
-
-if [[ -f .idea/misc.xml ]]; then
-  if grep -q "<component name=\"ProjectRootManager\".*languageLevel=\"$project_language_level\"" .idea/misc.xml; then
-    :
-  else
-    echo "The existing Qodana IDEA metadata does not declare the catalog's required Java $project_jdk project SDK." >&2
-    exit 1
-  fi
-fi
-
-# Mixin invokes these declarations after transforming native owners; shadow fields are written by those owners.
-# Model the framework entrypoints instead of excluding each annotated source file from unused-code analysis.
-{
-  printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>'
-  printf '%s\n' '<project version="4">'
-  printf '  <component name="ProjectRootManager" version="2" languageLevel="%s" default="true" project-jdk-name="jbr-%s" project-jdk-type="JavaSDK" />\n' "$project_language_level" "$project_jdk"
-  cat <<'XML'
-  <component name="EntryPointsManager">
-    <list size="9">
-      <item index="0" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.Mixin" />
-      <item index="1" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.Shadow" />
-      <item index="2" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.gen.Accessor" />
-      <item index="3" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.gen.Invoker" />
-      <item index="4" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.injection.Inject" />
-      <item index="5" class="java.lang.String" itemvalue="org.spongepowered.asm.mixin.injection.ModifyConstant" />
-      <item index="6" class="java.lang.String" itemvalue="com.llamalad7.mixinextras.injector.ModifyExpressionValue" />
-      <item index="7" class="java.lang.String" itemvalue="com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod" />
-      <item index="8" class="java.lang.String" itemvalue="com.llamalad7.mixinextras.injector.v2.WrapWithCondition" />
-    </list>
-    <writeAnnotations>
-      <writeAnnotation name="org.spongepowered.asm.mixin.Shadow" />
-    </writeAnnotations>
-  </component>
-</project>
-XML
-} > .idea/misc.xml
-
-echo "Prepared Qodana IDEA metadata for $runtime_count runtime and $integration_count integration Minecraft modules, Java $project_jdk, and the CPU font backend."
+"$qodana_python" gradle/prepare-qodana-project.py "$project_root" "$inventory_directory/minecraft-loom-projects.txt" "$project_jdk"
