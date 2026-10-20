@@ -1,13 +1,11 @@
-@file:Suppress("DEPRECATION") // Compatibility overloads and regression coverage retain the deprecated screen entry points.
-
 package dev.s7a.strata.integration.docs
 
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
-import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -98,7 +96,7 @@ internal class ShowcaseHeadlessRendererTest {
             fixture.testResources,
         )
 
-    private fun textScreen(text: String): ScreenDefinition = ScreenDefinition("New source text") { Stack { Text(text) } }
+    private fun textScreen(text: String): UiDefinition = UiDefinition("New source text") { Stack { Text(text) } }
 
     private fun pngSize(bytes: ByteArray): IntSize {
         val buffer = ByteBuffer.wrap(bytes)
