@@ -35,7 +35,7 @@ jobs:
         cache-read-only: true
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Prepare the standalone Gradle wrapper
-      run: bash ./gradlew -p build-logic :wrapper
+      run: bash ./gradlew -p build-logic :wrapper :pluginUnderTestMetadata
       working-directory: product
     - name: Analyze the included Gradle build
       uses: JetBrains/qodana-action@v2026.2

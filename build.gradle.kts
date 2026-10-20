@@ -78,7 +78,7 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = "0.3.0"
+version = "0.3.1"
 
 plugins.withType<YarnPlugin> {
     extensions.configure<YarnRootExtension> {

@@ -3,11 +3,16 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
-## 0.3.0 - 2026-10-20
+## 0.3.1 - 2026-10-20
 
 Fabric server-owned screens and HUDs, shared browser editors, images, fonts and touch navigation, official Fabric API networking and lifecycle integration, a `Strata` entry point in each platform package, `Modifier` as the empty-chain starter, and independent text foreground and shadows. Recompile consumers, update platform imports and enum-based text style code, and install Fabric API alongside the exact-version runtime.
 
-[Detailed changes and upgrade notes](docs/releases/v0.3.0.md)
+[Detailed changes and upgrade notes](docs/releases/v0.3.1.md)
+
+## 0.3.0 - Not published
+
+This version was tagged but not distributed.
+Its changes and upgrade instructions are included in 0.3.1.
 
 ## 0.2.3 - 2026-10-17
 
