@@ -1,3 +1,10 @@
+<!--
+- Include user-visible additions, fixes, removals, limitations, and required migration steps.
+- Keep comparable detail across releases, accurate historical API names, and scoped performance claims.
+- Omit internal-only cleanup, CI/test minutiae, development history, and per-release version reminders or unchanged-API assurances.
+- Link detailed release notes for implementation, measurements, and longer migration instructions.
+-->
+
 # Changelog
 
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
@@ -16,10 +23,6 @@ Keep all Strata artifacts on the same release version.
 - Web text editors reuse PNG frames for images currently displayed by the same host across content updates and resizing.
   Temporary frame canvases are released even when browser image conversion fails.
 
-The Kotlin compiler and Fabric Language Kotlin dependency have been updated together.
-When upgrading from 0.3.0, update all Strata artifacts together and install a Fabric Language Kotlin version satisfying the new Fabric runtime's metadata; the [version catalog](gradle/libs.versions.toml) owns the required versions.
-No public API or remote-protocol migration is required from 0.3.0.
-
 ## 0.3.0 - 2026-10-21
 
 - Fabric Mods can own screens and HUDs on dedicated or integrated servers, with server-owned state and callbacks and native rendering on matching clients.
@@ -27,7 +30,6 @@ No public API or remote-protocol migration is required from 0.3.0.
 - Networking, ticking, connection lifetime and HUD registration use Fabric API.
   Leaving play closes remote UI even when the socket remains connected through configuration; a new play join negotiates a fresh generation.
 - Paper, Folia, Velocity and Fabric server packages expose their platform entry point as `Strata`.
-  Paper and Velocity execution ownership and operations retain their existing contracts.
 - `Modifier` starts an empty chain directly and becomes an interface.
   `Modifier.Empty` remains a deprecated alias, scheduled for removal in 1.0.0.
 - `TextStyle` becomes an immutable value with independent foreground, shadow and disabled-editor colors; existing preset expressions remain available.
@@ -55,7 +57,7 @@ Text remote schemas change, so both endpoints must use matching Strata versions.
 
 In the same-host JVM comparison with public 0.2.2, clean-frame allocation falls from 112 to 32 B/op and 1024×1024 PNG encoding allocation from 12.59 to 4.20 MB/op.
 The detailed notes retain the measurement scope and latency regressions.
-Application screen definitions and remote messages need no migration from 0.2.2; replace `RuntimeUiDiagnosticsOwner`, `UiRenderMonitor` and `startRenderMonitoring()` usage with external measurement.
+Replace `RuntimeUiDiagnosticsOwner`, `UiRenderMonitor` and `startRenderMonitoring()` usage with external measurement.
 Custom Minecraft 26.3 Vulkan bridges must follow the updated GPU-lifetime contract in the detailed notes.
 
 [Detailed changes and upgrade notes](docs/releases/v0.2.3.md)
@@ -74,7 +76,6 @@ Custom Minecraft 26.3 Vulkan bridges must follow the updated GPU-lifetime contra
 
 Same-host JVM comparisons with public 0.2.1 measured clean Full HD timed frames at 0.578 → 0.062 µs/op and patterned Full HD CPU composition at 38.264 → 1.191 ms/op.
 Other cases include latency regressions; these fixture results do not establish a universal rendering speedup.
-Existing screen definitions and remote communication contracts require no migration from 0.2.1, and adopting the testkit is optional.
 
 [Detailed changes and upgrade notes](docs/releases/v0.2.2.md)
 
@@ -90,9 +91,6 @@ Existing screen definitions and remote communication contracts require no migrat
 In a tiled-panel fixture from a consuming project, initial drawing commands fell from 387,223 to 467.
 The reduction depends on the source texture and screen contents; patterned sources still require tiling.
 The optimized paths preserve clipping, transparent and translucent pixels, semantics, input, scroll position and invalidation.
-
-Existing screen definitions require no API migration from 0.2.0, and remote communication contracts remain unchanged.
-Update dependencies and the installed exact-version Fabric runtime together; the supported Minecraft matrix is unchanged.
 
 [Detailed changes and upgrade notes](docs/releases/v0.2.1.md)
 
@@ -129,7 +127,6 @@ Server-owned UIs require the platform plugin and matching client runtime.
 - Fractional `scaleToFit` viewports preserve precise scroll and paint clips until physical pixel coverage is determined.
   Images crossing a fractional edge use bounded fallback with unchanged source mapping; wholly contained images keep the direct native path.
 
-Existing appearance overloads and ordinary screen layouts remain available.
 Custom exhaustive display-list backends must handle `DrawCommand.PushFractionalClip`, balanced by `PopClip`.
 Opaque platform payloads crossing fractional clips are rejected before submission; wholly contained payloads remain supported.
 
@@ -138,7 +135,6 @@ Opaque platform payloads crossing fractional clips are rejected before submissio
 ## 0.1.5 - 2026-09-08
 
 - Components accept direct `StateSource` inputs, including source-backed Text and mixtures of literal and source values for controls, media and lists.
-  Existing literal overloads remain available.
 - `Observe` declares a changing region with one through 22 source arguments, a modifier and an optional stable key.
   Wrap multiple emitted components in a layout because each region emits zero or one root.
 - Retained trees share observations by source identity and commit pending revisions at the frame cutoff.
@@ -147,7 +143,7 @@ Opaque platform payloads crossing fractional clips are rejected before submissio
   UI projections compute from committed frame inputs and invalidate dependents only when the result changes.
 - Optional `RuntimeUiDiagnosticsOwner` monitoring records content, node, subscription and pipeline work on the owner thread, with bounded diagnostic retention.
 
-Existing `ScreenDefinition` opening APIs remain available; screens need not reopen for each source update.
+Screens can stay open across source updates.
 Keep editing, scrolling and other navigation state outside observed callbacks, retain reusable projections, and keep transforms pure.
 Ordinary captured Kotlin reads are not implicitly reactive in this release.
 Use one immutable source model when multiple fields need an atomic application update.
@@ -165,7 +161,6 @@ Use one immutable source model when multiple fields need an atomic application u
 - Deferred Fabric renderers preserve committed frame-layer order when fractional transforms create overlaps that native integer bounds cannot fully represent.
   Immediate renderers retain the shared sequence without an extra ordering operation.
 
-Existing modifiers remain available.
 Place viewport modifiers before `scaleToFit` and design-space modifiers after it.
 Custom child-transform nodes must invalidate layout when their reported transform changes.
 Opaque platform draws, including native items, still require unit scale and exact integer translation; unsupported transforms fail before adapter output.
@@ -184,7 +179,6 @@ Opaque platform draws, including native items, still require unit scale and exac
   Failed or over-limit resolutions remain retryable, and host close releases retained entries.
   A new host resolves against the current resource-pack stack.
 
-The activation overloads are additive; existing component and modifier signatures remain available.
 Use the same enabled state for the component and `onActivate`, or keep `onPress` for pointer-specific behavior.
 Custom Minecraft platform adapters must allow successful resource-image resolutions to be reused rather than expect a callback for every declarative use.
 
@@ -199,9 +193,7 @@ Custom Minecraft platform adapters must allow successful resource-image resoluti
   Accepted legacy sizes not divisible by eight retain the bounded premultiplied bilinear image introduced in 0.1.1, now presented through the same retained path.
 - Headless rendering continues to consume the portable command with its existing final-density sampling contract.
 
-No public API members are added or removed from 0.1.1.
 The standard components now produce sampled-image commands instead of integer `BlitImage` commands, so custom backends must support or explicitly reject the variant introduced in 0.1.1.
-The supported Minecraft matrix is unchanged; keep common artifacts and the exact-version runtime aligned.
 
 [Detailed changes and upgrade notes](docs/releases/v0.1.2.md)
 
@@ -219,7 +211,7 @@ The supported Minecraft matrix is unchanged; keep common artifacts and the exact
   The older arbitrary-size overload remains available but is deprecated; retained sampled-image commands enable qualified native texture reuse.
 
 Custom exhaustive visitors must handle the new `UiText.WithFont` and `DrawCommand.SampledImage` cases.
-Existing JVM signatures remain available, but old exhaustive visitors can fail when receiving a new variant.
+Previously compiled exhaustive visitors can fail when receiving a new variant.
 Font coverage follows the selected Minecraft resources; system fonts and a separate color-emoji engine are not added.
 
 [Detailed changes and upgrade notes](docs/releases/v0.1.1.md)
