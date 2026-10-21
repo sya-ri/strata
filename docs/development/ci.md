@@ -70,7 +70,9 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Changed input | Selected work |
 | --- | --- |
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
-| Build-logic tests/resources, private JVM Kotlin test sources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and Qodana |
+| Build-logic tests/resources | JVM tests and coverage, workflow fixtures, and native build-logic Qodana |
+| Native build-logic analysis workflow or profile | Workflow fixtures and native build-logic Qodana |
+| Private JVM Kotlin test sources or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and both Qodana scans |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
 | API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and Qodana |
 | Prose and links | Documentation and Skill consistency |
@@ -86,6 +88,9 @@ JavaScript sources and common tests in the API, core, and performance testkit re
 They do not select loaded clients or full documentation; their owning tests still run through the existing job commands.
 Resources and unrecognized source roots keep their broader plans, since fixtures such as fonts are also browser inputs.
 Build-logic test-only changes and the IDEA analysis model do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
+Private build-logic tests and their analysis configuration retain the standalone native scan without importing the unrelated product model.
+Mixed product changes, manual full runs, and explicit analysis source references retain both scans.
+The always-running Qodana result job requires each selected scan to succeed and each unselected scan to skip.
 
 `writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model and the documentation project's actual source roots.
 Shared-source selection uses that output; deletions and both sides of renames participate in the diff.
