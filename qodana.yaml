@@ -18,7 +18,21 @@ exclude:
     paths:
       - api/src/main/kotlin/dev/s7a/strata/component/CanvasComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ObserveComponents.kt
-      - api/src/main/kotlin/dev/s7a/strata/component/ObservedComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedButtonComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedCanvasComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedCheckboxComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedCycleButtonComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedImageComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedPlayerHeadComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedProgressBarComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedSelectionListComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedSliderComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedSlotComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTabComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextAreaComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextFieldComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTiledImageComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedVirtualListComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/SelectionListComponents.kt
