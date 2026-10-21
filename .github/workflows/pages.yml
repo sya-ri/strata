@@ -44,10 +44,32 @@ jobs:
     - uses: actions/checkout@v7
       with:
         fetch-depth: 0
+    - name: Select documentation asset owner
+      id: assets
+      run: bash gradle/plan-minecraft-ci.sh
     - uses: ./.github/actions/setup-strata-java
     - uses: gradle/actions/setup-gradle@v6
       with:
         gradle-home-cache-excludes: caches/fabric-loom
+    - name: Hash documentation Loom inputs
+      id: loom_inputs
+      shell: bash
+      run: |-
+        LOOM_PROJECTS="$(find runtime -mindepth 1 -maxdepth 1 -type d -name 'minecraft-fabric-*' | sort)
+        integration/minecraft-fabric-$MINECRAFT_VERSION"
+        export LOOM_PROJECTS
+        bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+      env:
+        MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
+    - name: Restore documentation Loom cache
+      id: loom_cache
+      uses: actions/cache/restore@v6
+      with:
+        path: .gradle/loom-cache
+        key: loom-${{ runner.os }}-documentation-${{ steps.loom_inputs.outputs.hash }}
+        restore-keys: |
+          loom-${{ runner.os }}-documentation-
+          loom-${{ runner.os }}-minecraft-all-
     - name: Restore rendered versions
       run: |-
         if git ls-remote --exit-code --heads origin gh-pages; then
@@ -89,7 +111,9 @@ jobs:
         RELEASE_TAG: ${{ inputs.release_tag }}
     - name: Generate and check development documentation
       run: bash ./gradlew :integration:docs:checkDokkaPagesStaging -Pstrata.sourceRevision=master -Pstrata.sourceCommit="$GITHUB_SHA" -Pstrata.olderDocs=build/pages-store/older
-        -Pstrata.webDemoInstallSystemDependencies=true
+        -Pstrata.minecraftVersions="$MINECRAFT_VERSION" -Pstrata.webDemoInstallSystemDependencies=true
+      env:
+        MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
     - name: Save rendered documentation
       run: |-
         python3 release/pages-archive.py check --store build/dokka/html
@@ -105,6 +129,12 @@ jobs:
       with:
         path: build/dokka/html
         retention-days: 30
+    - name: Save documentation Loom cache
+      if: success() && steps.loom_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: .gradle/loom-cache
+        key: ${{ steps.loom_cache.outputs.cache-primary-key }}
   deploy:
     needs: build
     runs-on: ubuntu-latest

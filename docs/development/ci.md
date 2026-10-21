@@ -16,7 +16,7 @@ Web-only checks use `-Pstrata.webOnly=true` to include the complete JavaScript w
 This scope accepts only fully qualified module `check` and `jsTest` tasks; publication and coverage aggregation use the complete build.
 An invocation containing only `:ciMinecraftCheck` includes the Minecraft versions selected by `strata.minecraftVersions` and omits the documentation project.
 Adding `:integration:docs:checkMinecraftShowcaseParity` retains that project for the native showcase comparison without loading other Minecraft versions.
-The separate documentation job includes every runtime for Dokka and only the integration project supplying its assets.
+The separate documentation job and development Pages generation include every runtime for Dokka and only the integration project supplying their assets.
 Reader documentation checks use the same project scope, selecting the asset owner from the checked documentation build through the existing Minecraft planner.
 All runtime sources remain available for the shared-source and Skill consistency checks.
 Paired dedicated Fabric acceptance launches select their exact target from the requested integration task and invocation identity.
@@ -108,7 +108,7 @@ API/core JavaScript tests and Web unit tests run once on Linux; Windows retains 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
 Independent Minecraft jobs may restore Gradle dependency caches from other jobs, including the full-model writers on the default branch, but do not each save another large copy; the documentation and Qodana jobs retain full-model cache writers.
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
-Full and reader-documentation jobs reuse the same Loom input hash and restore/save steps.
+Full and reader-documentation jobs and development Pages builds use the same Loom ownership, input hash, and cache namespace.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
 Acceptance evidence is generated for the selected revision.
 Each ordinary PR or full-CI Minecraft matrix job also runs `integration/fabric/run_acceptance.py` against a fresh loopback Fabric server using the production runtime and test Mod archives.
