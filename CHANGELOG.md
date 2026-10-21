@@ -5,11 +5,22 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
-Web image rendering now allocates pixels only within the destination, clip and viewport intersection, so highly zoomed images keep the screen open without exceeding the image pixel budget because of offscreen content.
-Source sampling, image orientation and the visible physical pixel limit are preserved; no consumer API changes are required.
+The following fixes are relative to 0.3.0.
 
-Web text editors reuse PNG frames for images currently displayed by the same host across content updates and resizing.
-Temporary frame canvases are released even when browser image conversion fails.
+- Mapped `StateSource` subscriptions no longer deadlock when an observer closes its subscription while another thread is closing it.
+  An already admitted callback may still finish after close.
+- Minecraft `PlayerHead` and `Slot` release acquired bindings even when initialization or subscription cleanup fails, preserving the original failure when cleanup also throws.
+- A remote client close rejected during UI evaluation preserves the session for later owner cleanup.
+  Rejected owner withdrawal also preserves extension registrations so a later retry can retire dependent screens.
+- Closing a Web host from an input callback completes the current input operation before releasing its subscriptions, DOM children and listeners.
+- Web image rendering allocates pixels only within the destination, clip and viewport intersection, so highly zoomed images keep the screen open without exceeding the image pixel budget because of offscreen content.
+  Source sampling, image orientation and the visible physical pixel limit are preserved.
+- Web text editors reuse PNG frames for images currently displayed by the same host across content updates and resizing.
+  Temporary frame canvases are released even when browser image conversion fails.
+
+The Kotlin compiler and Fabric Language Kotlin dependency have been updated together.
+When upgrading from 0.3.0, update all Strata artifacts together and install a Fabric Language Kotlin version satisfying the new Fabric runtime's metadata; the [version catalog](gradle/libs.versions.toml) owns the required versions.
+No public API or remote-protocol migration is required from 0.3.0.
 
 ## 0.3.0 - 2026-10-21
 
