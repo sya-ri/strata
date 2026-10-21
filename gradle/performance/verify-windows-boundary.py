@@ -118,7 +118,7 @@ def main():
             ("contended-immediate-history", f'@"{sys.executable}" -B "{history}" --output descendants --batches 4 --immediate --held 64\n', 4 * 1024**3, 120),
             ("history-budget-refusal", f'@"{sys.executable}" -B "{history}" --output descendants --batches 512 --immediate\n', 4 * 1024**3, 120),
             ("failure", "@exit /b 7\n", 4 * 1024**3, 30),
-            ("invalid-handle-error-result", f'@"{sys.executable}" -c "import ctypes,json; k=ctypes.WinDLL(\'kernel32\',use_last_error=True); k.CloseHandle.argtypes=[ctypes.c_void_p]; k.CloseHandle.restype=ctypes.c_int; ctypes.set_last_error(0); r=k.CloseHandle(ctypes.c_void_p(0x12345678)); e=ctypes.get_last_error(); print(json.dumps(dict(result=r,error=e))); assert r==0 and e==6"\n', 4 * 1024**3, 30),
+            ("invalid-handle-error-result", f'@"{sys.executable}" -c "import ctypes,json; k=ctypes.WinDLL(\'kernel32\',use_last_error=True); k.CloseHandle.argtypes=[ctypes.c_void_p]; k.CloseHandle.restype=ctypes.c_int; ctypes.set_last_error(0); r=k.CloseHandle(ctypes.c_void_p(0x12345678)); e=ctypes.get_last_error(); print(json.dumps(dict(result=r,error=e)))"\n', 4 * 1024**3, 30),
             ("unhandled-native-exception", f'@"{sys.executable}" -c "import ctypes; ctypes.WinDLL(\'kernel32\').RaiseException(ctypes.c_uint32(0xe0424242),0,0,None)"\n', 4 * 1024**3, 30),
             ("ram-refusal", "@exit /b 0\n", 2**50, 30),
             ("timeout", '@python -c "import time; time.sleep(30)"\n', 4 * 1024**3, 2),

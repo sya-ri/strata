@@ -30,6 +30,8 @@ def plan(paths, model=None, full=False):
             result.update(common=True, workflow=True, qodana_build_logic=True)
         elif path in ("build-logic/qodana.yaml", ".github/workflows/qodana-build-logic.yml"):
             result.update(workflow=True, qodana_build_logic=True)
+        elif path == "gradle/verify-jvm-fixture-collection.py":
+            result.update(common=True, workflow=True)
         elif path == "gradle/qodana-idea-model.gradle.kts":
             result.update(common=True, workflow=True, qodana=True)
         elif path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")) or (path.startswith("gradle/performance/") and path.endswith(".py")):

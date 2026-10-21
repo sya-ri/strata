@@ -73,6 +73,7 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Build-logic tests/resources | JVM tests and coverage, workflow fixtures, and native build-logic Qodana |
 | Native build-logic analysis workflow or profile | Workflow fixtures and native build-logic Qodana |
 | Private JVM Kotlin test sources or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and both Qodana scans |
+| Scoped JVM fixture collection verifier | JVM checks and coverage, workflow fixtures |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
 | API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and Qodana |
 | Prose and links | Documentation and Skill consistency |

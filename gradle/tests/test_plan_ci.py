@@ -245,6 +245,20 @@ class PlanCiTest(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
 
+    def test_scoped_jvm_fixture_verifier_keeps_its_jvm_execution_owner(self):
+        path = "gradle/verify-jvm-fixture-collection.py"
+        expected = planner.plan([])
+        expected.update(common=True, workflow=True)
+        self.assertEqual(expected, planner.plan([path]))
+        self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
+        for other in ("runtime/web/src/jsMain/kotlin/Host.kt", "runtime/core/src/main/kotlin/Node.kt",
+                      "build.gradle.kts", "gradle/verify-jvm-fixture-collection-other.py", "unknown-input"):
+            for changed in ([path, other], [other, path]):
+                with self.subTest(changed=changed):
+                    mixed = planner.plan([other])
+                    mixed.update(common=True, workflow=True)
+                    self.assertEqual(mixed, planner.plan(changed))
+
     def test_idea_analysis_model_keeps_real_compiler_and_inspection_checks(self):
         path = "gradle/qodana-idea-model.gradle.kts"
         expected = planner.plan([])
