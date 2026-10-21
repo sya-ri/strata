@@ -54,10 +54,4 @@ internal class SampledSourceWeights(
         } else {
             null
         }
-
-    /**
-     * Primitive arrays occupy at most 54,272 bytes per tint, excluding the fixed reference array.
-     */
-    val retainedBytes: Int
-        get() = (256 * 2 + 768 + rowCount * 768) * Float.SIZE_BYTES
 }
