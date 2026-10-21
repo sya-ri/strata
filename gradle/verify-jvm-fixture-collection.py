@@ -7,6 +7,12 @@ import subprocess
 import tempfile
 
 
+def require(condition, message):
+    """Reject incomplete fixture evidence independently of Python optimization."""
+    if not condition:
+        raise ValueError(message)
+
+
 FIXTURE = """package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntRect
@@ -146,9 +152,10 @@ public open class ScopedRemoteFixtureBenchmark {
         destination = directory / name
         with (directory / (name + ".log")).open("w", encoding="utf-8") as log:
             process = subprocess.run(wrapper + arguments + extra_arguments + [f"-Pstrata.performance.output={destination}"], cwd=root, stdout=log, stderr=subprocess.STDOUT)
-        assert (process.returncode == 0) == expected_success, (directory / (name + ".log")).read_text(encoding="utf-8")[-6000:]
+        if not ((process.returncode == 0) == expected_success):
+            raise ValueError((directory / (name + ".log")).read_text(encoding="utf-8")[-6000:])
         if not expected_success:
-            assert destination.exists() is False
+            require(destination.exists() is False, "Rejected remote selection retained a receipt directory.")
         return destination
 
     try:
@@ -159,11 +166,11 @@ public open class ScopedRemoteFixtureBenchmark {
         result = call("selected", [], True)
         receipt = json.loads((result / "receipt.json").read_text(encoding="utf-8"))
         rows = json.loads((result / "results.json").read_text(encoding="utf-8"))
-        assert receipt["status"] == "passed" and receipt["fork_verification"] == "loaded-artifacts-per-iteration-v1"
-        assert len(receipt["registered_workloads"]) == len(rows) == 1
-        assert rows[0]["benchmark"].endswith("ScopedRemoteFixtureBenchmark.snapshot") and rows[0]["params"] == {"width": "16"}
-        assert rows[0]["secondaryMetrics"]["strata.provenance"]["score"] == 1
-        assert "scoped-remote-input" in receipt["inputs"]
+        require(receipt["status"] == "passed" and receipt["fork_verification"] == "loaded-artifacts-per-iteration-v1", "Remote receipt did not certify loaded artifacts per iteration.")
+        require(len(receipt["registered_workloads"]) == len(rows) == 1, "Remote selection did not retain exactly one workload.")
+        require(rows[0]["benchmark"].endswith("ScopedRemoteFixtureBenchmark.snapshot") and rows[0]["params"] == {"width": "16"}, "Remote method or parameters differ from the requested selection.")
+        require(rows[0]["secondaryMetrics"]["strata.provenance"]["score"] == 1, "Remote fixture lost generated provenance.")
+        require("scoped-remote-input" in receipt["inputs"], "Remote fixture omitted its external input.")
         call("unknown-fixture", ["-Pstrata.performance.benchmarks=UnknownRemoteFixture"], False)
         call("unknown-method", ["-Pstrata.performance.workloads=ScopedRemoteFixtureBenchmark.missing"], False)
         parameters.write_text("width=32\n", encoding="utf-8")
@@ -179,7 +186,7 @@ public open class ScopedRemoteFixtureBenchmark {
 def verify_project_selection(closure_log, projects):
     """Require the entire explicit scoped model before admitting a fixture collection."""
     selected = next(line.removeprefix("EXPLICIT_JVM_PROJECTS=") for line in closure_log.splitlines() if line.startswith("EXPLICIT_JVM_PROJECTS="))
-    assert set(selected.split(",")) == projects
+    require(set(selected.split(",")) == projects, "Explicit JVM project selection differs from the required scoped model.")
 
 
 def main():
@@ -226,7 +233,7 @@ def main():
         subprocess.run(wrapper + ["-Pstrata.jvmOnly=true", "--dry-run", "-I", str(init)] + tasks, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
     closure_log = (evidence / "task-closure.log").read_text(encoding="utf-8")
     verify_project_selection(closure_log, projects)
-    assert "verifyPublishedHostInventory SKIPPED" not in closure_log and "verifyPublishedPerformanceInventory SKIPPED" not in closure_log
+    require("verifyPublishedHostInventory SKIPPED" not in closure_log and "verifyPublishedPerformanceInventory SKIPPED" not in closure_log, "Scoped collection unexpectedly reaches published inventory validation.")
     (evidence / "project-model.json").write_text(json.dumps({"explicit_projects": sorted(projects), "explicit_project_count": len(projects), "requested_tasks": tasks}, indent=2), encoding="utf-8")
     arguments = [
         "-Pstrata.jvmOnly=true",
@@ -247,22 +254,22 @@ def main():
         run = evidence / "run-0"
         receipt = json.loads((run / "receipt.json").read_text(encoding="utf-8"))
         results = json.loads((run / "results.json").read_text(encoding="utf-8"))
-        assert receipt["status"] == "passed" and receipt["fork_verification"] == "loaded-artifacts-per-iteration-v1"
-        assert len(receipt["registered_workloads"]) == len(results) == 1
-        assert any("ScopedModelFixtureBenchmark" in name for name in receipt["fixture_identity"])
-        assert "scoped-model-input" in receipt["inputs"]
-        assert receipt["results_sha256"] == hashlib.sha256((run / "results.json").read_bytes()).hexdigest()
+        require(receipt["status"] == "passed" and receipt["fork_verification"] == "loaded-artifacts-per-iteration-v1", "Component receipt did not certify loaded artifacts per iteration.")
+        require(len(receipt["registered_workloads"]) == len(results) == 1, "Component selection did not retain exactly one workload.")
+        require(any("ScopedModelFixtureBenchmark" in name for name in receipt["fixture_identity"]), "Component fixture identity is missing.")
+        require("scoped-model-input" in receipt["inputs"], "Component fixture omitted its external input.")
+        require(receipt["results_sha256"] == hashlib.sha256((run / "results.json").read_bytes()).hexdigest(), "Fixture results differ from the recorded digest.")
         result = results[0]
-        assert result["benchmark"].endswith("ScopedModelFixtureBenchmark.paint") and result["params"] == {"width": "16"}
-        assert result["forks"] == result["measurementIterations"] == 1 and result["warmupIterations"] == 0
-        assert result["secondaryMetrics"]["strata.provenance"]["score"] == 1
-        assert "Verified unregistered scoped fixture" in (evidence / "collection.log").read_text(encoding="utf-8")
+        require(result["benchmark"].endswith("ScopedModelFixtureBenchmark.paint") and result["params"] == {"width": "16"}, "Component method or parameters differ from the requested selection.")
+        require(result["forks"] == result["measurementIterations"] == 1 and result["warmupIterations"] == 0, "Fixture sampling differs from the quick collection contract.")
+        require(result["secondaryMetrics"]["strata.provenance"]["score"] == 1, "Component fixture lost generated provenance.")
+        require("Verified unregistered scoped fixture" in (evidence / "collection.log").read_text(encoding="utf-8"), "Compiled fixture did not run its independent verification.")
         extra.write_text("FF173A58\n", encoding="utf-8")
         with (evidence / "rejected-input.log").open("w", encoding="utf-8") as log:
             rejected = subprocess.run(wrapper + arguments + [f"-Pstrata.performance.output={evidence / 'rejected'}"], cwd=root, stdout=log, stderr=subprocess.STDOUT)
-        assert rejected.returncode != 0
-        assert "Fixture external input differs from compiled resource" in (evidence / "rejected-input.log").read_text(encoding="utf-8")
-        assert (evidence / "rejected").exists() is False
+        require(rejected.returncode != 0, "Changed external input was accepted.")
+        require("Fixture external input differs from compiled resource" in (evidence / "rejected-input.log").read_text(encoding="utf-8"), "Changed input did not reach the compiled fixture rejection.")
+        require((evidence / "rejected").exists() is False, "Rejected input retained a receipt directory.")
     finally:
         source.unlink(missing_ok=True)
         resource.unlink(missing_ok=True)
