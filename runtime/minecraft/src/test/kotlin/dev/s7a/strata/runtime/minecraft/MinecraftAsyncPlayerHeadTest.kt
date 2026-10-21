@@ -16,6 +16,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
@@ -166,6 +167,48 @@ internal class MinecraftAsyncPlayerHeadTest {
         }
     }
 
+    @Test
+    fun failedAcquisitionPreservesItsFailureWhenBindingCloseAlsoFails() {
+        for (failsAtSnapshot in listOf(true, false)) {
+            val primary = IllegalStateException("acquire")
+            val cleanup = IllegalArgumentException("close")
+            val binding =
+                FakeSkinBinding(
+                    snapshotFailure = primary.takeIf { failsAtSnapshot },
+                    observeFailure = primary.takeUnless { failsAtSnapshot },
+                    closeFailure = cleanup,
+                )
+            val source = PlayerSkinSource.Name("FailedPlayer")
+            val tree = UiTree()
+            val thrown =
+                assertThrows(IllegalStateException::class.java) {
+                    tree.update(asyncElement(FakeSkinPlatform(source, binding), source))
+                }
+            assertSame(primary, thrown)
+            assertEquals(listOf(cleanup), thrown.suppressed.toList())
+            assertTrue(binding.closed)
+            tree.close()
+        }
+    }
+
+    @Test
+    fun failedSubscriptionReleaseStillClosesBindingWithoutSelfSuppression() {
+        for (sameFailure in listOf(false, true)) {
+            val primary = IllegalStateException("subscription")
+            val cleanup = if (sameFailure) primary else IllegalArgumentException("binding")
+            val binding = FakeSkinBinding(subscriptionCloseFailure = primary, closeFailure = cleanup)
+            val source = PlayerSkinSource.Name("ClosingPlayer")
+            val element = asyncElement(FakeSkinPlatform(source, binding), source)
+            val node = element.type.createErased(element) as LifecycleNode
+            node.attach()
+            val thrown = assertThrows(IllegalStateException::class.java) { node.detach() }
+            assertSame(primary, thrown)
+            assertEquals(if (sameFailure) emptyList() else listOf(cleanup), thrown.suppressed.toList())
+            assertTrue(binding.closed)
+            node.dispose()
+        }
+    }
+
     private fun definition(
         source: PlayerSkinSource = PlayerSkinSource.Name("Player0"),
     ): ScreenDefinition =
@@ -237,7 +280,12 @@ internal class MinecraftAsyncPlayerHeadTest {
         }
     }
 
-    private class FakeSkinBinding : MinecraftPlayerSkinBinding {
+    private class FakeSkinBinding(
+        private val snapshotFailure: Throwable? = null,
+        private val observeFailure: Throwable? = null,
+        private val subscriptionCloseFailure: Throwable? = null,
+        private val closeFailure: Throwable? = null,
+    ) : MinecraftPlayerSkinBinding {
         private var current: MinecraftPlayerSkinBinding.Snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
         private var pending: MinecraftPlayerSkinBinding.Snapshot? = null
         private var observer: (() -> Unit)? = null
@@ -246,6 +294,7 @@ internal class MinecraftAsyncPlayerHeadTest {
 
         override fun snapshot(): MinecraftPlayerSkinBinding.Snapshot {
             check(closed.not())
+            snapshotFailure?.let { throw it }
             return current
         }
 
@@ -253,9 +302,11 @@ internal class MinecraftAsyncPlayerHeadTest {
             check(closed.not())
             check(this.observer == null)
             this.observer = observer
+            observeFailure?.let { throw it }
             return AutoCloseable {
                 if (this.observer === observer) {
                     this.observer = null
+                    subscriptionCloseFailure?.let { throw it }
                 }
             }
         }
@@ -265,6 +316,7 @@ internal class MinecraftAsyncPlayerHeadTest {
             closed = true
             pending = null
             observer = null
+            closeFailure?.let { throw it }
         }
 
         fun enqueue(snapshot: MinecraftPlayerSkinBinding.Snapshot) {

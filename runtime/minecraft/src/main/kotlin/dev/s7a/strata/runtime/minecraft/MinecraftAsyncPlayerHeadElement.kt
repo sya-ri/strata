@@ -126,18 +126,16 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
         }
 
         override fun detach() {
-            releaseBinding()
+            attached = false
             snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
             painter.clear()
-            attached = false
+            releaseBinding()
         }
 
         override fun dispose() {
-            releaseBinding()
-            painter.clear()
             platform = null
             source = null
-            attached = false
+            detach()
         }
 
         /**
@@ -175,14 +173,13 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
             }
         }
 
-        @Suppress("TooGenericExceptionCaught")
         private fun acquireBinding() {
             check(binding == null) { "PlayerHead lookup binding is already acquired." }
             val acquired = checkNotNull(platform).playerSkin(checkNotNull(source))
-            try {
+            binding = acquired
+            runCatching {
                 val initial = acquired.snapshot()
                 validateSnapshot(initial)
-                binding = acquired
                 snapshot = initial
                 subscription =
                     acquired.observe {
@@ -195,19 +192,20 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                             invalidate(DirtyMask.of(DirtyPhase.Measure))
                         }
                     }
-            } catch (failure: Throwable) {
-                acquired.close()
+            }.getOrElse { failure ->
+                runCatching(::releaseBinding).exceptionOrNull()?.let { cleanup ->
+                    if (cleanup !== failure) failure.addSuppressed(cleanup)
+                }
                 throw failure
             }
         }
 
         private fun releaseBinding() {
             val currentSubscription = subscription
-            subscription = null
-            currentSubscription?.close()
             val currentBinding = binding
+            subscription = null
             binding = null
-            currentBinding?.close()
+            currentBinding.use { currentSubscription?.close() }
         }
 
         private fun validateSnapshot(candidate: MinecraftPlayerSkinBinding.Snapshot) {

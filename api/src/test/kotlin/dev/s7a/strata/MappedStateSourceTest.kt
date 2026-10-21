@@ -10,10 +10,12 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.lang.Thread.State as ThreadState
 
 /**
  * Exercises lazy mapping, ordinary revision delivery, and close racing an in-flight projection.
@@ -65,6 +67,59 @@ internal class MappedStateSourceTest {
         assertSame(failure, assertThrows(IllegalArgumentException::class.java) { mapped.subscribe { } })
         assertEquals(listOf(cleanup), failure.suppressed.toList())
         assertEquals(1, releases.get())
+    }
+
+    @Test
+    fun anAdmittedObserverCanCloseWhileAnotherThreadIsClosing() {
+        val observing = CountDownLatch(1)
+        val closeFromObserver = CountDownLatch(1)
+        val closes = AtomicInteger()
+        var callback: ((StateSnapshot<Int>) -> Unit)? = null
+        val source =
+            StateSource<Int> { observer ->
+                callback = observer
+                StateSubscription(StateSnapshot(StateRevision(0), 0)) {
+                    callback = null
+                    closes.incrementAndGet()
+                }
+            }
+        lateinit var subscription: StateSubscription<Int>
+        subscription =
+            source.map { it }.subscribe {
+                observing.countDown()
+                check(closeFromObserver.await(5, TimeUnit.SECONDS))
+                subscription.close()
+            }
+        val deliver = checkNotNull(callback)
+        val executor =
+            Executors.newFixedThreadPool(2) { action ->
+                Thread(action, "mapped-observer-close").apply { isDaemon = true }
+            }
+        try {
+            val delivery = executor.submit { deliver(StateSnapshot(StateRevision(1), 1)) }
+            assertTrue(observing.await(5, TimeUnit.SECONDS))
+            val closeThread = CompletableFuture<Thread>()
+            val closing =
+                executor.submit {
+                    closeThread.complete(Thread.currentThread())
+                    subscription.close()
+                }
+            val thread = closeThread.get(5, TimeUnit.SECONDS)
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+            // Force the observer's close to overlap a close already admitted on the other thread.
+            while (closing.isDone.not() && thread.state != ThreadState.BLOCKED && System.nanoTime() < deadline) {
+                Thread.onSpinWait()
+            }
+            assertTrue(closing.isDone || thread.state == ThreadState.BLOCKED)
+            closeFromObserver.countDown()
+            delivery.get(5, TimeUnit.SECONDS)
+            closing.get(5, TimeUnit.SECONDS)
+            assertEquals(1, closes.get())
+        } finally {
+            closeFromObserver.countDown()
+            executor.shutdownNow()
+            executor.awaitTermination(2, TimeUnit.SECONDS)
+        }
     }
 
     @Test
