@@ -33,6 +33,7 @@ internal class WebDomRenderer(
 ) : AutoCloseable {
     private var nodes = emptyMap<String, HTMLElement>()
     private val owned = LinkedHashSet<HTMLElement>()
+    private val editors = WebEditorDom()
     private var initialized = false
     private var stylesheet: HTMLElement? = null
     private val originalTheme = root.getAttribute("data-strata-theme-root")
@@ -47,6 +48,7 @@ internal class WebDomRenderer(
             stylesheet = installWebTheme(root, theme)
             initialized = true
         }
+        editors.beginFrame()
         val next = LinkedHashMap<String, HTMLElement>()
         root.style.position = "relative"
         root.style.width = "${frame.size.width}px"
@@ -79,6 +81,7 @@ internal class WebDomRenderer(
             if (next[identity] !== element) release(element)
         }
         nodes = next
+        editors.endFrame()
         entries.firstOrNull(::focusedEntry)?.let { entry ->
             val target = checkNotNull(nodes[entry.identity])
             if (root.ownerDocument?.activeElement !== target && target.isConnected) target.focus()
@@ -88,6 +91,7 @@ internal class WebDomRenderer(
     private fun focusedEntry(entry: Entry): Boolean = entry.semantic?.let { it.owner?.let { owner -> owner.focused && owner.focusable } == true && it.semantics.disabled.not() } ?: (entry.editor?.focused == true || entry.presentation?.focused == true)
 
     override fun close() {
+        editors.close()
         owned.toList().forEach(::release)
         nodes = emptyMap()
         stylesheet?.let { it.parentNode?.removeChild(it) }
@@ -197,7 +201,7 @@ internal class WebDomRenderer(
             return
         }
         if (entry.editor != null) {
-            WebEditorDom.update(element, entry.editor, checkNotNull(resources))
+            editors.update(element, entry.editor, checkNotNull(resources))
             return
         }
         textStyle(element, presentation)

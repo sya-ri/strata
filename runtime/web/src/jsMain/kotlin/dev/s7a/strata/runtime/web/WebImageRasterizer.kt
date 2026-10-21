@@ -120,19 +120,19 @@ internal object WebImageRasterizer {
      */
     fun dataUrl(image: DrawImage): String {
         val canvas = document.createElement("canvas") as HTMLCanvasElement
-        canvas.width = image.size.width
-        canvas.height = image.size.height
-        val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
-        val pixels = context.createImageData(image.size.width.toDouble(), image.size.height.toDouble())
-        image.copyArgb().forEachIndexed { index, argb ->
-            val offset = index * 4
-            pixels.data.asDynamic()[offset] = argb ushr 16 and 255
-            pixels.data.asDynamic()[offset + 1] = argb ushr 8 and 255
-            pixels.data.asDynamic()[offset + 2] = argb and 255
-            pixels.data.asDynamic()[offset + 3] = argb ushr 24
-        }
-        context.putImageData(pixels, 0.0, 0.0)
         return try {
+            canvas.width = image.size.width
+            canvas.height = image.size.height
+            val context = checkNotNull(canvas.getContext("2d") as? CanvasRenderingContext2D)
+            val pixels = context.createImageData(image.size.width.toDouble(), image.size.height.toDouble())
+            image.copyArgb().forEachIndexed { index, argb ->
+                val offset = index * 4
+                pixels.data.asDynamic()[offset] = argb ushr 16 and 255
+                pixels.data.asDynamic()[offset + 1] = argb ushr 8 and 255
+                pixels.data.asDynamic()[offset + 2] = argb and 255
+                pixels.data.asDynamic()[offset + 3] = argb ushr 24
+            }
+            context.putImageData(pixels, 0.0, 0.0)
             canvas.toDataURL()
         } finally {
             canvas.width = 0
