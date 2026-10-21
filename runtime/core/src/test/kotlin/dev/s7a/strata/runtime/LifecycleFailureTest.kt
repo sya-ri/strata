@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementType
-import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.Node

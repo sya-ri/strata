@@ -16,9 +16,7 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.HorizontalAlignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
-import dev.s7a.strata.modifier.initialFocus
 import dev.s7a.strata.modifier.menuBackground
-import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.onPress
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -46,7 +44,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import javax.imageio.ImageIO
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork

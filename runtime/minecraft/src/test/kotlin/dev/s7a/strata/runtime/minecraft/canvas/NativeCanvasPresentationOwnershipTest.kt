@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime.minecraft.canvas
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand

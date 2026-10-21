@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.containerBackground

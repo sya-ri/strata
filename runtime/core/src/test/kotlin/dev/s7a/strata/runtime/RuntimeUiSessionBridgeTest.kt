@@ -14,7 +14,6 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onCapturedPointerEvent
 import dev.s7a.strata.modifier.onHover
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
