@@ -3,8 +3,8 @@ package dev.s7a.strata.state
 import dev.s7a.strata.internal.platform.synchronized
 
 /**
- * Subscription-local gate preventing a transformation already in flight from starting delivery after close.
- * Closing clears the callback under the same monitor used for delivery; source cleanup runs outside this monitor.
+ * Subscription-local gate preventing a transformation already in flight from admitting delivery after close.
+ * Closing clears the callback under the admission monitor; admitted callbacks run outside it and may finish after close.
  */
 internal class MappedStateDelivery<T>(
     observer: (StateSnapshot<T>) -> Unit,
@@ -13,10 +13,11 @@ internal class MappedStateDelivery<T>(
     private var observer: ((StateSnapshot<T>) -> Unit)? = observer
 
     /**
-     * Delivers a transformed snapshot only while open, preserving upstream callback serialization.
+     * Admits a transformed snapshot only while open, preserving upstream callback serialization.
      */
     fun deliver(snapshot: StateSnapshot<T>) {
-        synchronized(monitor) { observer?.invoke(snapshot) }
+        val current = synchronized(monitor) { observer }
+        current?.invoke(snapshot)
     }
 
     override fun close() {
