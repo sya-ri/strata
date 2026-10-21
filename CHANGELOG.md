@@ -12,6 +12,8 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
+- `VirtualList` can omit `viewportSize` to fill its parent's finite allocation, including remaining space assigned by `weight`.
+  Resizing preserves scrolling and virtualized rows; declaration-only remote hosts require an explicit viewport.
 - Mapped `StateSource` subscriptions no longer deadlock when an observer closes its subscription while another thread is closing it.
   An already admitted callback may still finish after close.
 - Minecraft `PlayerHead` and `Slot` release acquired bindings even when initialization or subscription cleanup fails, preserving the original failure when cleanup also throws.
