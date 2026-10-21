@@ -40,6 +40,7 @@ def plan(paths, model=None, full=False):
             result["workflow"] = True
         elif path.startswith((".github/workflows/qodana", "qodana.yaml", "gradle/prepare-qodana", "gradle/verify-qodana")):
             result.update(workflow=True, qodana=True)
+            result["qodana_build_logic"] |= path.startswith(".github/workflows/qodana")
         elif path.startswith((".github/workflows/", ".github/actions/", "gradle/plan-", "gradle/verify-minecraft-ci")):
             result["workflow"] = True
             result["docs_full"] |= path.startswith(".github/workflows/pages")
@@ -51,7 +52,8 @@ def plan(paths, model=None, full=False):
             else:
                 result["all_minecraft"] = True
             result["docs_full"] |= any(path == root or path.startswith(root.rstrip("/") + "/") for root in documentation_sources)
-            result["qodana"] = True
+            # The standalone build also imports shared game-independent pacing tests.
+            result.update(qodana=True, qodana_build_logic=True)
         elif path.startswith(("runtime/web/", "integration/web/", "examples/web/", "tools/web/", "kotlin-js-store/")):
             result["web"] = True
             result["qodana"] |= path.endswith((".kt", ".kts"))
@@ -78,7 +80,6 @@ def plan(paths, model=None, full=False):
             full = True
     if full:
         result = dict.fromkeys(result, True)
-    result["qodana_build_logic"] |= result["qodana"]
     result["minecraft"] = sorted(versions, key=lambda version: tuple(map(int, version.split("."))))
     return result
 

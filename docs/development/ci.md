@@ -72,10 +72,10 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
 | Build-logic tests/resources | JVM tests and coverage, workflow fixtures, and native build-logic Qodana |
 | Native build-logic analysis workflow or profile | Workflow fixtures and native build-logic Qodana |
-| Private JVM Kotlin test or JMH sources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and both Qodana scans |
+| Private JVM Kotlin test or JMH sources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and product Qodana |
 | Scoped JVM fixture collection verifier | JVM checks and coverage, workflow fixtures |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
-| API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and both Qodana scans |
+| API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and product Qodana |
 | Prose and links | Documentation and Skill consistency |
 | Documentation generation, examples, images, or Dokka | Compiled documentation and generated-output checks |
 | One Minecraft runtime or shared source | Every version using that source |
@@ -92,7 +92,10 @@ They do not select loaded clients or full documentation; their owning tests stil
 Resources and unrecognized source roots keep their broader plans, since fixtures such as fonts are also browser inputs.
 Build-logic test-only changes and the IDEA analysis model do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
 Private build-logic tests and their analysis configuration retain the standalone native scan without importing the unrelated product model.
-Mixed product changes, manual full runs, and explicit analysis source references retain both scans.
+Product-only changes select product analysis without repeating the independent build-logic import.
+Native and shared helpers retain both scans because the standalone build also imports shared pacing tests.
+Product analysis workflow changes, build-wide inputs, unrecognized inputs, manual full runs, and explicit analysis source references retain both scans.
+Mixed changes retain every selected owner regardless of path order.
 The always-running Qodana result job requires each selected scan to succeed and each unselected scan to skip.
 
 `writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model and the documentation project's actual source roots.
