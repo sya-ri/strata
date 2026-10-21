@@ -3,6 +3,7 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
@@ -131,18 +132,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                     runtime.evaluate(content.content)
                 }
             peer.sessions[handle.identity] = Active(owner, handle, session, settings.presentation, settings.category)
-            handle.bindControls { request ->
-                val active = peer.sessions[handle.identity]
-                if (active != null) {
-                    if (request.presentation == UiPresentation.Hud && capabilities.limits.hudSessions <= peer.hudCount(handle.identity)) {
-                        handle.controls.rejected(request.sequence, UiRejection.Capacity)
-                    } else {
-                        active.presentation = request.presentation
-                        if (request.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced, handle.identity)
-                        session.applyControl(request)
-                    }
-                }
-            }
+            handle.bindControls { request -> applyControl(player, peer, handle, request) }
             runCatching(session::tick).onFailure { failure -> report(failure) }
             peer.refresh()
         }
@@ -221,6 +211,32 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             val failures = remaining.mapNotNull { runCatching { it.close(RemoteFailure.OwnerClosed) }.exceptionOrNull() }
             failures.forEach(report)
         }
+    }
+
+    /**
+     * Commits a request only while its connection and session still own it after replacement listeners return.
+     */
+    private fun applyControl(
+        player: Player,
+        peer: Peer<Owner>,
+        handle: RemoteScreenSession,
+        request: RuntimeUiControl,
+    ) {
+        if (peers[player] !== peer) return
+        val active = peer.sessions[handle.identity] ?: return
+        val limits = checkNotNull(peer.connection.capabilities).limits
+        if (request.presentation == UiPresentation.Hud && limits.hudSessions <= peer.hudCount(handle.identity)) {
+            handle.controls.rejected(request.sequence, UiRejection.Capacity)
+            return
+        }
+        if (request.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced, handle.identity)
+        if (peers[player] !== peer || peer.sessions[handle.identity] !== active) return
+        if (request.presentation == UiPresentation.Screen && peer.sessions.values.any { it.presentation == UiPresentation.Screen && it.handle.identity != handle.identity }) {
+            peer.closeSession(handle.identity, RemoteFailure.Replaced)
+            return
+        }
+        active.presentation = request.presentation
+        active.session.applyControl(request)
     }
 
     private fun tick(

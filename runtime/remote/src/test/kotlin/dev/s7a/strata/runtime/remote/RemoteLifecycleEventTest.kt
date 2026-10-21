@@ -298,6 +298,35 @@ internal class RemoteLifecycleEventTest {
     }
 
     @Test
+    fun aReentrantHudOpenRespectsCapacityUntilPromotionIsSent() {
+        Host(RemotePacket.limits.copy(hudSessions = 1)).use { fixture ->
+            assertEquals(1, checkNotNull(fixture.service.capabilities(Unit)).limits.hudSessions)
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            val hud = fixture.service.open(owner, Unit, UiDefinition(presentation = UiPresentation.Hud) { Spacer() })
+            fixture.drain().filterIsInstance<RemoteMessage.Snapshot>().forEach { snapshot ->
+                fixture.send(RemoteMessage.ControlApplied(snapshot.session, checkNotNull(snapshot.control).sequence))
+            }
+            var added: RemoteScreenSession? = null
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    added = fixture.service.open(owner, Unit, UiDefinition(presentation = UiPresentation.Hud) { Spacer() })
+                }
+            }
+            hud.uiSession.switch(UiPresentation.Screen)
+            val extra = checkNotNull(added)
+            val messages = fixture.drain()
+            if (extra.status == RemoteSessionStatus.Open) {
+                val promotion = messages.indexOfFirst { it is RemoteMessage.Control && it.session == hud.identity && it.state.presentation == UiPresentation.Screen }
+                val admission = messages.indexOfFirst { it is RemoteMessage.Snapshot && it.session == extra.identity }
+                assertTrue(0 <= promotion && promotion < admission, "Promotion $promotion must precede HUD admission $admission.")
+            } else {
+                assertEquals(RemoteSessionStatus.Closed(RemoteFailure.ResourceLimit), extra.status)
+            }
+        }
+    }
+
+    @Test
     fun aReporterFailureDoesNotStrandAnAlreadyQueuedServiceClose() {
         Host().use { fixture ->
             val owner = Any()
@@ -346,7 +375,9 @@ internal class RemoteLifecycleEventTest {
     /**
      * Authenticated packet route with explicit native-application acknowledgements.
      */
-    private class Host : AutoCloseable {
+    private class Host(
+        limits: RemoteLimits = RemotePacket.limits,
+    ) : AutoCloseable {
         val events = mutableListOf<RemoteLifecycleEvent<Any>>()
         var listener: (RemoteLifecycleEvent<Any>) -> Unit = {}
         val outgoing = ArrayDeque<ByteArray>()
@@ -359,7 +390,7 @@ internal class RemoteLifecycleEventTest {
         private val address: RemoteAddress
         private var sequence = 1L
         private val client =
-            RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types, RemotePacket.limits) {
+            RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types, limits) {
                 incoming.addLast(RemotePacket.encode(RemotePacket.Frame(address, sequence++, it)))
             }
 
