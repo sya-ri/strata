@@ -14,7 +14,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import textwrap
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -3286,11 +3285,11 @@ class PairedJvmTest(unittest.TestCase):
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
             planner.check_results(json.loads(os.environ["RESULTS"]))
         exposed["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
-        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
+        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(ValueError):
             planner.check_results(json.loads(os.environ["RESULTS"]))
         for result in ("failure", "cancelled"):
             jobs["paired-jvm"]["result"] = result
-            with self.subTest(result=result), patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
+            with self.subTest(result=result), patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(ValueError):
                 planner.check_results(json.loads(os.environ["RESULTS"]))
         jobs["paired-jvm"]["result"] = "success"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
