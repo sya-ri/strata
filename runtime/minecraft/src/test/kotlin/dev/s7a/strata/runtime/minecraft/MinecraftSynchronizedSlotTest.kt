@@ -171,6 +171,23 @@ internal class MinecraftSynchronizedSlotTest {
         assertEquals(1, failingClose.closeCount)
     }
 
+    @Test
+    fun failedObserverAcquisitionPreservesItsFailureWhenBindingCloseAlsoFails() {
+        for (sameFailure in listOf(false, true)) {
+            val primary = IllegalStateException("observe")
+            val cleanup = if (sameFailure) primary else IllegalArgumentException("binding")
+            val binding = FakeBinding(observeFailure = primary, closeFailure = cleanup)
+            val platform = FakePlatform(binding = binding)
+            val host = createHost(platform)
+            val thrown = assertThrows(IllegalStateException::class.java) { host.attach() }
+            assertSame(primary, thrown)
+            assertEquals(if (sameFailure) emptyList() else listOf(cleanup), thrown.suppressed.toList())
+            assertEquals(1, binding.closeCount)
+            assertNull(binding.observer)
+            host.close()
+        }
+    }
+
     private fun createHost(
         platform: FakePlatform,
         binding: SlotBinding = Slots.playerInventory(7),
@@ -190,8 +207,8 @@ internal class MinecraftSynchronizedSlotTest {
         private val expectedBinding: SlotBinding = Slots.playerInventory(7),
         private val refreshFailure: Throwable? = null,
         private val closeFailure: Throwable? = null,
+        val binding: FakeBinding = FakeBinding(),
     ) : MinecraftUiPlatform {
-        val binding = FakeBinding()
         var refreshCount = 0
         var inventorySlotCount = 0
         var closeCount = 0
@@ -225,7 +242,10 @@ internal class MinecraftSynchronizedSlotTest {
         }
     }
 
-    private class FakeBinding : MinecraftInventorySlotBinding {
+    private class FakeBinding(
+        private val observeFailure: Throwable? = null,
+        private val closeFailure: Throwable? = null,
+    ) : MinecraftInventorySlotBinding {
         var command: PlatformDrawCommand? = null
         var observer: (() -> Unit)? = null
         var changed = false
@@ -237,6 +257,7 @@ internal class MinecraftSynchronizedSlotTest {
         override fun observe(observer: () -> Unit): AutoCloseable {
             check(this.observer == null)
             this.observer = observer
+            observeFailure?.let { throw it }
             return AutoCloseable {
                 if (this.observer === observer) this.observer = null
             }
@@ -251,6 +272,7 @@ internal class MinecraftSynchronizedSlotTest {
             if (closeCount != 0) return
             closeCount += 1
             observer = null
+            closeFailure?.let { throw it }
         }
 
         fun refresh() {
