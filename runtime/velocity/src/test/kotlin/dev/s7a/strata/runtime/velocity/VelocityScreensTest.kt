@@ -89,6 +89,7 @@ internal class VelocityScreensTest {
         Harness().use { fixture ->
             val entered = CountDownLatch(1)
             val proceed = CountDownLatch(1)
+            val calls = AtomicInteger()
             val current =
                 VelocityScreens.execute(fixture.owner) {
                     entered.countDown()
@@ -97,16 +98,53 @@ internal class VelocityScreensTest {
             check(entered.await(5, TimeUnit.SECONDS))
             val pending =
                 try {
-                    List(1025) { VelocityScreens.capabilities(fixture.player) }.also { requests ->
+                    List(1025) { VelocityScreens.execute(fixture.owner) { calls.incrementAndGet() } }.also { requests ->
                         val failure = assertThrows(ExecutionException::class.java) { requests.last().get(5, TimeUnit.SECONDS) }
                         assertEquals(RemoteFailure.ResourceLimit, (failure.cause as RemoteProtocolException).reason)
+                        fixture.beginShutdown()
                     }
                 } finally {
                     proceed.countDown()
                 }
             fixture.close()
-            assertTrue(current.isDone)
-            assertTrue(pending.all { it.isDone })
+            current.get(5, TimeUnit.SECONDS)
+            assertEquals(0, calls.get())
+            pending.dropLast(1).forEach { request ->
+                val failure = assertThrows(ExecutionException::class.java) { request.get(5, TimeUnit.SECONDS) }
+                assertEquals(RemoteFailure.OwnerClosed, (failure.cause as RemoteProtocolException).reason)
+            }
+        }
+    }
+
+    @Test
+    fun shutdownDiscardsPendingInputBeforeTickingTheHost() {
+        Harness().use { fixture ->
+            fixture.negotiate()
+            val calls = AtomicInteger()
+            val handle =
+                VelocityScreens
+                    .open(fixture.owner, fixture.player) {
+                        ScreenDefinition("Shutdown") { Spacer(Modifier.onActivate { calls.incrementAndGet() }) }
+                    }.get(5, TimeUnit.SECONDS)
+            val snapshot = fixture.nextMessage() as RemoteMessage.Snapshot
+            val entered = CountDownLatch(1)
+            val proceed = CountDownLatch(1)
+            val current =
+                VelocityScreens.execute(fixture.owner) {
+                    entered.countDown()
+                    check(proceed.await(5, TimeUnit.SECONDS))
+                }
+            check(entered.await(5, TimeUnit.SECONDS))
+            try {
+                fixture.activate(snapshot)
+                fixture.beginShutdown()
+            } finally {
+                proceed.countDown()
+            }
+            fixture.close()
+            current.get(5, TimeUnit.SECONDS)
+            assertEquals(0, calls.get())
+            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.OwnerClosed), handle.status)
         }
     }
 
@@ -325,6 +363,7 @@ internal class VelocityScreensTest {
         private var sequence = 1L
         private var client = createClient()
         private var closed = false
+        private var shutdown: CompletableFuture<Unit>? = null
 
         init {
             currentBackend.set(backend)
@@ -400,10 +439,13 @@ internal class VelocityScreensTest {
             client.flush()
         }
 
-        override fun close() {
-            if (closed) return
-            closed = true
+        /**
+         * Requests shutdown without waiting for the current owner-thread action to finish.
+         */
+        fun beginShutdown(): CompletableFuture<Unit> {
+            shutdown?.let { return it }
             val completion = CompletableFuture<Unit>()
+            shutdown = completion
             plugin.shutdown(ProxyShutdownEvent())?.execute(
                 object : Continuation {
                     override fun resume() {
@@ -415,8 +457,13 @@ internal class VelocityScreensTest {
                     }
                 },
             ) ?: completion.complete(Unit)
-            completion.get(5, TimeUnit.SECONDS)
-            client.close()
+            return completion
+        }
+
+        override fun close() {
+            if (closed) return
+            closed = true
+            client.use { beginShutdown().get(5, TimeUnit.SECONDS) }
         }
 
         private fun <T> proxy(

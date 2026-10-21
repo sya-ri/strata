@@ -17,6 +17,8 @@ Keep all Strata artifacts on the same release version.
 - Minecraft `PlayerHead` and `Slot` release acquired bindings even when initialization or subscription cleanup fails, preserving the original failure when cleanup also throws.
 - A remote client close rejected during UI evaluation preserves the session for later owner cleanup.
   Rejected owner withdrawal also preserves extension registrations so a later retry can retire dependent screens.
+- Velocity shutdown stops admitting queued UI work and pending input processing.
+  Already admitted operations may finish; queued API requests fail with `OwnerClosed`.
 - Closing a Web host from an input callback completes the current input operation before releasing its subscriptions, DOM children and listeners.
 - Web image rendering allocates pixels only within the destination, clip and viewport intersection, so highly zoomed images keep the screen open without exceeding the image pixel budget because of offscreen content.
   Source sampling, image orientation and the visible physical pixel limit are preserved.

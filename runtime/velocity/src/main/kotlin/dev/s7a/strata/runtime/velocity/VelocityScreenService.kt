@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
  * Serializes Velocity declarations, state construction, and handlers on one dedicated UI thread.
  * API work is bounded independently of each player's bounded packet inbox; no action queue is silently coalesced.
  * Shutdown rejects new work, completes queued requests exceptionally, and releases the common host on its owner thread.
+ * An operation admitted before shutdown may finish; later commands and host ticks cannot start.
  */
 @Suppress("TooManyFunctions") // Keeps the worker, API queue, player lifetime, and terminal cleanup under one owner.
 internal class VelocityScreenService(
@@ -54,9 +55,14 @@ internal class VelocityScreenService(
     private val ticker =
         executor.scheduleWithFixedDelay({
             for (index in 0 until 64) {
-                commands.poll()?.run() ?: break
+                val command = commands.poll() ?: break
+                if (synchronized(lock) { stopping }) {
+                    command.fail(RemoteProtocolException(RemoteFailure.OwnerClosed, "Velocity screens have stopped."))
+                    return@scheduleWithFixedDelay
+                }
+                command.run()
             }
-            runCatching(host::tick).onFailure(report)
+            if (synchronized(lock) { stopping.not() }) runCatching(host::tick).onFailure(report)
         }, 0, 50, TimeUnit.MILLISECONDS)
 
     /**
