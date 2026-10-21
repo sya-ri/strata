@@ -137,6 +137,21 @@ class PlanCiTest(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             self.check_outcomes(changed)
 
+    def test_workflow_result_accepts_runner_omitted_empty_opt_in_output(self):
+        outputs = {key: "false" for key in ("common", "web", "docs", "docs_full", "workflow", "all_minecraft")}
+        outputs["minecraft"] = "[]"
+        # The runner omits empty outputs before exposing needs.plan.outputs to the aggregation job.
+        jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
+        jobs["plan"] = {"result": "success", "outputs": outputs}
+        self.check_outcomes(jobs)
+        outputs["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
+        for result in ("skipped", "failure", "cancelled"):
+            jobs["paired-jvm"]["result"] = result
+            with self.subTest(result=result), self.assertRaises(ValueError):
+                self.check_outcomes(jobs)
+        jobs["paired-jvm"]["result"] = "success"
+        self.check_outcomes(jobs)
+
     def test_outcome_cli_checks_results_without_creating_a_new_plan(self):
         jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
         jobs["plan"] = {"result": "success", "outputs": {key: json.dumps(value) for key, value in planner.plan([]).items()}}
