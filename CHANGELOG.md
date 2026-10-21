@@ -5,8 +5,6 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
-The following fixes are relative to 0.3.0.
-
 - Mapped `StateSource` subscriptions no longer deadlock when an observer closes its subscription while another thread is closing it.
   An already admitted callback may still finish after close.
 - Minecraft `PlayerHead` and `Slot` release acquired bindings even when initialization or subscription cleanup fails, preserving the original failure when cleanup also throws.
