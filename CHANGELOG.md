@@ -12,6 +12,9 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
+- Source-backed component overloads use per-component JVM facades.
+  The former `ObservedComponentsKt` facade remains as deprecated binary forwarding methods until 1.0.0; Java source naming that facade must migrate when recompiling.
+  See the [deprecation list](DEPRECATION.md#observedcomponentskt-jvm-facade).
 - `VirtualList` can omit `viewportSize` to fill its parent's finite allocation, including remaining space assigned by `weight`.
   Resizing preserves scrolling and virtualized rows; declaration-only remote hosts require an explicit viewport.
 - Mapped `StateSource` subscriptions no longer deadlock when an observer closes its subscription while another thread is closing it.

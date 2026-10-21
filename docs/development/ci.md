@@ -6,8 +6,9 @@ CI scripts require Python 3.11 or newer for standard-library TOML parsing.
 The Java setup action and Qodana bootstrap read their ordinary and frozen paired toolchains from the same catalog reader.
 
 SonarQube Cloud uses [automatic analysis](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/automatic-analysis/) with repository settings in `.sonarcloud.properties`.
-Copy-paste detection excludes only `ObservedComponents.kt`, whose overloads are generated and verified from the maintained component declarations by `:api:checkStateComponentOverloads`.
-Rule analysis still includes that generated file; handwritten declarations and runtime code remain subject to duplication checks.
+Copy-paste detection excludes the explicit list of generated per-component overload and JVM binary bridge files in `.sonarcloud.properties`.
+`:api:checkStateComponentOverloads` verifies those overloads against the maintained component declarations.
+Rule analysis still includes the generated files; handwritten declarations and runtime code remain subject to duplication checks.
 
 ## Build configuration and concurrency
 
