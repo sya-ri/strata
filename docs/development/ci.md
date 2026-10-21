@@ -203,6 +203,7 @@ Other shared roots, including authored showcase inputs, are accepted only when t
 Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
 IDE indexes are restored for matching build-model inputs and saved only after successful analysis and complete-model verification.
 Their identity follows Gradle configuration, wrapper and catalog inputs, model-generation scripts, and the analysis profile and workflow; other CI scripts and Python regression tests do not invalidate compatible indexes.
+Private build-logic test sources and fixtures retain their standalone verification without invalidating product indexes.
 Keeping matrix Gradle caches read-only limits storage pressure so these indexes and the complete Loom project cache can coexist.
 Every run recreates the project model and analysis reports and verifies every expected module.
 The `qodana-model-evidence` artifact retains the fresh declaration inventory, generated IML/project metadata, and bootstrap task log in their repository-relative paths.

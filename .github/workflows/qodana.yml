@@ -93,7 +93,8 @@ jobs:
           'gradle/kover-jvm-projects.txt', 'gradle/performance-modules.tsv',
           'gradle/java-toolchains.py', 'gradle/plan-minecraft-ci.sh',
           'gradle/prepare-qodana-idea-model.sh', 'gradle/prepare-qodana-project.py',
-          'build-logic/src/**', 'qodana.yaml', '.github/workflows/qodana.yml'
+          'build-logic/src/main/**', 'qodana.yaml', '.github/workflows/qodana.yml',
+          '!build-logic/src/test/**'
           ) }}" >> "$GITHUB_OUTPUT"
     - name: Restore Minecraft Loom project cache
       id: loom_cache
