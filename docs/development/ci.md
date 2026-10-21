@@ -72,7 +72,7 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
 | Build-logic tests/resources | JVM tests and coverage, workflow fixtures, and native build-logic Qodana |
 | Native build-logic analysis workflow or profile | Workflow fixtures and native build-logic Qodana |
-| Private JVM Kotlin test sources or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and both Qodana scans |
+| Private JVM Kotlin test or JMH sources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and both Qodana scans |
 | Scoped JVM fixture collection verifier | JVM checks and coverage, workflow fixtures |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
 | API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and Qodana |
@@ -84,7 +84,8 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Unrecognized input | Full verification |
 
 Native helpers, native compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
-Private JVM test sources are consumed only by their owning JVM tests; shared verification helpers belong in their declared shared roots.
+Private JVM test and JMH sources are consumed only by their owning JVM checks; shared verification helpers belong in their declared shared roots.
+The shared benchmark fixture and workload roots retain their broader verification plans because the core, Web, and loaded-client tests also consume them.
 JavaScript sources and common tests in the API, core, and performance testkit retain both JVM and Web verification, including the existing ABI and static checks.
 They do not select loaded clients or full documentation; their owning tests still run through the existing job commands.
 Resources and unrecognized source roots keep their broader plans, since fixtures such as fonts are also browser inputs.

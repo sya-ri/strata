@@ -226,7 +226,7 @@ class PlanCiTest(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
 
-    def test_private_jvm_test_sources_keep_jvm_checks_coverage_and_analysis(self):
+    def test_private_jvm_sources_keep_jvm_checks_coverage_and_analysis(self):
         expected = planner.plan([])
         expected.update(common=True, qodana=True, qodana_build_logic=True)
         paths = [f"{module}/src/{source_set}/kotlin/PrivateJvmTest.kt"
@@ -234,29 +234,36 @@ class PlanCiTest(unittest.TestCase):
                                              ("runtime/remote", ("test",)), ("runtime/headless", ("test",)),
                                              ("runtime/minecraft", ("test",)), ("runtime/minecraft-fonts-lwjgl", ("test",)))
                  for source_set in source_sets]
+        paths += [f"quality/{module}/src/jmh/kotlin/Workload.kt"
+                  for module in ("benchmarks", "component-benchmarks", "remote-benchmarks")]
         for path in paths:
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
                 self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
         self.assertEqual(expected, planner.plan(paths))
 
-    def test_private_jvm_tests_do_not_narrow_other_changed_inputs(self):
-        test = "runtime/minecraft/src/test/kotlin/PrivateJvmTest.kt"
-        for other in ("api/src/commonMain/kotlin/Component.kt", "runtime/minecraft/src/main/kotlin/Rendering.kt",
-                      "runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/Canvas.kt",
-                      "runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf", "build.gradle.kts", "unknown-input"):
-            expected = planner.plan([other])
-            expected.update(common=True, qodana=True, qodana_build_logic=True)
-            for paths in ([test, other], [other, test]):
-                with self.subTest(paths=paths):
-                    self.assertEqual(expected, planner.plan(paths))
+    def test_private_jvm_sources_do_not_narrow_other_changed_inputs(self):
+        for source in ("runtime/minecraft/src/test/kotlin/PrivateJvmTest.kt", "quality/benchmarks/src/jmh/kotlin/Workload.kt",
+                       "quality/component-benchmarks/src/jmh/kotlin/Workload.kt", "quality/remote-benchmarks/src/jmh/kotlin/Workload.kt"):
+            for other in ("api/src/commonMain/kotlin/Component.kt", "runtime/minecraft/src/main/kotlin/Rendering.kt",
+                          "runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/Canvas.kt",
+                          "runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf", "build.gradle.kts", "unknown-input"):
+                expected = planner.plan([other])
+                expected.update(common=True, qodana=True, qodana_build_logic=True)
+                for paths in ([source, other], [other, source]):
+                    with self.subTest(paths=paths):
+                        self.assertEqual(expected, planner.plan(paths))
 
     def test_test_resources_and_unknown_roots_keep_platform_checks(self):
         expected = planner.plan(["api/src/main/kotlin/Component.kt"])
         for path in ("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf",
                      "runtime/core/src/test/resources/fixture.json", "runtime/future/src/test/kotlin/Test.kt",
                      "runtime/remote/src/jvmTest/kotlin/Test.kt", "runtime/core/src/test/kotlin-fixtures/Test.kt",
-                     "runtime/core/src/test/kotlin/Test.kt.disabled"):
+                     "runtime/core/src/test/kotlin/Test.kt.disabled", "quality/benchmarks/src/fixture/kotlin/Shared.kt",
+                     "quality/component-benchmarks/src/workload/kotlin/Shared.kt", "quality/remote-benchmarks/src/main/kotlin/Future.kt",
+                     "quality/benchmarks/src/jmh/resources/fixture.ttf", "quality/future/src/jmh/kotlin/Workload.kt",
+                     "quality/benchmarks/src/jmh/kotlin-fixtures/Workload.kt", "quality/benchmarks/src/jmh/kotlin/Workload.kt.disabled",
+                     "quality/benchmarks/build.gradle.kts"):
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
 
