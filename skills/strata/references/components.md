@@ -364,7 +364,7 @@ fun UiScope.Scrollbar(state: ScrollState, modifier: Modifier = Modifier, key: El
 VirtualList retains only visible fixed-height rows plus bounded overscan, supports prepended and appended loading, and can jump by index or stable key.
 
 - Compiled overloads: 32
-- Modifiers: Sizing is expressed by `viewportSize`; modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
+- Modifiers: Omit `viewportSize` to fill a bounded parent allocation, including height assigned by a Column's `weight`; provide it for an exact viewport or a declaration-only remote host. Modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
 - Parent scope: `VirtualList` evaluates row callbacks only for visible rows plus bounded overscan; stable keys preserve retained identity while the caller owns source and navigation state.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#virtual-list)
 
