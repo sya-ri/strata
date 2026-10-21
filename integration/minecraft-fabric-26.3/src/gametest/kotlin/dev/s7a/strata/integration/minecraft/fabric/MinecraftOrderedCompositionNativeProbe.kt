@@ -2,7 +2,6 @@
 
 package dev.s7a.strata.integration.minecraft.fabric
 
-import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.renderpearl.api.buffers.GpuBuffer
 import dev.s7a.strata.geometry.IntSize

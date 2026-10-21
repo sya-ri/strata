@@ -4,7 +4,6 @@
 
 package dev.s7a.strata.runtime.minecraft
 
-import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.Slot
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack

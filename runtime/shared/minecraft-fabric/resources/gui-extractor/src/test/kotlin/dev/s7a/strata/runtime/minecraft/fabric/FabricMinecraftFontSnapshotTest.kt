@@ -23,7 +23,6 @@ import net.minecraft.server.packs.PathPackResources
 import net.minecraft.server.packs.repository.PackSource
 import net.minecraft.server.packs.resources.MultiPackResourceManager
 import net.minecraft.server.packs.resources.Resource
-import net.minecraft.server.packs.resources.ResourceManager
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -32,7 +31,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayOutputStream
 import java.io.FilterInputStream
-import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path

@@ -6,7 +6,6 @@ import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.FocusEvent
 import dev.s7a.strata.input.InputResult
@@ -26,13 +25,11 @@ import dev.s7a.strata.modifier.onTextInput
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
-import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows

@@ -5,7 +5,6 @@ import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PanZoomState
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.geometry.DoubleOffset
-import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.closeFabricScreen
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.readRenderWork
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.renderWork
