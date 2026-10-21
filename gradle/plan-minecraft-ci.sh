@@ -64,7 +64,8 @@ docs_version=${docs_versions[0]}
 [[ "$docs_version" =~ $version_pattern ]] || fail "Invalid documentation native Minecraft input: $docs_version"
 printf '%s\n' "${versions[@]}" | grep -Fx "$docs_version" >/dev/null ||
   fail "Documentation native input has no paired Minecraft target: $docs_version"
-if [[ "${STRATA_MC_VERSIONS:-all}" != all ]]; then
+# CI uses an explicitly empty selection for documentation-only work.
+if [[ "${STRATA_MC_VERSIONS-all}" != all ]]; then
   selected_versions=()
   IFS=',' read -r -a requested_versions <<< "${STRATA_MC_VERSIONS}"
   if [[ "${STRATA_CI_DOCS:-true}" == true ]]; then requested_versions+=("$docs_version"); fi

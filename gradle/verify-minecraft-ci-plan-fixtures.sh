@@ -92,6 +92,19 @@ for include_docs in false true; do
   ' "$valid_root/selected/minecraft-matrix.json" >/dev/null
 done
 
+STRATA_MC_VERSIONS='' STRATA_CI_DOCS=true bash \
+  "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/docs-only"
+jq -e '
+  (.include | length) == 1 and .include[0].version == "1.7" and .include[0].documentation == true
+  and .include[0].gradle_arguments == ":ciMinecraftCheck :integration:docs:checkMinecraftShowcaseParity -Pstrata.minecraftVersions=1.7"
+' "$valid_root/docs-only/minecraft-matrix.json" >/dev/null
+if STRATA_MC_VERSIONS='' STRATA_CI_DOCS=false bash \
+  "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/none" > "$valid_root/empty.log" 2> "$valid_root/empty-error.log"; then
+  echo 'Minecraft CI planner accepted an empty selection without documentation.' >&2
+  exit 1
+fi
+grep -F 'The selected Minecraft CI inventory is empty.' "$valid_root/empty-error.log" >/dev/null
+
 for invalid_docs in missing empty malformed unknown ambiguous; do
   invalid_root="$fixture_root/docs-$invalid_docs"
   add_project "$invalid_root" runtime '1.2'
