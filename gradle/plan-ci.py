@@ -64,7 +64,7 @@ def plan(paths, model=None, full=False):
             result.update(common=True, web=True, qodana=True)
         elif re.fullmatch(
                 r"(?:api|runtime/core)/src/(?:test|jvmTest)/kotlin/.+\.kt"
-                r"|runtime/(?:remote|headless|minecraft|minecraft-fonts-lwjgl)/src/test/kotlin/.+\.kt"
+                r"|runtime/(?:remote|headless|minecraft|minecraft-fonts-lwjgl|paper|velocity)/src/test/kotlin/.+\.kt"
                 r"|quality/(?:benchmarks|component-benchmarks|remote-benchmarks)/src/jmh/kotlin/.+\.kt", path):
             # These private source roots have no browser, documentation, or loaded-client consumers.
             result.update(common=True, qodana=True)
