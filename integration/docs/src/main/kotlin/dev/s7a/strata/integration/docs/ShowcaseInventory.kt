@@ -18,7 +18,7 @@ internal object ShowcaseInventory {
     private const val CLASS_SUFFIX = ".class"
 
     /**
-     * Finds every public static non-synthetic UpperCamel extension whose first JVM parameter is exactly `UiScope` and whose return type is void.
+     * Finds every public static non-synthetic UpperCamel extension on a public class whose first JVM parameter is exactly `UiScope` and whose return type is void.
      *
      * @param classDirectories compiled public API directories to scan.
      * @return decoded component identities with one identity for each overload name.
@@ -160,7 +160,8 @@ internal object ShowcaseInventory {
         uiScopeType: Class<*>,
     ): Boolean {
         val parameters = method.parameterTypes
-        return Modifier.isPublic(method.modifiers) &&
+        return Modifier.isPublic(method.declaringClass.modifiers) &&
+            Modifier.isPublic(method.modifiers) &&
             Modifier.isStatic(method.modifiers) &&
             method.isSynthetic.not() &&
             (isUpperCamel(method.name) || DocumentedComponent.fromApiMethodName(method.name) != null) &&
