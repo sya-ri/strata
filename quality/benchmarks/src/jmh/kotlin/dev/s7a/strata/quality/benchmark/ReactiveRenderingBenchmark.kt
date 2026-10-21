@@ -53,7 +53,7 @@ public open class ReactiveRenderingBenchmark {
      * One caller-owned retained session per JMH worker.
      */
     @State(Scope.Thread)
-    public open class ReactiveSession {
+    public open class ReactiveSession : AutoCloseable {
         /**
          * Reactive workload selected by JMH.
          */
@@ -136,16 +136,14 @@ public open class ReactiveRenderingBenchmark {
 
         /**
          * Verifies complete interval evidence and releases every retained resource on the worker thread.
+         * Snapshot failures stay primary, with cleanup failures suppressed in release order.
          */
         @TearDown(Level.Trial)
-        public fun close() {
-            try {
-                monitor?.let {
-                    it.snapshot()
-                    it.close()
-                }
-            } finally {
-                session.close()
+        public override fun close() {
+            val previous = monitor
+            monitor = null
+            session.use { _ ->
+                previous?.use { it.snapshot() }
             }
         }
     }

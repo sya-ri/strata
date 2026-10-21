@@ -107,11 +107,7 @@ internal class OverlayScene(
     }
 
     override fun close() {
-        try {
-            monitor?.close()
-        } finally {
-            session.close()
-        }
+        session.use { monitor?.close() }
         check(source.subscribed.not()) { "The overlay scene retained its source after close." }
     }
 }
