@@ -67,7 +67,15 @@ internal class UiSession(
             validateMutation = ::checkWritable,
         )
     private val bindings: MutableList<UiSessionBinding<*>> = ArrayList()
-    private val screenScopeFacade = SessionScreenScope()
+
+    /**
+     * Provides one stable coroutine scope whose job is replaced for every attachment.
+     *
+     * The scope context is active only while the session is attached.
+     * Launches made while the session is created, detached, failed, or closed are cancelled before their body starts.
+     * The scope may be used from a worker coroutine; its generation dispatcher resumes work on the owner thread.
+     */
+    internal val screenScope: CoroutineScope = SessionScreenScope()
 
     @Volatile
     private var screenScopeContext: CoroutineContext = inactiveScopeContext()
@@ -104,16 +112,6 @@ internal class UiSession(
             check(operationKind == null) { "A session operation is already active." }
             return if (currentState === UiSessionState.Attached && frameAvailable) tree?.currentTextInputFocus() else null
         }
-
-    /**
-     * Provides one stable coroutine scope whose job is replaced for every attachment.
-     *
-     * The scope context is active only while the session is attached.
-     * Launches made while the session is created, detached, failed, or closed are cancelled before their body starts.
-     * The scope may be used from a worker coroutine; its generation dispatcher resumes work on the owner thread.
-     */
-    internal val screenScope: CoroutineScope
-        get() = screenScopeFacade
 
     /**
      * The lifecycle state read by synchronous runtime tests and integration code.
