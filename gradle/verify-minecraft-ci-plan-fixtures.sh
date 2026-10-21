@@ -37,28 +37,21 @@ GITHUB_OUTPUT="$valid_root/docs-output" bash "$project_root/gradle/plan-minecraf
 grep -Fx 'docs_version=1.7' "$valid_root/docs-output" >/dev/null
 matrix_file="$valid_root/output/minecraft-matrix.json"
 loom_file="$valid_root/output/minecraft-loom-projects.txt"
-python3 - "$matrix_file" <<'PY'
-import json
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as matrix_file:
-    entries = json.load(matrix_file)["include"]
-assert len(entries) == 31
-assert all(len(entry["loom_projects"].splitlines()) == 2 for entry in entries)
-docs_entries = [entry for entry in entries if ":integration:docs:check" in entry["gradle_arguments"]]
-assert len(docs_entries) == 1
-assert all(":integration:docs:checkDokkaPagesStaging" not in entry["gradle_arguments"] for entry in entries)
-assert "integration/minecraft-fabric-1.7" in docs_entries[0]["loom_projects"].splitlines()
-projects = [project for entry in entries for project in entry["loom_projects"].splitlines()]
-assert len(projects) == len(set(projects)) == 62
-assert [entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1] for entry in entries] == [
-    *[f"1.{minor}" for minor in range(1, 31)], "2"]
-assert all(
-    entry["gradle_arguments"].startswith(":ciMinecraftCheck -Pstrata.minecraftVersions=")
-    or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:checkMinecraftShowcaseParity -Pstrata.minecraftVersions=")
-    for entry in entries
-)
-PY
+jq -e -s '
+  select(length == 1) | .[0].include as $entries
+  | [$entries[].loom_projects | split("\n")[]] as $projects
+  | [$entries[] | select(.gradle_arguments | contains(":integration:docs:check"))] as $docs
+  | ($entries | length) == 31
+    and all($entries[]; (.loom_projects | split("\n") | length) == 2)
+    and ($docs | length) == 1
+    and all($entries[]; .gradle_arguments | contains(":integration:docs:checkDokkaPagesStaging") | not)
+    and ($docs[0].loom_projects | split("\n") | index("integration/minecraft-fabric-1.7")) != null
+    and ($projects | length) == 62 and ($projects | unique | length) == 62
+    and ([$entries[].gradle_arguments | split("-Pstrata.minecraftVersions=")[1]] == ([range(1; 31) | "1.\(.)"] + ["2"]))
+    and all($entries[]; .gradle_arguments
+      | startswith(":ciMinecraftCheck -Pstrata.minecraftVersions=")
+        or startswith(":ciMinecraftCheck :integration:docs:checkMinecraftShowcaseParity -Pstrata.minecraftVersions="))
+' "$matrix_file" >/dev/null
 [[ $(wc -l < "$loom_file") -eq 62 ]]
 [[ $(sed -n '1p' "$loom_file") == 'runtime/minecraft-fabric-1.1' ]]
 [[ $(sed -n '19p' "$loom_file") == 'runtime/minecraft-fabric-1.10' ]]
@@ -72,44 +65,31 @@ for version_count in 1 3 21; do
   done
   add_documentation "$sized_root" '1.1'
   bash "$project_root/gradle/plan-minecraft-ci.sh" "$sized_root" "$sized_root/output"
-  python3 - "$sized_root/output/minecraft-matrix.json" "$version_count" <<'PY'
-import json
-import sys
-
-entries = json.load(open(sys.argv[1], encoding="utf-8"))["include"]
-count = int(sys.argv[2])
-assert len(entries) == count
-assert len({entry["id"] for entry in entries}) == len(entries)
-projects = [project for entry in entries for project in entry["loom_projects"].splitlines()]
-expected = {f"{kind}/minecraft-fabric-1.{minor}"
-            for kind in ("runtime", "integration") for minor in range(1, count + 1)}
-assert set(projects) == expected and len(projects) == len(expected)
-assert sum(":integration:docs:check" in entry["gradle_arguments"] for entry in entries) == 1
-for entry in entries:
-    versions = entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1].split(",")
-    assert len(versions) == 1
-    assert entry["version"] == versions[0]
-    assert entry["documentation"] == (":integration:docs:check" in entry["gradle_arguments"])
-    assert entry["loom_projects"].splitlines() == [f"{kind}/minecraft-fabric-{version}"
-        for version in versions for kind in ("runtime", "integration")]
-    if ":integration:docs:check" in entry["gradle_arguments"]:
-        assert "1.1" in versions
-PY
+  jq -e -s --argjson count "$version_count" '
+    select(length == 1) | .[0].include as $entries
+    | [$entries[].loom_projects | split("\n")[]] as $projects
+    | [range(1; $count + 1) | "runtime/minecraft-fabric-1.\(.)", "integration/minecraft-fabric-1.\(.)"] as $expected
+    | ($entries | length) == $count
+      and ($entries | map(.id) | unique | length) == $count
+      and ($projects | sort) == ($expected | sort)
+      and ([$entries[] | select(.gradle_arguments | contains(":integration:docs:check"))] | length) == 1
+      and all($entries[];
+        (.gradle_arguments | split("-Pstrata.minecraftVersions=")[1] | split(",")) == [.version]
+        and .documentation == (.gradle_arguments | contains(":integration:docs:check"))
+        and (.loom_projects | split("\n")) == ["runtime/minecraft-fabric-\(.version)", "integration/minecraft-fabric-\(.version)"]
+        and (if .documentation then .version == "1.1" else true end))
+  ' "$sized_root/output/minecraft-matrix.json" >/dev/null
 done
 
 for include_docs in false true; do
   STRATA_MC_VERSIONS=1.10,1.2 STRATA_CI_DOCS=$include_docs bash \
     "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/selected"
-  python3 - "$valid_root/selected/minecraft-matrix.json" "$include_docs" <<'PY'
-import json
-import sys
-
-entries = json.load(open(sys.argv[1], encoding="utf-8"))["include"]
-include_docs = sys.argv[2] == "true"
-versions = [entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1] for entry in entries]
-assert versions == (["1.2", "1.7", "1.10"] if include_docs else ["1.2", "1.10"])
-assert sum(":integration:docs:check" in entry["gradle_arguments"] for entry in entries) == int(include_docs)
-PY
+  jq -e -s --argjson include_docs "$include_docs" '
+    select(length == 1) | .[0]
+    | [.include[].gradle_arguments | split("-Pstrata.minecraftVersions=")[1]]
+      == (if $include_docs then ["1.2", "1.7", "1.10"] else ["1.2", "1.10"] end)
+    and ([.include[] | select(.gradle_arguments | contains(":integration:docs:check"))] | length) == (if $include_docs then 1 else 0 end)
+  ' "$valid_root/selected/minecraft-matrix.json" >/dev/null
 done
 
 for invalid_docs in missing empty malformed unknown ambiguous; do
