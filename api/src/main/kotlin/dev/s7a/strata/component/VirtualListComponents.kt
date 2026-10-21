@@ -54,15 +54,13 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
-    checkUsable()
     emitVirtualList(
-        initialItemCount = validateVirtualListItemCount(itemCount),
+        viewportSize = viewportSize,
         itemCount = { itemCount },
         itemAt = itemAt,
         keyAt = keyAt,
-        indexOfKey = { target, _ -> indexOfKey(target) },
+        indexOfKey = indexOfKey,
         state = state,
-        viewportSize = viewportSize,
         rowHeight = rowHeight,
         scrollRate = scrollRate,
         canLoadLeading = canLoadLeading,
@@ -118,21 +116,13 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
-    checkUsable()
-    val initialItemCount = validateVirtualListItemCount(itemCount())
     emitVirtualList(
-        initialItemCount = initialItemCount,
+        viewportSize = viewportSize,
         itemCount = itemCount,
         itemAt = itemAt,
         keyAt = keyAt,
-        indexOfKey =
-            if (indexOfKey == null) {
-                { target, sampledCount -> (0 until sampledCount).firstOrNull { index -> keyAt(index) == target } }
-            } else {
-                { target, _ -> indexOfKey(target) }
-            },
+        indexOfKey = indexOfKey,
         state = state,
-        viewportSize = viewportSize,
         rowHeight = rowHeight,
         scrollRate = scrollRate,
         canLoadLeading = canLoadLeading,
@@ -145,13 +135,12 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 
 @OptIn(InternalStrataRuntimeApi::class)
 private fun <T : Any, K : Any> UiScope.emitVirtualList(
-    initialItemCount: Int,
+    viewportSize: IntSize?,
     itemCount: () -> Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
-    indexOfKey: (K, Int) -> Int?,
+    indexOfKey: ((K) -> Int?)?,
     state: VirtualListState<K>,
-    viewportSize: IntSize?,
     rowHeight: Int,
     scrollRate: Int,
     canLoadLeading: Boolean,
@@ -161,6 +150,8 @@ private fun <T : Any, K : Any> UiScope.emitVirtualList(
     content: UiScope.(T) -> Unit,
 ) {
     checkUsable()
+    val initialItemCount = itemCount()
+    require(0 <= initialItemCount) { "VirtualList item count must be non-negative." }
     val evaluator = ComponentRuntimeBridge.currentOrNull()?.retainEvaluator()
     val factory: (Any) -> Element = { raw ->
         @Suppress("UNCHECKED_CAST")
@@ -175,7 +166,13 @@ private fun <T : Any, K : Any> UiScope.emitVirtualList(
             itemCount = itemCount,
             itemAt = { index -> itemAt(index) },
             keyAt = { index -> keyAt(index) },
-            indexOfKey = { raw, sampledCount -> indexOfKey(raw as K, sampledCount) },
+            indexOfKey = { raw, sampledCount ->
+                if (indexOfKey == null) {
+                    (0 until sampledCount).firstOrNull { index -> keyAt(index) == raw }
+                } else {
+                    indexOfKey(raw as K)
+                }
+            },
             itemContent = factory,
             viewportSize = viewportSize,
             rowHeight = rowHeight,
@@ -187,11 +184,6 @@ private fun <T : Any, K : Any> UiScope.emitVirtualList(
             modifier = modifier,
         ),
     )
-}
-
-private fun validateVirtualListItemCount(itemCount: Int): Int {
-    require(0 <= itemCount) { "VirtualList item count must be non-negative." }
-    return itemCount
 }
 
 /**
@@ -289,15 +281,13 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
-    checkUsable()
     emitVirtualList(
-        initialItemCount = validateVirtualListItemCount(itemCount),
+        viewportSize = null,
         itemCount = { itemCount },
         itemAt = itemAt,
         keyAt = keyAt,
-        indexOfKey = { target, _ -> indexOfKey(target) },
+        indexOfKey = indexOfKey,
         state = state,
-        viewportSize = null,
         rowHeight = rowHeight,
         scrollRate = scrollRate,
         canLoadLeading = canLoadLeading,
@@ -355,21 +345,13 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
-    checkUsable()
-    val initialItemCount = validateVirtualListItemCount(itemCount())
     emitVirtualList(
-        initialItemCount = initialItemCount,
+        viewportSize = null,
         itemCount = itemCount,
         itemAt = itemAt,
         keyAt = keyAt,
-        indexOfKey =
-            if (indexOfKey == null) {
-                { target, sampledCount -> (0 until sampledCount).firstOrNull { index -> keyAt(index) == target } }
-            } else {
-                { target, _ -> indexOfKey(target) }
-            },
+        indexOfKey = indexOfKey,
         state = state,
-        viewportSize = null,
         rowHeight = rowHeight,
         scrollRate = scrollRate,
         canLoadLeading = canLoadLeading,
