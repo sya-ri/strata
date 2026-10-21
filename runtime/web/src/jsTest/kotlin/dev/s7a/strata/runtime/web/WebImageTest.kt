@@ -40,12 +40,12 @@ internal class WebImageTest {
             val canvas = document.createElement("canvas") as HTMLCanvasElement
             val source = FloatRect(0f, 0f, 2f, 1f)
             val destination = FloatRect(0f, 0f, 1f, 1f)
-            val bounds = IntRect(0, 0, 1, 1)
-            WebImageRasterizer.draw(canvas, image, source, destination, bounds, null, ArgbColor(-1), 0f, SampledImageOrientation.Normal, physicalSampling = false)
+            val viewport = IntSize(1, 1)
+            WebImageRasterizer.draw(canvas, image, source, destination, viewport, null, ArgbColor(-1), 0f, SampledImageOrientation.Normal, physicalSampling = false)
             val context = canvas.getContext("2d") as CanvasRenderingContext2D
             val logical = context.getImageData(0.0, 0.0, 2.0, 1.0).data
             assertEquals(listOf(0, 255, 0, 255, 0, 255, 0, 255), (0 until 8).map { logical[it].toInt() })
-            WebImageRasterizer.draw(canvas, image, source, destination, bounds, null, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
+            WebImageRasterizer.draw(canvas, image, source, destination, viewport, null, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
             val physical = context.getImageData(0.0, 0.0, 2.0, 1.0).data
             assertEquals(listOf(255, 0, 0, 255, 0, 255, 0, 255), (0 until 8).map { physical[it].toInt() })
         } finally {

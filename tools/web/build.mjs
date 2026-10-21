@@ -79,6 +79,7 @@ try {
                 }
                 receipts.push(await verifyInteractions(browser, engine, false));
                 receipts.push(await verifyInteractions(browser, engine, true));
+                receipts.push(await verifyInteractions(browser, engine, true, 3));
             } finally { await browser.close(); }
         }
         const sourceRevision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim();
@@ -127,8 +128,8 @@ async function verifyTheme(browser, engine, theme, expected) {
     return receipt;
 }
 
-async function verifyInteractions(browser, engine, touch) {
-    const context = await browser.newContext({ viewport: touch ? { width: 360, height: 640 } : { width: 800, height: 700 }, hasTouch: touch, deviceScaleFactor: touch ? 2 : 1 });
+async function verifyInteractions(browser, engine, touch, density = touch ? 2 : 1) {
+    const context = await browser.newContext({ viewport: touch ? { width: 360, height: 640 } : { width: 800, height: 700 }, hasTouch: touch, deviceScaleFactor: density });
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.stack ?? error.message));
@@ -224,19 +225,29 @@ async function verifyInteractions(browser, engine, touch) {
         const family = await page.getByText('A日🙂', { exact: true }).evaluate(element => getComputedStyle(element).fontFamily);
         assert.ok(family.includes('StrataFixture'), 'The resource font must be the loaded fixture face');
         assert.equal((await snapshot()).fontWidth, 23, 'Independent integral advance widths from the original OpenType fixture at 10px');
+        await page.evaluate(() => window.strataInteractions.zoom(256));
+        await page.mouse.move(root.x + 180, root.y + 180);
+        await page.mouse.wheel(0, -120);
+        await page.waitForFunction(() => 256 < JSON.parse(window.strataInteractions.snapshot()).zoom);
+        const firstZoom = (await snapshot()).zoom;
+        await page.mouse.wheel(0, -120);
+        await page.waitForFunction(previous => previous < JSON.parse(window.strataInteractions.snapshot()).zoom, firstZoom);
+        const highZoom = (await snapshot()).zoom;
+        assert.equal(await page.evaluate(() => document.querySelector('input') === window.retainedField), true, 'High zoom keeps the host and its retained editors alive');
+        assert.equal(await page.locator('canvas').evaluateAll((canvases, ratio) => canvases.every(canvas => canvas.width * canvas.height <= 120 * 100 * ratio * ratio), density), true, 'Zoomed images allocate only their visible map viewport');
         assert.deepEqual(errors, []);
         await mkdir(resolve(build, 'parity'), { recursive: true });
-        await page.screenshot({ path: resolve(build, 'parity', `${engine.name()}-interactions-${touch ? 'touch' : 'desktop'}.png`) });
+        await page.screenshot({ path: resolve(build, 'parity', `${engine.name()}-interactions-${touch ? 'touch' : 'desktop'}-dpr${density}.png`) });
         await page.evaluate(() => window.strataInteractions.close());
         assert.equal(await page.locator('#strata-root > *').count(), 0);
         assert.equal((await snapshot()).subscriptions, 0);
         assert.deepEqual(errors, []);
-        return { engine: engine.name(), version: browser.version(), scenario: 'retained-interactions', touchEmulation: touch, syntheticNavigation: touch, osIme: 'not tested', physicalDevice: 'not tested' };
+        return { engine: engine.name(), version: browser.version(), scenario: 'retained-interactions', pixelRatio: density, highZoom, touchEmulation: touch, syntheticNavigation: touch, osIme: 'not tested', physicalDevice: 'not tested' };
     } catch (failure) {
         console.error("Interaction browser errors:", errors);
         console.error("Interaction active element:", await page.evaluate(() => document.activeElement?.outerHTML));
         await mkdir(resolve(build, 'parity'), { recursive: true });
-        await writeFile(resolve(build, 'parity', `${engine.name()}-interactions-failure.html`), await page.locator("body").innerHTML());
+        await writeFile(resolve(build, 'parity', `${engine.name()}-interactions-dpr${density}-failure.html`), await page.locator("body").innerHTML());
         throw failure;
     } finally { await context.close(); }
 }

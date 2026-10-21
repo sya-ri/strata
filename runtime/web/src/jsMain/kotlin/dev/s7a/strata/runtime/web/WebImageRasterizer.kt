@@ -2,9 +2,11 @@ package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.SampledImageOrientation
+import dev.s7a.strata.runtime.render.DrawCommand
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.CanvasRenderingContext2D
@@ -18,7 +20,27 @@ import kotlin.math.floor
  */
 internal object WebImageRasterizer {
     /**
-     * Rasterizes one image operation without changing source geometry when clipped.
+     * Decodes each portable image command through the same viewport-bounded sampler.
+     */
+    fun draw(
+        canvas: HTMLCanvasElement,
+        command: DrawCommand,
+        viewport: IntSize,
+        clip: FloatRect?,
+    ) {
+        when (command) {
+            is DrawCommand.SampledImage -> draw(canvas, command.image, command.source, command.destination, viewport, clip, command.tint, command.alphaCutoff, command.orientation)
+            is DrawCommand.BlitImage -> draw(canvas, command.image, floating(command.source), floating(command.destination), viewport, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal, physicalSampling = false)
+            is DrawCommand.BlitImagePixels -> draw(canvas, command.image, floating(command.source), floating(command.destination), viewport, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
+            else -> error("Unexpected web image command.")
+        }
+    }
+
+    private fun floating(bounds: IntRect): FloatRect = FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat())
+
+    /**
+     * Rasterizes only covered pixel centers inside the viewport and clip, preserving the original source mapping.
+     * Empty coverage releases the current bitmap without allocating image data; visible coverage retains the physical pixel budget.
      */
     @Suppress("CyclomaticComplexMethod", "ComplexCondition", "LoopWithTooManyJumpStatements") // Half-open coverage and discard branches follow the portable sampled-image contract.
     fun draw(
@@ -26,7 +48,7 @@ internal object WebImageRasterizer {
         image: DrawImage,
         source: FloatRect,
         destination: FloatRect,
-        bounds: IntRect,
+        viewport: IntSize,
         clip: FloatRect?,
         tint: ArgbColor,
         cutoff: Float,
@@ -34,11 +56,30 @@ internal object WebImageRasterizer {
         physicalSampling: Boolean = true,
     ) {
         val scale = window.devicePixelRatio.coerceAtLeast(1.0)
-        val left = floor(bounds.left * scale).toInt()
-        val top = floor(bounds.top * scale).toInt()
-        val width = ceil(bounds.right * scale).toInt() - left
-        val height = ceil(bounds.bottom * scale).toInt() - top
-        require(width.toLong() * height <= 16_777_216L) { "Web image command exceeds its physical pixel budget." }
+        require(scale.isFinite()) { "Web image pixel density must be finite." }
+
+        fun edge(
+            value: Float,
+            extent: Int,
+        ): Double = ceil(value.toDouble().coerceIn(0.0, extent.toDouble()) * scale - 0.5)
+        val left = edge(maxOf(destination.left, clip?.left ?: destination.left), viewport.width)
+        val top = edge(maxOf(destination.top, clip?.top ?: destination.top), viewport.height)
+        val columns = edge(minOf(destination.right, clip?.right ?: destination.right), viewport.width) - left
+        val rows = edge(minOf(destination.bottom, clip?.bottom ?: destination.bottom), viewport.height) - top
+        if (columns <= 0.0 || rows <= 0.0) {
+            canvas.width = 0
+            canvas.height = 0
+            canvas.style.left = "0px"
+            canvas.style.top = "0px"
+            canvas.style.width = "0px"
+            canvas.style.height = "0px"
+            return
+        }
+        require(columns * rows <= 16_777_216.0) { "Web image command exceeds its physical pixel budget." }
+        val width = columns.toInt()
+        val height = rows.toInt()
+        // Clear the old height before resizing so an intermediate bitmap cannot exceed the budget.
+        canvas.height = 0
         canvas.width = width
         canvas.height = height
         canvas.style.left = "${left / scale}px"

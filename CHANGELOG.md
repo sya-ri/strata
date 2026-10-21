@@ -3,6 +3,11 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
+## Unreleased
+
+Web image rendering now allocates pixels only within the destination, clip and viewport intersection, so highly zoomed images keep the screen open without exceeding the image pixel budget because of offscreen content.
+Source sampling, image orientation and the visible physical pixel limit are preserved; no consumer API changes are required.
+
 ## 0.3.0 - 2026-10-21
 
 Fabric server-owned screens and HUDs, shared browser editors, images, fonts and touch navigation, official Fabric API networking and lifecycle integration, a `Strata` entry point in each platform package, `Modifier` as the empty-chain starter, and independent text foreground and shadows. Recompile consumers, update platform imports and enum-based text style code, and install Fabric API alongside the exact-version runtime.

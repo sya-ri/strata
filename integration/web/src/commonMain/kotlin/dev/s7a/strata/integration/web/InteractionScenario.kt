@@ -61,7 +61,7 @@ internal class InteractionScenario {
     val area = TextAreaState(maxLength = 1000)
     val scroll = ScrollState()
     val list = VirtualListState<Int>()
-    val navigation = PanZoomState(initialZoom = 2.0)
+    val navigation = PanZoomState(initialZoom = 2.0, maximumZoom = 4096.0)
     val revision = mutableStateOf(0)
     val actions = mutableStateOf(0)
     val frame = createDrawImage(IntSize(3, 3), IntArray(9) { if (it == 4) 0xffeeeeee.toInt() else 0xff777777.toInt() })
