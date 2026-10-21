@@ -108,7 +108,7 @@ The generated `TextAreaInputBenchmark` fixture adds a separate 60-case logical e
 Its 30 input rows cover beginning/middle/end primary presses on short wrapped, long BMP, supplementary, plateau and signed-coordinate lines, vertical/page navigation between two long hard-break lines, and three composition mapping regions.
 Each source respects the default state capacity; middle/end unwrapped inputs preserve real caret-following horizontal pan.
 Six initial-layout rows include fresh host creation, attach, first frame and terminal close with resource bytes prepared, while six clean-frame rows retain the existing frame.
-Eighteen isolated lookups cover all six source/metric families and three positions through one prebound primitive method handle, with the same handle cost on both runtime sides.
+Eighteen isolated lookups cover all six source/metric families and three positions through one prebound primitive integer lookup adapter shared by both runtime sides.
 
 Each input operation includes the fixed public opportunity restoration, settled frame and target dispatch in one cycle: a clean frame before an ordinary press, an opposite navigation key plus frame before a directional key, or Home/frame/preedit/frame before composition cancellation.
 Measured JMH elapsed time and normalized allocation therefore share the same complete cycle boundary; preedit layout replacement is included and cannot be attributed to isolated dispatch.
@@ -120,8 +120,8 @@ The untimed verifier independently checks complete Long-distance winners, scalar
 Coordinate-read observations must come from external or test-only instrumentation; the complete independent winner oracle always runs without a production diagnostic hook.
 Source-derived baseline call/read counts must be labeled separately from observed diagnostics and measured CPU/allocation.
 
-For a paired runtime comparison, freeze the fixture, its Java primitive-handle helper, generated JMH classes/resources, collector, harness and all common runtime/control archives before either side runs.
-A fixture-only archive can combine the Kotlin and Java compiled fixture roots and generated JMH roots without embedding any target runtime classes; this binds the helper to the same preserved fixture code source.
+For a paired runtime comparison, freeze the fixture, its lookup adapter, generated JMH classes/resources, collector, harness and all common runtime/control archives before either side runs.
+A fixture-only archive combines the compiled fixture and generated JMH roots without embedding any target runtime classes; this binds the lookup adapter to the same preserved fixture code source.
 Use the existing packaged collector entry point and the same resolved execution classpath, replacing only the selected actual Minecraft runtime archive.
 Preserve actual parent/fork loaded archives and class trees, external inputs, source revisions, conditions, all 60 rows and three independent Standard receipts for each side.
 Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
