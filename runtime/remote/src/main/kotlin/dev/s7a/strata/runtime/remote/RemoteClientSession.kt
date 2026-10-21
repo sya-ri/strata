@@ -178,6 +178,7 @@ public class RemoteClientSession(
 
     /**
      * Ends this screen and releases its tree and transport captures, even if sending close fails.
+     * Calls forbidden by the current state-mutation scope leave the session open for later owner cleanup.
      */
     public fun close(
         reason: RemoteFailure,
@@ -185,11 +186,11 @@ public class RemoteClientSession(
     ) {
         checkOwner()
         if (status is RemoteSessionStatus.Closed) return
+        current.value = null
         status = RemoteSessionStatus.Closed(reason)
         publicSession.native = null
         val send = outgoing
         outgoing = null
-        current.value = null
         val release = runCatching(states::close)
         val notification = runCatching { if (notifyPeer) send?.invoke(RemoteMessage.Close(identity, reason)) }
         val failure = release.exceptionOrNull()
