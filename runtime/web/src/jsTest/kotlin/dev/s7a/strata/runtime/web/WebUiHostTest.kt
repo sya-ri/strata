@@ -2,10 +2,18 @@
 
 package dev.s7a.strata.runtime.web
 
+import dev.s7a.strata.component.Button
+import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.state.StateRevision
+import dev.s7a.strata.state.StateSnapshot
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.StateSubscription
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.ui.UiCloseReason
 import dev.s7a.strata.ui.UiDefinition
@@ -27,6 +35,44 @@ import kotlin.test.assertTrue
  * Exercises actual native DOM updates through the shared reactive session.
  */
 internal class WebUiHostTest {
+    @Test
+    fun closingTheHostFromAnActionReleasesItsSourceAfterInputCompletes() {
+        val root = document.createElement("div") as HTMLElement
+        checkNotNull(document.body).appendChild(root)
+        var releases = 0
+        val source = StateSource<String> { StateSubscription(StateSnapshot(StateRevision(0), "Observed")) { releases++ } }
+        lateinit var host: WebUiHost
+        host =
+            mountWeb(
+                UiDefinition {
+                    Column {
+                        Text(source)
+                        Button(
+                            "Close",
+                            modifier =
+                                Modifier.onActivate {
+                                    host.close()
+                                    assertEquals(0, releases)
+                                },
+                        )
+                    }
+                },
+                root,
+                IntSize(100, 60),
+            )
+        try {
+            val button = checkNotNull(root.querySelector("button") as? HTMLElement)
+            button.click()
+            assertEquals(1, releases)
+            assertFalse(root.hasChildNodes())
+            assertEquals(UiSessionStatus.Closed(UiCloseReason.Closed), host.uiSession.status)
+        } finally {
+            host.close()
+            root.remove()
+        }
+        assertEquals(1, releases)
+    }
+
     @Test
     fun commonSessionClosesDomAndExplicitlyRejectsGameOnlyFeatures() {
         val root = document.createElement("div") as HTMLElement
