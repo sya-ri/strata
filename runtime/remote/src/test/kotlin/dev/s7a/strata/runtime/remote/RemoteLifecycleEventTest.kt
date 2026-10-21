@@ -113,6 +113,29 @@ internal class RemoteLifecycleEventTest {
     }
 
     @Test
+    fun rejectedOwnerWithdrawalPreservesSchemasUntilAnAdmittedRetry() {
+        val owner = Any()
+        val other = Any()
+        val extension = ProjectionType(ResourceId("example", "withdrawal"), 1)
+        lateinit var service: RemoteScreenService<Unit, Any>
+        service =
+            RemoteScreenService(RemoteEndpoint.Server, { _, _ -> }, { throw it }, notify = { _, event ->
+                if (event is RemoteLifecycleEvent.Closed) {
+                    repeat(64) { service.ownerDisabled(other) }
+                    val failure = assertThrows(RemoteProtocolException::class.java) { service.ownerDisabled(owner) }
+                    assertEquals(RemoteFailure.ResourceLimit, failure.reason)
+                }
+            })
+        service.use {
+            service.register(owner, extension)
+            service.open(Any(), Unit, UiDefinition { Spacer() })
+            assertThrows(IllegalArgumentException::class.java) { service.register(other, extension) }
+            service.ownerDisabled(owner)
+            service.register(other, extension)
+        }
+    }
+
+    @Test
     fun unavailableOpeningAndListenerFailureDoNotInventReadiness() {
         val failures = mutableListOf<Throwable>()
         val events = mutableListOf<RemoteLifecycleEvent<Any>>()
