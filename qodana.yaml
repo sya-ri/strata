@@ -53,11 +53,6 @@ exclude:
   - name: RedundantRequireNotNullCall
     paths:
       - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/HeadlessRendering.kt
-  # Named concrete facades keep internal coroutine/control state distinct from their exposed CoroutineScope and UiSession contracts.
-  - name: ConvertToExplicitBackingFields
-    paths:
-      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiSession.kt
-      - runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientSession.kt
   # Migration changes definition construction and session ownership outside the opening call, so no call-only replacement is valid.
   - name: DeprecatedCallableAddReplaceWith
     paths:

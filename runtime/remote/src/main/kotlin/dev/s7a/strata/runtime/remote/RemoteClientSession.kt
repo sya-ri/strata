@@ -35,12 +35,12 @@ public class RemoteClientSession(
     private val pausesGame = snapshot.pausesGame
     private val settings = snapshot.settings
     private val initialControl = snapshot.control
-    private val publicSession = ClientUiSession()
 
     /**
      * Receiver for synchronous client extension events; all controls are sequenced by the server.
      */
-    public val uiSession: UiSession get() = publicSession
+    public val uiSession: UiSession
+        field = ClientUiSession()
 
     /**
      * Current declaration count for connection-wide admission.
@@ -56,9 +56,9 @@ public class RemoteClientSession(
      */
     public fun bindUiSession(session: UiSession) {
         checkActive()
-        check(publicSession.native == null)
-        publicSession.native = session
-        publicSession.observedInteraction = session.interactionMode
+        check(uiSession.native == null)
+        uiSession.native = session
+        uiSession.observedInteraction = session.interactionMode
     }
 
     /**
@@ -67,12 +67,12 @@ public class RemoteClientSession(
      */
     public fun synchronizeInteraction() {
         checkActive()
-        val native = publicSession.native ?: return
+        val native = uiSession.native ?: return
         if (native.status is UiSessionStatus.Closed) return
         val mode = native.interactionMode
-        if (publicSession.observedInteraction == mode) return
-        publicSession.observedInteraction = mode
-        publicSession.setInteractionMode(mode)
+        if (uiSession.observedInteraction == mode) return
+        uiSession.observedInteraction = mode
+        uiSession.setInteractionMode(mode)
     }
 
     /**
@@ -83,7 +83,7 @@ public class RemoteClientSession(
         rejection: UiRejection?,
     ) {
         checkActive()
-        publicSession.applied(state, rejection)
+        uiSession.applied(state, rejection)
     }
 
     /**
@@ -92,7 +92,7 @@ public class RemoteClientSession(
     public fun receive(receipt: RemoteMessage.ControlReceipt) {
         checkActive()
         require(receipt.session == identity) { "UI control receipt targets another session." }
-        publicSession.received(receipt)
+        uiSession.received(receipt)
     }
 
     private val current = mutableStateOf<RemotePreparedTree?>(registry.prepare(snapshot.tree, limits))
@@ -188,7 +188,7 @@ public class RemoteClientSession(
         if (status is RemoteSessionStatus.Closed) return
         current.value = null
         status = RemoteSessionStatus.Closed(reason)
-        publicSession.native = null
+        uiSession.native = null
         val send = outgoing
         outgoing = null
         val release = runCatching(states::close)
