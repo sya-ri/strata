@@ -99,17 +99,24 @@ public class WebUiHost internal constructor(
         }
     }
 
+    /**
+     * Requests terminal close, releasing resources after any current host operation completes.
+     */
     override fun close() {
+        controls.close()
+    }
+
+    /**
+     * Releases host ownership after the controller's current transaction has completed.
+     */
+    internal fun closeResources() {
         if (closed) return
         closed = true
         request?.let(window::cancelAnimationFrame)
         request = null
         events.close()
         lastFrame = null
-        val controlFailure = runCatching { controls.close() }.exceptionOrNull()
-        val sessionFailure = runCatching { session.close() }.exceptionOrNull()
-        val primary = controlFailure ?: sessionFailure
-        if (controlFailure != null && sessionFailure != null && controlFailure !== sessionFailure) controlFailure.addSuppressed(sessionFailure)
+        val primary = runCatching { session.close() }.exceptionOrNull()
         val cleanup = runCatching { renderer.close() }.exceptionOrNull()
         if (primary != null) {
             if (cleanup != null && cleanup !== primary) primary.addSuppressed(cleanup)
@@ -191,7 +198,7 @@ internal fun createWebHost(
             } else {
                 controls.applied(request.sequence)
             }
-        }, close = { host?.close() })
+        }, close = { host?.closeResources() })
     val session = createRuntimeUiSession(controls) { ComponentRuntimeBridge.evaluate(runtime, transferred.content) }
     return WebUiHost(root, session, viewport, controls, theme, runtime).also { host = it }
 }
