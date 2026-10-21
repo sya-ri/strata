@@ -9,6 +9,10 @@ Portable parity alone cannot prove agreement with Minecraft's native renderer.
 `./gradlew :runtime:minecraft-fonts-lwjgl:check` runs the isolated CPU dependency matrix without starting Minecraft.
 `./gradlew :runtime:minecraft-fonts-lwjgl:verifyOfflineFontParity` recreates the representative native runs and compares their metrics and complete images with fresh renders from separate CPU workers.
 
+CPU tests and browser interactions share the original TrueType fixture in `runtime/minecraft-fonts-lwjgl/src/test/resources/fonts`.
+The Web build stages those bytes as `strata-browser-test.ttf`.
+Regenerate both the original and its derived bitmap-strike fixture with `python runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/generate_fixture.py`.
+
 ## Measured vanilla inputs
 
 The checked-in [vanilla load-budget receipt](https://github.com/sya-ri/strata/blob/master/runtime/minecraft/src/test/resources/font-evidence/vanilla-load-budgets.json) records every measured supported release, official client and asset-index hashes, source-entry counts, and observed font document, provider, glyph, archive, and image payload maxima.

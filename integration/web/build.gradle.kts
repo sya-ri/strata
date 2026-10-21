@@ -1,5 +1,12 @@
 group = "dev.s7a.strata.integration"
 
+val stageBrowserFont = tasks.register<Copy>("stageBrowserFont") {
+    description = "Stages the shared original font for browser interaction verification."
+    from(rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf"))
+    into(layout.buildDirectory.dir("generated/browser-font"))
+    rename { "strata-browser-test.ttf" }
+}
+
 kotlin {
     js {
         browser { commonWebpackConfig { outputFileName = "application.js" } }
@@ -26,6 +33,7 @@ kotlin {
 
 // Reuse the exact API-only declarations and typed fixture inventory already exercised by JMH and Fabric.
 kotlin.sourceSets.named("jsMain") {
+    resources.srcDir(stageBrowserFont)
     kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
     kotlin.srcDir(rootProject.file("quality/component-benchmarks/src/workload/kotlin"))
 }
