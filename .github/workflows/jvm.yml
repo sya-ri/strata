@@ -357,7 +357,7 @@ jobs:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
       shell: bash
-      run: bash ./gradlew :integration:web:check -Pstrata.web.installSystemDependencies="$INSTALL_SYSTEM_DEPENDENCIES"
+      run: bash ./gradlew :integration:web:check -Pstrata.webOnly=true -Pstrata.web.installSystemDependencies="$INSTALL_SYSTEM_DEPENDENCIES"
       env:
         INSTALL_SYSTEM_DEPENDENCIES: ${{ runner.os == 'Linux' }}
     - name: Upload browser evidence

@@ -106,6 +106,7 @@ Common checks and Kover share one Gradle invocation so JVM tests run once.
 The complete compiled fixture route and its negative attempts run in two independent Windows jobs, both required by `CI result`.
 The complete route keeps every paired sample on one host, and the Windows ownership-boundary checks run once with that route.
 API/core JavaScript tests and Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
+The browser matrix uses the Web project model from [build verification](build.md), avoiding unrelated versioned runtime configuration.
 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
 Independent Minecraft jobs may restore Gradle dependency caches from other jobs, including the full-model writers on the default branch, but do not each save another large copy; the documentation and Qodana jobs retain full-model cache writers.
