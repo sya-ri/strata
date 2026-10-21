@@ -10,7 +10,6 @@ import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Mutation
 import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Scene
 import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Workload
 import dev.s7a.strata.runtime.UiTree
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.file.Path
 
 /**
@@ -18,7 +17,6 @@ import java.nio.file.Path
  * Each row owns one prepared tree; original verification, serialization and terminal close stay outside sampling.
  * Every sample performs one complete update with validation, component callbacks and child reconciliation.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public object ModifierReconciliationOperationReport : JvmOperationReportAdapter {
     override val inputs: Map<String, Path>
         get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))

@@ -6,7 +6,6 @@ import dev.s7a.strata.runtime.minecraft.font.FontTestResources
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
@@ -20,7 +19,6 @@ import kotlin.random.Random
  * Compares real logical-boundary lookup with a complete ordered Long-distance reference.
  * Array-read counts execute a test-only instrumented copy of the actual compiled search.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftTextLineLookupTest {
     private val emptyRun = MinecraftTextRenderer.legacy(emptyMap()).use { it.create(UiText.Literal(""), TextStyle.Normal) }
 

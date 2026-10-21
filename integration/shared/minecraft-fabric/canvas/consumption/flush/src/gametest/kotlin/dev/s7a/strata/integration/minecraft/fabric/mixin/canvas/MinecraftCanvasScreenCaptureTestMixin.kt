@@ -1,10 +1,7 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.integration.minecraft.fabric.mixin.canvas
 
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftCanvasCaptureTestHooks
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.screens.Screen
 import org.spongepowered.asm.mixin.Mixin

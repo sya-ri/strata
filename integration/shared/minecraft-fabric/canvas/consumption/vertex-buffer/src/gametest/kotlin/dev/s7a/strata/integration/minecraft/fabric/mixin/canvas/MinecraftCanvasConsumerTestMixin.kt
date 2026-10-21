@@ -1,12 +1,9 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.integration.minecraft.fabric.mixin.canvas
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftCanvasCaptureTestHooks
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftCanvasConsumerTestHooks
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.render.GuiRenderer
 import org.spongepowered.asm.mixin.Mixin
 

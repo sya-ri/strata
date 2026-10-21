@@ -3,7 +3,6 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.minecraft.client.Minecraft
 import net.minecraft.client.input.MouseButtonEvent
@@ -25,7 +24,6 @@ import java.util.function.Predicate
  * Fixed native fixture inputs belong to this invocation.
  * The caller retains the world lifetime and is responsible for restoring scenario state.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class InventorySlotTestContext(
     internal val client: ClientGameTestContext,
 ) {

@@ -1,9 +1,6 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Test-only access to the presenter's immutable preparation inputs, without extending the runtime SPI or native ownership.

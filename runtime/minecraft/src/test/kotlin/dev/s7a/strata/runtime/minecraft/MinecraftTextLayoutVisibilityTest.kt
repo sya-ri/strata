@@ -1,5 +1,3 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.TextStyle
@@ -16,7 +14,6 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText

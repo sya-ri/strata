@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.TextStyle
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -13,7 +12,6 @@ import java.lang.reflect.Modifier
  * Requires the candidate's exclusive array transfer without changing shared semantic and defensive-constructor controls.
  * The copying neutral runtime executes every shared ownership test and omits only this storage-identity class.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftTextLineStorageTest {
     @Test
     fun ownedAdmissionRetainsExactlyTheTwoExclusiveArraysAndDetachedRun() {

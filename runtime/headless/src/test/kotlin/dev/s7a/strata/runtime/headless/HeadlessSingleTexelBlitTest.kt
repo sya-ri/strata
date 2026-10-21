@@ -6,14 +6,12 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 
 /**
  * Verifies that both single-texel image commands retain fill coverage and source-over semantics.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessSingleTexelBlitTest {
     @Test
     // The finite matrix covers both command representations, alpha values, density, and clipped extents.
