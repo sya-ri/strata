@@ -100,6 +100,7 @@ The planner creates one matrix job per selected Minecraft version in numeric ord
 GitHub runs these jobs independently within the available runner concurrency, and a failed version can be retried separately.
 Documentation and Dokka run in their own parallel job and upload the checked site.
 Only the native showcase comparison and its CPU reference rendering stay with the Minecraft job producing that evidence; the documentation job does not repeat either check or start a game.
+An explicitly empty Minecraft selection admits only the documentation asset owner when full documentation is requested.
 Common checks and Kover share one Gradle invocation so JVM tests run once.
 The complete compiled fixture route and its negative attempts run in two independent Windows jobs, both required by `CI result`.
 The complete route keeps every paired sample on one host, and the Windows ownership-boundary checks run once with that route.
