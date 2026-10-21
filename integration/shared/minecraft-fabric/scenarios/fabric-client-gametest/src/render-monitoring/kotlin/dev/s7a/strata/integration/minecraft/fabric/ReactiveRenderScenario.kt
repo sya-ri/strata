@@ -13,13 +13,11 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.map
 
 /**
  * Shared native acceptance for automatic direct updates, projected equality, and exact output and texture reuse.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal object ReactiveRenderScenario {
     /**
      * Runs against actual scheduled host frames; no fixed sleep is used as evidence.

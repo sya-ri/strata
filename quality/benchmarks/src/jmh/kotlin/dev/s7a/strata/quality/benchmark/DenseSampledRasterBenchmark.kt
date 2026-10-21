@@ -9,7 +9,6 @@ import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -21,7 +20,6 @@ import org.openjdk.jmh.annotations.State
  * Separate full-HD corpus that varies source detail independently of physical output area.
  * Source construction is outside measurement; opaque and translucent images use the same patterned RGB values.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public open class DenseSampledRasterBenchmark {
     /**
      * Composes a tinted, fractional nearest-sampled image over an opaque destination in newly owned storage.

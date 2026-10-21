@@ -1,5 +1,3 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.component.TextShadow
@@ -13,7 +11,6 @@ import dev.s7a.strata.runtime.minecraft.font.FontTestBackend
 import dev.s7a.strata.runtime.minecraft.font.FontTestResources
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

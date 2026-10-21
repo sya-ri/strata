@@ -4,7 +4,6 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -17,7 +16,6 @@ import java.lang.reflect.Method
  * Measures portable partitioning from an explicitly supplied Fabric runtime without initializing the game.
  * The independent corpus leaves the historical runtime classpath and benchmark matrix unchanged.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public open class PortableTileBenchmark {
     /**
      * Includes the same one reflective JVM-synthetic entry-point invocation on both runtime revisions.

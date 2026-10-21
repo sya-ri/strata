@@ -2,12 +2,10 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.runtime.remote.RemoteMessage
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Untimed retention and patch admission using the actual retained-session benchmark fixtures.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public object RemoteSessionWorkEvidence {
     /**
      * Verifies the complete separate matrix, idle output reuse, exact changed records and terminal release.

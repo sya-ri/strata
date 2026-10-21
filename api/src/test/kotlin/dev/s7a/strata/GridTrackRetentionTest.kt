@@ -1,5 +1,3 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata
 
 import dev.s7a.strata.geometry.Constraints
@@ -8,7 +6,6 @@ import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.GridElement
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.layout.ParentDataKey
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertNull

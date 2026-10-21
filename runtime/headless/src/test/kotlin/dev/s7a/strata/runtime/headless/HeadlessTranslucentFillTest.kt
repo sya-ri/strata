@@ -6,7 +6,6 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.floor
@@ -14,7 +13,6 @@ import kotlin.math.floor
 /**
  * Physical coverage and straight-alpha rounding remain exact for uniform and mixed destination colors.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessTranslucentFillTest {
     @Test
     internal fun initialFullImageOwnsOutputAndCanonicalizesTransparentPixels() {

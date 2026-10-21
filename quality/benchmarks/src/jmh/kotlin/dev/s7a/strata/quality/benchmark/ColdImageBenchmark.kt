@@ -8,7 +8,6 @@ import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -22,7 +21,6 @@ import javax.imageio.ImageIO
  * Independent cold-decoder and deterministic PNG-encoding workloads, excluded from steady presentation.
  * Encoded input is resident before timing; this corpus makes no filesystem-cache or network-cold claim.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public open class ColdImageBenchmark {
     /**
      * Opens a fresh stream, decodes a PNG, and detaches immutable straight-ARGB pixels on each operation.

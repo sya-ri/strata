@@ -15,7 +15,6 @@ import dev.s7a.strata.node.Node
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.UiTree
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -30,7 +29,6 @@ import org.openjdk.jmh.annotations.TearDown
  * component callbacks, child reconciliation and lifecycle work inside each measured update.
  * Equivalent chains share their exact modifier descriptions, isolating bookkeeping from typed callbacks.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public open class ModifierReconciliationBenchmark {
     /**
      * Reconciles the next frozen tree on the JMH worker owning its retained nodes.

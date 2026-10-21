@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -13,7 +12,6 @@ import org.junit.jupiter.api.Test
 /**
  * Verifies ordinary read-only list behavior for nested, sparse immutable paint snapshots.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class RetainedDrawCommandsTest {
     @Test
     fun deepConcatenationsPreserveIndexedIterationEqualityAndCursorExhaustion() {

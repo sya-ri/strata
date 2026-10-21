@@ -23,7 +23,6 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertNull
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.Test
 /**
  * Verifies current-entry transformed command reuse, geometry changes and terminal release.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class RetainedPaintCommandsTest {
     @Test
     fun paintOnlyLayoutReusesGeometryButAncestorTransformsAndMeasuredSizesStillPropagate() {

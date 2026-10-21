@@ -14,12 +14,10 @@ import dev.s7a.strata.modifier.scaleToFit
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.screen.ScreenDefinition
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Independent native viewport oracle: the expected image has no clip or transformed geometry.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal object FractionalClipScenario {
     /**
      * Exercises a clipped row under the same three-quarter transform as a GUI-scale-four phone.

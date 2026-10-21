@@ -9,7 +9,6 @@ import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -20,7 +19,6 @@ import org.openjdk.jmh.annotations.State
 /**
  * Separate mixed-pixel raster workload; it does not alter the historical retained overlay matrix.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public open class NonuniformOverlayBenchmark {
     /**
      * Switches between two prepared nonuniform source images and composes every ordered translucent fill.

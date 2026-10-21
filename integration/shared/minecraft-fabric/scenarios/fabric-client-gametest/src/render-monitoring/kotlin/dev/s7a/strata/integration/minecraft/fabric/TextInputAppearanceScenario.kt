@@ -21,14 +21,12 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.screen.ScreenDefinition
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Verifies custom input frames on every loaded runtime using actual host progress and native pixels.
  * Editor composition and focus dispatch are tested independently through the shared Minecraft host.
  * Editors remain unfocused so native window focus changes cannot invalidate the static-work measurement.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal object TextInputAppearanceScenario {
     /**
      * Opens retained editors, changes only their appearance, and compares native output with a literal reference.
