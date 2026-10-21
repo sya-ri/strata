@@ -107,6 +107,7 @@ API/core JavaScript tests and Web unit tests run once on Linux; Windows retains 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
 Independent Minecraft jobs may restore Gradle dependency caches from other jobs, including the full-model writers on the default branch, but do not each save another large copy; the documentation and Qodana jobs retain full-model cache writers.
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
+Full and reader-documentation jobs reuse the same Loom input hash and restore/save steps.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
 Acceptance evidence is generated for the selected revision.
 Each ordinary PR or full-CI Minecraft matrix job also runs `integration/fabric/run_acceptance.py` against a fresh loopback Fabric server using the production runtime and test Mod archives.

@@ -603,19 +603,22 @@ jobs:
         key: ${{ steps.loom_cache.outputs.cache-primary-key }}
   documentation:
     name: Documentation and Dokka
-    needs:
-    - plan
-    - minecraft-matrix
+    needs: plan
     if: needs.plan.outputs.docs_full == 'true'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+    - &documentation_assets
+      name: Select documentation asset owner
+      id: assets
+      run: bash gradle/plan-minecraft-ci.sh
     - uses: ./.github/actions/setup-strata-java
     - uses: gradle/actions/setup-gradle@v6
       with:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
-    - name: Hash documentation Loom inputs
+    - &documentation_loom_inputs
+      name: Hash documentation Loom inputs
       id: loom_inputs
       shell: bash
       run: |-
@@ -624,8 +627,9 @@ jobs:
         export LOOM_PROJECTS
         bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
       env:
-        MINECRAFT_VERSION: ${{ needs.minecraft-matrix.outputs.docs_version }}
-    - name: Restore documentation Loom cache
+        MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
+    - &documentation_loom_restore
+      name: Restore documentation Loom cache
       id: loom_cache
       uses: actions/cache/restore@v6
       with:
@@ -642,7 +646,7 @@ jobs:
           -Pstrata.minecraftVersions="$MINECRAFT_VERSION" -Pstrata.webDemoInstallSystemDependencies=true "${args[@]}"
       env:
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}
-        MINECRAFT_VERSION: ${{ needs.minecraft-matrix.outputs.docs_version }}
+        MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
     - name: Upload checked documentation
       uses: actions/upload-artifact@v7
       with:
@@ -650,7 +654,8 @@ jobs:
         path: build/dokka/html
         if-no-files-found: error
         retention-days: 7
-    - name: Save documentation Loom cache
+    - &documentation_loom_save
+      name: Save documentation Loom cache
       if: success() && steps.loom_cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v6
       with:
@@ -666,17 +671,18 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
-    - name: Select documentation asset owner
-      id: assets
-      run: bash gradle/plan-minecraft-ci.sh
+    - *documentation_assets
     - uses: ./.github/actions/setup-strata-java
     - uses: gradle/actions/setup-gradle@v6
       with:
         gradle-home-cache-excludes: caches/fabric-loom
+    - *documentation_loom_inputs
+    - *documentation_loom_restore
     - name: Check reader documentation
       run: bash ./gradlew :integration:docs:checkDocumentationLinks :integration:docs:checkStrataSkill -Pstrata.minecraftVersions="$MINECRAFT_VERSION"
       env:
         MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
+    - *documentation_loom_save
   result:
     name: CI result
     needs:
