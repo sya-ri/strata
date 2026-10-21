@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       qodana: ${{ steps.plan.outputs.qodana }}
+      qodana_build_logic: ${{ steps.plan.outputs.qodana_build_logic }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -27,13 +28,14 @@ jobs:
         persist-credentials: false
     - name: Select analysis inputs
       run: |-
-        if [[ "$EVENT" == pull_request ]]; then
+        if [[ "$EVENT" == pull_request && -z "$SOURCE_REF" ]]; then
           python3 gradle/plan-ci.py --base "$BASE" --head "$HEAD"
         else
           python3 gradle/plan-ci.py --full
         fi
       id: plan
       env:
+        SOURCE_REF: ${{ inputs.ref }}
         EVENT: ${{ github.event_name }}
         BASE: ${{ github.event.pull_request.base.sha }}
         HEAD: ${{ github.event.pull_request.head.sha }}
@@ -162,7 +164,23 @@ jobs:
     if: needs.plan.outputs.qodana == 'true'
   build-logic:
     needs: plan
-    if: needs.plan.outputs.qodana == 'true'
+    if: needs.plan.outputs.qodana_build_logic == 'true'
     uses: ./.github/workflows/qodana-build-logic.yml
     with:
       ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+  result:
+    name: Qodana result
+    needs:
+    - plan
+    - qodana
+    - build-logic
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - name: Check planned analysis outcomes
+      run: python3 gradle/plan-ci.py --check-analysis-results
+      env:
+        RESULTS: ${{ toJSON(needs) }}
