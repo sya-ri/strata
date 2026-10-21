@@ -190,8 +190,8 @@ private data class MinecraftFabricTarget(
     }
 
     /** Native HUD extraction signatures verified from the exact client archives. */
-    enum class UiFamily(val sourceRoot: String) {
-        Float("float-delta"), Delta("delta-tracker"), ExtractGui("gui-extractor"), ExtractHud("hud-extractor"),
+    enum class UiFamily {
+        Float, Delta, ExtractGui, ExtractHud,
     }
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
@@ -1493,8 +1493,7 @@ if (completeIdeaModelActive) {
                         // Resolve only while executing a task owned by this project, including parallel builds.
                         val artifacts = classpaths.flatMap { (_, name, _) -> owner.configurations.getByName(name).incoming.artifacts.artifacts }
                             .distinctBy { it.file.canonicalFile }.sortedBy { it.id.displayName }.map { artifact ->
-                                val component = artifact.id.componentIdentifier
-                                val identity = when (component) {
+                                val identity = when (val component = artifact.id.componentIdentifier) {
                                     is ProjectComponentIdentifier -> mapOf("project" to component.projectPath)
                                     is ModuleComponentIdentifier -> mapOf("identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}")
                                     else -> mapOf("identity" to component.displayName)
@@ -2613,7 +2612,7 @@ subprojects {
                                         "fabricloader" to ">=${loaderVersion}",
                                         "minecraft" to target.version,
                                         "fabric-language-kotlin" to ">=${languageKotlinVersion}",
-                                        "java" to ">=${target.javaVersion.toString()}",
+                                        "java" to ">=${target.javaVersion}",
                                     ),
                             ) {
                                 "Fabric metadata dependencies must match the version catalog: ${metadata["depends"]}"
@@ -2844,12 +2843,10 @@ tasks.named("check") {
 
 val releaseArtifacts = releasePublicationProjectPaths.flatMap { projectPath ->
     val artifact = releaseArtifactByProjectPath.getValue(projectPath)
-    if (projectPath in legacyJvmMultiplatformProjectPaths) {
-        listOf(artifact, "$artifact-multiplatform", "$artifact-js")
-    } else if (projectPath in multiplatformProjectPaths) {
-        listOf(artifact, "$artifact-js")
-    } else {
-        listOf(artifact)
+    when (projectPath) {
+        in legacyJvmMultiplatformProjectPaths -> listOf(artifact, "$artifact-multiplatform", "$artifact-js")
+        in multiplatformProjectPaths -> listOf(artifact, "$artifact-js")
+        else -> listOf(artifact)
     }
 }
 val verifyReleasePublicationMatrix =
