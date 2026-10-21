@@ -3,8 +3,7 @@ package dev.s7a.strata.runtime.web
 import dev.s7a.strata.component.TextShadow
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.SampledImageOrientation
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -65,7 +64,7 @@ internal class WebDomRenderer(
             element.setAttribute("data-strata-node", entry.identity)
             owned.add(element)
             element.setAttribute("data-strata-theme", theme.token)
-            update(element, entry)
+            update(element, entry, frame.size)
             WebSemanticsDom.update(element, entry.semantic, entry.proxy)
             element.style.zIndex = entry.order.toString()
             val activeEditor = entry.editor != null && (root.ownerDocument?.activeElement === element || element.hasAttribute("data-strata-composing"))
@@ -162,6 +161,7 @@ internal class WebDomRenderer(
     private fun update(
         element: HTMLElement,
         entry: Entry,
+        viewport: IntSize,
     ) {
         val bounds = entry.bounds
         val style = element.style
@@ -193,7 +193,7 @@ internal class WebDomRenderer(
         style.lineHeight = presentation?.lineHeight?.let { "${it}px" }.orEmpty()
         val image = entry.image
         if (image != null) {
-            paintImage(element as HTMLCanvasElement, image, bounds, entry.clip)
+            paintImage(element as HTMLCanvasElement, image, viewport, entry.clip)
             return
         }
         if (entry.editor != null) {
@@ -345,17 +345,12 @@ internal class WebDomRenderer(
     private fun paintImage(
         canvas: HTMLCanvasElement,
         image: DrawCommand,
-        bounds: IntRect,
+        viewport: IntSize,
         clip: FloatRect?,
     ) {
         canvas.style.setProperty("pointer-events", "none")
         canvas.style.setProperty("clip-path", "none")
-        when (image) {
-            is DrawCommand.SampledImage -> WebImageRasterizer.draw(canvas, image.image, image.source, image.destination, bounds, clip, image.tint, image.alphaCutoff, image.orientation)
-            is DrawCommand.BlitImage -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal, physicalSampling = false)
-            is DrawCommand.BlitImagePixels -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
-            else -> error("Unexpected web image command.")
-        }
+        WebImageRasterizer.draw(canvas, image, viewport, clip)
     }
 
     private fun textStyle(
