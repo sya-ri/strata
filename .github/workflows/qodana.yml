@@ -81,19 +81,26 @@ jobs:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Generate Minecraft cache inventory
       run: bash gradle/plan-minecraft-ci.sh
-    - name: Hash all Minecraft Loom cache inputs
-      id: loom_inputs
+    - name: Hash analysis cache inputs
+      id: analysis_inputs
       shell: bash
       run: |
         LOOM_PROJECTS="$(< build/github-actions/minecraft-loom-projects.txt)"
         export LOOM_PROJECTS
         bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+        echo "qodana_hash=${{ hashFiles(
+          '**/*.gradle.kts', 'gradle/wrapper/**', 'gradle/libs.versions.toml', 'gradle.properties',
+          'gradle/kover-jvm-projects.txt', 'gradle/performance-modules.tsv',
+          'gradle/java-toolchains.py', 'gradle/plan-minecraft-ci.sh',
+          'gradle/prepare-qodana-idea-model.sh', 'gradle/prepare-qodana-project.py',
+          'build-logic/src/**', 'qodana.yaml', '.github/workflows/qodana.yml'
+          ) }}" >> "$GITHUB_OUTPUT"
     - name: Restore Minecraft Loom project cache
       id: loom_cache
       uses: actions/cache/restore@v6
       with:
         path: .gradle/loom-cache
-        key: loom-${{ runner.os }}-minecraft-all-${{ steps.loom_inputs.outputs.hash }}
+        key: loom-${{ runner.os }}-minecraft-all-${{ steps.analysis_inputs.outputs.hash }}
         restore-keys: |
           loom-${{ runner.os }}-minecraft-
     - name: Restore Qodana indexes
@@ -101,9 +108,9 @@ jobs:
       uses: actions/cache/restore@v6
       with:
         path: ${{ runner.temp }}/qodana/caches
-        key: qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-${{ github.sha }}
+        key: qodana-index-${{ runner.os }}-${{ steps.analysis_inputs.outputs.qodana_hash }}-${{ github.sha }}
         restore-keys: |
-          qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-
+          qodana-index-${{ runner.os }}-${{ steps.analysis_inputs.outputs.qodana_hash }}-
     - name: Run Qodana
       uses: JetBrains/qodana-action@v2026.2
       with:
