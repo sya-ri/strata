@@ -2134,6 +2134,498 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
 }
 
 /**
+ * Observes canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListState48d6d37341e0_1")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } },
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadLeading), key) { values ->
+        VirtualList(
+            itemCount = itemCount,
+            itemAt = itemAt,
+            keyAt = keyAt,
+            state = state,
+            rowHeight = rowHeight,
+            indexOfKey = indexOfKey,
+            scrollRate = scrollRate,
+            canLoadLeading = values[0] as Boolean,
+            canLoadTrailing = canLoadTrailing,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListState48d6d37341e0_2")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } },
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadTrailing), key) { values ->
+        VirtualList(
+            itemCount = itemCount,
+            itemAt = itemAt,
+            keyAt = keyAt,
+            state = state,
+            rowHeight = rowHeight,
+            indexOfKey = indexOfKey,
+            scrollRate = scrollRate,
+            canLoadLeading = canLoadLeading,
+            canLoadTrailing = values[0] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListState48d6d37341e0_3")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } },
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadLeading, canLoadTrailing), key) { values ->
+        VirtualList(
+            itemCount = itemCount,
+            itemAt = itemAt,
+            keyAt = keyAt,
+            state = state,
+            rowHeight = rowHeight,
+            indexOfKey = indexOfKey,
+            scrollRate = scrollRate,
+            canLoadLeading = values[0] as Boolean,
+            canLoadTrailing = values[1] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListState0f5b9edb9f2b_1")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadLeading), key) { values ->
+        VirtualList(
+            itemCount = itemCount,
+            itemAt = itemAt,
+            keyAt = keyAt,
+            state = state,
+            rowHeight = rowHeight,
+            indexOfKey = indexOfKey,
+            scrollRate = scrollRate,
+            canLoadLeading = values[0] as Boolean,
+            canLoadTrailing = canLoadTrailing,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListState0f5b9edb9f2b_2")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadTrailing), key) { values ->
+        VirtualList(
+            itemCount = itemCount,
+            itemAt = itemAt,
+            keyAt = keyAt,
+            state = state,
+            rowHeight = rowHeight,
+            indexOfKey = indexOfKey,
+            scrollRate = scrollRate,
+            canLoadLeading = canLoadLeading,
+            canLoadTrailing = values[0] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListState0f5b9edb9f2b_3")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadLeading, canLoadTrailing), key) { values ->
+        VirtualList(
+            itemCount = itemCount,
+            itemAt = itemAt,
+            keyAt = keyAt,
+            state = state,
+            rowHeight = rowHeight,
+            indexOfKey = indexOfKey,
+            scrollRate = scrollRate,
+            canLoadLeading = values[0] as Boolean,
+            canLoadTrailing = values[1] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes items for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListStatecaf0ed52c324_1")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(items), key) { values ->
+        VirtualList(
+            items = values[0] as List<T>,
+            keyOf = keyOf,
+            state = state,
+            rowHeight = rowHeight,
+            scrollRate = scrollRate,
+            canLoadLeading = canLoadLeading,
+            canLoadTrailing = canLoadTrailing,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListStatecaf0ed52c324_2")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: List<T>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadLeading), key) { values ->
+        VirtualList(
+            items = items,
+            keyOf = keyOf,
+            state = state,
+            rowHeight = rowHeight,
+            scrollRate = scrollRate,
+            canLoadLeading = values[0] as Boolean,
+            canLoadTrailing = canLoadTrailing,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes items, canLoadLeading for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListStatecaf0ed52c324_3")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(items, canLoadLeading), key) { values ->
+        VirtualList(
+            items = values[0] as List<T>,
+            keyOf = keyOf,
+            state = state,
+            rowHeight = rowHeight,
+            scrollRate = scrollRate,
+            canLoadLeading = values[1] as Boolean,
+            canLoadTrailing = canLoadTrailing,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListStatecaf0ed52c324_4")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: List<T>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadTrailing), key) { values ->
+        VirtualList(
+            items = items,
+            keyOf = keyOf,
+            state = state,
+            rowHeight = rowHeight,
+            scrollRate = scrollRate,
+            canLoadLeading = canLoadLeading,
+            canLoadTrailing = values[0] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes items, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListStatecaf0ed52c324_5")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(items, canLoadTrailing), key) { values ->
+        VirtualList(
+            items = values[0] as List<T>,
+            keyOf = keyOf,
+            state = state,
+            rowHeight = rowHeight,
+            scrollRate = scrollRate,
+            canLoadLeading = canLoadLeading,
+            canLoadTrailing = values[1] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListStatecaf0ed52c324_6")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: List<T>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(canLoadLeading, canLoadTrailing), key) { values ->
+        VirtualList(
+            items = items,
+            keyOf = keyOf,
+            state = state,
+            rowHeight = rowHeight,
+            scrollRate = scrollRate,
+            canLoadLeading = values[0] as Boolean,
+            canLoadTrailing = values[1] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
+ * Observes items, canLoadLeading, canLoadTrailing for [VirtualList] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [VirtualList].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("VirtualListStatecaf0ed52c324_7")
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    emitObservedComponent(listOf(items, canLoadLeading, canLoadTrailing), key) { values ->
+        VirtualList(
+            items = values[0] as List<T>,
+            keyOf = keyOf,
+            state = state,
+            rowHeight = rowHeight,
+            scrollRate = scrollRate,
+            canLoadLeading = values[1] as Boolean,
+            canLoadTrailing = values[2] as Boolean,
+            modifier = modifier,
+            key = null,
+            content = content,
+        )
+    }
+}
+
+/**
  * Observes items for [SelectionList] at the next owner-thread frame cutoff.
  *
  * Retain caller-owned sources and editing state outside reevaluation.

@@ -22,10 +22,10 @@ import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.internal.toIntExact
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
+import dev.s7a.strata.node.ConstrainedChildrenNode
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
-import dev.s7a.strata.node.DynamicChildrenNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PointerInputNode
@@ -53,7 +53,7 @@ internal class VirtualListElement(
     internal val keyAt: (Int) -> Any,
     internal val indexOfKey: (Any, Int) -> Int?,
     internal val itemContent: (Any) -> Element,
-    internal val viewportSize: IntSize,
+    internal val viewportSize: IntSize?,
     internal val rowHeight: Int,
     internal val scrollRate: Int,
     internal val canLoadLeading: Boolean,
@@ -74,7 +74,7 @@ internal class VirtualListElement(
     internal class Node(
         initial: VirtualListElement,
     ) : RetainedNode(),
-        DynamicChildrenNode,
+        ConstrainedChildrenNode,
         MeasureNode,
         LayoutNode,
         PointerInputNode,
@@ -89,7 +89,8 @@ internal class VirtualListElement(
         private var keyAt = initial.keyAt
         private var indexOfKey = initial.indexOfKey
         private var itemContent = initial.itemContent
-        private var viewportSize = initial.viewportSize
+        private var requestedViewportSize = initial.viewportSize
+        private var viewportSize = initial.viewportSize ?: IntSize.Zero
         private var rowHeight = initial.rowHeight
         private var scrollRate = initial.scrollRate
         private var canLoadLeading = initial.canLoadLeading
@@ -106,6 +107,7 @@ internal class VirtualListElement(
         private var attached = false
 
         override fun prepareDeclaration() {
+            require(requestedViewportSize != null) { "Automatic VirtualList sizing requires local layout; remote declarations must specify viewportSize." }
             state.scrollState.updateGeometry(viewportSize.height, (itemCount.toLong() * rowHeight).toIntExact(), checkNotNull(observer))
         }
 
@@ -132,10 +134,26 @@ internal class VirtualListElement(
                     )
                 }
 
+        override fun dynamicChildren(constraints: Constraints): List<Element> {
+            val requested = requestedViewportSize
+            viewportSize =
+                if (requested != null) {
+                    require(constraints.isSatisfiedBy(requested)) { "VirtualList constraints must contain its requested viewport size." }
+                    requested
+                } else {
+                    require(constraints.maxWidth != Int.MAX_VALUE && constraints.maxHeight != Int.MAX_VALUE) {
+                        "Automatic VirtualList sizing requires bounded width and height; use weight, fillMaxSize, size or viewportSize."
+                    }
+                    IntSize(constraints.maxWidth, constraints.maxHeight)
+                }
+            state.scrollState.updateGeometry(viewportSize.height, (itemCount.toLong() * rowHeight).toIntExact(), checkNotNull(observer))
+            return dynamicChildren()
+        }
+
         override fun dynamicChildren(): List<Element> {
-            if (itemCount == 0) {
+            if (itemCount == 0 || viewportSize.width == 0 || viewportSize.height == 0) {
                 clearCachedChildren()
-                clearAnchor()
+                if (itemCount == 0) clearAnchor()
                 return emptyList()
             }
             val offset = state.scrollState.metrics.offset
@@ -332,7 +350,8 @@ internal class VirtualListElement(
             keyAt = current.keyAt
             indexOfKey = current.indexOfKey
             itemContent = current.itemContent
-            viewportSize = current.viewportSize
+            requestedViewportSize = current.viewportSize
+            viewportSize = current.viewportSize ?: viewportSize
             rowHeight = current.rowHeight
             scrollRate = current.scrollRate
             canLoadLeading = current.canLoadLeading
@@ -452,7 +471,9 @@ internal class VirtualListElement(
                 nodeClass = Node::class,
                 validateLocal = { element ->
                     require(0 <= element.initialItemCount) { "VirtualList item count must be non-negative." }
-                    require(0 < element.viewportSize.width && 0 < element.viewportSize.height) { "VirtualList viewport size must be positive." }
+                    element.viewportSize?.let { size ->
+                        require(0 < size.width && 0 < size.height) { "VirtualList viewport size must be positive." }
+                    }
                     require(0 < element.rowHeight) { "VirtualList row height must be positive." }
                     require(0 < element.scrollRate) { "VirtualList scroll rate must be positive." }
                     require(element.children.isEmpty()) { "VirtualList declarative children must be dynamically materialized." }

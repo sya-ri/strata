@@ -5,6 +5,10 @@ Use this document when changing workflow topology or caches; [release publicatio
 CI scripts require Python 3.11 or newer for standard-library TOML parsing.
 The Java setup action and Qodana bootstrap read their ordinary and frozen paired toolchains from the same catalog reader.
 
+SonarQube Cloud uses [automatic analysis](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/automatic-analysis/) with repository settings in `.sonarcloud.properties`.
+Copy-paste detection excludes only `ObservedComponents.kt`, whose overloads are generated and verified from the maintained component declarations by `:api:checkStateComponentOverloads`.
+Rule analysis still includes that generated file; handwritten declarations and runtime code remain subject to duplication checks.
+
 ## Build configuration and concurrency
 
 The typed Minecraft target matrix owns versions, toolchains, distributions, paired projects, and linked Dokka sources.
