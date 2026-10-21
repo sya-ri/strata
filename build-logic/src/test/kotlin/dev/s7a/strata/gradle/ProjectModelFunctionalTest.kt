@@ -212,21 +212,56 @@ internal class ProjectModelFunctionalTest {
     }
 
     @Test
-    fun `Web model retains source checks and refuses implicit coverage acceptance`() {
+    fun `Web model retains every owned module check`() {
         assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents"))
         assertEquals(
             sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"),
             included("-Pstrata.webOnly=true", ":runtime:web:check", ":performance-testkit:publishToMavenLocal"),
         )
-        rejected("complete build", false, "-Pstrata.webOnly=true", ":integration:web:check")
-        assertEquals(69, included(":integration:web:check").size)
-        assertTrue(
-            Files.readAllLines(directory.resolve("executed-tasks.txt")).containsAll(
-                listOf(":integration:web:check", ":integration:web:koverVerify", ":integration:web:koverCachedVerify"),
-            ),
+        Files.deleteIfExists(directory.resolve("executed-tasks.txt"))
+        assertEquals(
+            sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"),
+            included("-Pstrata.webOnly=true", ":integration:web:check"),
         )
+        assertEquals(
+            listOf(":integration:web:koverCachedVerify", ":integration:web:koverVerify", ":integration:web:check"),
+            Files.readAllLines(directory.resolve("executed-tasks.txt")),
+        )
+        assertEquals(69, included(":integration:web:check").size)
         rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:check")
         rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents", ":quality:component-benchmarks:check")
+    }
+
+    @Test
+    fun `Web module verification cannot admit complete acceptance`() {
+        listOf(
+            ":check",
+            ":koverVerify",
+            ":koverCachedVerify",
+            ":koverHtmlReport",
+            ":koverXmlReport",
+            ":integration:web:koverHtmlReport",
+            ":performance-testkit:verifyPublishedPerformanceInventory",
+            ":runtime:minecraft-fonts-lwjgl:verifyOfflineFontParity",
+            ":runtime:core:publishToMavenLocal",
+        ).forEach { complete ->
+            rejected("complete build", false, "-Pstrata.webOnly=true", ":integration:web:check", complete)
+        }
+    }
+
+    @Test
+    fun `Web module coverage verification survives configuration cache reuse`() {
+        val arguments = arrayOf("-Pstrata.webOnly=true", "--configuration-cache", ":integration:web:check")
+        val stored = runner(*arguments).build()
+        assertTrue(stored.output.contains("Configuration cache entry stored."), stored.output)
+        Files.deleteIfExists(directory.resolve("executed-tasks.txt"))
+        val reused = runner(*arguments).build()
+        assertTrue(reused.output.contains("Configuration cache entry reused."), reused.output)
+        assertEquals(
+            listOf(":integration:web:koverCachedVerify", ":integration:web:koverVerify", ":integration:web:check"),
+            Files.readAllLines(directory.resolve("executed-tasks.txt")),
+        )
+        rejected("complete build", false, *arguments, ":koverVerify")
     }
 
     @Test

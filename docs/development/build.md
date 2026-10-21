@@ -79,6 +79,8 @@ The unqualified `check` includes each selected project's checks; `:check` alone 
 The full command includes development and production loaded-client gates, isolated CPU font contracts, and configured native-to-offline comparisons.
 
 For isolated JVM tests, fixture verification, benchmark preparation and collection, use `-Pstrata.jvmOnly=true` as described in the [performance testkit](performance-testkit.md#collection-ownership).
+The Web model, `-Pstrata.webOnly=true`, supports its included module checks and the project-local Kover verification dependencies of `:integration:web:check`.
+Root coverage reports retain the complete model.
 Scoped models reject complete acceptance requests instead of silently narrowing them; component benchmark `check` and published inventory acceptance also require the complete model when using `strata.webOnly`.
 IDE/Qodana imports always require the complete project model, including every versioned runtime and integration project.
 

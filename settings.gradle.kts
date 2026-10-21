@@ -220,7 +220,10 @@ if (jvmOnly) {
 } else if (webOnly) {
     include(*webProjectPaths.toTypedArray())
     installScopedSourceBoundary("strata.webOnly") { task ->
-        (task.name == "check" && task.project.path in webProjectPaths && task.project.path != ":quality:component-benchmarks") ||
+        val projectCheck = task.name == "check" && task.project.path != ":quality:component-benchmarks"
+        // These check dependencies verify coverage owned by the fully included project.
+        val projectCoverageVerification = task.group == LifecycleBasePlugin.VERIFICATION_GROUP && task.name in setOf("koverVerify", "koverCachedVerify")
+        (task.project.path in webProjectPaths && (projectCheck || projectCoverageVerification)) ||
             (task.project.path == ":performance-testkit" && (task.name == "publishToMavenLocal" || task is PublishToMavenLocal))
     }
 } else {
