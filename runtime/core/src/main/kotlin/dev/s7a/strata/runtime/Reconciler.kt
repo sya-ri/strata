@@ -3,10 +3,13 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.modifier.ModifierElement
+import dev.s7a.strata.node.ConstrainedChildrenNode
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DeferredContentNode
 import dev.s7a.strata.node.DirtyMask
+import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.DynamicChildrenNode
 import dev.s7a.strata.node.ReactiveContentNode
 import dev.s7a.strata.node.StateObserverNode
@@ -134,7 +137,7 @@ internal class Reconciler(
         lifecycle.attachCurrent(root)
         synchronizeObservers(root)
         val dynamic = root.node as? DynamicChildrenNode
-        if (dynamic != null) {
+        if (dynamic != null && dynamic !is ConstrainedChildrenNode) {
             val descriptions = evaluateChildren(root, dynamic)
             reconcileDynamicChildren(root, descriptions, validator)
         }
@@ -161,6 +164,28 @@ internal class Reconciler(
         val children = root.refreshChildren
         for (index in children.indices) refreshProjectedChildren(children[index], validator)
         if (root.hasPendingAttachments || root.traversalSummaryDirty) root.refreshTraversalSummary(propagate = false)
+    }
+
+    /**
+     * Reconciles constraint-dependent children inside the active ancestor measurement pass.
+     * Structural invalidation still updates layout, paint and semantics; ancestor measurement already in progress consumes this work.
+     */
+    fun refreshConstrainedChildren(
+        root: RetainedNode,
+        constraints: Constraints,
+        validator: DescriptionValidator,
+    ) {
+        val constrained = root.node as? ConstrainedChildrenNode ?: return
+        val measuringAncestors =
+            generateSequence<RetainedEntry>(root) { it.parent }
+                .filter { DirtyPhase.Measure !in it.dirty }
+                .toList()
+        val descriptions = constrained.dynamicChildren(constraints)
+        reconcileDynamicChildren(root, descriptions, validator)
+        val children = root.refreshChildren
+        for (index in children.indices) refreshDynamicChildren(children[index], validator)
+        lifecycle.attachPending(root)
+        measuringAncestors.forEach { it.dirty -= DirtyMask.of(DirtyPhase.Measure) }
     }
 
     private fun reconcileDynamicChildren(

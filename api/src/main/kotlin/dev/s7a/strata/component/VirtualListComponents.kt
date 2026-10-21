@@ -151,7 +151,7 @@ private fun <T : Any, K : Any> UiScope.emitVirtualList(
     keyAt: (Int) -> K,
     indexOfKey: (K, Int) -> Int?,
     state: VirtualListState<K>,
-    viewportSize: IntSize,
+    viewportSize: IntSize?,
     rowHeight: Int,
     scrollRate: Int,
     canLoadLeading: Boolean,
@@ -233,6 +233,193 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
         keyAt = { index -> keyOf(snapshot[index]) },
         state = state,
         viewportSize = viewportSize,
+        rowHeight = rowHeight,
+        indexOfKey = { target -> snapshot.indexOfFirst { item -> keyOf(item) == target }.takeIf { index -> 0 <= index } },
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+/**
+ * Emits a fixed-row virtual viewport backed by a known finite indexed source.
+ *
+ * Uses the parent's bounded maximum width and height, including space assigned by Column.weight.
+ * Zero allocation materializes no rows; either unbounded axis fails during measurement.
+ * Keep the same state through resize. Declaration-only remote hosts require the explicit viewportSize overload.
+ *
+ * Only visible rows plus one overscan row on each edge are constructed and retained.
+ * [state] supports index and key jumps and exposes its [ScrollState] for a separately placed optional Scrollbar.
+ * Data access and row construction are owner-thread operations performed immediately before a dirty measure pass.
+ * Overlapping rows may reuse their declaration when their absolute index, item identity, stable key and list definition are unchanged.
+ * Direct mutable-state reads in [content] require fresh row construction when the window changes; use Observe for independently observed row regions.
+ * Keep row models immutable and call [VirtualListState.refresh] after changing other captured presentation inputs.
+ * Row callbacks describe UI and must not rely on an invocation for every scroll step.
+ *
+ * @param T immutable row model type.
+ * @param K stable row key type.
+ * @receiver active owner-thread UI scope.
+ * @param itemCount non-negative known source size.
+ * @param itemAt indexed item accessor called only for materialized rows.
+ * @param keyAt stable key accessor called only for materialized rows and key validation.
+ * @param indexOfKey optional efficient key resolver; the default scans keys without materializing row content.
+ * @param state caller-owned navigation and shared scroll state.
+ * @param rowHeight positive fixed logical row height.
+ * @param scrollRate positive wheel multiplier.
+ * @param canLoadLeading whether upward boundary input emits a leading load request through [modifier].
+ * @param canLoadTrailing whether downward boundary input emits a trailing load request through [modifier].
+ * @param modifier active viewport behavior.
+ * @param key optional stable sibling identity.
+ * @param content deferred callback that emits exactly one row root.
+ */
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } },
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    checkUsable()
+    emitVirtualList(
+        initialItemCount = validateVirtualListItemCount(itemCount),
+        itemCount = { itemCount },
+        itemAt = itemAt,
+        keyAt = keyAt,
+        indexOfKey = { target, _ -> indexOfKey(target) },
+        state = state,
+        viewportSize = null,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+/**
+ * Emits a fixed-row virtual viewport backed by a caller-owned dynamic indexed source.
+ *
+ * Uses the parent's bounded maximum width and height, including space assigned by Column.weight.
+ * Zero allocation materializes no rows; either unbounded axis fails during measurement.
+ * Keep the same state through resize. Declaration-only remote hosts require the explicit viewportSize overload.
+ *
+ * [itemCount] is sampled exactly once while this description is created and once after each explicit [VirtualListState.refresh].
+ * [itemAt], [keyAt], and [indexOfKey] are read only against the most recently sampled non-negative count.
+ * Complete a source mutation before calling [VirtualListState.refresh] on its owner thread.
+ * Refresh reconstructs the materialized rows even when the count is unchanged and preserves the last visible stable key and its intra-row offset when that key remains.
+ * A refresh requested before attachment is retained until a list attaches.
+ * Only visible rows plus one overscan row on each edge are constructed and retained.
+ * Moving-window reuse follows the finite indexed overload's contract; refresh always reconstructs the entire current window.
+ *
+ * @param T row model type owned by the caller.
+ * @param K stable row key type.
+ * @receiver active owner-thread UI scope.
+ * @param itemCount owner-thread source-size accessor returning a non-negative count at each explicit sampling boundary.
+ * @param itemAt indexed item accessor for the current sampled source revision.
+ * @param keyAt stable key accessor for the current sampled source revision.
+ * @param indexOfKey optional efficient resolver for the current source revision; null scans [keyAt] within the sampled count.
+ * @param state caller-owned navigation, invalidation, and shared scroll state.
+ * @param rowHeight positive fixed logical row height.
+ * @param scrollRate positive wheel multiplier.
+ * @param canLoadLeading whether upward boundary input emits a leading load request through [modifier].
+ * @param canLoadTrailing whether downward boundary input emits a trailing load request through [modifier].
+ * @param modifier active viewport behavior.
+ * @param key optional stable sibling identity.
+ * @param content deferred callback that emits exactly one row root.
+ * @throws IllegalArgumentException when a sampled item count is negative or a non-null resolved key index is outside that sample.
+ * @throws IllegalStateException when refresh or data access violates the owner-thread contract.
+ */
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    checkUsable()
+    val initialItemCount = validateVirtualListItemCount(itemCount())
+    emitVirtualList(
+        initialItemCount = initialItemCount,
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        indexOfKey =
+            if (indexOfKey == null) {
+                { target, sampledCount -> (0 until sampledCount).firstOrNull { index -> keyAt(index) == target } }
+            } else {
+                { target, _ -> indexOfKey(target) }
+            },
+        state = state,
+        viewportSize = null,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+/**
+ * Emits a fixed-row virtual viewport backed by an immutable in-memory list.
+ * Row construction and moving-window reuse follow the finite indexed overload's contract.
+ *
+ * Uses the parent's bounded maximum width and height, including space assigned by Column.weight.
+ * Zero allocation materializes no rows; either unbounded axis fails during measurement.
+ * Keep the same state through resize. Declaration-only remote hosts require the explicit viewportSize overload.
+ *
+ * @param T immutable row model type.
+ * @param K stable row key type.
+ * @receiver active owner-thread UI scope.
+ * @param items immutable source snapshot; callers must replace rather than mutate it while attached.
+ * @param keyOf stable row key mapping.
+ * @param state caller-owned navigation and shared scroll state.
+ * @param rowHeight positive fixed logical row height.
+ * @param scrollRate positive wheel multiplier.
+ * @param canLoadLeading whether upward boundary input emits a leading load request through [modifier].
+ * @param canLoadTrailing whether downward boundary input emits a trailing load request through [modifier].
+ * @param modifier active viewport behavior.
+ * @param key optional stable sibling identity.
+ * @param content deferred callback that emits exactly one row root.
+ */
+public fun <T : Any, K : Any> UiScope.VirtualList(
+    items: List<T>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    val snapshot = items.toList()
+    VirtualList(
+        itemCount = snapshot.size,
+        itemAt = snapshot::get,
+        keyAt = { index -> keyOf(snapshot[index]) },
+        state = state,
         rowHeight = rowHeight,
         indexOfKey = { target -> snapshot.indexOfFirst { item -> keyOf(item) == target }.takeIf { index -> 0 <= index } },
         scrollRate = scrollRate,

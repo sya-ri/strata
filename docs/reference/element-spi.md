@@ -218,5 +218,8 @@ The runtime evaluates that callback synchronously under its installed profile, a
 Zero or multiple roots fail before retained-tree creation; a callback failure is propagated unchanged before cardinality validation.
 Low-level SPI tests may opt into `evaluateComponentTree` and install its returned element in a `UiTree`, but this privileged bridge is not an application screen builder.
 Call `measure` with constraints.
+Nodes implementing `ConstrainedChildrenNode` materialize their direct children after the parent and active modifiers resolve their measurement constraints, before any child is measured.
+They follow the same validation, keyed reconciliation, attachment and failure contracts as ordinary `DynamicChildrenNode` children.
+Ordinary dynamic children still materialize before measurement; declaration-only projection continues to use the unconstrained callback.
 Call `layout`.
 Consume `paint`, `dispatchPointer`, or `semantics` output at the platform boundary.

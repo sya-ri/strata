@@ -53,7 +53,10 @@ public class UiTree(
     internal var stateObservation: StateObservation? = null
     private val dirtyTracker = DirtyTracker()
     private val registry = NodeOwnershipRegistry()
-    private val pipeline = Pipeline(ownerGuard, dirtyTracker)
+    private val pipeline: Pipeline =
+        Pipeline(ownerGuard, dirtyTracker) { retained, constraints ->
+            reconciler.refreshConstrainedChildren(retained, constraints, validator)
+        }
     private val observedSources = ObservedSourceRegistry()
     private val lifecycle =
         LifecycleManager(registry, ownerGuard, dirtyTracker, callbackSession) { entry ->

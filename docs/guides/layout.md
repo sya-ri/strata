@@ -58,6 +58,12 @@ Weights must be positive and finite.
 `fill = true` gives the child an exact slot; `fill = false` lets it use less without redistributing the unused space.
 Integer rounding leaves the final weighted child the remainder.
 Very small relative weights can receive zero pixels; weights do not guarantee a minimum size.
+
+Omit `viewportSize` from `VirtualList` to use the bounded width and height allocated by its parent.
+For a list below a header or search field, put it directly in a bounded Column with `Modifier.weight(1f)`; the Column measures fixed siblings and spacing before assigning the remaining height.
+The list resolves its viewport before constructing visible rows, retains its state through resize, and constructs no rows when either allocated extent is zero.
+Both axes must be bounded; an unbounded axis fails explicitly rather than constructing an unbounded list.
+The explicit `viewportSize` overload retains its exact-size contract and must be used by declaration-only remote hosts, which do not perform local layout.
 With an unbounded main axis, children use intrinsic size instead of proportional allocation.
 
 ## Arrangement and alignment

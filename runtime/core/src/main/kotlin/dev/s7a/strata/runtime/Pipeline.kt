@@ -35,6 +35,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal class Pipeline(
     private val ownerGuard: OwnerGuard,
     private val dirtyTracker: DirtyTracker = DirtyTracker(),
+    private val prepareChildren: (RetainedNode, Constraints) -> Unit = { _, _ -> },
 ) {
     private val frameCallbacks = FrameCallbackIndex()
     private val paintPipeline = PaintPipeline(ownerGuard)
@@ -306,6 +307,7 @@ internal class Pipeline(
         constraints: Constraints,
     ): IntSize {
         if (DirtyPhase.Measure in retained.dirty || retained.measuredConstraints != constraints) {
+            if (retained is RetainedNode) prepareChildren(retained, constraints)
             retained.dirty -= DirtyMask.of(DirtyPhase.Measure)
             retained.dirty += DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
             val measurePass = if (0 < retained.effectiveChildCount) Any() else null
