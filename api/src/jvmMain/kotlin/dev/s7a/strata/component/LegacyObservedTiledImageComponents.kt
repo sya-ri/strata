@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TiledImageState06558dbd1f3e_1")
-public fun UiScope.legacyTiledImage06558dbd1f3e_1(
+public fun UiScope.legacyTiledImage06558dbd1f3eVariant1(
     source: StateSource<TiledImageSource>,
     state: PanZoomState,
     size: IntSize,

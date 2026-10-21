@@ -20,7 +20,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SlotStatea3c7818cbdc8_1")
-public fun UiScope.legacySlota3c7818cbdc8_1(
+public fun UiScope.legacySlota3c7818cbdc8Variant1(
     bind: StateSource<SlotBinding?>,
     highlightable: Boolean = true,
     modifier: Modifier = Modifier,
@@ -45,7 +45,7 @@ public fun UiScope.legacySlota3c7818cbdc8_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SlotStatea3c7818cbdc8_2")
-public fun UiScope.legacySlota3c7818cbdc8_2(
+public fun UiScope.legacySlota3c7818cbdc8Variant2(
     bind: SlotBinding? = null,
     highlightable: StateSource<Boolean>,
     modifier: Modifier = Modifier,
@@ -70,7 +70,7 @@ public fun UiScope.legacySlota3c7818cbdc8_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SlotStatea3c7818cbdc8_3")
-public fun UiScope.legacySlota3c7818cbdc8_3(
+public fun UiScope.legacySlota3c7818cbdc8Variant3(
     bind: StateSource<SlotBinding?>,
     highlightable: StateSource<Boolean>,
     modifier: Modifier = Modifier,

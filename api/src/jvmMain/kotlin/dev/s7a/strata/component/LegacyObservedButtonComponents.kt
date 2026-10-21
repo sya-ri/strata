@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ButtonStatecffa97b99dc2_1")
-public fun UiScope.legacyButtoncffa97b99dc2_1(
+public fun UiScope.legacyButtoncffa97b99dc2Variant1(
     label: StateSource<UiText>,
     width: Int = 150,
     enabled: Boolean = true,
@@ -46,7 +46,7 @@ public fun UiScope.legacyButtoncffa97b99dc2_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ButtonStatecffa97b99dc2_2")
-public fun UiScope.legacyButtoncffa97b99dc2_2(
+public fun UiScope.legacyButtoncffa97b99dc2Variant2(
     label: UiText,
     width: Int = 150,
     enabled: StateSource<Boolean>,
@@ -71,7 +71,7 @@ public fun UiScope.legacyButtoncffa97b99dc2_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ButtonStatecffa97b99dc2_3")
-public fun UiScope.legacyButtoncffa97b99dc2_3(
+public fun UiScope.legacyButtoncffa97b99dc2Variant3(
     label: StateSource<UiText>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
@@ -96,7 +96,7 @@ public fun UiScope.legacyButtoncffa97b99dc2_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ButtonState6e1d7e05cd68_1")
-public fun UiScope.legacyButton6e1d7e05cd68_1(
+public fun UiScope.legacyButton6e1d7e05cd68Variant1(
     label: StateSource<String>,
     width: Int = 150,
     enabled: Boolean = true,
@@ -121,7 +121,7 @@ public fun UiScope.legacyButton6e1d7e05cd68_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ButtonState6e1d7e05cd68_2")
-public fun UiScope.legacyButton6e1d7e05cd68_2(
+public fun UiScope.legacyButton6e1d7e05cd68Variant2(
     label: String,
     width: Int = 150,
     enabled: StateSource<Boolean>,
@@ -146,7 +146,7 @@ public fun UiScope.legacyButton6e1d7e05cd68_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ButtonState6e1d7e05cd68_3")
-public fun UiScope.legacyButton6e1d7e05cd68_3(
+public fun UiScope.legacyButton6e1d7e05cd68Variant3(
     label: StateSource<String>,
     width: Int = 150,
     enabled: StateSource<Boolean>,

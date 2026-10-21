@@ -22,7 +22,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldStatebdacf61484d9_1")
-public fun UiScope.legacyTextFieldbdacf61484d9_1(
+public fun UiScope.legacyTextFieldbdacf61484d9Variant1(
     state: TextFieldState,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
@@ -47,7 +47,7 @@ public fun UiScope.legacyTextFieldbdacf61484d9_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldState06eec201bfdd_1")
-public fun UiScope.legacyTextField06eec201bfdd_1(
+public fun UiScope.legacyTextField06eec201bfddVariant1(
     state: TextFieldState,
     size: IntSize,
     enabled: StateSource<Boolean>,
@@ -74,7 +74,7 @@ public fun UiScope.legacyTextField06eec201bfdd_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldStateac020717728e_1")
-public fun UiScope.legacyTextFieldac020717728e_1(
+public fun UiScope.legacyTextFieldac020717728eVariant1(
     state: TextFieldState,
     font: ResourceId,
     enabled: StateSource<Boolean>,
@@ -101,7 +101,7 @@ public fun UiScope.legacyTextFieldac020717728e_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldState0f2e4a0352af_1")
-public fun UiScope.legacyTextField0f2e4a0352af_1(
+public fun UiScope.legacyTextField0f2e4a0352afVariant1(
     state: TextFieldState,
     size: IntSize,
     font: ResourceId,
@@ -130,7 +130,7 @@ public fun UiScope.legacyTextField0f2e4a0352af_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldState8ebce6a07628_1")
-public fun UiScope.legacyTextField8ebce6a07628_1(
+public fun UiScope.legacyTextField8ebce6a07628Variant1(
     state: TextFieldState,
     appearance: TextInputAppearance,
     enabled: StateSource<Boolean>,
@@ -157,7 +157,7 @@ public fun UiScope.legacyTextField8ebce6a07628_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldState68d5823f42d7_1")
-public fun UiScope.legacyTextField68d5823f42d7_1(
+public fun UiScope.legacyTextField68d5823f42d7Variant1(
     state: TextFieldState,
     appearance: TextInputAppearance,
     size: IntSize,
@@ -186,7 +186,7 @@ public fun UiScope.legacyTextField68d5823f42d7_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldState715dafc3f527_1")
-public fun UiScope.legacyTextField715dafc3f527_1(
+public fun UiScope.legacyTextField715dafc3f527Variant1(
     state: TextFieldState,
     appearance: TextInputAppearance,
     font: ResourceId,
@@ -215,7 +215,7 @@ public fun UiScope.legacyTextField715dafc3f527_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextFieldStatefd7b3be167e7_1")
-public fun UiScope.legacyTextFieldfd7b3be167e7_1(
+public fun UiScope.legacyTextFieldfd7b3be167e7Variant1(
     state: TextFieldState,
     appearance: TextInputAppearance,
     size: IntSize,

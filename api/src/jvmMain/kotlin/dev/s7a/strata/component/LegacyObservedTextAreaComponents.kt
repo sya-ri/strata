@@ -22,7 +22,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextAreaStatec0abf0512fec_1")
-public fun UiScope.legacyTextAreac0abf0512fec_1(
+public fun UiScope.legacyTextAreac0abf0512fecVariant1(
     state: TextAreaState,
     viewport: TextAreaViewport,
     enabled: StateSource<Boolean>,
@@ -53,7 +53,7 @@ public fun UiScope.legacyTextAreac0abf0512fec_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextAreaStatec701b9e2eaf6_1")
-public fun UiScope.legacyTextAreac701b9e2eaf6_1(
+public fun UiScope.legacyTextAreac701b9e2eaf6Variant1(
     state: TextAreaState,
     viewport: TextAreaViewport,
     font: ResourceId,
@@ -86,7 +86,7 @@ public fun UiScope.legacyTextAreac701b9e2eaf6_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextAreaState80c0b5b4cb37_1")
-public fun UiScope.legacyTextArea80c0b5b4cb37_1(
+public fun UiScope.legacyTextArea80c0b5b4cb37Variant1(
     state: TextAreaState,
     appearance: TextInputAppearance,
     viewport: TextAreaViewport,
@@ -119,7 +119,7 @@ public fun UiScope.legacyTextArea80c0b5b4cb37_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TextAreaState4da1faac4769_1")
-public fun UiScope.legacyTextArea4da1faac4769_1(
+public fun UiScope.legacyTextArea4da1faac4769Variant1(
     state: TextAreaState,
     appearance: TextInputAppearance,
     viewport: TextAreaViewport,

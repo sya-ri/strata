@@ -22,7 +22,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ImageState386405e1017f_1")
-public fun UiScope.legacyImage386405e1017f_1(
+public fun UiScope.legacyImage386405e1017fVariant1(
     source: StateSource<ImageSource>,
     size: IntSize? = null,
     modifier: Modifier = Modifier,
@@ -45,7 +45,7 @@ public fun UiScope.legacyImage386405e1017f_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ImageState6751db0e9723_1")
-public fun UiScope.legacyImage6751db0e9723_1(
+public fun UiScope.legacyImage6751db0e9723Variant1(
     source: StateSource<ImageSource>,
     sourceRegion: IntRect,
     size: IntSize = IntSize(sourceRegion.width, sourceRegion.height),

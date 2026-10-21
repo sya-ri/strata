@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CheckboxState3bddea62a5dc_1")
-public fun UiScope.legacyCheckbox3bddea62a5dc_1(
+public fun UiScope.legacyCheckbox3bddea62a5dcVariant1(
     label: StateSource<UiText>,
     state: CheckboxState,
     width: Int = 150,
@@ -48,7 +48,7 @@ public fun UiScope.legacyCheckbox3bddea62a5dc_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CheckboxState3bddea62a5dc_2")
-public fun UiScope.legacyCheckbox3bddea62a5dc_2(
+public fun UiScope.legacyCheckbox3bddea62a5dcVariant2(
     label: UiText,
     state: CheckboxState,
     width: Int = 150,
@@ -75,7 +75,7 @@ public fun UiScope.legacyCheckbox3bddea62a5dc_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CheckboxState3bddea62a5dc_3")
-public fun UiScope.legacyCheckbox3bddea62a5dc_3(
+public fun UiScope.legacyCheckbox3bddea62a5dcVariant3(
     label: StateSource<UiText>,
     state: CheckboxState,
     width: Int = 150,
@@ -102,7 +102,7 @@ public fun UiScope.legacyCheckbox3bddea62a5dc_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CheckboxState1d460d77bb71_1")
-public fun UiScope.legacyCheckbox1d460d77bb71_1(
+public fun UiScope.legacyCheckbox1d460d77bb71Variant1(
     label: StateSource<String>,
     state: CheckboxState,
     width: Int = 150,
@@ -129,7 +129,7 @@ public fun UiScope.legacyCheckbox1d460d77bb71_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CheckboxState1d460d77bb71_2")
-public fun UiScope.legacyCheckbox1d460d77bb71_2(
+public fun UiScope.legacyCheckbox1d460d77bb71Variant2(
     label: String,
     state: CheckboxState,
     width: Int = 150,
@@ -156,7 +156,7 @@ public fun UiScope.legacyCheckbox1d460d77bb71_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CheckboxState1d460d77bb71_3")
-public fun UiScope.legacyCheckbox1d460d77bb71_3(
+public fun UiScope.legacyCheckbox1d460d77bb71Variant3(
     label: StateSource<String>,
     state: CheckboxState,
     width: Int = 150,

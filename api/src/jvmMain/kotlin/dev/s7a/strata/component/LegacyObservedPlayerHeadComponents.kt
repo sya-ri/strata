@@ -20,7 +20,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("PlayerHeadState339c1e7d20b9_1")
-public fun UiScope.legacyPlayerHead339c1e7d20b9_1(
+public fun UiScope.legacyPlayerHead339c1e7d20b9Variant1(
     source: StateSource<PlayerSkinSource>,
     scale: PlayerHeadScale,
     showHat: Boolean = true,

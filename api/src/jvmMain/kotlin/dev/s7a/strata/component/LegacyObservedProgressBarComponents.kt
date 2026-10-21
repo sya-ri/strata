@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("ProgressBarState4c303dc4114b_1")
-public fun UiScope.legacyProgressBar4c303dc4114b_1(
+public fun UiScope.legacyProgressBar4c303dc4114bVariant1(
     progress: StateSource<Double>,
     size: IntSize = IntSize(100, 12),
     modifier: Modifier = Modifier,

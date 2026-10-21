@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SelectionListState685be857e721_1")
-public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_1(
+public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721Variant1(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: SelectionListState<K>,
@@ -58,7 +58,7 @@ public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SelectionListState685be857e721_2")
-public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_2(
+public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721Variant2(
     items: List<T>,
     keyOf: (T) -> K,
     state: SelectionListState<K>,
@@ -95,7 +95,7 @@ public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SelectionListState685be857e721_3")
-public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_3(
+public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721Variant3(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: SelectionListState<K>,
@@ -132,7 +132,7 @@ public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SelectionListState685be857e721_4")
-public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_4(
+public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721Variant4(
     items: List<T>,
     keyOf: (T) -> K,
     state: SelectionListState<K>,
@@ -169,7 +169,7 @@ public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_4(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SelectionListState685be857e721_5")
-public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_5(
+public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721Variant5(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: SelectionListState<K>,
@@ -206,7 +206,7 @@ public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_5(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SelectionListState685be857e721_6")
-public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_6(
+public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721Variant6(
     items: List<T>,
     keyOf: (T) -> K,
     state: SelectionListState<K>,
@@ -243,7 +243,7 @@ public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_6(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SelectionListState685be857e721_7")
-public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721_7(
+public fun <T : Any, K : Any> UiScope.legacySelectionList685be857e721Variant7(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: SelectionListState<K>,

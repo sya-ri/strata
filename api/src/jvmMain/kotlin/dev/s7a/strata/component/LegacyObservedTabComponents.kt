@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState58ed18680f25_1")
-public fun UiScope.legacyTab58ed18680f25_1(
+public fun UiScope.legacyTab58ed18680f25Variant1(
     label: StateSource<UiText>,
     selected: Boolean,
     width: Int = 150,
@@ -50,7 +50,7 @@ public fun UiScope.legacyTab58ed18680f25_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState58ed18680f25_2")
-public fun UiScope.legacyTab58ed18680f25_2(
+public fun UiScope.legacyTab58ed18680f25Variant2(
     label: UiText,
     selected: StateSource<Boolean>,
     width: Int = 150,
@@ -79,7 +79,7 @@ public fun UiScope.legacyTab58ed18680f25_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState58ed18680f25_3")
-public fun UiScope.legacyTab58ed18680f25_3(
+public fun UiScope.legacyTab58ed18680f25Variant3(
     label: StateSource<UiText>,
     selected: StateSource<Boolean>,
     width: Int = 150,
@@ -108,7 +108,7 @@ public fun UiScope.legacyTab58ed18680f25_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState58ed18680f25_4")
-public fun UiScope.legacyTab58ed18680f25_4(
+public fun UiScope.legacyTab58ed18680f25Variant4(
     label: UiText,
     selected: Boolean,
     width: Int = 150,
@@ -137,7 +137,7 @@ public fun UiScope.legacyTab58ed18680f25_4(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState58ed18680f25_5")
-public fun UiScope.legacyTab58ed18680f25_5(
+public fun UiScope.legacyTab58ed18680f25Variant5(
     label: StateSource<UiText>,
     selected: Boolean,
     width: Int = 150,
@@ -166,7 +166,7 @@ public fun UiScope.legacyTab58ed18680f25_5(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState58ed18680f25_6")
-public fun UiScope.legacyTab58ed18680f25_6(
+public fun UiScope.legacyTab58ed18680f25Variant6(
     label: UiText,
     selected: StateSource<Boolean>,
     width: Int = 150,
@@ -195,7 +195,7 @@ public fun UiScope.legacyTab58ed18680f25_6(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState58ed18680f25_7")
-public fun UiScope.legacyTab58ed18680f25_7(
+public fun UiScope.legacyTab58ed18680f25Variant7(
     label: StateSource<UiText>,
     selected: StateSource<Boolean>,
     width: Int = 150,
@@ -224,7 +224,7 @@ public fun UiScope.legacyTab58ed18680f25_7(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState06dab4066e27_1")
-public fun UiScope.legacyTab06dab4066e27_1(
+public fun UiScope.legacyTab06dab4066e27Variant1(
     label: StateSource<String>,
     selected: Boolean,
     width: Int = 150,
@@ -253,7 +253,7 @@ public fun UiScope.legacyTab06dab4066e27_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState06dab4066e27_2")
-public fun UiScope.legacyTab06dab4066e27_2(
+public fun UiScope.legacyTab06dab4066e27Variant2(
     label: String,
     selected: StateSource<Boolean>,
     width: Int = 150,
@@ -282,7 +282,7 @@ public fun UiScope.legacyTab06dab4066e27_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState06dab4066e27_3")
-public fun UiScope.legacyTab06dab4066e27_3(
+public fun UiScope.legacyTab06dab4066e27Variant3(
     label: StateSource<String>,
     selected: StateSource<Boolean>,
     width: Int = 150,
@@ -311,7 +311,7 @@ public fun UiScope.legacyTab06dab4066e27_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState06dab4066e27_4")
-public fun UiScope.legacyTab06dab4066e27_4(
+public fun UiScope.legacyTab06dab4066e27Variant4(
     label: String,
     selected: Boolean,
     width: Int = 150,
@@ -340,7 +340,7 @@ public fun UiScope.legacyTab06dab4066e27_4(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState06dab4066e27_5")
-public fun UiScope.legacyTab06dab4066e27_5(
+public fun UiScope.legacyTab06dab4066e27Variant5(
     label: StateSource<String>,
     selected: Boolean,
     width: Int = 150,
@@ -369,7 +369,7 @@ public fun UiScope.legacyTab06dab4066e27_5(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState06dab4066e27_6")
-public fun UiScope.legacyTab06dab4066e27_6(
+public fun UiScope.legacyTab06dab4066e27Variant6(
     label: String,
     selected: StateSource<Boolean>,
     width: Int = 150,
@@ -398,7 +398,7 @@ public fun UiScope.legacyTab06dab4066e27_6(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("TabState06dab4066e27_7")
-public fun UiScope.legacyTab06dab4066e27_7(
+public fun UiScope.legacyTab06dab4066e27Variant7(
     label: StateSource<String>,
     selected: StateSource<Boolean>,
     width: Int = 150,

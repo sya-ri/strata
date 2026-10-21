@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState7e3481099f80_1")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80_1(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80Variant1(
     itemCount: Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -62,7 +62,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState7e3481099f80_2")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80_2(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80Variant2(
     itemCount: Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -103,7 +103,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState7e3481099f80_3")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80_3(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80Variant3(
     itemCount: Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -144,7 +144,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList7e3481099f80_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState4013cecb450b_1")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450b_1(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450bVariant1(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -185,7 +185,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450b_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState4013cecb450b_2")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450b_2(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450bVariant2(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -226,7 +226,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450b_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState4013cecb450b_3")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450b_3(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450bVariant3(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -267,7 +267,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList4013cecb450b_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState91e435daa5f9_1")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_1(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9Variant1(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -304,7 +304,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState91e435daa5f9_2")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_2(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9Variant2(
     items: List<T>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -341,7 +341,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState91e435daa5f9_3")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_3(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9Variant3(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -378,7 +378,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState91e435daa5f9_4")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_4(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9Variant4(
     items: List<T>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -415,7 +415,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_4(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState91e435daa5f9_5")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_5(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9Variant5(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -452,7 +452,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_5(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState91e435daa5f9_6")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_6(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9Variant6(
     items: List<T>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -489,7 +489,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_6(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState91e435daa5f9_7")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_7(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9Variant7(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -526,7 +526,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList91e435daa5f9_7(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState48d6d37341e0_1")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0_1(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0Variant1(
     itemCount: Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -565,7 +565,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState48d6d37341e0_2")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0_2(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0Variant2(
     itemCount: Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -604,7 +604,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState48d6d37341e0_3")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0_3(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0Variant3(
     itemCount: Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -643,7 +643,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList48d6d37341e0_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState0f5b9edb9f2b_1")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2b_1(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2bVariant1(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -682,7 +682,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2b_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState0f5b9edb9f2b_2")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2b_2(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2bVariant2(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -721,7 +721,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2b_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListState0f5b9edb9f2b_3")
-public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2b_3(
+public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2bVariant3(
     itemCount: () -> Int,
     itemAt: (Int) -> T,
     keyAt: (Int) -> K,
@@ -760,7 +760,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualList0f5b9edb9f2b_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListStatecaf0ed52c324_1")
-public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_1(
+public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324Variant1(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -795,7 +795,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListStatecaf0ed52c324_2")
-public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_2(
+public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324Variant2(
     items: List<T>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -830,7 +830,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListStatecaf0ed52c324_3")
-public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_3(
+public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324Variant3(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -865,7 +865,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListStatecaf0ed52c324_4")
-public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_4(
+public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324Variant4(
     items: List<T>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -900,7 +900,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_4(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListStatecaf0ed52c324_5")
-public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_5(
+public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324Variant5(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -935,7 +935,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_5(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListStatecaf0ed52c324_6")
-public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_6(
+public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324Variant6(
     items: List<T>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,
@@ -970,7 +970,7 @@ public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_6(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("VirtualListStatecaf0ed52c324_7")
-public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324_7(
+public fun <T : Any, K : Any> UiScope.legacyVirtualListcaf0ed52c324Variant7(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
     state: VirtualListState<K>,

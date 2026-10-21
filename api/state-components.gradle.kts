@@ -80,7 +80,7 @@ fun stateComponentOverloads(output: StateComponentOutput = StateComponentOutput.
                         val functionName = when (output) {
                             StateComponentOutput.OVERLOADS -> name
                             StateComponentOutput.COMPILE_CASES -> "compile${name}${signature}_$mask"
-                            StateComponentOutput.JVM_BRIDGES -> "legacy${name}${signature}_$mask"
+                            StateComponentOutput.JVM_BRIDGES -> "legacy${name}${signature}Variant$mask"
                         }
                         appendLine("${if (compileCases) "private" else "public"} fun ${if (generics.isEmpty()) "" else "$generics "}UiScope.$functionName(")
                         parameters.forEachIndexed { index, parameter ->

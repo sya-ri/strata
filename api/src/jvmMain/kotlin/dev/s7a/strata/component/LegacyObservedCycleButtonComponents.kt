@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CycleButtonState454065400fd3_1")
-public fun <T : Any> UiScope.legacyCycleButton454065400fd3_1(
+public fun <T : Any> UiScope.legacyCycleButton454065400fd3Variant1(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
@@ -48,7 +48,7 @@ public fun <T : Any> UiScope.legacyCycleButton454065400fd3_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CycleButtonState454065400fd3_2")
-public fun <T : Any> UiScope.legacyCycleButton454065400fd3_2(
+public fun <T : Any> UiScope.legacyCycleButton454065400fd3Variant2(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: Boolean = true,
@@ -75,7 +75,7 @@ public fun <T : Any> UiScope.legacyCycleButton454065400fd3_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CycleButtonState454065400fd3_3")
-public fun <T : Any> UiScope.legacyCycleButton454065400fd3_3(
+public fun <T : Any> UiScope.legacyCycleButton454065400fd3Variant3(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: StateSource<Boolean>,

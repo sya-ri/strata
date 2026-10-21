@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SliderStatef08abfd13498_1")
-public fun UiScope.legacySliderf08abfd13498_1(
+public fun UiScope.legacySliderf08abfd13498Variant1(
     label: StateSource<UiText>,
     state: SliderState,
     width: Int = 150,
@@ -48,7 +48,7 @@ public fun UiScope.legacySliderf08abfd13498_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SliderStatef08abfd13498_2")
-public fun UiScope.legacySliderf08abfd13498_2(
+public fun UiScope.legacySliderf08abfd13498Variant2(
     label: UiText,
     state: SliderState,
     width: Int = 150,
@@ -75,7 +75,7 @@ public fun UiScope.legacySliderf08abfd13498_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SliderStatef08abfd13498_3")
-public fun UiScope.legacySliderf08abfd13498_3(
+public fun UiScope.legacySliderf08abfd13498Variant3(
     label: StateSource<UiText>,
     state: SliderState,
     width: Int = 150,
@@ -102,7 +102,7 @@ public fun UiScope.legacySliderf08abfd13498_3(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SliderStatecccdb0fa60d4_1")
-public fun UiScope.legacySlidercccdb0fa60d4_1(
+public fun UiScope.legacySlidercccdb0fa60d4Variant1(
     label: StateSource<String>,
     state: SliderState,
     width: Int = 150,
@@ -129,7 +129,7 @@ public fun UiScope.legacySlidercccdb0fa60d4_1(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SliderStatecccdb0fa60d4_2")
-public fun UiScope.legacySlidercccdb0fa60d4_2(
+public fun UiScope.legacySlidercccdb0fa60d4Variant2(
     label: String,
     state: SliderState,
     width: Int = 150,
@@ -156,7 +156,7 @@ public fun UiScope.legacySlidercccdb0fa60d4_2(
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("SliderStatecccdb0fa60d4_3")
-public fun UiScope.legacySlidercccdb0fa60d4_3(
+public fun UiScope.legacySlidercccdb0fa60d4Variant3(
     label: StateSource<String>,
     state: SliderState,
     width: Int = 150,

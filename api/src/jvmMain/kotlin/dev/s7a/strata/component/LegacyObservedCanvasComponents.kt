@@ -21,7 +21,7 @@ import kotlin.jvm.JvmName
     level = DeprecationLevel.HIDDEN,
 )
 @JvmName("CanvasState7047d39d3483_1")
-public fun UiScope.legacyCanvas7047d39d3483_1(
+public fun UiScope.legacyCanvas7047d39d3483Variant1(
     source: StateSource<CanvasSource>,
     size: IntSize,
     modifier: Modifier = Modifier,
