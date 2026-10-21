@@ -34,12 +34,6 @@ public class HeadlessRasterScratch : AutoCloseable {
     }
 
     /**
-     * Current primitive payload used by deterministic retention tests; excludes fixed object and map overhead.
-     */
-    internal val retainedBytes: Int
-        get() = entries?.values?.sumOf { it.retainedBytes } ?: 0
-
-    /**
      * Severs all derived storage on the owner thread; repeated close is harmless.
      */
     override fun close() {
