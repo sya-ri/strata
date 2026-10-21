@@ -79,6 +79,26 @@ internal class ShowcaseInventoryTest {
     }
 
     @Test
+    fun publicFacadeDoesNotCountPackagePrivateImplementationMethods() {
+        val classes =
+            compile(
+                "dev/s7a/strata/component/ProfileComponents.java",
+                """
+                package dev.s7a.strata.component;
+                public final class ProfileComponents {
+                    public static void Button(UiScope scope) { ProfileComponentsPart.Button(scope); }
+                }
+                final class ProfileComponentsPart {
+                    public static void Button(UiScope scope) {}
+                    public static void Unknown(UiScope scope) {}
+                }
+                """.trimIndent(),
+            )
+
+        assertEquals(mapOf(DocumentedComponent.Button to 1), ShowcaseInventory.discoverOverloads(listOf(classes)))
+    }
+
+    @Test
     fun unknownUpperCamelAndCorruptClassPreserveDeterministicFailureContext() {
         val unknown =
             compile(

@@ -102,6 +102,20 @@ Kover exposes HTML and XML reports without enforcing a coverage threshold.
 Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`; each fully qualified root report task first runs the ordinary JVM test suite selected by `koverJvmTests` without discovering same-named tasks in unrelated projects.
 `gradle/kover-jvm-projects.txt` is the single source of truth for that aggregation boundary: it includes modules with ordinary JVM tests and excludes testless remapped adapters, loaded-client-only integrations, and benchmarks so coverage does not configure or compile unrelated Loom projects.
 
+## Generated source-backed component overloads
+
+`api/state-components.gradle.kts` derives source-backed overloads from the maintained literal declarations and selected reactive parameters.
+Run `./gradlew :api:generateStateComponentOverloads` after changing those inputs.
+Each component owns an `Observed<Component>Components.kt` file and matching `Observed<Component>CompileCases.kt` compilation cases.
+The JVM source set separately contains generated `LegacyObserved<Component>Components.kt` binary bridges.
+The generator removes obsolete files carrying its generated marker; handwritten helpers, including `ObservedTextComponents.kt`, remain separately maintained.
+`:api:checkStateComponentOverloads` rejects missing, unexpected, or stale generated files without rewriting them.
+
+Current overloads use their per-component JVM file facades.
+The legacy bridges share the former `ObservedComponentsKt` multifile facade and retain its method descriptors, including default-argument helpers.
+They use `DeprecationLevel.HIDDEN` to keep compiled Kotlin callers linked while recompilation selects the current declarations; remove them in 1.0.0 according to the [deprecation list](../../DEPRECATION.md).
+Keep the explicit generated-file lists in `.sonarcloud.properties` and `qodana.yaml` aligned when adding or removing a generated component; [CI](ci.md) describes the analysis boundary.
+
 ## Packaging and publication checks
 
 When artifact packaging or publication definitions change, run `./gradlew publishToMavenLocal` and inspect artifact contents and publication metadata.
