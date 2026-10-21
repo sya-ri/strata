@@ -281,24 +281,16 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     ) {
         val active = peer.sessions[message.session] ?: return
         when (message) {
-            is RemoteMessage.Applied, is RemoteMessage.ControlApplied, is RemoteMessage.ControlRequest -> {
+            is RemoteMessage.Applied, is RemoteMessage.ControlApplied, is RemoteMessage.ControlRequest, is RemoteMessage.Action -> {
                 dispatch { runCatching { active.session.receive(message) }.onFailure(report) }
             }
 
-            is RemoteMessage.Action -> {
-                if (message.session == active.handle.identity) {
-                    dispatch {
-                        runCatching { active.session.receive(message) }.onFailure(report)
-                    }
-                }
-            }
-
             is RemoteMessage.Resynchronize -> {
-                if (message.session == active.handle.identity) active.session.resynchronize()
+                active.session.resynchronize()
             }
 
             is RemoteMessage.Close -> {
-                if (message.session == active.handle.identity) peer.closeSession(active.handle.identity, message.reason, false)
+                peer.closeSession(active.handle.identity, message.reason, false)
             }
 
             else -> {
