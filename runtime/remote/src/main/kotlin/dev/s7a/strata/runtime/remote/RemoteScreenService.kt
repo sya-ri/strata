@@ -84,6 +84,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
 
     /**
      * Consumes the definition and opens a screen only after successful peer negotiation.
+     * Pending openings close without evaluating content if replacement listeners retire the connection.
      */
     public fun open(
         owner: Owner,
@@ -115,6 +116,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         }
         transition(admitted = true) {
             if (handle.status is RemoteSessionStatus.Closed) return@transition
+            if (settings.presentation == UiPresentation.Screen && peers[player] === peer) peer.closeForeground(RemoteFailure.Replaced)
             if (peers[player] !== peer) {
                 closeUnopened(player, owner, handle, settings.category, RemoteFailure.Disconnected)
                 return@transition
@@ -123,7 +125,6 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                 closeUnopened(player, owner, handle, settings.category, RemoteFailure.ResourceLimit)
                 return@transition
             }
-            if (settings.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced)
             val runtime = RemoteComponentRuntime()
             val session =
                 RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame, eventSession = handle.uiSession, controller = handle.controls, settings = settings) {
@@ -136,8 +137,8 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                     if (request.presentation == UiPresentation.Hud && capabilities.limits.hudSessions <= peer.hudCount(handle.identity)) {
                         handle.controls.rejected(request.sequence, UiRejection.Capacity)
                     } else {
-                        if (request.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced, handle.identity)
                         active.presentation = request.presentation
+                        if (request.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced, handle.identity)
                         session.applyControl(request)
                     }
                 }

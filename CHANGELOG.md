@@ -12,6 +12,8 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
+- Remote screen replacement stops before evaluating a pending definition when a close listener disconnects, reconnects, or shuts down the service.
+  Promoting a HUD to a screen also preserves a single foreground when a close listener opens another screen.
 - Source-backed component overloads use per-component JVM facades.
   The former `ObservedComponentsKt` facade remains as deprecated binary forwarding methods until 1.0.0; Java source naming that facade must migrate when recompiling.
   See the [deprecation list](DEPRECATION.md#observedcomponentskt-jvm-facade).
