@@ -18,9 +18,9 @@ public fun main() {
         val host = mountWeb(demo.definition(), root, Demo.viewport)
         document.getElementById("demo-status")?.textContent = "Ready to explore. Changes stay on this page."
         root.setAttribute("data-demo-ready", "true")
-        window.addEventListener("pagehide", { event ->
+        window.addEventListener("pagehide") { event ->
             if ((event as PageTransitionEvent).persisted.not()) host.close()
-        })
+        }
     }.getOrElse { failure ->
         document.getElementById("demo-status")?.textContent = "Unable to start this demo. Reload to try again."
         throw failure

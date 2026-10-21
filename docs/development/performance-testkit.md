@@ -374,7 +374,7 @@ Only the verified legacy `getWindow` family uses GLFW attributes; an opaque mode
 Loaded correctness suites share one backend-aware viewport boundary for screen, font, transport and Canvas checks.
 OpenGL retains Fabric's physical resize operation; Vulkan changes logical and framebuffer test extents on the render thread without resizing the platform window or swapchain.
 Measured native workloads keep their fixed physical viewport; this correctness-fixture boundary does not change their inputs or sampler.
-Production GameTests put the unchanged testkit JAR on Loom's Java classpath through `LibraryClientProductionRunTask`, rather than publishing it as a Mod or merging its classes into an integration artifact.
+Production GameTests add the unchanged testkit JAR to Loom's `minecraftTestClientRuntimeLibraries` configuration as an ordinary Java library; it is neither a Mod nor part of a published artifact.
 
 The host enum identifies Paper and Velocity evidence, but an enum value does not prove that a real transport scenario has run.
 Loaded Minecraft family verification, browser executions, and remote server/client measurements must be reported separately from JVM unit tests.

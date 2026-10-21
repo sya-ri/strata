@@ -11,7 +11,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven("https://maven.fabricmc.net/")
 }
 
 gradlePlugin {
@@ -26,7 +25,6 @@ gradlePlugin {
 }
 
 dependencies {
-    compileOnly(libs.fabric.loom.build)
     testImplementation(gradleTestKit())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
@@ -52,6 +50,7 @@ tasks.test {
         "../settings.gradle.kts",
         "../gradle/libs.versions.toml",
         "../gradle/performance/bounded-jvm.init.gradle.kts",
+        "../gradle/verify-selected-clients.init.gradle.kts",
         "../integration/minecraft-fabric-published-runtime.gradle.kts",
         "../gradle/qodana-idea-model.gradle.kts",
         "../gradle/verify-qodana-declarations.py",

@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       qodana: ${{ steps.plan.outputs.qodana }}
+      qodana_build_logic: ${{ steps.plan.outputs.qodana_build_logic }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -27,13 +28,14 @@ jobs:
         persist-credentials: false
     - name: Select analysis inputs
       run: |-
-        if [[ "$EVENT" == pull_request ]]; then
+        if [[ "$EVENT" == pull_request && -z "$SOURCE_REF" ]]; then
           python3 gradle/plan-ci.py --base "$BASE" --head "$HEAD"
         else
           python3 gradle/plan-ci.py --full
         fi
       id: plan
       env:
+        SOURCE_REF: ${{ inputs.ref }}
         EVENT: ${{ github.event_name }}
         BASE: ${{ github.event.pull_request.base.sha }}
         HEAD: ${{ github.event.pull_request.head.sha }}
@@ -79,19 +81,26 @@ jobs:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Generate Minecraft cache inventory
       run: bash gradle/plan-minecraft-ci.sh
-    - name: Hash all Minecraft Loom cache inputs
-      id: loom_inputs
+    - name: Hash analysis cache inputs
+      id: analysis_inputs
       shell: bash
       run: |
         LOOM_PROJECTS="$(< build/github-actions/minecraft-loom-projects.txt)"
         export LOOM_PROJECTS
         bash gradle/loom-cache-key.sh >> "$GITHUB_OUTPUT"
+        echo "qodana_hash=${{ hashFiles(
+          '**/*.gradle.kts', 'gradle/wrapper/**', 'gradle/libs.versions.toml', 'gradle.properties',
+          'gradle/kover-jvm-projects.txt', 'gradle/performance-modules.tsv',
+          'gradle/java-toolchains.py', 'gradle/plan-minecraft-ci.sh',
+          'gradle/prepare-qodana-idea-model.sh', 'gradle/prepare-qodana-project.py',
+          'build-logic/src/**', 'qodana.yaml', '.github/workflows/qodana.yml'
+          ) }}" >> "$GITHUB_OUTPUT"
     - name: Restore Minecraft Loom project cache
       id: loom_cache
       uses: actions/cache/restore@v6
       with:
         path: .gradle/loom-cache
-        key: loom-${{ runner.os }}-minecraft-all-${{ steps.loom_inputs.outputs.hash }}
+        key: loom-${{ runner.os }}-minecraft-all-${{ steps.analysis_inputs.outputs.hash }}
         restore-keys: |
           loom-${{ runner.os }}-minecraft-
     - name: Restore Qodana indexes
@@ -99,9 +108,9 @@ jobs:
       uses: actions/cache/restore@v6
       with:
         path: ${{ runner.temp }}/qodana/caches
-        key: qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-${{ github.sha }}
+        key: qodana-index-${{ runner.os }}-${{ steps.analysis_inputs.outputs.qodana_hash }}-${{ github.sha }}
         restore-keys: |
-          qodana-index-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/**', 'build-logic/src/**', 'gradle.properties', 'qodana.yaml', '.github/workflows/qodana.yml') }}-
+          qodana-index-${{ runner.os }}-${{ steps.analysis_inputs.outputs.qodana_hash }}-
     - name: Run Qodana
       uses: JetBrains/qodana-action@v2026.2
       with:
@@ -160,3 +169,25 @@ jobs:
         key: ${{ steps.loom_cache.outputs.cache-primary-key }}
     needs: plan
     if: needs.plan.outputs.qodana == 'true'
+  build-logic:
+    needs: plan
+    if: needs.plan.outputs.qodana_build_logic == 'true'
+    uses: ./.github/workflows/qodana-build-logic.yml
+    with:
+      ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+  result:
+    name: Qodana result
+    needs:
+    - plan
+    - qodana
+    - build-logic
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - name: Check planned analysis outcomes
+      run: python3 gradle/plan-ci.py --check-analysis-results
+      env:
+        RESULTS: ${{ toJSON(needs) }}

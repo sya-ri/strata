@@ -1,0 +1,58 @@
+name: Native build logic analysis
+'on':
+  workflow_dispatch: {}
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ''
+permissions:
+  actions: read
+  contents: read
+  checks: write
+  pull-requests: write
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out the analysis controller
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - name: Check out the selected source
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+        path: product
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+      with:
+        directory: product
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Prepare the standalone Gradle wrapper
+      run: bash ./gradlew -p build-logic :wrapper :pluginUnderTestMetadata
+      working-directory: product
+    - name: Analyze the included Gradle build
+      uses: JetBrains/qodana-action@v2026.2
+      with:
+        cache-dir: ${{ runner.temp }}/qodana-build-logic/caches
+        results-dir: ${{ runner.temp }}/qodana-build-logic/results
+        use-caches: false
+        pr-mode: false
+        args: >-
+          --project-dir=${{ github.workspace }}/product/build-logic
+          --config=${{ github.workspace }}/build-logic/qodana.yaml
+          --linter=qodana-jvm-community --within-docker=false
+    - name: Retain the native analysis evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: native-build-logic-analysis
+        path: ${{ runner.temp }}/qodana-build-logic/results
+        if-no-files-found: error
+        include-hidden-files: true

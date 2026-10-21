@@ -46,8 +46,7 @@ public class FabricToolchainManifest(
                 archive
                     .entries()
                     .asSequence()
-                    .filter { it.name == JarFile.MANIFEST_NAME }
-                    .singleOrNull(),
+                    .singleOrNull { it.name == JarFile.MANIFEST_NAME },
             ) {
                 "Expected exactly one ${JarFile.MANIFEST_NAME} entry."
             }

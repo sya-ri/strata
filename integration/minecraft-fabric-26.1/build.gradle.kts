@@ -1,6 +1,6 @@
 import dev.detekt.gradle.extensions.DetektExtension
 import groovy.json.JsonOutput
-import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask as ClientProductionRunTask
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
@@ -41,6 +41,7 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/scenarios/native-parity/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-extractor/src/gametest/kotlin"),

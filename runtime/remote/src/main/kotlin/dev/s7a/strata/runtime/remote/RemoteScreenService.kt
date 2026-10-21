@@ -166,12 +166,14 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
 
     /**
      * Ends every screen owned by a plugin before that plugin can be unloaded.
+     * Rejected transition admission preserves registrations so a later retry can retire dependent screens.
      */
     public fun ownerDisabled(owner: Owner) {
         checkOwner()
+        admitTransition()
         val removed = extensions.filterValues { it === owner }.keys.toSet()
         removed.forEach(extensions::remove)
-        transition {
+        transition(admitted = true) {
             val failures =
                 peers.values.flatMap { peer ->
                     peer.sessions.values.toList().filter { it.owner === owner || it.session.requiredTypes.any { type -> type in removed } }.mapNotNull { active ->

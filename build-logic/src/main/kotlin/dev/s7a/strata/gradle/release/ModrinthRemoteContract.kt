@@ -7,6 +7,7 @@ import dev.s7a.strata.gradle.release.ModrinthApiClient.Loader
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectStatus
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ProjectType
 import dev.s7a.strata.gradle.release.ModrinthApiClient.ReleaseType
+import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteDependency
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteDisclosure
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteProject
 import dev.s7a.strata.gradle.release.ModrinthApiClient.RemoteVersion
@@ -200,12 +201,14 @@ internal class ModrinthRemoteContract(
         compare("loaders", remote.loaders, setOf(Loader.FABRIC))
         compare("featured", remote.featured, ModrinthManifest.FEATURED)
         compare("environment", remote.environment, VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL)
+        // API response order varies; counts retain rejection of duplicate declarations.
         compare(
             "dependencies",
-            remote.dependencies.map { dependency ->
-                listOf(dependency.projectId, dependency.versionId, dependency.fileName, dependency.type)
-            },
-            ModrinthManifest.REQUIRED_PROJECT_DEPENDENCIES.map { listOf(it, null, null, DependencyType.REQUIRED) },
+            remote.dependencies.groupingBy { it }.eachCount(),
+            ModrinthManifest.REQUIRED_PROJECT_DEPENDENCIES
+                .map { RemoteDependency(projectId = it, versionId = null, fileName = null, type = DependencyType.REQUIRED) }
+                .groupingBy { it }
+                .eachCount(),
         )
         compare("file count", remote.files.size, 1)
         if (remote.files.size == 1) {

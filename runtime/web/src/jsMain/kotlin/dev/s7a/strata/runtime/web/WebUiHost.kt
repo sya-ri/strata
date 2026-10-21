@@ -10,7 +10,6 @@ import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
-import dev.s7a.strata.ui.UiInputPolicy
 import dev.s7a.strata.ui.UiInteractionMode
 import dev.s7a.strata.ui.UiPresentation
 import dev.s7a.strata.ui.UiRejection
@@ -26,7 +25,7 @@ import org.w3c.dom.HTMLElement
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public class WebUiHost internal constructor(
-    private val root: HTMLElement,
+    root: HTMLElement,
     private val session: RuntimeUiSession,
     private var viewport: IntSize,
     private val controls: RuntimeUiController,
@@ -100,17 +99,24 @@ public class WebUiHost internal constructor(
         }
     }
 
+    /**
+     * Requests terminal close, releasing resources after any current host operation completes.
+     */
     override fun close() {
+        controls.close()
+    }
+
+    /**
+     * Releases host ownership after the controller's current transaction has completed.
+     */
+    internal fun closeResources() {
         if (closed) return
         closed = true
         request?.let(window::cancelAnimationFrame)
         request = null
         events.close()
         lastFrame = null
-        val controlFailure = runCatching { controls.close() }.exceptionOrNull()
-        val sessionFailure = runCatching { session.close() }.exceptionOrNull()
-        val primary = controlFailure ?: sessionFailure
-        if (controlFailure != null && sessionFailure != null && controlFailure !== sessionFailure) controlFailure.addSuppressed(sessionFailure)
+        val primary = runCatching { session.close() }.exceptionOrNull()
         val cleanup = runCatching { renderer.close() }.exceptionOrNull()
         if (primary != null) {
             if (cleanup != null && cleanup !== primary) primary.addSuppressed(cleanup)
@@ -150,7 +156,6 @@ public class WebUiHost internal constructor(
  * @return mounted host owning its session, DOM children, listeners, and animation request.
  * @throws Throwable on transfer, content, layout, or rendering failure; partially mounted resources are released.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun mountWeb(
     definition: UiDefinition,
     root: HTMLElement,
@@ -161,7 +166,6 @@ public fun mountWeb(
  * Mounts a themed screen using the ownership and failure contract of [mountWeb].
  * The theme must match initial build rendering; mismatches fail before changing existing HTML.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun mountWeb(
     definition: UiDefinition,
     root: HTMLElement,
@@ -194,7 +198,7 @@ internal fun createWebHost(
             } else {
                 controls.applied(request.sequence)
             }
-        }, close = { host?.close() })
+        }, close = { host?.closeResources() })
     val session = createRuntimeUiSession(controls) { ComponentRuntimeBridge.evaluate(runtime, transferred.content) }
     return WebUiHost(root, session, viewport, controls, theme, runtime).also { host = it }
 }
@@ -222,17 +226,6 @@ public fun mountWeb(
     root: HTMLElement,
     viewport: IntSize,
 ): WebUiHost = mountWeb(definition.asUiDefinition(), root, viewport)
-
-/**
- * Compatibility overload for deterministic HTML generation.
- */
-@OptIn(InternalStrataRuntimeApi::class)
-@Suppress("DEPRECATION")
-internal fun createWebHost(
-    definition: ScreenDefinition,
-    root: HTMLElement,
-    viewport: IntSize,
-): WebUiHost = createWebHost(definition.asUiDefinition(), root, viewport)
 
 /**
  * Compatibility overload for mounting a themed screen.

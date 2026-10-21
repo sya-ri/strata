@@ -98,7 +98,7 @@ internal class ModrinthApiClient(
     ) {
         val boundary = "strata-${UUID.randomUUID()}"
         val data =
-            linkedMapOf<String, Any>(
+            linkedMapOf(
                 "name" to artifact.versionName,
                 "version_number" to artifact.versionNumber,
                 "changelog" to manifest.changelog,
@@ -188,7 +188,7 @@ internal class ModrinthApiClient(
         uses: Set<AiUse>,
     ) {
         val disclosure =
-            linkedMapOf<String, Any>(
+            linkedMapOf(
                 "type" to DisclosureType.AI_CONTENT.wireValue,
                 "uses" to uses.map(AiUse::wireValue).sorted(),
                 "note" to note,

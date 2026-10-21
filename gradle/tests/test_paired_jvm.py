@@ -14,7 +14,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import textwrap
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -607,6 +606,8 @@ class PairedJvmTest(unittest.TestCase):
 
     def selector_repository(self):
         self.selector_git("init", "--quiet")
+        # Detached maintenance must not recreate metadata during temporary cleanup.
+        self.selector_git("config", "maintenance.auto", "false")
         self.selector_git("config", "core.autocrlf", "false")
         self.selector_git("config", "core.longpaths", "true")
         (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
@@ -3270,29 +3271,6 @@ class PairedJvmTest(unittest.TestCase):
                 PAIRED.run(self.root, manifest, output)
         self.assertEqual(PAIRED.read_json(output / "attempt.json")["status"], "failed")
         self.assertTrue(output.with_suffix(".zip").is_file())
-
-    def test_workflow_result_accepts_runner_omitted_empty_opt_in_output(self):
-        spec = importlib.util.spec_from_file_location("plan_ci", Path(__file__).parents[1] / "plan-ci.py")
-        planner = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(planner)
-        outputs = {key: "false" for key in ("common", "web", "docs", "docs_full", "workflow", "all_minecraft")}
-        outputs.update(minecraft="[]", paired_manifest="")
-        # The runner omits empty outputs before exposing needs.plan.outputs to the aggregation job.
-        exposed = {key: value for key, value in outputs.items() if value}
-        jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
-        jobs["plan"] = {"result": "success", "outputs": exposed}
-        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
-            planner.check_results(json.loads(os.environ["RESULTS"]))
-        exposed["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
-        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
-            planner.check_results(json.loads(os.environ["RESULTS"]))
-        for result in ("failure", "cancelled"):
-            jobs["paired-jvm"]["result"] = result
-            with self.subTest(result=result), patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
-                planner.check_results(json.loads(os.environ["RESULTS"]))
-        jobs["paired-jvm"]["result"] = "success"
-        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
-            planner.check_results(json.loads(os.environ["RESULTS"]))
 
 
 if __name__ == "__main__":

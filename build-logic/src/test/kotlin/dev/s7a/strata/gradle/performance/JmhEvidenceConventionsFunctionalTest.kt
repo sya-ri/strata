@@ -143,14 +143,14 @@ internal class JmhEvidenceConventionsFunctionalTest {
     ) {
         write(
             "build.gradle.kts",
-            """
+            $$"""
             import dev.s7a.strata.gradle.performance.configureJmhEvidence
             import org.gradle.api.artifacts.component.ProjectComponentIdentifier
             import org.gradle.api.attributes.LibraryElements
             import org.gradle.api.attributes.Usage
             import org.gradle.api.tasks.SourceSetContainer
             import java.util.Properties
-            buildscript { dependencies { classpath(files("$helper")) } }
+            buildscript { dependencies { classpath(files("$$helper")) } }
             plugins { java }
             subprojects { apply(plugin = "java-library") }
             configure(listOf(project(":quality:benchmarks"), project(":quality:remote-benchmarks"), project(":quality:component-benchmarks"))) {
@@ -175,7 +175,7 @@ internal class JmhEvidenceConventionsFunctionalTest {
             val componentGenerator = historicalGenerator
             val componentClasspath = historicalClasspath
             val componentLauncher = historicalLauncher
-            $tasks
+            $$tasks
             tasks.withType<JavaExec>().configureEach {
                 dependsOn(":classes", runtime)
                 // Substitute only the process entry point and finite test launcher, never production argument/actions.
@@ -183,8 +183,8 @@ internal class JmhEvidenceConventionsFunctionalTest {
                 javaLauncher.set(historicalLauncher)
                 maxHeapSize = "64m"
                 jvmArgs("-XX:MaxMetaspaceSize=128m")
-                systemProperty("fixture.receipt", layout.buildDirectory.file("probes/${'$'}name.properties").get().asFile.absolutePath)
-                val argumentFile = layout.buildDirectory.file("probes/${'$'}name.arguments").get().asFile
+                systemProperty("fixture.receipt", layout.buildDirectory.file("probes/$name.properties").get().asFile.absolutePath)
+                val argumentFile = layout.buildDirectory.file("probes/$name.arguments").get().asFile
                 systemProperty("fixture.arguments", argumentFile.absolutePath)
                 systemProperty("fixture.workingDir", workingDir.absolutePath)
                 doFirst {

@@ -1,16 +1,15 @@
+import dev.s7a.strata.gradle.fabric.CanvasVerification
 import dev.detekt.gradle.extensions.DetektExtension
 import groovy.json.JsonOutput
 import net.fabricmc.loom.LoomGradleExtension
 import net.fabricmc.loom.task.DownloadAssetsTask
-import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask as ClientProductionRunTask
-import org.gradle.api.file.RegularFile
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
-import java.nio.file.Files
 import java.util.Properties
 import java.util.UUID
 
@@ -19,91 +18,8 @@ plugins {
     alias(libs.plugins.fabricLoom)
 }
 
-/** Typed configuration boundaries for independently recorded native Canvas acceptance runs. */
-private object CanvasVerification {
-    /** Explicit native device selection, decoded before a client is launched. */
-    enum class Backend(val argument: String) {
-        OpenGl("opengl"),
-        Vulkan("vulkan"),
-    }
-
-    /** Explicit loaded-suite scope; ordinary verification always defaults to the complete shared suite. */
-    enum class Scope(val argument: String) {
-        Full("full"),
-        CanvasOnly("canvas-only"),
-        TerminalOnly("terminal-only"),
-    }
-}
-
-private val canvasBackend = providers.gradleProperty("strata.canvas.backend").map { value ->
-    requireNotNull(CanvasVerification.Backend.entries.singleOrNull { backend -> backend.argument == value }) {
-        "strata.canvas.backend must be opengl or vulkan."
-    }
-}
-private val canvasScope = providers.gradleProperty("strata.canvas.scope").map { value ->
-    requireNotNull(CanvasVerification.Scope.entries.singleOrNull { scope -> scope.argument == value }) {
-        "strata.canvas.scope must be full, canvas-only, or terminal-only."
-    }
-}.orElse(CanvasVerification.Scope.Full)
-
-/**
- * Requires a fresh receipt from actual client shutdown after unconsumed native Canvas extraction.
- *
- * Configuration supplies one invocation token; execution deletes any previous owned output before launching Minecraft.
- * The postcondition uses no native API and rejects missing, stale, or incomplete close evidence independently of the game's exit code.
- */
-private fun Task.requireCanvasTerminalReceipt(
-    receipt: Provider<RegularFile>,
-    minecraftVersion: String,
-    suiteScope: CanvasVerification.Scope = CanvasVerification.Scope.Full,
-    setProperty: (String, String) -> Unit,
-) {
-    val runId = UUID.randomUUID().toString()
-    inputs.property("canvasTerminalReceipt", receipt.map { it.asFile.absolutePath })
-    inputs.property("canvasTerminalMinecraftVersion", minecraftVersion)
-    inputs.property("canvasTerminalRunId", runId)
-    inputs.property("canvasTerminalSuiteScope", suiteScope.argument)
-    outputs.file(receipt)
-    outputs.upToDateWhen { false }
-    outputs.cacheIf { false }
-    setProperty("strata.canvas.shutdown.receipt", receipt.get().asFile.absolutePath)
-    setProperty("strata.canvas.shutdown.run", runId)
-    setProperty("strata.minecraftVersion", minecraftVersion)
-    setProperty("strata.canvas.scope", suiteScope.argument)
-    doFirst {
-        Files.deleteIfExists(receipt.get().asFile.toPath())
-    }
-    doLast {
-        val file = receipt.get().asFile
-        check(file.isFile) { "Actual Minecraft shutdown did not produce the native Canvas receipt: $file" }
-        val proof = Properties()
-        file.reader(Charsets.UTF_8).use(proof::load)
-        check(proof.getProperty("runId") == runId) { "The terminal Canvas receipt belongs to another invocation." }
-        check(proof.getProperty("minecraftVersion") == minecraftVersion) { "The terminal Canvas receipt has the wrong Minecraft version." }
-        check(proof.getProperty("suiteScope") == suiteScope.argument) { "The terminal Canvas receipt belongs to another verification scope." }
-        check(proof.getProperty("verifiedChecks").isNullOrBlank().not()) { "The terminal Canvas receipt does not declare its verified checks." }
-        check(proof.getProperty("excludedChecks").isNullOrBlank().not()) { "The terminal Canvas receipt does not declare its scope exclusions." }
-        val menuBackgroundBlurriness = requireNotNull(proof.getProperty("menuBackgroundBlurriness")?.toIntOrNull()) {
-            "The terminal Canvas receipt does not record the actual menu background blur option."
-        }
-        check(menuBackgroundBlurriness in 0..10) { "The terminal Canvas receipt has an invalid menu background blur option." }
-        check(proof.getProperty("originalCloseReturned")?.toBooleanStrictOrNull() == true) { "The terminal Canvas proof did not observe successful original close." }
-        val backend = proof.getProperty("backend").orEmpty()
-        check(CanvasVerification.Backend.entries.any { it.name.equals(backend, ignoreCase = true) }) { "The terminal Canvas receipt has no recognized native backend." }
-        listOf("queuedElementsBefore", "portableSetsBefore").forEach { key ->
-            check(0 < requireNotNull(proof.getProperty(key)?.toIntOrNull())) { "The terminal Canvas receipt did not prove pending native GUI work: $key" }
-        }
-        listOf("queuedElementsAdded", "queuedBlitsAdded").forEach { key ->
-            check(3 <= requireNotNull(proof.getProperty(key)?.toIntOrNull())) { "The terminal Canvas receipt did not prove the mixed portable/native queue: $key" }
-        }
-        listOf("targetsBefore", "renderersOpened", "renderCalls", "renderersClosed").forEach { key ->
-            check(proof.getProperty(key)?.toIntOrNull() == 1) { "The terminal Canvas receipt did not prove one complete renderer lifetime: $key" }
-        }
-        listOf("queuedElementsAfter", "targetsAfter", "portableSetsAfter").forEach { key ->
-            check(proof.getProperty(key)?.toIntOrNull() == 0) { "The terminal Canvas receipt retained native ownership after shutdown: $key" }
-        }
-    }
-}
+private val canvasBackend = providers.gradleProperty("strata.canvas.backend").map(CanvasVerification::parseBackend)
+private val canvasScope = providers.gradleProperty("strata.canvas.scope").map(CanvasVerification::parseScope).orElse(CanvasVerification.Scope.Full)
 
 apply(from = rootProject.file("integration/minecraft-fabric-published-runtime.gradle.kts"))
 
@@ -165,6 +81,7 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"),
+            rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/scenarios/native-parity/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/screen/gui-extractor/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-extractor/src/gametest/kotlin"),
@@ -338,7 +255,7 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     mods.from(runtimeJar)
     runDir.set(productionRunDirectory)
     programArgs.addAll(showcaseClientIdentityArguments)
-    programArgs.addAll(canvasBackend.map { backend -> listOf("--graphicsBackend", backend.argument) }.orElse(emptyList<String>()))
+    programArgs.addAll(canvasBackend.map { backend -> listOf("--graphicsBackend", backend.argument) }.orElse(emptyList()))
     jvmArgs.add("-Dfabric.client.gametest")
     providers.gradleProperty("strata.paper.address").orNull?.let {
         jvmArgs.add("-Dstrata.paper.address=$it")
@@ -346,7 +263,7 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     providers.gradleProperty("strata.paper.run").orNull?.let { jvmArgs.add("-Dstrata.paper.run=$it") }
     providers.gradleProperty("strata.fabric.address").orNull?.let { jvmArgs.add("-Dstrata.fabric.address=$it") }
     providers.gradleProperty("strata.fabric.run").orNull?.let { jvmArgs.add("-Dstrata.fabric.run=$it") }
-    jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList<String>()))
+    jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList()))
     val verificationOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
             when (scope) {
@@ -362,7 +279,7 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft263.map { version -> "-Dstrata.minecraftVersion=$version" })
     val receipt = verificationOutput.map { directory -> directory.file("strata-canvas-terminal.properties") }
-    requireCanvasTerminalReceipt(receipt, libs.versions.minecraft263.get(), canvasScope.get()) { key, value ->
+    CanvasVerification.requireTerminalReceipt(this, receipt, libs.versions.minecraft263.get(), canvasScope.get()) { key, value ->
         jvmArgs.add("-D$key=$value")
     }
 }
@@ -382,9 +299,9 @@ tasks.register<ClientProductionRunTask>("runPublishedCoordinateClientGameTest") 
     mods.from(publishedRuntimeJar)
     runDir.set(publishedCoordinateRunDirectory)
     programArgs.addAll(showcaseClientIdentityArguments)
-    programArgs.addAll(canvasBackend.map { backend -> listOf("--graphicsBackend", backend.argument) }.orElse(emptyList<String>()))
+    programArgs.addAll(canvasBackend.map { backend -> listOf("--graphicsBackend", backend.argument) }.orElse(emptyList()))
     jvmArgs.add("-Dfabric.client.gametest")
-    jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList<String>()))
+    jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList()))
     val verificationOutput = layout.buildDirectory.dir(
         canvasBackend.map { backend -> "minecraft-published-coordinate-parity-${backend.argument}" }.orElse("minecraft-published-coordinate-parity"),
     )
@@ -392,7 +309,7 @@ tasks.register<ClientProductionRunTask>("runPublishedCoordinateClientGameTest") 
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft263.map { version -> "-Dstrata.minecraftVersion=$version" })
     val receipt = verificationOutput.map { directory -> directory.file("strata-canvas-terminal.properties") }
-    requireCanvasTerminalReceipt(receipt, libs.versions.minecraft263.get(), CanvasVerification.Scope.Full) { key, value ->
+    CanvasVerification.requireTerminalReceipt(this, receipt, libs.versions.minecraft263.get(), CanvasVerification.Scope.Full) { key, value ->
         jvmArgs.add("-D$key=$value")
     }
 }
@@ -425,7 +342,7 @@ tasks.named<JavaExec>("runClientGameTest") {
     inputs.property("strataCanvasBackend", canvasBackend.map(CanvasVerification.Backend::argument).orElse("default"))
     inputs.property("strataCanvasSuiteScope", canvasScope.map(CanvasVerification.Scope::argument))
     val receipt = parityOutput.map { directory -> directory.file("strata-canvas-terminal.properties") }
-    requireCanvasTerminalReceipt(receipt, libs.versions.minecraft263.get(), canvasScope.get()) { key, value ->
+    CanvasVerification.requireTerminalReceipt(this, receipt, libs.versions.minecraft263.get(), canvasScope.get()) { key, value ->
         systemProperty(key, value)
     }
     doFirst {

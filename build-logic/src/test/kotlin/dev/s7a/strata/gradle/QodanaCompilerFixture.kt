@@ -213,7 +213,7 @@ internal class QodanaCompilerFixture(
     private fun writeBenchmark(owner: String) {
         write(
             "$owner/build.gradle.kts",
-            """
+            $$"""
             plugins { alias(libs.plugins.jmh) }
             dependencies { add("jmh", project(":support")) }
             sourceSets.named("jmh") {
@@ -223,13 +223,13 @@ internal class QodanaCompilerFixture(
             val additionalJmh = kotlin.sourceSets.create("additionalJmh") {
                 kotlin.setSrcDirs(listOf(rootProject.file("shared-inputs/kotlin")))
                 resources.setSrcDirs(listOf(rootProject.file("shared-inputs/resources")))
-                ${mapOf("bench-two" to "kotlin.include(\"**/SharedValue.kt\")").getOrDefault(owner, "")}
+                $${mapOf("bench-two" to "kotlin.include(\"**/SharedValue.kt\")").getOrDefault(owner, "")}
             }
             kotlin.sourceSets.named("jmh") {
                 kotlin.setSrcDirs(listOf("authored/kotlin"))
                 dependsOn(additionalJmh)
             }
-            idea.module.name = "resolved-${'$'}{project.name}"
+            idea.module.name = "resolved-${project.name}"
             """.trimIndent(),
         )
         write("$owner/authored/java/fixture/JavaBenchmark.java", "package fixture; import org.openjdk.jmh.annotations.Benchmark; public class JavaBenchmark { @Benchmark public int value() { return Support.value(); } }")

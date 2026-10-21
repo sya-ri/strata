@@ -478,7 +478,7 @@ classify_target_source_path() {
   elif [[ "$repository_relative_path" == 'examples/paper/src/main/kotlin' ]]; then
     target_source_allowed_owners='integration,paper-example'
     target_source_root='examples/paper'
-  elif [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' ]]; then
+  elif [[ "$repository_relative_path" == 'quality/component-benchmarks/src/workload/kotlin' ]]; then
     target_source_allowed_owners='integration'
     target_source_root='quality/component-benchmarks'
   elif [[ "$repository_relative_path" == 'runtime/minecraft-fonts-lwjgl/'* ]]; then
@@ -491,7 +491,8 @@ classify_target_source_path() {
   elif [[ "$repository_relative_path" =~ ^((runtime|integration)/shared/minecraft-fabric/[a-z0-9/-]+)/src(/|$) ]]; then
     target_source_allowed_owners=${BASH_REMATCH[2]}
     target_source_root=${BASH_REMATCH[1]}
-    if [[ "$repository_relative_path" == 'integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' ]]; then
+    if [[ "$repository_relative_path" == 'integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin' || \
+      "$repository_relative_path" == 'integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin' ]]; then
       target_source_allowed_owners='integration,docs'
     fi
   elif [[ "$repository_relative_path" =~ ^(integration/shared/font-parity)(/|$) ]]; then
@@ -863,9 +864,10 @@ for owner in inventory["projects"]:
 PY
 fi
 
-docs_showcase_source_path='file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin'
-required_docs_showcase_source=$'docs\t-\tSource\t'"$docs_showcase_source_path"
-docs_showcase_source_count=$(grep -Fxc "$required_docs_showcase_source" "$declared_target_source_roots" || true)
+docs_showcase_source_paths=(
+  'file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin'
+  'file://$PROJECT_DIR$/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin'
+)
 docs_target_source_count=0
 while IFS=$'\t' read -r expected_owner _ _ expected_path; do
   if [[ "$expected_owner" != 'docs' || "$expected_path" != 'file://$PROJECT_DIR$/'* ]]; then
@@ -875,8 +877,16 @@ while IFS=$'\t' read -r expected_owner _ _ expected_path; do
   $target_source_uses_target_namespace || continue
   ((docs_target_source_count += 1))
 done < "$declared_target_source_roots"
-if [[ "$docs_showcase_source_count" -ne 1 || "$docs_target_source_count" -ne 1 ]]; then
-  echo "The generated documentation IDEA module must link exactly one showcase Source and no other target source root: source=$docs_showcase_source_count total=$docs_target_source_count" >&2
+for docs_showcase_source_path in "${docs_showcase_source_paths[@]}"; do
+  required_docs_showcase_source=$'docs\t-\tSource\t'"$docs_showcase_source_path"
+  docs_showcase_source_count=$(grep -Fxc "$required_docs_showcase_source" "$declared_target_source_roots" || true)
+  if [[ "$docs_showcase_source_count" -ne 1 ]]; then
+    echo "The generated documentation IDEA module must link exactly one showcase Source for each compiled root: path=$docs_showcase_source_path source=$docs_showcase_source_count total=$docs_target_source_count" >&2
+    exit 1
+  fi
+done
+if [[ "$docs_target_source_count" -ne "${#docs_showcase_source_paths[@]}" ]]; then
+  echo "The generated documentation IDEA module must link no other target source root: total=$docs_target_source_count expected=${#docs_showcase_source_paths[@]}" >&2
   exit 1
 fi
 
@@ -898,7 +908,7 @@ for version in "${expected_versions[@]}"; do
     fi
     if [[ "$expected_owner" == 'integration' && \
       "$expected_version" == "$version" && \
-      "$expected_path" == 'file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin' ]]; then
+      "$expected_path" == 'file://$PROJECT_DIR$/quality/component-benchmarks/src/workload/kotlin' ]]; then
       ((integration_component_root_count += 1))
       if [[ "$expected_type" == 'TestSource' ]]; then
         ((integration_component_source_count += 1))

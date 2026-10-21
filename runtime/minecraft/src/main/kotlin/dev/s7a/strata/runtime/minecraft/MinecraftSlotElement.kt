@@ -149,15 +149,14 @@ private class MinecraftSlotElement private constructor(
         }
 
         override fun detach() {
-            releaseBinding()
             attached = false
+            releaseBinding()
         }
 
         override fun dispose() {
-            releaseBinding()
-            attached = false
             platform = null
             locator = null
+            detach()
         }
 
         /**
@@ -192,27 +191,27 @@ private class MinecraftSlotElement private constructor(
             }
         }
 
-        @Suppress("TooGenericExceptionCaught")
         private fun acquireBinding() {
             check(binding == null) { "Minecraft Slot binding is already acquired." }
             val currentPlatform = platform ?: return
             val acquired = currentPlatform.inventorySlot(checkNotNull(locator))
-            try {
-                binding = acquired
+            binding = acquired
+            runCatching {
                 subscription = acquired.observe { invalidate(DirtyMask.of(DirtyPhase.Paint)) }
-            } catch (failure: Throwable) {
-                acquired.close()
+            }.getOrElse { failure ->
+                runCatching(::releaseBinding).exceptionOrNull()?.let { cleanup ->
+                    if (cleanup !== failure) failure.addSuppressed(cleanup)
+                }
                 throw failure
             }
         }
 
         private fun releaseBinding() {
-            val current = subscription
-            subscription = null
-            current?.close()
+            val currentSubscription = subscription
             val currentBinding = binding
+            subscription = null
             binding = null
-            currentBinding?.close()
+            currentBinding.use { currentSubscription?.close() }
         }
     }
 

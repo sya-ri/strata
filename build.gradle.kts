@@ -14,7 +14,6 @@ import dev.detekt.gradle.extensions.DetektExtension
 import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
 import dev.s7a.strata.gradle.fabric.FabricClientResourceService
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
-import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask
 import dev.s7a.strata.gradle.performance.PublishedPerformanceInventory
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
@@ -79,7 +78,7 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = "0.3.1"
+version = "0.3.0"
 
 plugins.withType<YarnPlugin> {
     extensions.configure<YarnRootExtension> {
@@ -191,8 +190,8 @@ private data class MinecraftFabricTarget(
     }
 
     /** Native HUD extraction signatures verified from the exact client archives. */
-    enum class UiFamily(val sourceRoot: String) {
-        Float("float-delta"), Delta("delta-tracker"), ExtractGui("gui-extractor"), ExtractHud("hud-extractor"),
+    enum class UiFamily {
+        Float, Delta, ExtractGui, ExtractHud,
     }
 
     /** Verified native API families, selected explicitly for every supported Minecraft artifact. */
@@ -1494,8 +1493,7 @@ if (completeIdeaModelActive) {
                         // Resolve only while executing a task owned by this project, including parallel builds.
                         val artifacts = classpaths.flatMap { (_, name, _) -> owner.configurations.getByName(name).incoming.artifacts.artifacts }
                             .distinctBy { it.file.canonicalFile }.sortedBy { it.id.displayName }.map { artifact ->
-                                val component = artifact.id.componentIdentifier
-                                val identity = when (component) {
+                                val identity = when (val component = artifact.id.componentIdentifier) {
                                     is ProjectComponentIdentifier -> mapOf("project" to component.projectPath)
                                     is ModuleComponentIdentifier -> mapOf("identity" to "${component.group}:${component.module}:${component.version}:${artifact.file.name}")
                                     else -> mapOf("identity" to component.displayName)
@@ -2253,13 +2251,21 @@ subprojects {
                     }
                 }
             }
-            tasks.withType<LibraryClientProductionRunTask>().configureEach {
+            val productionVerificationLibraries = configurations.register("productionVerificationLibraries") {
+                isCanBeConsumed = false
+                isCanBeResolved = false
+            }
+            dependencies.add(
+                productionVerificationLibraries.name,
+                files(providers.provider {
+                    project(":performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
+                }),
+            )
+            configurations.matching { it.name == "minecraftTestClientRuntimeLibraries" }.configureEach {
+                extendsFrom(productionVerificationLibraries.get())
+            }
+            tasks.withType<ClientProductionRunTask>().configureEach {
                 dependsOn(":performance-testkit:jvmJar")
-                verificationLibraries.from(
-                    providers.provider {
-                        project(":performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
-                    },
-                )
             }
             val remoteVerification = rootProject.file("integration/shared/minecraft-fabric/transport/verification/src")
             val remoteVerificationFamily = remoteVerification.resolve(target.remoteNetworkFamily.sourceRoot)
@@ -2279,15 +2285,8 @@ subprojects {
             val profileCacheTests = rootProject.file("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/profile-cache/kotlin")
             val continuousInputTests = rootProject.file("integration/shared/minecraft-fabric/input/fabric-client-gametest/src/continuous-input/kotlin")
             val renderMonitoringTests = rootProject.file("integration/shared/minecraft-fabric/scenarios/fabric-client-gametest/src/render-monitoring/kotlin")
-            val nativeComponentCases = objects.sourceDirectorySet("nativeComponentCases", "Canonical performance component cases").apply {
-                srcDir(rootProject.file("quality/component-benchmarks/src/jmh/kotlin"))
-                include("**/ComponentWorkload.kt")
-            }
-            val nativeShowcase = objects.sourceDirectorySet("nativePerformanceShowcase", "Compiled API-only showcase definitions").apply {
-                srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
-                include("**/*Example.kt")
-                exclude("**/MinecraftSocialExample.kt")
-            }
+            val nativeComponentCases = rootProject.file("quality/component-benchmarks/src/workload/kotlin")
+            val nativeShowcase = rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
             val continuousScrollTests =
                 rootProject.file(
                     if (target.version in legacyScrollTargets) {
@@ -2299,8 +2298,8 @@ subprojects {
             extensions.configure<KotlinJvmProjectExtension> {
                 sourceSets.matching { sourceSet -> sourceSet.name == "gametest" }.configureEach {
                     kotlin.srcDir(profileCacheTests)
-                    kotlin.source(nativeComponentCases)
-                    if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) kotlin.source(nativeShowcase)
+                    kotlin.srcDir(nativeComponentCases)
+                    if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) kotlin.srcDir(nativeShowcase)
                     kotlin.srcDir(continuousInputTests)
                     kotlin.srcDir(renderMonitoringTests)
                     kotlin.srcDir(continuousScrollTests)
@@ -2309,30 +2308,30 @@ subprojects {
             providers.gradleProperty("strata.performance.nativeOutput").orNull?.let { output ->
                 val nativeOutput = rootProject.file(output).absoluteFile
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.quick", quickPerformance) }
-                tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.quick=$quickPerformance") }
+                tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.quick=$quickPerformance") }
                 providers.gradleProperty("strata.performance.sampledImages").orNull?.let { selected ->
                     val sampled = selected.toBooleanStrict()
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.sampledImages", sampled) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.sampledImages=$sampled") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.sampledImages=$sampled") }
                 }
                 providers.gradleProperty("strata.performance.gpuQueries").orNull?.let { selected ->
                     val enabled = selected.toBooleanStrict()
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.gpuQueries", enabled) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
                 }
                 providers.gradleProperty("strata.performance.inactivity").orNull?.let { selected ->
                     require(selected in setOf("minimized", "afk")) { "strata.performance.inactivity must be minimized or afk." }
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.inactivity", selected) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
                 }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
-                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
+                    tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
                 }
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.nativeOutput", nativeOutput.path) }
-                tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeOutput=${nativeOutput.path}") }
+                tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeOutput=${nativeOutput.path}") }
                 afterEvaluate {
-                    tasks.named<LibraryClientProductionRunTask>("runProductionClientGameTest") {
+                    tasks.named<ClientProductionRunTask>("runProductionClientGameTest") {
                         // Each receipt retains its actual processed-mod origins across later invocations.
                         runDir.set(layout.buildDirectory.dir("run/native-performance/${UUID.randomUUID()}"))
                         doFirst {
@@ -2613,7 +2612,7 @@ subprojects {
                                         "fabricloader" to ">=${loaderVersion}",
                                         "minecraft" to target.version,
                                         "fabric-language-kotlin" to ">=${languageKotlinVersion}",
-                                        "java" to ">=${target.javaVersion.toString()}",
+                                        "java" to ">=${target.javaVersion}",
                                     ),
                             ) {
                                 "Fabric metadata dependencies must match the version catalog: ${metadata["depends"]}"
@@ -2844,12 +2843,10 @@ tasks.named("check") {
 
 val releaseArtifacts = releasePublicationProjectPaths.flatMap { projectPath ->
     val artifact = releaseArtifactByProjectPath.getValue(projectPath)
-    if (projectPath in legacyJvmMultiplatformProjectPaths) {
-        listOf(artifact, "$artifact-multiplatform", "$artifact-js")
-    } else if (projectPath in multiplatformProjectPaths) {
-        listOf(artifact, "$artifact-js")
-    } else {
-        listOf(artifact)
+    when (projectPath) {
+        in legacyJvmMultiplatformProjectPaths -> listOf(artifact, "$artifact-multiplatform", "$artifact-js")
+        in multiplatformProjectPaths -> listOf(artifact, "$artifact-js")
+        else -> listOf(artifact)
     }
 }
 val verifyReleasePublicationMatrix =

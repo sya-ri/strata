@@ -4,9 +4,11 @@ package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.evaluateComponentTree
+import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiInputPolicy
 import dev.s7a.strata.ui.UiInteractionMode
@@ -24,6 +26,36 @@ import org.junit.jupiter.api.Test
  * Verifies extension preparation and cleanup failures cannot retain partially installed client state.
  */
 internal class RemoteClientLifetimeTest {
+    @Test
+    fun rejectedCloseDuringEvaluationPreservesTheSessionForOwnerCleanup() {
+        val released = mutableListOf<Long>()
+        val outgoing = mutableListOf<RemoteMessage>()
+        val registry = RemoteRegistry()
+        val key = RemoteStateKey(Owned::class)
+        registry.element(TYPE, { it }, { _, context ->
+            context.states.prepare(context.identity, key, { Owned(context.identity) }, {}, { released.add(it.identity) })
+        }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
+        val client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1)))), registry, send = outgoing::add)
+        try {
+            createRuntimeUiSession {
+                assertThrows(IllegalStateException::class.java) { client.close() }
+                assertEquals(RemoteSessionStatus.Open, client.status)
+                assertEquals(1, client.nodeCount)
+                assertEquals(emptyList<Long>(), released)
+                evaluateComponentTree { Spacer() }
+            }.use { host ->
+                host.attach()
+                host.frame(Constraints.fixed(8, 8))
+            }
+        } finally {
+            client.close()
+        }
+        assertEquals(RemoteSessionStatus.Closed(RemoteFailure.PeerClosed), client.status)
+        assertEquals(0, client.nodeCount)
+        assertEquals(listOf(1L), released)
+        assertEquals(listOf(RemoteMessage.Applied(1, 1), RemoteMessage.Close(1, RemoteFailure.PeerClosed)), outgoing)
+    }
+
     @Test
     fun failedControlRequestsReleaseStateAndRejectLaterRequests() {
         ControlOperation.entries.forEach { operation ->

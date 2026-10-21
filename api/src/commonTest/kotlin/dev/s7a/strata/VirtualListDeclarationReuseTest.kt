@@ -187,7 +187,7 @@ internal class VirtualListDeclarationReuseTest {
      * Bound API owner with stable source identities and a replaceable declaration callback.
      */
     private class Fixture(
-        private val content: UiScope.() -> Unit = { Spacer() },
+        content: UiScope.() -> Unit = { Spacer() },
     ) : AutoCloseable {
         val state = VirtualListState<Int>()
         val items = MutableList(1_000) { Row(it) }

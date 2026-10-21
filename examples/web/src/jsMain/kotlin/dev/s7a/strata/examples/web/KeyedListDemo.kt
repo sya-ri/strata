@@ -20,7 +20,7 @@ internal fun keyedListDemo(): UiDefinition {
             Text("Items: ${items.value.size} / 5", modifier = Modifier.width(304))
             Row(spacing = 8) {
                 actionButton("Add", enabled = items.value.size < 5) {
-                    items.value = items.value + nextItem
+                    items.value += nextItem
                     nextItem += 1
                 }
                 actionButton("Reverse", enabled = 1 < items.value.size) { items.value = items.value.reversed() }

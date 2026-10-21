@@ -11,7 +11,7 @@ import subprocess
 
 def plan(paths, model=None, full=False):
     """Unknown inputs deliberately select the complete suite instead of silently skipping it."""
-    result = {name: False for name in ("common", "web", "docs", "docs_full", "workflow", "qodana", "all_minecraft", "preflight")}
+    result = {name: False for name in ("common", "web", "docs", "docs_full", "workflow", "qodana", "qodana_build_logic", "all_minecraft", "preflight")}
     if model is not None and (not isinstance(model, dict) or set(model) != {"minecraft", "documentation"}
                               or not isinstance(model["minecraft"], dict) or not isinstance(model["documentation"], list)):
         full, model = True, None
@@ -26,7 +26,13 @@ def plan(paths, model=None, full=False):
             result.update(workflow=True, preflight=True)
             continue
         result["preflight"] |= path.startswith("gradle/performance/") or path in ("gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml")
-        if path.startswith("build-logic/src/test/") or path == "gradle/qodana-idea-model.gradle.kts":
+        if path.startswith("build-logic/src/test/"):
+            result.update(common=True, workflow=True, qodana_build_logic=True)
+        elif path in ("build-logic/qodana.yaml", ".github/workflows/qodana-build-logic.yml"):
+            result.update(workflow=True, qodana_build_logic=True)
+        elif path == "gradle/verify-jvm-fixture-collection.py":
+            result.update(common=True, workflow=True)
+        elif path == "gradle/qodana-idea-model.gradle.kts":
             result.update(common=True, workflow=True, qodana=True)
         elif path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")) or (path.startswith("gradle/performance/") and path.endswith(".py")):
             result["workflow"] = True
@@ -54,6 +60,13 @@ def plan(paths, model=None, full=False):
             result["qodana"] |= path.endswith((".kt", ".kts"))
         elif path.startswith(("docs/", "skills/")) or path in ("README.md", "CHANGELOG.md"):
             result["docs"] = True
+        elif re.fullmatch(r"(?:api|runtime/core|performance-testkit)/src/(?:jsMain|jsTest|commonTest)/kotlin/.+\.kt", path):
+            result.update(common=True, web=True, qodana=True)
+        elif re.fullmatch(
+                r"(?:api|runtime/core)/src/(?:test|jvmTest)/kotlin/.+\.kt"
+                r"|runtime/(?:remote|headless|minecraft|minecraft-fonts-lwjgl)/src/test/kotlin/.+\.kt", path):
+            # These private source roots have no browser, documentation, or loaded-client consumers.
+            result.update(common=True, qodana=True)
         elif path.startswith(("api/", "runtime/", "integration/", "examples/", "paper-api/", "velocity-api/", "quality/", "detekt-rules/", "performance-testkit/")):
             result.update(common=True, web=True, all_minecraft=True, qodana=True, docs_full=True)
         elif path.startswith("build-logic/") or path in ("build.gradle.kts", "settings.gradle.kts", "gradle.properties") or path.startswith(("gradle/", "config/")):
@@ -64,12 +77,13 @@ def plan(paths, model=None, full=False):
             full = True
     if full:
         result = dict.fromkeys(result, True)
+    result["qodana_build_logic"] |= result["qodana"]
     result["minecraft"] = sorted(versions, key=lambda version: tuple(map(int, version.split("."))))
     return result
 
 
 def client_plan(root, versions, backend, subject_ref):
-    """Admit exact paired targets declaring the existing full backend client contract."""
+    """Select immutable paired targets; Gradle admits their actual full backend tasks before execution."""
     if not re.fullmatch(r"[0-9a-f]{40}", subject_ref):
         raise ValueError("subject_ref must be a full lowercase immutable commit SHA")
     actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
@@ -87,15 +101,6 @@ def client_plan(root, versions, backend, subject_ref):
         projects = [f"{kind}/minecraft-fabric-{version}" for kind in ("runtime", "integration")]
         if not all((root / project / "build.gradle.kts").is_file() for project in projects):
             raise ValueError(f"Unknown paired Minecraft target: {version}")
-        build = (root / projects[1] / "build.gradle.kts").read_text(encoding="utf-8")
-        declaration = re.search(r"enum class Backend\(val argument: String\)\s*\{([^}]+)\}", build)
-        tasks = [f":integration:minecraft-fabric-{version}:{name}" for name in ("runClientGameTest", "runProductionClientGameTest")]
-        check = re.search(r'tasks\.named\("check"\)\s*\{\s*dependsOn\("runClientGameTest",\s*runProductionClientGameTest\)\s*\}', build)
-        if (not declaration or f'("{backend}")' not in declaration[1]
-                or 'Scope.Full' not in build or '"strata.canvas.backend"' not in build
-                or not check
-                or any(f'"{task.rsplit(":", 1)[1]}"' not in build for task in tasks)):
-            raise ValueError(f"Minecraft {version} does not declare full {backend} development and production client verification")
         entries.append(dict(id=f"minecraft-{version.replace('.', '-')}-{backend}", version=version,
                             documentation=False, name=f"Minecraft {version} {backend} full clients",
                             gradle_arguments=" ".join([f":integration:minecraft-fabric-{version}:check", f"-Pstrata.minecraftVersions={version}",
@@ -109,7 +114,8 @@ def client_plan(root, versions, backend, subject_ref):
 
 def check_results(jobs):
     """Require exactly the selected successes and planned skips, including opt-in jobs."""
-    assert jobs["plan"]["result"] == "success", "CI planning failed"
+    if jobs["plan"]["result"] != "success":
+        raise ValueError("CI planning failed")
     outputs = jobs["plan"]["outputs"]
     common, web, docs, full_docs, workflow = (outputs[key] == "true" for key in ("common", "web", "docs", "docs_full", "workflow"))
     minecraft = outputs["all_minecraft"] == "true" or json.loads(outputs["minecraft"]) != [] or full_docs
@@ -118,7 +124,22 @@ def check_results(jobs):
                 "paired-jvm": outputs.get("paired_manifest", "") != "", "preflight-qualification": outputs.get("preflight", "false") == "true"}
     for job, selected in expected.items():
         required = "success" if selected else "skipped"
-        assert jobs[job]["result"] == required, f"{job}: expected {required}, got {jobs[job]['result']}"
+        if jobs[job]["result"] != required:
+            raise ValueError(f"{job}: expected {required}, got {jobs[job]['result']}")
+
+
+def check_analysis_results(jobs):
+    """Require both analysis owners to succeed or skip exactly as planned."""
+    if jobs["plan"]["result"] != "success":
+        raise ValueError("Analysis planning failed")
+    outputs = jobs["plan"]["outputs"]
+    for job, output in (("qodana", "qodana"), ("build-logic", "qodana_build_logic")):
+        selected = outputs[output]
+        if selected not in ("true", "false"):
+            raise ValueError(f"{output}: expected a boolean plan output")
+        required = "success" if selected == "true" else "skipped"
+        if jobs[job]["result"] != required:
+            raise ValueError(f"{job}: expected {required}, got {jobs[job]['result']}")
 
 
 def main():
@@ -130,6 +151,7 @@ def main():
     mode.add_argument("--paired-manifest", help="Validate an explicit manual measurement input instead of ordinary verification")
     mode.add_argument("--subject-ref")
     mode.add_argument("--check-results", action="store_true", help="Validate the completed jobs supplied in RESULTS")
+    mode.add_argument("--check-analysis-results", action="store_true", help="Validate the completed Qodana jobs supplied in RESULTS")
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--model", type=Path)
     parser.add_argument("--minecraft-versions", default="")
@@ -137,8 +159,9 @@ def main():
     parser.add_argument("--subject-root", type=Path, default=Path("subject"))
     parser.add_argument("--output", type=Path, default=Path("build/github-actions/ci-plan.json"))
     args = parser.parse_args()
-    if args.check_results:
-        check_results(json.loads(os.environ["RESULTS"]))
+    if args.check_results or args.check_analysis_results:
+        checker = check_analysis_results if args.check_analysis_results else check_results
+        checker(json.loads(os.environ["RESULTS"]))
         return
     selected_client = bool(args.minecraft_versions or args.subject_ref is not None or args.minecraft_backend != "default")
     if selected_client and (args.paired_manifest is not None or args.base is not None or args.full or args.head != "HEAD" or args.model is not None):

@@ -400,7 +400,7 @@ internal class MockModrinthServer(
                     mapOf(
                         "disclosures" to
                             remoteDisclosures.map { disclosure ->
-                                linkedMapOf<String, Any?>(
+                                linkedMapOf(
                                     "type" to disclosure.type.wireValue,
                                     "note" to disclosure.note,
                                     "uses" to disclosure.aiUses.map(AiUse::wireValue).sorted(),

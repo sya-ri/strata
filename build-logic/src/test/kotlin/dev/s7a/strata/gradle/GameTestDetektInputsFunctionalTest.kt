@@ -57,7 +57,7 @@ internal class GameTestDetektInputsFunctionalTest {
     private fun writeBuild(declaration: String) {
         write(
             "build.gradle.kts",
-            """
+            $$"""
             import dev.detekt.gradle.Detekt
             import dev.detekt.gradle.extensions.DetektExtension
             import org.gradle.api.tasks.SourceSetContainer
@@ -71,7 +71,7 @@ internal class GameTestDetektInputsFunctionalTest {
                 apply(plugin = "org.jetbrains.kotlin.jvm")
                 apply(plugin = "dev.detekt")
                 repositories { mavenCentral() }
-            $declaration
+            $$declaration
                 extensions.getByType<SourceSetContainer>().create("gametest")
                 val shared = objects.sourceDirectorySet("sharedExamples", "Filtered shared examples").apply {
                     srcDir(rootProject.file("shared"))
@@ -92,9 +92,9 @@ internal class GameTestDetektInputsFunctionalTest {
                         val selected = project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.getByName("gametest").kotlin.files
                         val analyzed = tasks.named<Detekt>("detekt").get().source.files
                         val expected = setOf(file("authored/SelectedGame.kt"), rootProject.file("shared/SelectedExample.kt"))
-                        check(selected == expected) { "The working compiler selection changed: ${'$'}selected" }
-                        check(analyzed.containsAll(expected + file("src/main/kotlin/Ordinary.kt"))) { "Analysis lost selected or ordinary sources: ${'$'}analyzed" }
-                        check(analyzed.none { it.name.startsWith("Excluded") || it.name == "Ignored.kt" }) { "Analysis broadened a compiler filter: ${'$'}analyzed" }
+                        check(selected == expected) { "The working compiler selection changed: $selected" }
+                        check(analyzed.containsAll(expected + file("src/main/kotlin/Ordinary.kt"))) { "Analysis lost selected or ordinary sources: $analyzed" }
+                        check(analyzed.none { it.name.startsWith("Excluded") || it.name == "Ignored.kt" }) { "Analysis broadened a compiler filter: $analyzed" }
                     }
                 }
             }

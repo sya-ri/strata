@@ -53,7 +53,7 @@ class PlanCiTest(unittest.TestCase):
 
     def test_explicit_manual_inputs_keep_complete_jvm_browser_and_source_contracts(self):
         expected = {"common": False, "web": False, "docs": False, "docs_full": False, "workflow": False,
-                    "qodana": False, "all_minecraft": False, "preflight": True, "minecraft": [], "source_model": False}
+                    "qodana": False, "qodana_build_logic": False, "all_minecraft": False, "preflight": True, "minecraft": [], "source_model": False}
         for schema in ("jvm", "browser", "source"):
             with self.subTest(schema=schema):
                 fixture, value = self.paired_fixture(schema)
@@ -134,23 +134,43 @@ class PlanCiTest(unittest.TestCase):
                 for status in statuses:
                     with self.subTest(full=full, manifest=manifest, job=job, status=status):
                         changed = {**results, job: {**results[job], "result": status}}
-                        with self.assertRaises(AssertionError):
+                        with self.assertRaises(ValueError):
                             self.check_outcomes(changed)
+
+    def test_workflow_result_accepts_runner_omitted_empty_opt_in_output(self):
+        outputs = {key: "false" for key in ("common", "web", "docs", "docs_full", "workflow", "all_minecraft")}
+        outputs["minecraft"] = "[]"
+        # The runner omits empty outputs before exposing needs.plan.outputs to the aggregation job.
+        jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
+        jobs["plan"] = {"result": "success", "outputs": outputs}
+        self.check_outcomes(jobs)
+        outputs["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
+        for result in ("skipped", "failure", "cancelled"):
+            jobs["paired-jvm"]["result"] = result
+            with self.subTest(result=result), self.assertRaises(ValueError):
+                self.check_outcomes(jobs)
+        jobs["paired-jvm"]["result"] = "success"
+        self.check_outcomes(jobs)
 
     def test_outcome_cli_checks_results_without_creating_a_new_plan(self):
         jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
         jobs["plan"] = {"result": "success", "outputs": {key: json.dumps(value) for key, value in planner.plan([]).items()}}
         with tempfile.TemporaryDirectory() as temporary:
             command = [sys.executable, "-B", str(Path(__file__).resolve().parents[1] / "plan-ci.py"), "--check-results"]
-            environment = {**os.environ, "RESULTS": json.dumps(jobs)}
-            completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
-            self.assertEqual(0, completed.returncode, completed.stderr)
-            self.assertEqual([], list(Path(temporary).iterdir()))
-            jobs["checks"]["result"] = "success"
-            environment["RESULTS"] = json.dumps(jobs)
-            completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
-            self.assertNotEqual(0, completed.returncode)
-            self.assertIn("checks: expected skipped, got success", completed.stderr)
+            for optimize in ("0", "1", "2"):
+                environment = {**os.environ, "RESULTS": json.dumps(jobs), "PYTHONOPTIMIZE": optimize}
+                completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertEqual([], list(Path(temporary).iterdir()))
+                for job, status in (("checks", "success"), ("checks", "failure"), ("checks", "cancelled"), ("plan", "failure"), ("plan", "cancelled"), ("plan", "skipped")):
+                    changed = {**jobs, job: {**jobs[job], "result": status}}
+                    environment["RESULTS"] = json.dumps(changed)
+                    with self.subTest(optimize=optimize, job=job, status=status):
+                        completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
+                        self.assertNotEqual(0, completed.returncode)
+                        expected = "CI planning failed" if job == "plan" else f"checks: expected skipped, got {status}"
+                        self.assertIn(expected, completed.stderr)
+                        self.assertEqual([], list(Path(temporary).iterdir()))
 
     def test_workflow_isolates_selected_client_concurrency_and_paired_intent(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
@@ -170,10 +190,94 @@ class PlanCiTest(unittest.TestCase):
         self.assertEqual([], result.pop("minecraft"))
         self.assertTrue(all(result.values()))
 
+    def test_multiplatform_js_and_common_tests_keep_their_platform_checks(self):
+        paths = []
+        for module in ("api", "runtime/core", "performance-testkit"):
+            for source_set in ("jsMain", "jsTest", "commonTest"):
+                path = f"{module}/src/{source_set}/kotlin/Contract.kt"
+                paths.append(path)
+                expected = planner.plan([])
+                expected.update(common=True, web=True, qodana=True, qodana_build_logic=True)
+                with self.subTest(path=path):
+                    self.assertEqual(expected, planner.plan([path]))
+                    self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
+        expected = planner.plan([])
+        expected.update(common=True, web=True, qodana=True, qodana_build_logic=True)
+        self.assertEqual(expected, planner.plan(paths))
+
+    def test_multiplatform_inputs_do_not_narrow_other_changed_inputs(self):
+        for path in ("api/src/jsMain/kotlin/Implementation.kt", "runtime/core/src/commonTest/kotlin/Contract.kt"):
+            selected = planner.plan([path])
+            for other in ("runtime/minecraft/src/test/kotlin/Test.kt", "api/src/commonMain/kotlin/Element.kt",
+                          "runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/Canvas.kt",
+                          "runtime/core/src/jsTest/resources/fixture.json", "settings.gradle.kts", "unknown-input"):
+                expected = planner.plan([other])
+                expected = {key: (expected[key] or selected[key]) if type(expected[key]) is bool else expected[key] for key in expected}
+                for paths in ([path, other], [other, path]):
+                    with self.subTest(paths=paths):
+                        self.assertEqual(expected, planner.plan(paths))
+
+    def test_multiplatform_resources_and_unrecognized_source_roots_keep_platform_checks(self):
+        expected = planner.plan(["api/src/commonMain/kotlin/Element.kt"])
+        for path in ("api/src/jsMain/resources/image.png", "runtime/core/src/jsTest/resources/fixture.json",
+                     "performance-testkit/src/commonTest/resources/evidence.json", "api/src/webMain/kotlin/Implementation.kt",
+                     "runtime/future/src/jsTest/kotlin/Test.kt", "runtime/headless/src/commonTest/kotlin/Test.kt",
+                     "performance-testkit/src/jsMain/kotlin-fixtures/Fixture.kt", "api/src/jsTest/kotlin/Test.kt.disabled"):
+            with self.subTest(path=path):
+                self.assertEqual(expected, planner.plan([path]))
+
+    def test_private_jvm_test_sources_keep_jvm_checks_coverage_and_analysis(self):
+        expected = planner.plan([])
+        expected.update(common=True, qodana=True, qodana_build_logic=True)
+        paths = [f"{module}/src/{source_set}/kotlin/PrivateJvmTest.kt"
+                 for module, source_sets in (("api", ("test", "jvmTest")), ("runtime/core", ("test", "jvmTest")),
+                                             ("runtime/remote", ("test",)), ("runtime/headless", ("test",)),
+                                             ("runtime/minecraft", ("test",)), ("runtime/minecraft-fonts-lwjgl", ("test",)))
+                 for source_set in source_sets]
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual(expected, planner.plan([path]))
+                self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
+        self.assertEqual(expected, planner.plan(paths))
+
+    def test_private_jvm_tests_do_not_narrow_other_changed_inputs(self):
+        test = "runtime/minecraft/src/test/kotlin/PrivateJvmTest.kt"
+        for other in ("api/src/commonMain/kotlin/Component.kt", "runtime/minecraft/src/main/kotlin/Rendering.kt",
+                      "runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/Canvas.kt",
+                      "runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf", "build.gradle.kts", "unknown-input"):
+            expected = planner.plan([other])
+            expected.update(common=True, qodana=True, qodana_build_logic=True)
+            for paths in ([test, other], [other, test]):
+                with self.subTest(paths=paths):
+                    self.assertEqual(expected, planner.plan(paths))
+
+    def test_test_resources_and_unknown_roots_keep_platform_checks(self):
+        expected = planner.plan(["api/src/main/kotlin/Component.kt"])
+        for path in ("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf",
+                     "runtime/core/src/test/resources/fixture.json", "runtime/future/src/test/kotlin/Test.kt",
+                     "runtime/remote/src/jvmTest/kotlin/Test.kt", "runtime/core/src/test/kotlin-fixtures/Test.kt",
+                     "runtime/core/src/test/kotlin/Test.kt.disabled"):
+            with self.subTest(path=path):
+                self.assertEqual(expected, planner.plan([path]))
+
+    def test_scoped_jvm_fixture_verifier_keeps_its_jvm_execution_owner(self):
+        path = "gradle/verify-jvm-fixture-collection.py"
+        expected = planner.plan([])
+        expected.update(common=True, workflow=True)
+        self.assertEqual(expected, planner.plan([path]))
+        self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
+        for other in ("runtime/web/src/jsMain/kotlin/Host.kt", "runtime/core/src/main/kotlin/Node.kt",
+                      "build.gradle.kts", "gradle/verify-jvm-fixture-collection-other.py", "unknown-input"):
+            for changed in ([path, other], [other, path]):
+                with self.subTest(changed=changed):
+                    mixed = planner.plan([other])
+                    mixed.update(common=True, workflow=True)
+                    self.assertEqual(mixed, planner.plan(changed))
+
     def test_idea_analysis_model_keeps_real_compiler_and_inspection_checks(self):
         path = "gradle/qodana-idea-model.gradle.kts"
         expected = planner.plan([])
-        expected.update(common=True, workflow=True, qodana=True)
+        expected.update(common=True, workflow=True, qodana=True, qodana_build_logic=True)
         self.assertEqual(expected, planner.plan([path]))
         for other in ("build.gradle.kts", "settings.gradle.kts", "gradle/unknown-model.gradle.kts", "gradle/qodana-idea-model-other.gradle.kts",
                       "gradle/libs.versions.toml", "build-logic/src/main/kotlin/Plugin.kt"):
@@ -184,6 +288,62 @@ class PlanCiTest(unittest.TestCase):
         mixed = planner.plan(["api/src/main/kotlin/Element.kt"])
         mixed["workflow"] = True
         self.assertEqual(mixed, planner.plan([path, "api/src/main/kotlin/Element.kt"]))
+
+    def test_native_analysis_configuration_only_selects_its_own_scan(self):
+        expected = planner.plan([])
+        expected.update(workflow=True, qodana_build_logic=True)
+        paths = ["build-logic/qodana.yaml", ".github/workflows/qodana-build-logic.yml"]
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual(expected, planner.plan([path]))
+        self.assertEqual(expected, planner.plan(paths))
+        self.assertEqual(planner.plan([], full=True), planner.plan(paths, full=True))
+        for other in ("api/src/test/kotlin/Test.kt", "runtime/core/src/main/kotlin/Node.kt",
+                      "build-logic/build.gradle.kts", "build-logic/src/testFixtures/kotlin/Shared.kt", "unknown-input"):
+            for changed in ([paths[0], other], [other, paths[0]]):
+                with self.subTest(changed=changed):
+                    mixed = planner.plan([other])
+                    mixed["workflow"] = True
+                    self.assertEqual(mixed, planner.plan(changed))
+        mixed = expected | {"docs": True}
+        self.assertEqual(mixed, planner.plan(paths + ["docs/development/ci.md"]))
+
+    def test_analysis_aggregate_requires_exact_selected_successes_and_skips(self):
+        owners = {"qodana": "qodana", "build-logic": "qodana_build_logic"}
+        for product, build_logic in ((False, False), (False, True), (True, False), (True, True)):
+            outputs = {"qodana": json.dumps(product), "qodana_build_logic": json.dumps(build_logic)}
+            jobs = {job: {"result": "success" if outputs[output] == "true" else "skipped"} for job, output in owners.items()}
+            jobs["plan"] = {"result": "success", "outputs": outputs}
+            planner.check_analysis_results(jobs)
+            for job in jobs:
+                statuses = ("failure", "cancelled", "skipped") if job == "plan" or jobs[job]["result"] == "success" else ("failure", "cancelled", "success")
+                for status in statuses:
+                    with self.subTest(product=product, build_logic=build_logic, job=job, status=status):
+                        changed = {**jobs, job: {**jobs[job], "result": status}}
+                        with self.assertRaises(ValueError):
+                            planner.check_analysis_results(changed)
+            for output in owners.values():
+                for value in ("", "True", "0"):
+                    with self.subTest(output=output, value=value), self.assertRaises(ValueError):
+                        changed = {**jobs, "plan": {"result": "success", "outputs": {**outputs, output: value}}}
+                        planner.check_analysis_results(changed)
+
+    def test_analysis_outcome_cli_does_not_create_another_plan(self):
+        jobs = {"plan": {"result": "success", "outputs": {"qodana": "false", "qodana_build_logic": "true"}},
+                "qodana": {"result": "skipped"}, "build-logic": {"result": "success"}}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "unused-plan.json"
+            command = [sys.executable, "-B", str(Path(__file__).resolve().parents[1] / "plan-ci.py"), "--check-analysis-results", "--output", str(output)]
+            for optimize in ("0", "1"):
+                environment = {**os.environ, "RESULTS": json.dumps(jobs), "PYTHONOPTIMIZE": optimize}
+                completed = subprocess.run(command, env=environment, capture_output=True, text=True, check=False)
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertEqual("", completed.stdout)
+                self.assertFalse(output.exists())
+                omitted = {**jobs, "build-logic": {"result": "skipped"}}
+                completed = subprocess.run(command, env=environment | {"RESULTS": json.dumps(omitted)}, capture_output=True, text=True, check=False)
+                self.assertNotEqual(0, completed.returncode)
+                self.assertIn("expected success", completed.stderr)
 
     def test_workflow_tool_configuration_keeps_all_linter_checks_without_loading_clients(self):
         expected = planner.plan([])
@@ -203,7 +363,7 @@ class PlanCiTest(unittest.TestCase):
 
     def test_build_logic_tests_keep_jvm_analysis_without_unrelated_platform_acceptance(self):
         expected = planner.plan([])
-        expected.update(common=True, workflow=True, qodana=True)
+        expected.update(common=True, workflow=True, qodana_build_logic=True)
         tests = ["build-logic/src/test/kotlin/dev/s7a/strata/gradle/ProjectModelFunctionalTest.kt",
                  "build-logic/src/test/resources/model/settings.gradle.kts"]
         for path in tests:
@@ -216,6 +376,13 @@ class PlanCiTest(unittest.TestCase):
                 with self.subTest(paths=paths):
                     self.assertEqual(planner.plan([path]), planner.plan(paths))
         self.assertEqual(planner.plan([], full=True), planner.plan(tests, full=True))
+        for product in ("api/src/test/kotlin/Test.kt", "runtime/core/src/main/kotlin/Node.kt", "gradle/qodana-idea-model.gradle.kts"):
+            for changed in ([tests[0], product], [product, tests[0]]):
+                with self.subTest(changed=changed):
+                    mixed = planner.plan([product])
+                    mixed["workflow"] = True
+                    self.assertEqual(mixed, planner.plan(changed))
+
         mixed = planner.plan(["api/src/main/kotlin/Element.kt"])
         mixed["workflow"] = True
         self.assertEqual(mixed, planner.plan(tests + ["api/src/main/kotlin/Element.kt"]))
@@ -247,7 +414,7 @@ class PlanCiTest(unittest.TestCase):
                     result = json.loads(output.read_text())
                     self.assertEqual(expected, tuple(result[key] for key in ("source_model", "all_minecraft", "common")))
 
-    def test_selected_clients_bind_the_subject_and_declared_backend_contract(self):
+    def test_selected_clients_bind_the_subject_and_exact_target_directories(self):
         subject = "a" * 40
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -255,9 +422,8 @@ class PlanCiTest(unittest.TestCase):
                 for kind in ("runtime", "integration"):
                     directory = root / kind / f"minecraft-fabric-{version}"
                     directory.mkdir(parents=True)
-                    # Use the real build declarations, rather than inventing another backend inventory.
-                    source = Path(__file__).parents[2] / kind / f"minecraft-fabric-{version}" / "build.gradle.kts"
-                    (directory / "build.gradle.kts").write_bytes(source.read_bytes())
+                    # Gradle owns task admission; the planner must not parse build-script contents.
+                    (directory / "build.gradle.kts").write_text("// Task configuration is evaluated by Gradle.\n", encoding="utf-8")
             with patch.object(planner.subprocess, "check_output", side_effect=lambda args, **kwargs: subject + "\n" if args[1] == "rev-parse" else b""):
                 for backend in ("opengl", "vulkan"):
                     with self.subTest(backend=backend):
@@ -272,12 +438,6 @@ class PlanCiTest(unittest.TestCase):
                                              entry["gradle_arguments"].split())
                             self.assertFalse(entry["documentation"])
                 self.assertEqual(["26.3"], planner.client_plan(root, "26.3", "vulkan", subject)["minecraft"])
-                build_file = root / "integration/minecraft-fabric-26.3/build.gradle.kts"
-                build = build_file.read_text(encoding="utf-8")
-                build_file.write_text(build.replace('dependsOn("runClientGameTest", runProductionClientGameTest)', 'dependsOn("runClientGameTest")'), encoding="utf-8")
-                with self.assertRaisesRegex(ValueError, "does not declare"):
-                    planner.client_plan(root, "26.3", "vulkan", subject)
-                build_file.write_text(build, encoding="utf-8")
                 for versions, backend, ref in (("", "vulkan", subject), ("26.3,", "vulkan", subject),
                                                ("26.3,26.3", "vulkan", subject), ("26.3;whoami", "vulkan", subject),
                                                ("26.9", "vulkan", subject), ("26.3", "default", subject),
@@ -285,9 +445,6 @@ class PlanCiTest(unittest.TestCase):
                                                ("26.3", "vulkan", "b" * 40)):
                     with self.subTest(versions=versions, backend=backend, ref=ref), self.assertRaises(ValueError):
                         planner.client_plan(root, versions, backend, ref)
-                (root / "integration/minecraft-fabric-26.2/build.gradle.kts").write_text('tasks.named("runClientGameTest")')
-                with self.assertRaisesRegex(ValueError, "does not declare"):
-                    planner.client_plan(root, "26.2", "vulkan", subject)
                 with patch.object(planner.subprocess, "check_output", side_effect=[subject + "\n", b" M build.gradle.kts"]):
                     with self.assertRaisesRegex(ValueError, "modified tracked"):
                         planner.client_plan(root, "26.3", "vulkan", subject)
@@ -367,6 +524,7 @@ class PlanCiTest(unittest.TestCase):
                 return subprocess.check_output(["git", "-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", *args], cwd=root)
 
             git("init", "--quiet")
+            git("config", "maintenance.auto", "false")
             original = root / "runtime/shared/old/Native.kt"
             original.parent.mkdir(parents=True)
             original.write_text("// Retained source moves between shared families.\n" * 10)

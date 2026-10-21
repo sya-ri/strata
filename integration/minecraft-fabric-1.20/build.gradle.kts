@@ -1,5 +1,5 @@
 import dev.detekt.gradle.extensions.DetektExtension
-import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask as ClientProductionRunTask
+import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
