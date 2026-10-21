@@ -1442,6 +1442,368 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_7(
     )
 }
 
+private fun <T : Any, K : Any> UiScope.compileVirtualList48d6d37341e0_1(
+    itemCount: Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } },
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        state = state,
+        rowHeight = rowHeight,
+        indexOfKey = indexOfKey,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualList48d6d37341e0_2(
+    itemCount: Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } },
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        state = state,
+        rowHeight = rowHeight,
+        indexOfKey = indexOfKey,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualList48d6d37341e0_3(
+    itemCount: Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } },
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        state = state,
+        rowHeight = rowHeight,
+        indexOfKey = indexOfKey,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualList0f5b9edb9f2b_1(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        state = state,
+        rowHeight = rowHeight,
+        indexOfKey = indexOfKey,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualList0f5b9edb9f2b_2(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        state = state,
+        rowHeight = rowHeight,
+        indexOfKey = indexOfKey,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualList0f5b9edb9f2b_3(
+    itemCount: () -> Int,
+    itemAt: (Int) -> T,
+    keyAt: (Int) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    indexOfKey: ((K) -> Int?)? = null,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        itemCount = itemCount,
+        itemAt = itemAt,
+        keyAt = keyAt,
+        state = state,
+        rowHeight = rowHeight,
+        indexOfKey = indexOfKey,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualListcaf0ed52c324_1(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        items = items,
+        keyOf = keyOf,
+        state = state,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualListcaf0ed52c324_2(
+    items: List<T>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        items = items,
+        keyOf = keyOf,
+        state = state,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualListcaf0ed52c324_3(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: Boolean = false,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        items = items,
+        keyOf = keyOf,
+        state = state,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualListcaf0ed52c324_4(
+    items: List<T>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        items = items,
+        keyOf = keyOf,
+        state = state,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualListcaf0ed52c324_5(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: Boolean = false,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        items = items,
+        keyOf = keyOf,
+        state = state,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualListcaf0ed52c324_6(
+    items: List<T>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        items = items,
+        keyOf = keyOf,
+        state = state,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
+private fun <T : Any, K : Any> UiScope.compileVirtualListcaf0ed52c324_7(
+    items: StateSource<List<T>>,
+    keyOf: (T) -> K,
+    state: VirtualListState<K>,
+    rowHeight: Int,
+    scrollRate: Int = 10,
+    canLoadLeading: StateSource<Boolean>,
+    canLoadTrailing: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    content: UiScope.(T) -> Unit,
+) {
+    VirtualList(
+        items = items,
+        keyOf = keyOf,
+        state = state,
+        rowHeight = rowHeight,
+        scrollRate = scrollRate,
+        canLoadLeading = canLoadLeading,
+        canLoadTrailing = canLoadTrailing,
+        modifier = modifier,
+        key = key,
+        content = content,
+    )
+}
+
 private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_1(
     items: StateSource<List<T>>,
     keyOf: (T) -> K,
