@@ -134,7 +134,7 @@ class PlanCiTest(unittest.TestCase):
                 for status in statuses:
                     with self.subTest(full=full, manifest=manifest, job=job, status=status):
                         changed = {**results, job: {**results[job], "result": status}}
-                        with self.assertRaises(AssertionError):
+                        with self.assertRaises(ValueError):
                             self.check_outcomes(changed)
 
     def test_outcome_cli_checks_results_without_creating_a_new_plan(self):
@@ -142,15 +142,20 @@ class PlanCiTest(unittest.TestCase):
         jobs["plan"] = {"result": "success", "outputs": {key: json.dumps(value) for key, value in planner.plan([]).items()}}
         with tempfile.TemporaryDirectory() as temporary:
             command = [sys.executable, "-B", str(Path(__file__).resolve().parents[1] / "plan-ci.py"), "--check-results"]
-            environment = {**os.environ, "RESULTS": json.dumps(jobs)}
-            completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
-            self.assertEqual(0, completed.returncode, completed.stderr)
-            self.assertEqual([], list(Path(temporary).iterdir()))
-            jobs["checks"]["result"] = "success"
-            environment["RESULTS"] = json.dumps(jobs)
-            completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
-            self.assertNotEqual(0, completed.returncode)
-            self.assertIn("checks: expected skipped, got success", completed.stderr)
+            for optimize in ("0", "1", "2"):
+                environment = {**os.environ, "RESULTS": json.dumps(jobs), "PYTHONOPTIMIZE": optimize}
+                completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertEqual([], list(Path(temporary).iterdir()))
+                for job, status in (("checks", "success"), ("checks", "failure"), ("checks", "cancelled"), ("plan", "failure"), ("plan", "cancelled"), ("plan", "skipped")):
+                    changed = {**jobs, job: {**jobs[job], "result": status}}
+                    environment["RESULTS"] = json.dumps(changed)
+                    with self.subTest(optimize=optimize, job=job, status=status):
+                        completed = subprocess.run(command, cwd=temporary, env=environment, capture_output=True, text=True)
+                        self.assertNotEqual(0, completed.returncode)
+                        expected = "CI planning failed" if job == "plan" else f"checks: expected skipped, got {status}"
+                        self.assertIn(expected, completed.stderr)
+                        self.assertEqual([], list(Path(temporary).iterdir()))
 
     def test_workflow_isolates_selected_client_concurrency_and_paired_intent(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")

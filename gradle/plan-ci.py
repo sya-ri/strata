@@ -112,7 +112,8 @@ def client_plan(root, versions, backend, subject_ref):
 
 def check_results(jobs):
     """Require exactly the selected successes and planned skips, including opt-in jobs."""
-    assert jobs["plan"]["result"] == "success", "CI planning failed"
+    if jobs["plan"]["result"] != "success":
+        raise ValueError("CI planning failed")
     outputs = jobs["plan"]["outputs"]
     common, web, docs, full_docs, workflow = (outputs[key] == "true" for key in ("common", "web", "docs", "docs_full", "workflow"))
     minecraft = outputs["all_minecraft"] == "true" or json.loads(outputs["minecraft"]) != [] or full_docs
@@ -121,7 +122,8 @@ def check_results(jobs):
                 "paired-jvm": outputs.get("paired_manifest", "") != "", "preflight-qualification": outputs.get("preflight", "false") == "true"}
     for job, selected in expected.items():
         required = "success" if selected else "skipped"
-        assert jobs[job]["result"] == required, f"{job}: expected {required}, got {jobs[job]['result']}"
+        if jobs[job]["result"] != required:
+            raise ValueError(f"{job}: expected {required}, got {jobs[job]['result']}")
 
 
 def check_analysis_results(jobs):
