@@ -38,7 +38,7 @@ See the [modifier guide](docs/guides/modifiers.md) and [Modifier SPI](docs/refer
 
 ### ObservedComponentsKt JVM facade
 
-- **Deprecated in**: Unreleased (the next release after 0.3.0)
+- **Deprecated in**: 0.3.1
 - **Scheduled for removal**: 1.0.0
 - **Replacement**: the per-component JVM file facades, such as `ObservedButtonComponentsKt` and `ObservedVirtualListComponentsKt`
 
