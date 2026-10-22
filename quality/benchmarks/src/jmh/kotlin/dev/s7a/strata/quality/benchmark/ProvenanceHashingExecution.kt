@@ -94,7 +94,7 @@ internal object ProvenanceHashingExecution {
         inputs: Map<String, Path>,
     ) {
         require(args.isNotEmpty())
-        val command = enumValues<Command>().single { it.name.equals(args.first(), ignoreCase = true) }
+        val command = Command.entries.single { it.name.equals(args.first(), ignoreCase = true) }
         require(args.size == if (command == Command.Collect) 6 else 9)
         val inputManifest = inputManifest()
         require(inputs.keys == Input.entries.map { it.label }.toSet())

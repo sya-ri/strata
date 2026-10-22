@@ -55,7 +55,7 @@ internal object ProvenanceHashingEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(args.isNotEmpty())
-        val command = enumValues<Command>().single { it.name.equals(args.first(), ignoreCase = true) }
+        val command = Command.entries.single { it.name.equals(args.first(), ignoreCase = true) }
         when (command) {
             Command.Collect -> {
                 require(args.size == 6)
@@ -278,9 +278,9 @@ internal object ProvenanceHashingEvidence {
             addProperty("available_processors", Runtime.getRuntime().availableProcessors())
         }
 
-    private fun mode(row: JsonObject): ProvenanceHashingCorpus.Mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
+    private fun mode(row: JsonObject): ProvenanceHashingCorpus.Mode = ProvenanceHashingCorpus.Mode.entries.single { it.name.contentEquals(row.get("mode").asString) }
 
-    private fun rowIdentity(row: JsonObject): ProvenanceHashingCorpus.Case = ProvenanceHashingCorpus.Case(mode(row), row.get("entries").asInt, enumValues<ProvenanceHashingCorpus.Shape>().single { it.name.contentEquals(row.get("shape").asString) })
+    private fun rowIdentity(row: JsonObject): ProvenanceHashingCorpus.Case = ProvenanceHashingCorpus.Case(mode(row), row.get("entries").asInt, ProvenanceHashingCorpus.Shape.entries.single { it.name.contentEquals(row.get("shape").asString) })
 
     private fun origin(type: Class<*>): Path = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI())
 }
