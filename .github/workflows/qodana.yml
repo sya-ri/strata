@@ -124,6 +124,7 @@ jobs:
           --linter=qodana-jvm-community --within-docker=false
           --property=idea.config.path=${{ github.workspace }}/build/qodana/ide-config
     - name: Verify complete Gradle IDE model
+      id: model
       if: always()
       run: bash gradle/verify-qodana-model.sh "${{ runner.temp }}/qodana/results/projectStructure/Modules.json" "$GITHUB_WORKSPACE"
         /data/project
@@ -164,7 +165,7 @@ jobs:
         path: ${{ runner.temp }}/qodana/caches
         key: ${{ steps.analysis_cache.outputs.cache-primary-key }}
     - name: Save complete Minecraft Loom project cache
-      if: success() && steps.loom_cache.outputs.cache-hit != 'true'
+      if: ${{ !cancelled() && steps.model.outcome == 'success' && steps.loom_cache.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v6
       with:
         path: .gradle/loom-cache
