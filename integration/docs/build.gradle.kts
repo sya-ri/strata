@@ -143,7 +143,6 @@ val skillExampleSources = layout.projectDirectory.dir("src/skillExamples/kotlin"
 val runtimeVersionBuildInputs =
     rootProject.fileTree(rootProject.layout.projectDirectory.dir("runtime")) {
         include("minecraft-fabric-*/build.gradle.kts")
-        exclude("**/build/**", "**/.gradle/**", "**/out/**")
     }
 
 /**
@@ -528,50 +527,7 @@ val stageWebDemos = tasks.register<Sync>("stageWebDemos") {
 rootProject.tasks.named("verifyGeneratedDokkaSourceLinks") { mustRunAfter(stageWebDemos) }
 
 val dokkaPagesRoot = rootProject.layout.buildDirectory.dir("dokka/html")
-val dokkaPagesInputs =
-    dokkaPagesRoot.map { directory ->
-        directory.asFileTree.matching {
-            exclude("pages-public-urls.txt", "older/**")
-        }
-    }
 val pagesPublicUrlInventory = rootProject.layout.buildDirectory.file("dokka/html/pages-public-urls.txt")
-val pagesRepositoryInputs =
-    providers.provider {
-        rootProject
-            .fileTree(rootProject.layout.projectDirectory) {
-                listOf(
-                    "gradle",
-                    "html",
-                    "java",
-                    "json",
-                    "kt",
-                    "kts",
-                    "md",
-                    "properties",
-                    "toml",
-                    "txt",
-                    "xml",
-                    "yaml",
-                    "yml",
-                ).forEach { extension ->
-                    include("*.$extension", "**/*.$extension")
-                }
-                exclude(
-                    ".git/**",
-                    ".worktrees/**",
-                    ".gradle/**",
-                    "build/**",
-                    "out/**",
-                    "**/.git/**",
-                    "**/.worktrees/**",
-                    "**/.gradle/**",
-                    "**/build/**",
-                    "**/out/**",
-                )
-            }.files
-            .filter(File::isFile)
-            .sortedBy(File::getAbsolutePath)
-    }
 val generateDokkaPagesInventory =
     tasks.register<JavaExec>("generateDokkaPagesInventory") {
         group = "documentation"
@@ -585,8 +541,6 @@ val generateDokkaPagesInventory =
             dokkaPagesRoot.get().asFile.absolutePath,
             pagesPublicUrlInventory.get().asFile.absolutePath,
         )
-        inputs.files(pagesRepositoryInputs)
-        inputs.files(dokkaPagesInputs).withPropertyName("dokkaSite").withPathSensitivity(PathSensitivity.RELATIVE)
         outputs.file(pagesPublicUrlInventory)
         outputs.upToDateWhen { false }
     }
@@ -606,8 +560,6 @@ tasks.register<JavaExec>("checkDokkaPagesStaging") {
         dokkaPagesRoot.get().asFile.absolutePath,
         pagesPublicUrlInventory.get().asFile.absolutePath,
     )
-    inputs.files(pagesRepositoryInputs)
-    inputs.files(dokkaPagesInputs).withPropertyName("dokkaSite").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.file(pagesPublicUrlInventory)
     outputs.upToDateWhen { false }
 }
