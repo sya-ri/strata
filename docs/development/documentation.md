@@ -105,6 +105,7 @@ Generation owns the six API and workflow skill references, README installation/o
 The skill entrypoint owns everyday component selection, content-slot composition, modifier placement, state ownership, and review decisions; inventory styling and retained-component guidance are separate maintained references.
 The checker pairs source declarations with compiled API inventories, validates state/binding fingerprints, and checks byte-exact freshness and repository-local links.
 Skill and README examples compile against `:api` alone.
+README rendering consumes that compilation's output through a Kotlin compilation association instead of compiling its sources again.
 Preserve the public skill's package structure and README marker pairs; edit their templates or source examples.
 
 ## README code-and-screen demo
