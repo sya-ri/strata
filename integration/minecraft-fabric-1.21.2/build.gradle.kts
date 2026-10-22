@@ -47,7 +47,7 @@ extensions.configure<KotlinJvmProjectExtension> {
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/classic/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/mapped/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/lookup-enchantments/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location-factory/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/stream-codec/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("examples/paper/src/shared/kotlin"))

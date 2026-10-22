@@ -41,7 +41,7 @@ tasks.withType<ClientProductionRunTask>().configureEach {
 }
 
 extensions.configure<DetektExtension> {
-    source.from(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/renderpearl/src/gametest/kotlin"))
+    source.from(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/common/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/renderpearl/src/gametest/kotlin"))
 }
 
 loom {
@@ -99,6 +99,7 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-extractor/src/gametest/kotlin"),
         )
         kotlin.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/common/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/renderpearl/src/gametest/kotlin"))
     }

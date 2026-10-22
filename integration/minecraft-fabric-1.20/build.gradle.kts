@@ -29,6 +29,7 @@ val compatibleGameTest = rootProject.file("integration/minecraft-fabric-1.20.1/s
 extensions.configure<DetektExtension> {
     source.from(
         rootProject.file("integration/shared/font-parity/src/gametest/kotlin"),
+        rootProject.file("integration/shared/minecraft-fabric/font-parity/common/src/gametest/kotlin"),
         rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-graphics/src/gametest/kotlin"),
         layout.projectDirectory.file("src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativeFontAccess.kt"),
     )
@@ -70,7 +71,7 @@ extensions.configure<KotlinJvmProjectExtension> {
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/dirt-clear/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/mapped/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location-constructor/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/identifier-buffer/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("examples/paper/src/shared/kotlin"))
@@ -86,6 +87,7 @@ extensions.configure<KotlinJvmProjectExtension> {
         )
         kotlin.srcDir(compatibleGameTest.resolve("kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/common/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-graphics/src/gametest/kotlin"))
     }
 }

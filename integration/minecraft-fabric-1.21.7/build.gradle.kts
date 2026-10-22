@@ -43,6 +43,7 @@ loom {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/callback/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/component-disconnect/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/mapped/src/gametest/kotlin"))
