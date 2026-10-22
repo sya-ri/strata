@@ -41,7 +41,7 @@ internal object MinecraftCanvasBackendGameTest {
             context.computeOnClient { extractMinecraftUiProfile() }
         runMinecraftCanvasTest(context, profile, output)
         context.createSingleplayerWorld().use {
-            InventorySlotSynchronizationGameTest.runCanvasOrdering(context, profile, output)
+            runMinecraftCanvasInventoryOrderingTest(context, profile, output)
         }
         context.waitFor {
             NativeCanvasDevices.retainedTargetCount() == 0 && NativeCanvasDevices.retainedGuiResourceSetCount() == 0

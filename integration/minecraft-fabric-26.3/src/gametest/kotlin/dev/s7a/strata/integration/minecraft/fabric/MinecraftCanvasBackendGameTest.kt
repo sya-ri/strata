@@ -42,7 +42,7 @@ internal object MinecraftCanvasBackendGameTest {
         runMinecraftCanvasTest(context, profile, output)
         MinecraftOrderedCompositionNativeProbe.run(context, profile, output.resolve("ordered-composition"))
         context.createSingleplayerWorld().use {
-            InventorySlotSynchronizationGameTest.runCanvasOrdering(context, profile, output)
+            runMinecraftCanvasInventoryOrderingTest(context, profile, output)
         }
         context.waitFor {
             NativeCanvasDevices.retainedTargetCount() == 0 && NativeCanvasDevices.retainedGuiResourceSetCount() == 0
