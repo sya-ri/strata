@@ -5,7 +5,6 @@ import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.runtime.spi.RuntimeUiControl
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiRejection
-import java.util.Collections
 
 /**
  * Typed messages carried over an already established player connection.
@@ -27,7 +26,7 @@ public sealed interface RemoteMessage {
         types: Set<ProjectionType>,
     ) : RemoteMessage {
         override val session: Long? get() = null
-        public val types: Set<ProjectionType> = Collections.unmodifiableSet(types.toSet())
+        public val types: Set<ProjectionType> = types.toSet()
     }
 
     /**

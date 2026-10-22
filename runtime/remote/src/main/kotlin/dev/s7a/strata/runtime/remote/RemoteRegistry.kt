@@ -5,7 +5,6 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.semantics.SemanticsRole
-import java.util.Collections
 
 /**
  * Explicit trusted client factories for negotiated component and modifier schemas.
@@ -24,7 +23,7 @@ public class RemoteRegistry {
     public val types: Set<ProjectionType>
         get() {
             frozen = true
-            return Collections.unmodifiableSet((elements.keys + modifiers.keys + roles.keys).toSet())
+            return elements.keys + modifiers.keys + roles.keys
         }
 
     /**

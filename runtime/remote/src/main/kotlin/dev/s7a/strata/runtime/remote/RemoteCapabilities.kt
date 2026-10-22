@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
-import java.util.Collections
 
 /**
  * Agreed limits and supported declaration schemas for one live player connection.
@@ -11,5 +10,5 @@ public class RemoteCapabilities(
     public val limits: RemoteLimits,
     types: Set<ProjectionType>,
 ) {
-    public val types: Set<ProjectionType> = Collections.unmodifiableSet(types.toSet())
+    public val types: Set<ProjectionType> = types.toSet()
 }

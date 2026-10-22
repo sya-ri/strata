@@ -1,7 +1,5 @@
 package dev.s7a.strata.runtime.remote
 
-import java.util.Collections
-
 /**
  * Immutable changes between two successive complete declaration trees.
  * Applying a patch validates the entire candidate before returning it, leaving the previous tree intact on failure.
@@ -11,8 +9,8 @@ public class RemotePatch(
     changed: Collection<RemoteNode>,
     removed: Collection<Long>,
 ) {
-    public val changed: List<RemoteNode> = Collections.unmodifiableList(changed.toList())
-    public val removed: Set<Long> = Collections.unmodifiableSet(removed.toSet())
+    public val changed: List<RemoteNode> = changed.toList()
+    public val removed: Set<Long> = removed.toSet()
 
     init {
         val identities = HashSet<Long>()

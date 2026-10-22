@@ -20,7 +20,6 @@ import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
-import java.util.Collections
 
 /**
  * One authoritative screen bound by its transport owner to one authenticated connection.
@@ -278,7 +277,7 @@ public class RemoteServerSession(
         slots = nextSlots
         actions = nextActions
         bindings.commit()
-        requiredTypes = Collections.unmodifiableSet(projectingTypes.toSet())
+        requiredTypes = projectingTypes.toSet()
         projectingTypes.clear()
         return tree
     }
