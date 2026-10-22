@@ -1885,7 +1885,7 @@ subprojects {
             }
             compilerOptions {
                 allWarningsAsErrors.set(true)
-                freeCompilerArgs.add("-Xexpect-actual-classes")
+                freeCompilerArgs.addAll("-Xexpect-actual-classes", "-Xexplicit-api=strict")
             }
             sourceSets {
                 commonMain { kotlin.srcDir("src/main/kotlin") }

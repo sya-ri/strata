@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 /**
  * Preserves the formal JMH evidence rejection contracts while removing the Python runtime.
  */
-class JmhPerformanceEvidenceTest {
+internal class JmhPerformanceEvidenceTest {
     @field:TempDir
     lateinit var directory: Path
 

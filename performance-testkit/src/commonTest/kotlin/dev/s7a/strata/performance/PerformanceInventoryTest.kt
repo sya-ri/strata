@@ -7,7 +7,7 @@ import kotlin.test.assertFailsWith
 /**
  * Public-surface changes and unknown source impact cannot bypass executable coverage registration.
  */
-class PerformanceInventoryTest {
+internal class PerformanceInventoryTest {
     @Test
     fun additionsRemovalsAndUnknownAssignmentsFailBeforeSelection() {
         val assignments = mapOf("api" to mapOf("Text" to "text"))

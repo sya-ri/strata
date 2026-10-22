@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 /**
  * Collector-capacity regressions independent of Minecraft timing or application behavior.
  */
-class RuntimeWorkAccumulatorTest {
+internal class RuntimeWorkAccumulatorTest {
     @Test
     fun longUpdatesDiscardRetiredRecordsWithoutLosingCounts() {
         val owner = NativeMeterFixture()

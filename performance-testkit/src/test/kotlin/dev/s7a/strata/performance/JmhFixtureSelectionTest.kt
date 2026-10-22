@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 /**
  * Exercises selection boundaries and untimed verifier failures without running JMH measurement.
  */
-class JmhFixtureSelectionTest {
+internal class JmhFixtureSelectionTest {
     @Test
     fun exactNamesAndUnambiguousAliasesPreserveSelectionOrder() {
         assertEquals(

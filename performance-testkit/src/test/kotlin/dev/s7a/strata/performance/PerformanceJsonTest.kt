@@ -14,7 +14,7 @@ import kotlin.test.assertFalse
 /**
  * Evidence publication must preserve the collector binding and cannot replace an earlier acceptance receipt.
  */
-class PerformanceJsonTest {
+internal class PerformanceJsonTest {
     @TempDir
     lateinit var temporary: Path
 

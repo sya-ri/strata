@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 /**
  * Rejects unsupported fork ownership and missing external inputs before executing any benchmark.
  */
-class JmhPerformanceRunnerTest {
+internal class JmhPerformanceRunnerTest {
     @field:TempDir
     lateinit var directory: Path
 

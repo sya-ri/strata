@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 /**
  * Portable event schemas and subscription rules have identical JVM and JavaScript behavior.
  */
-class ProjectionInputCodecTest {
+internal class ProjectionInputCodecTest {
     @Test
     fun preservesEveryExistingInputVariantAndCapturedCoordinates() {
         val modifiers = KeyboardModifiers(true, true, true, true, true, true)

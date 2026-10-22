@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 /**
  * Tests whole-frame boundaries with supplied readings, without delays or wall-time thresholds.
  */
-class NativeFrameIntervalsTest {
+internal class NativeFrameIntervalsTest {
     @Test
     fun preparationGapsAreExcludedAndTheFinalSpanIsRequired() {
         val frames = NativeFrameIntervals(2)

@@ -11,7 +11,7 @@ import kotlin.test.assertFailsWith
 /**
  * Covers portable JDK escaping and rejects ambiguous or missing external fixture inputs.
  */
-class JvmPerformanceInputsTest {
+internal class JvmPerformanceInputsTest {
     @field:TempDir
     lateinit var directory: Path
 

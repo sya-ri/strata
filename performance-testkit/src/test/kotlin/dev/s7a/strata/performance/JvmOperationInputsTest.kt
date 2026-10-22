@@ -13,7 +13,7 @@ import kotlin.test.assertNotEquals
 /**
  * Rejects live consumed-file changes and manifest redirection despite unchanged preserved JMH copies.
  */
-class JvmOperationInputsTest {
+internal class JvmOperationInputsTest {
     @field:TempDir
     lateinit var directory: Path
 

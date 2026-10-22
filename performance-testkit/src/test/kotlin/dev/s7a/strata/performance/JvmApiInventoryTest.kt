@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 /**
  * Exercises actual compiled archives rather than a hand-written inventory fixture.
  */
-class JvmApiInventoryTest {
+internal class JvmApiInventoryTest {
     @TempDir
     lateinit var temporary: Path
 

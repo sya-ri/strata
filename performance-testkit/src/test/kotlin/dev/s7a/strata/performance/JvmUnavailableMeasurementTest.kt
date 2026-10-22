@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 /**
  * Preserves unavailable nested distributions without accepting missing fields or malformed ancestors.
  */
-class JvmUnavailableMeasurementTest {
+internal class JvmUnavailableMeasurementTest {
     @field:TempDir lateinit var directory: Path
 
     @Test

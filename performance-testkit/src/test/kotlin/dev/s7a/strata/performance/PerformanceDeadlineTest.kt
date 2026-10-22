@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 /**
  * Deadline inheritance and wrap boundaries, with a deterministic clock rather than sleeps.
  */
-class PerformanceDeadlineTest {
+internal class PerformanceDeadlineTest {
     @Test
     fun preservesAnEarlierAndAnExpiredParentDeadline() {
         var now = 0L

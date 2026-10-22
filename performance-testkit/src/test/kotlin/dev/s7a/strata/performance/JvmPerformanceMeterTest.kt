@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 /**
  * Regression coverage for the shared collection and evidence contract.
  */
-class JvmPerformanceMeterTest {
+internal class JvmPerformanceMeterTest {
     @Test
     fun requiresAllSuccessfulSamplesAndDetachedEvidence() {
         val meter = JvmPerformanceMeter("bounded", 2)
