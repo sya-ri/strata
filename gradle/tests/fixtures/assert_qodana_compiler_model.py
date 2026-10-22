@@ -80,6 +80,28 @@ try:
 finally:
     checker.url_path = resolve_url
 assert library_resolutions and all(count <= library_edge_budget[edge] for edge, count in library_resolutions.items()), library_resolutions.most_common(5)
+example_owner = next(owner for owner in inventory["projects"] if owner["project"] == ":example-consumer")
+example_iml = root / example_owner["iml"]
+original_example = example_iml.read_bytes()
+for mutation in ("missing-test-output", "extra-test-output", "invalid-test-output-value"):
+    document = ET.fromstring(original_example)
+    manager = document.find("./component[@name='NewModuleRootManager']")
+    name = "support-kotlin" if mutation == "extra-test-output" else "examples-example-consumer"
+    edge = manager.find(f"orderEntry[@type='module'][@module-name='{name}']")
+    assert edge is not None, mutation
+    if mutation == "missing-test-output":
+        del edge.attrib["production-on-test"]
+    else:
+        edge.set("production-on-test", "true" if mutation == "invalid-test-output-value" else "")
+    example_iml.write_bytes(b'<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(document, encoding="utf-8"))
+    try:
+        checker.verify_model(root, model_path, "", java_path)
+    except ValueError as failure:
+        assert "incorrect compilation outputs" in str(failure), (mutation, failure)
+    else:
+        raise AssertionError(f"Accepted invalid compilation output selection: {mutation}")
+    finally:
+        example_iml.write_bytes(original_example)
 for mutation in ("missing-source", "wrong-root-kind", "wrong-source-set", "missing-compilation"):
     changed = copy.deepcopy(inventory)
     owner = next(owner for owner in changed["projects"] if owner["project"] == ":support-kotlin")

@@ -236,7 +236,11 @@ tasks.register("qodanaKotlinModel") {
                         else -> mapOf("scope" to "RUNTIME")
                     }
                     when (dependency["kind"]) {
-                        "Module" -> manager.element("orderEntry", mapOf("type" to "module", "module-name" to dependency["identity"] as String) + scope)
+                        "Module" -> {
+                            val target = projects.single { it["module"] == dependency["identity"] }
+                            val outputs = if (target["productionModule"] != null) mapOf("production-on-test" to "") else emptyMap()
+                            manager.element("orderEntry", mapOf("type" to "module", "module-name" to dependency["identity"] as String) + scope + outputs)
+                        }
                         "Library" -> {
                             val file = File(dependency["path"] as String).canonicalFile
                             require(file.exists()) { "Common compiler library is unavailable: $file" }

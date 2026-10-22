@@ -44,6 +44,7 @@ internal class QodanaCompilerModelAssertions(
         assertSelectedRoots(result)
         assertAuxiliary(result)
         assertTestBoundaries()
+        assertExampleOutput(result)
         assertCompilerModel()
         return inventory
     }
@@ -234,7 +235,7 @@ internal class QodanaCompilerModelAssertions(
      * Requires the real auxiliary compiler outputs and complete dependency closure.
      */
     private fun assertAuxiliary(result: BuildResult) {
-        val auxiliary = (inventory["auxiliary"] as List<*>).map { it as Map<*, *> }.single()
+        val auxiliary = objects(inventory["auxiliary"]).indexed("project").getValue(":auxiliary-owner")
         assertEquals(":auxiliary-owner", auxiliary["project"])
         assertEquals("verification", auxiliary["sourceSet"])
         assertEquals(TaskOutcome.SUCCESS, result.task(":auxiliary-owner:compileVerificationKotlin")?.outcome)
@@ -277,6 +278,20 @@ internal class QodanaCompilerModelAssertions(
     }
 
     /**
+     * Retains the compiler's production dependency on an independent API-only example output.
+     */
+    private fun assertExampleOutput(result: BuildResult) {
+        assertEquals(TaskOutcome.SUCCESS, result.task(":example-consumer:compileExamplesKotlin")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":example-consumer:compileKotlin")?.outcome)
+        val primary = directory.resolve(projects.getValue(":example-consumer")["iml"] as String)
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(primary.toFile())
+        val edge = document.elements("/module/component[@name='NewModuleRootManager']/orderEntry[@module-name='examples-example-consumer']").single()
+        assertTrue(edge.hasAttribute("production-on-test"), "Production must resolve the independent example module's compiled test roots.")
+        assertEquals("", edge.getAttribute("production-on-test"))
+        assertTrue(edge.hasAttribute("scope").not(), "The example output is required at both compile time and runtime.")
+    }
+
+    /**
      * Selects typed metadata elements at IDEA's XML serialization boundary.
      */
     private fun Document.elements(expression: String): List<Element> {
@@ -300,7 +315,7 @@ internal class QodanaCompilerModelAssertions(
      * Reads the required compiled Kotlin library fingerprint from the current declaration export.
      */
     fun supportOutputHash(): String {
-        val auxiliary = (inventory["auxiliary"] as List<*>).single() as Map<*, *>
+        val auxiliary = objects(inventory["auxiliary"]).indexed("project").getValue(":auxiliary-owner")
         val dependencies = auxiliary["dependencies"] as Map<*, *>
         return (dependencies.values.first() as List<*>)
             .map { it as Map<*, *> }

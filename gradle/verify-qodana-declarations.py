@@ -652,6 +652,9 @@ def verify_model(root, model_path, container_root, java_path):
                         fail(f"unresolved required project dependency: {name}: {identity}")
                     generated_dependencies = generated_index["Module", identity]
                     imported_dependencies = imported_index["Module", identity]
+                    test_output = required_project.get("productionModule") is not None
+                    if any(("production-on-test" in entry.attrib) != test_output or entry.attrib.get("production-on-test", "") != "" for entry in generated_dependencies):
+                        fail(f"module dependency selects incorrect compilation outputs: {name}: {identity}")
                 elif dependency["kind"] == "Library":
                     library = pathlib.Path(dependency["path"])
                     if not library.exists():
