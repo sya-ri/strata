@@ -539,7 +539,7 @@ jobs:
           if grep -Fxq "$project" gradle/kover-jvm-projects.txt; then args+=(-x "$project:test"); fi
         fi
         mkdir -p build/github-actions
-        bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true 2>&1 | tee build/github-actions/minecraft-gradle.log
+        bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true --stacktrace 2>&1 | tee build/github-actions/minecraft-gradle.log
       env:
         SUBJECT: ${{ needs.plan.outputs.subject_ref }}
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}
