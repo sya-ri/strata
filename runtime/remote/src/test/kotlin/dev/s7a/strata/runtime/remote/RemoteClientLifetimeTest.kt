@@ -104,7 +104,7 @@ internal class RemoteClientLifetimeTest {
                     is RemoteMessage.Close -> notification.also { notifications++ }
                     else -> null
                 }
-            sendFailure?.let { throw it }
+            sendFailure?.let { cause -> throw cause }
         }).use { client ->
             assertSame(failure, assertThrows(IllegalStateException::class.java) { client.uiSession.switch(UiPresentation.Hud) })
             assertEquals(RemoteSessionStatus.Closed(RemoteFailure.InvalidMessage), client.status)

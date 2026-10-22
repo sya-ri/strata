@@ -360,12 +360,10 @@ internal class UiSessionBindingTest {
         lateinit var session: UiSession
         var unavailableHandleCreated = false
         val reentrantSource =
-            object : StateSource<Int> {
-                override fun subscribe(observer: (StateSnapshot<Int>) -> Unit): StateSubscription<Int> {
-                    session.state(1)
-                    unavailableHandleCreated = true
-                    return StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
-                }
+            StateSource<Int> { _ ->
+                session.state(1)
+                unavailableHandleCreated = true
+                StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
             }
         session = UiSession(dispatcher) { TestProbe().root(emptyList()) }
 
