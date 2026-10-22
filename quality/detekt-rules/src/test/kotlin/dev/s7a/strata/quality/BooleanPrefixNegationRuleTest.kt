@@ -36,11 +36,10 @@ internal class BooleanPrefixNegationRuleTest {
      */
     @Test
     internal fun reportsBooleanExpressions() {
-        val negation = "!"
-        val literalSource = "fun check(): Boolean = ${negation}true || ${negation}false"
-        val typeCheckSource = "fun check(value: Any): Boolean = $negation(value is String)"
-        val equalitySource = "fun check(value: Any, other: Any): Boolean = $negation(value == other)"
-        val membershipSource = "fun check(item: String, items: List<String>): Boolean = $negation(item in items)"
+        val literalSource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-literals")
+        val typeCheckSource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-type-check")
+        val equalitySource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-equality")
+        val membershipSource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-membership")
 
         assertEquals(2, BooleanPrefixNegationRule(Config.empty).lint(literalSource).size)
         assertEquals(1, BooleanPrefixNegationRule(Config.empty).lint(typeCheckSource).size)

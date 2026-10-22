@@ -1,0 +1,1 @@
+fun check(item: String, items: List<String>): Boolean = !(item in items)

@@ -19,7 +19,7 @@ internal class MultilineKDocRuleTest {
 
     @Test
     fun requiresDocumentationOnTheEnumType() {
-        val source = "enum class Stage { Start, End }"
+        val source = DetektTestSources.read("multiline-kdoc-rule/requires-documentation-on-the-enum-type")
 
         assertEquals(1, MultilineKDocRule(Config.empty).lint(source).size)
     }

@@ -18,36 +18,7 @@ internal class PublicApiRuleTest {
             val file =
                 engine.compile(
                     code =
-                        """
-                        import dev.s7a.strata.component.UiScope
-                        import dev.s7a.strata.component.ScrollState
-                        import dev.s7a.strata.component.TextFieldState
-                        import dev.s7a.strata.component.TextAreaState
-                        import dev.s7a.strata.component.VirtualListState
-                        import dev.s7a.strata.component.PanZoomState
-                        import dev.s7a.strata.component.CheckboxState
-                        import dev.s7a.strata.component.CycleButtonState
-                        import dev.s7a.strata.component.SliderState
-                        import dev.s7a.strata.component.SelectionListState
-                        import dev.s7a.strata.modifier.Modifier
-                        import dev.s7a.strata.state.mutableStateOf
-                        import dev.s7a.strata.state.map
-                        import dev.s7a.strata.state.StateSource
-                        fun UiScope.content(source: StateSource<Int>, modifier: Modifier = Modifier) {
-                            ScrollState()
-                            TextFieldState()
-                            TextAreaState()
-                            VirtualListState<Long>()
-                            PanZoomState()
-                            CheckboxState(false)
-                            CycleButtonState(listOf("one", "two"), "one")
-                            SliderState(0.5)
-                            SelectionListState<Long>()
-                            mutableStateOf(1)
-                            val retained = mutableStateOf(2)
-                            source.map { it.toString() }
-                        }
-                        """.trimIndent(),
+                        checkNotNull(javaClass.getResource("/source-fixtures/public-api/state-factories-and-ignored-modifier.kt.txt")).readText(),
                     javaSourceRoots = environment.javaSourceRoots,
                     jvmClasspathRoots = environment.jvmClasspathRoots,
                     allowCompilationErrors = false,

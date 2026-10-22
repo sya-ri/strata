@@ -1,0 +1,1 @@
+fun check(value: Any): Boolean = !(value is String)
