@@ -35,7 +35,6 @@ import dev.s7a.strata.spi.RuntimeExecutionOwner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 

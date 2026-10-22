@@ -6,7 +6,6 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
-import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
