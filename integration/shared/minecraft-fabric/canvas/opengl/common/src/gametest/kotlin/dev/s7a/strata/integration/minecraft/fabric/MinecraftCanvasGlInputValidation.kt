@@ -105,7 +105,7 @@ internal object MinecraftCanvasGlInputValidation : MinecraftCanvasInputValidatio
         counts: Counts,
     ): CanvasSource =
         canvasSource(
-            {
+            provider = {
                 counts.acquired++
                 object : MinecraftCanvasTextureLease {
                     override val textureId: Int = texture

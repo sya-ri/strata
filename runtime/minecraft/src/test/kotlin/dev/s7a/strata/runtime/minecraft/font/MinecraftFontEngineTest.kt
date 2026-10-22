@@ -305,7 +305,7 @@ internal class MinecraftFontEngineTest {
 
     @Test
     fun visualGlyphsPreserveLogicalUtf16OffsetsAndNeverRetainInputRuns() {
-        MinecraftFontEngine(trueTypeSnapshot("default"), { FontTestBackend() }).use { engine ->
+        MinecraftFontEngine(trueTypeSnapshot("default"), backendFactory = { FontTestBackend() }).use { engine ->
             val glyphs = engine.visualGlyphs("日😀한\uD800")
             assertEquals(listOf('日'.code, 0x1F600, '한'.code, 0xFFFD), glyphs.map(MinecraftVisualGlyph::codePoint))
             assertEquals(listOf(0, 1, 3, 4), glyphs.map(MinecraftVisualGlyph::sourceIndex))

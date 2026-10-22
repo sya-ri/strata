@@ -53,12 +53,10 @@ internal class CanvasSourceTest {
         var subscriptions = 0
         var closes = 0
         val source =
-            canvasSource(
-                {
-                    subscriptions += 1
-                    StateSubscription(initial) { closes += 1 }
-                },
-            )
+            canvasSource {
+                subscriptions += 1
+                StateSubscription(initial) { closes += 1 }
+            }
         assertEquals(0, subscriptions)
 
         val first = source.open(CanvasId(1))
@@ -152,12 +150,10 @@ internal class CanvasSourceTest {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
         var closes = 0
         val binding =
-            canvasSource(
-                { callback ->
-                    observer = callback
-                    StateSubscription(snapshot(1)) { closes += 1 }
-                },
-            ).open(CanvasId(1))
+            canvasSource { callback ->
+                observer = callback
+                StateSubscription(snapshot(1)) { closes += 1 }
+            }.open(CanvasId(1))
         observer(StateSnapshot(StateRevision(2), createDrawImage(IntSize.Zero, intArrayOf())))
         binding.captureFrame()
         assertThrows(IllegalArgumentException::class.java) { binding.commitFrame() }
@@ -172,14 +168,12 @@ internal class CanvasSourceTest {
         var closes = 0
         val empty = createDrawImage(IntSize.Zero, intArrayOf())
         val source =
-            canvasSource(
-                {
-                    StateSubscription(StateSnapshot(StateRevision(0), empty)) {
-                        closes += 1
-                        throw cleanupFailure
-                    }
-                },
-            )
+            canvasSource {
+                StateSubscription(StateSnapshot(StateRevision(0), empty)) {
+                    closes += 1
+                    throw cleanupFailure
+                }
+            }
         val failure = assertThrows(IllegalArgumentException::class.java) { source.open(CanvasId(1)) }
         assertEquals(listOf(cleanupFailure), failure.suppressed.toList())
         assertEquals(1, closes)

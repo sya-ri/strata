@@ -86,7 +86,7 @@ internal class MinecraftCycleButtonSelectionTest {
         val values = List(8) { Choice(it) {} }
         val state = CycleButtonState(values, values.last())
         var notifications = 0
-        state.observe { notifications += 1 }.use { observer ->
+        state.observe { notifications += 1 }.use { _ ->
             host(state).use { host ->
                 host.attach()
                 val first = host.frame(SIZE)
@@ -108,7 +108,7 @@ internal class MinecraftCycleButtonSelectionTest {
         val values = List(8) { Choice(it) {} }
         val state = CycleButtonState(values)
         val failure = IllegalArgumentException("earlier observer")
-        state.observe { throw failure }.use { earlier ->
+        state.observe { throw failure }.use { _ ->
             host(state).use { host ->
                 host.attach()
                 host.frame(SIZE)
@@ -150,7 +150,7 @@ internal class MinecraftCycleButtonSelectionTest {
                         nested = true
                         state.value = values[7]
                     }
-                }.use { later ->
+                }.use { _ ->
                     state.value = values[2]
                     assertLabel(host.frame(SIZE), "V000007")
                 }

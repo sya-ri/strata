@@ -108,7 +108,7 @@ internal class MinecraftCanvasGenerationFixture(
     /**
      * Externally reusable texture source whose leases alternate the normalization of immutable native input pixels.
      */
-    internal val textureSource: CanvasSource = canvasSource({ acquireTexture() })
+    internal val textureSource: CanvasSource = canvasSource(provider = { acquireTexture() })
 
     /**
      * Externally reusable depth-enabled factory with one independently fenced renderer per attachment.

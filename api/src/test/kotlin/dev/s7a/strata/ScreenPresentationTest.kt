@@ -8,7 +8,6 @@ import dev.s7a.strata.screen.ScreenDefinitionUnavailableException
 import dev.s7a.strata.screen.ScreenOpenThreadException
 import dev.s7a.strata.screen.ScreenRuntimeUnavailableException
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.spi.ScreenPresenter
 import dev.s7a.strata.spi.ScreenPresenters
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,12 +37,10 @@ internal class ScreenPresentationTest {
         val definition = ScreenDefinition("present") {}
         var received: ScreenDefinition? = null
         ScreenPresenters
-            .install(
-                { candidate ->
-                    received = candidate
-                    candidate.transfer()
-                },
-            ).use { registration ->
+            .install { candidate ->
+                received = candidate
+                candidate.transfer()
+            }.use { _ ->
                 definition.open()
             }
 
@@ -54,9 +51,9 @@ internal class ScreenPresentationTest {
     @Test
     fun duplicateRegistrationFailsWithoutReplacingCurrentPresenter() {
         val calls = mutableListOf<String>()
-        ScreenPresenters.install({ definition -> calls += definition.transfer().literalTitle() }).use { first ->
+        ScreenPresenters.install { definition -> calls += definition.transfer().literalTitle() }.use { _ ->
             assertThrows(IllegalStateException::class.java) {
-                ScreenPresenters.install({ calls += "replacement" })
+                ScreenPresenters.install { calls += "replacement" }
             }
             ScreenDefinition("current") {}.open()
         }
@@ -66,19 +63,19 @@ internal class ScreenPresentationTest {
 
     @Test
     fun registrationCloseIsIdempotentAndReleasesPresenterSlot() {
-        val first = ScreenPresenters.install(ScreenPresenter { error("unused") })
+        val first = ScreenPresenters.install { error("unused") }
 
         first.close()
         first.close()
 
-        ScreenPresenters.install({ definition -> definition.transfer() }).use { second ->
+        ScreenPresenters.install { definition -> definition.transfer() }.use { _ ->
             ScreenDefinition("replacement") {}.open()
         }
     }
 
     @Test
     fun registrationCloseReleasesPresenterReferenceFromHandle() {
-        val registration = ScreenPresenters.install(ScreenPresenter { error("unused") })
+        val registration = ScreenPresenters.install { error("unused") }
 
         registration.close()
 
@@ -92,15 +89,13 @@ internal class ScreenPresentationTest {
     fun threadRejectionOccursBeforeTransferAndAllowsRetry() {
         val definition = ScreenDefinition("thread") {}
         ScreenPresenters
-            .install(
-                {
-                    throw ScreenOpenThreadException("Test presenter requires its owner thread.")
-                },
-            ).use { wrongThread ->
+            .install {
+                throw ScreenOpenThreadException("Test presenter requires its owner thread.")
+            }.use { _ ->
                 assertThrows(ScreenOpenThreadException::class.java) { definition.open() }
             }
 
-        ScreenPresenters.install({ candidate -> candidate.transfer() }).use { ownerThread ->
+        ScreenPresenters.install { candidate -> candidate.transfer() }.use { _ ->
             definition.open()
         }
     }
@@ -110,12 +105,10 @@ internal class ScreenPresentationTest {
         val definition = ScreenDefinition("failed") {}
         val expected = IllegalArgumentException("presentation")
         ScreenPresenters
-            .install(
-                { candidate ->
-                    candidate.transfer()
-                    throw expected
-                },
-            ).use { registration ->
+            .install { candidate ->
+                candidate.transfer()
+                throw expected
+            }.use { _ ->
                 assertSame(expected, assertThrows(IllegalArgumentException::class.java) { definition.open() })
             }
 
