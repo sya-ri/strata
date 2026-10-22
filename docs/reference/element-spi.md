@@ -8,7 +8,7 @@ A primitive contributes an immutable element description and a retained node, an
 
 Prefer a composition component when existing primitives already provide the required measurement, painting, input, and semantics.
 Define a normal Kotlin function or `UiScope` extension, validate its typed domain arguments, and emit exactly one composed root.
-This is the appropriate form for application-specific components such as an industrial Mod's `EnergyGauge` or one server's `SocialEntry`.
+This is the appropriate form for application-specific components such as an industrial Mod's `energyGauge` or one server's `socialEntry`.
 Purpose-specific downstream components are intentionally allowed and are not subject to Strata's standard-built-in generality review.
 
 Implement a retained primitive when the component needs behavior that existing primitives cannot express.
@@ -17,7 +17,7 @@ Emit the description with `UiScope.element`; no registry, annotation, generated 
 External primitive implementations receive the same retention and cleanup rules as built-ins and may be used inside a Minecraft screen definition.
 
 The `integration:api` module compiles both forms outside the implementation packages.
-Its purpose-specific `EnergyGauge` composes public layout and drawing modifiers, while `ExternalElement` and `ExternalNode` exercise custom retained measurement, painting, pointer input, semantics, invalidation, reconciliation, and lifecycle through the published SPI.
+Its purpose-specific `energyGauge` composes public layout and drawing modifiers, while `ExternalElement` and `ExternalNode` exercise custom retained measurement, painting, pointer input, semantics, invalidation, reconciliation, and lifecycle through the published SPI.
 
 ## Ownership and lifetime
 

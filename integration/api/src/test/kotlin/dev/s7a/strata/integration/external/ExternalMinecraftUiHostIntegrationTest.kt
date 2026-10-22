@@ -297,7 +297,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("external energy") {
-                    EnergyGauge(energy = 3, capacity = 4)
+                    energyGauge(energy = 3, capacity = 4)
                 },
                 profile(),
             )

@@ -1,5 +1,3 @@
-@file:Suppress("FunctionNaming", "ktlint:standard:function-naming")
-
 package dev.s7a.strata.integration.docs.skill
 
 // showcase-source-begin:skill-custom
@@ -18,7 +16,7 @@ import dev.s7a.strata.render.ArgbColor
 /**
  * Owns shared panel structure while its caller chooses the application content.
  */
-internal fun UiScope.Panel(
+internal fun UiScope.panel(
     title: String,
     modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
@@ -33,20 +31,20 @@ internal fun UiScope.Panel(
 /**
  * Composes one application into the shared panel without adding application dispatch to it.
  */
-internal fun UiScope.PowerScreen(
+internal fun UiScope.powerScreen(
     stored: Int,
     capacity: Int,
 ) {
-    Panel("Power") {
-        EnergyGauge(stored, capacity)
+    panel("Power") {
+        energyGauge(stored, capacity)
     }
 }
 
 /**
  * Reuses the same panel for independent application content.
  */
-internal fun UiScope.ConnectionScreen(connected: Boolean) {
-    Panel("Connection") {
+internal fun UiScope.connectionScreen(connected: Boolean) {
+    panel("Connection") {
         Text(if (connected) "Connected" else "Disconnected")
     }
 }
@@ -54,7 +52,7 @@ internal fun UiScope.ConnectionScreen(connected: Boolean) {
 /**
  * Emits an application-owned energy gauge by composing general Strata primitives.
  */
-internal fun UiScope.EnergyGauge(
+internal fun UiScope.energyGauge(
     stored: Int,
     capacity: Int,
     modifier: Modifier = Modifier,
