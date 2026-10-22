@@ -90,7 +90,7 @@ internal class FabricMinecraftInputMappingTest {
                 GLFW.GLFW_MOD_CAPS_LOCK or
                 GLFW.GLFW_MOD_NUM_LOCK
         val native = KeyEvent(GLFW.GLFW_KEY_ENTER, 17, flags)
-        val modifiers = KeyboardModifiers(true, true, true, true, true, true)
+        val modifiers = KeyboardModifiers(shift = true, control = true, alt = true, superKey = true, capsLock = true, numLock = true)
         assertEquals(KeyboardEvent.Press(KeyCode.Enter, 17, modifiers), mapMinecraftKeyPress(native))
         assertEquals(KeyboardEvent.Release(KeyCode.Enter, 17, modifiers), mapMinecraftKeyRelease(native))
         assertEquals(KeyCode.Unknown, mapMinecraftKeyPress(KeyEvent(GLFW.GLFW_KEY_UNKNOWN, 0, 0))?.key)

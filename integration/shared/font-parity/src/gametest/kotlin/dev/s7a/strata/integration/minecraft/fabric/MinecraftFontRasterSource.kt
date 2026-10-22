@@ -26,7 +26,7 @@ internal class MinecraftFontRasterSource(
         val source = command.source
         val horizontal = axis(x, Axis(destination.left, destination.right, source.left, source.right, command.image.size.width, command.orientation.flipX), ambiguous)
         val vertical = axis(y, Axis(destination.top, destination.bottom, source.top, source.bottom, command.image.size.height, command.orientation.flipY), ambiguous)
-        if (horizontal.samples.isEmpty() || vertical.samples.isEmpty()) return Selection(emptyList(), true, false)
+        if (horizontal.samples.isEmpty() || vertical.samples.isEmpty()) return Selection(emptyList(), maySkip = true, uncertain = false)
         val colors = horizontal.samples.flatMap { sx -> vertical.samples.map { sy -> command.image.argbAt(sx, sy) } }.distinct()
         return Selection(colors, horizontal.maySkip || vertical.maySkip, horizontal.uncertain || vertical.uncertain)
     }
@@ -41,8 +41,8 @@ internal class MinecraftFontRasterSource(
         val physicalEnd = axis.end.toDouble() * scale
         val projectionRounding = Math.ulp(maxOf(abs(physicalStart), abs(physicalEnd)).toFloat()).toDouble() * 8.0
         val edgeError = if (ambiguous) precision.subpixelUnit + projectionRounding else 0.0
-        if (physicalCenter < physicalStart - edgeError || physicalEnd + edgeError < physicalCenter) return AxisSelection(emptyList(), true, false)
-        if (ambiguous.not() && physicalEnd <= physicalCenter) return AxisSelection(emptyList(), true, false)
+        if (physicalCenter < physicalStart - edgeError || physicalEnd + edgeError < physicalCenter) return AxisSelection(emptyList(), maySkip = true, uncertain = false)
+        if (ambiguous.not() && physicalEnd <= physicalCenter) return AxisSelection(emptyList(), maySkip = true, uncertain = false)
         val edge = ambiguous && (abs(physicalCenter - physicalStart) <= edgeError || abs(physicalCenter - physicalEnd) <= edgeError)
         val center = (coordinate.toFloat() + 0.5f) / scale.toFloat()
         val relative = (center - axis.start) / (axis.end - axis.start)

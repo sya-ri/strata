@@ -34,14 +34,14 @@ internal class UiExecutionOwnerTest {
         val executor = Executors.newSingleThreadExecutor()
         try {
             assertThrows(IllegalStateException::class.java) { session.presentation }
-            assertThrows(IllegalStateException::class.java) { input.configure(session, UiInputPolicy.All, false) }
+            assertThrows(IllegalStateException::class.java) { input.configure(session, UiInputPolicy.All, editing = false) }
             executor
                 .submit {
                     owner.run {
                         assertEquals(UiPresentation.Hud, session.presentation)
                         session.switch(UiPresentation.Screen)
-                        input.configure(session, UiInputPolicy.Movement, false)
-                        input.event(listOf(UiGameAction.Movement), true, false)
+                        input.configure(session, UiInputPolicy.Movement, editing = false)
+                        input.event(listOf(UiGameAction.Movement), down = true, consumed = false)
                         assertEquals(setOf(UiGameAction.Movement), pressed)
                         RuntimeExecutionOwner().run {
                             assertThrows(IllegalStateException::class.java) { session.close() }
