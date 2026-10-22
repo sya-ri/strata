@@ -53,7 +53,7 @@ internal object ProvenanceHashingEvidence {
      * Every command preserves failed raw evidence; subset/quick collection is not supported.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         require(args.isNotEmpty())
         val command = Command.entries.single { it.name.equals(args.first(), ignoreCase = true) }
         when (command) {

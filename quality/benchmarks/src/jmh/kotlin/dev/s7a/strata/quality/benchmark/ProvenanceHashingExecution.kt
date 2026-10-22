@@ -21,7 +21,7 @@ internal object ProvenanceHashingExecution {
      * Immutable fixture inputs bind every selected archive and the original corpus/control manifests.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         when (args.size) {
             2 -> collectOwner(args)
             8 -> compareOwner(args)

@@ -450,7 +450,7 @@ internal class ApiContractTest {
         /**
          * Stable token and negative-test variants for the element bridge.
          */
-        public companion object {
+        companion object {
             val TYPE: ElementType<ContractElement, ContractNode> =
                 ElementType(
                     elementClass = ContractElement::class,
