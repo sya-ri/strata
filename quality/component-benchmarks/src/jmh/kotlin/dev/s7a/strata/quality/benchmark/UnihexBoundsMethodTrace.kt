@@ -273,7 +273,7 @@ public object UnihexBoundsMethodTrace {
     ) {
         check(Files.size(classLog) <= 64L * 1024 * 1024) { "Trace class-load output overflow" }
         required.keySet().forEach { name ->
-            val loaded = Pattern.compile("^\\[" + pid + "\\]\\[info *\\]\\[class,load *\\] " + Pattern.quote(name) + " source: [^\\r\\n]+")
+            val loaded = Pattern.compile("""^\[$pid]\[info *]\[class,load *] ${Pattern.quote(name)} source: [^\r\n]+""")
             val matches = Files.lines(classLog, StandardCharsets.UTF_8).use { lines -> lines.filter { loaded.matcher(it).matches() }.toList() }
             check(matches.size == 1) { "Missing or ambiguous actual worker class origin: $name" }
             println(matches.single())

@@ -39,7 +39,7 @@ internal class ObservedComponentBinaryCompatibilityTest {
             val component = name.substringBefore("State")
             val current = Class.forName("dev.s7a.strata.component.Observed${component}ComponentsKt").getDeclaredMethod(name, *type.parameterArray())
             assertEquals(method.returnType, current.returnType, descriptor)
-            if (name.endsWith("\$default").not()) {
+            if (name.endsWith($$"$default").not()) {
                 val deprecation = assertNotNull(method.getAnnotation(Deprecated::class.java))
                 assertEquals(DeprecationLevel.HIDDEN, deprecation.level)
                 assertTrue(deprecation.message.contains("removal in 1.0.0"))
@@ -71,7 +71,7 @@ internal class ObservedComponentBinaryCompatibilityTest {
 
         val default =
             legacy.getDeclaredMethod(
-                "ButtonStatecffa97b99dc2_1\$default",
+                $$"ButtonStatecffa97b99dc2_1$default",
                 *method.parameterTypes,
                 Int::class.javaPrimitiveType,
                 Any::class.java,

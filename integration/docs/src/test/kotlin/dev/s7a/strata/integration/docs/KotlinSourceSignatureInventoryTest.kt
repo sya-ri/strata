@@ -97,8 +97,8 @@ internal class KotlinSourceSignatureInventoryTest {
         val entry = StateBindingDocumentationCatalog.entries.associateBy(StateBindingDocumentationCatalog.Entry::typeName).getValue("ImageSource")
         val declarations = KotlinSourceSignatureInventory.discover(root.resolve("api/src/main/kotlin")).stateAndBindings.getValue(entry.typeName)
         val fingerprints = StateBindingBinaryInventory.discover(classes).getValue(entry.typeName)
-        val pixelOwner = "dev.s7a.strata.component.ImageSource\$Pixels"
-        val resourceOwner = "dev.s7a.strata.component.ImageSource\$Resource"
+        val pixelOwner = $$"dev.s7a.strata.component.ImageSource$Pixels"
+        val resourceOwner = $$"dev.s7a.strata.component.ImageSource$Resource"
         val moved =
             fingerprints.map { fingerprint ->
                 fingerprint.replace("$pixelOwner.getImage(", "$resourceOwner.getImage(")

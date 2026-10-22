@@ -31,7 +31,7 @@ public class TransportDrainFleet(
         RemoteScreenService::class.java
             .getDeclaredMethod(
                 "tick",
-                Class.forName("${RemoteScreenService::class.java.name}\$Peer"),
+                Class.forName($$"$${RemoteScreenService::class.java.name}$Peer"),
                 checkNotNull(Long::class.javaPrimitiveType),
             ).apply { isAccessible = true }
     private var logicalMillis = 0L

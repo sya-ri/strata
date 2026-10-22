@@ -238,7 +238,7 @@ internal class HeadlessPngTest {
     @Test
     fun allDerivedLengthsFailBeforeAllocatingOutputOrReadingPixels() {
         // Public image construction cannot supply these extents without allocating enormous valid rasters.
-        val encoder = Class.forName("dev.s7a.strata.runtime.headless.HeadlessImplementation\$PngEncoder")
+        val encoder = Class.forName($$"dev.s7a.strata.runtime.headless.HeadlessImplementation$PngEncoder")
         val instance = encoder.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
         val encode = encoder.getDeclaredMethod("encode", IntSize::class.java, IntArray::class.java).apply { isAccessible = true }
         val cases =
