@@ -20,11 +20,11 @@ internal fun observedFontResources(
 ): ResourceManager =
     object : ResourceManager by manager {
         // Keep inherited convenience methods on this wrapper so they observe and transform getResource reads.
-        override fun getResourceOrThrow(location: Identifier): Resource = super<ResourceManager>.getResourceOrThrow(location)
+        override fun getResourceOrThrow(location: Identifier): Resource = super.getResourceOrThrow(location)
 
-        override fun open(location: Identifier): InputStream = super<ResourceManager>.open(location)
+        override fun open(location: Identifier): InputStream = super.open(location)
 
-        override fun openAsReader(location: Identifier): BufferedReader = super<ResourceManager>.openAsReader(location)
+        override fun openAsReader(location: Identifier): BufferedReader = super.openAsReader(location)
 
         override fun listResourceStacks(
             path: String,
