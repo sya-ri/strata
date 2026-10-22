@@ -378,14 +378,12 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 true
             } else {
                 if (pending.compareAndSet(false, true)) {
-                    server.execute(
-                        Runnable {
-                            runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
-                                .exceptionOrNull()
-                                ?.let(failure::set)
-                            pending.set(false)
-                        },
-                    )
+                    server.execute {
+                        runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
+                            .exceptionOrNull()
+                            ?.let(failure::set)
+                        pending.set(false)
+                    }
                 }
                 false
             }

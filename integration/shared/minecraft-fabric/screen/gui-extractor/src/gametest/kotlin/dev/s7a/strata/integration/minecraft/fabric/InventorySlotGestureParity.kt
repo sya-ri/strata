@@ -17,7 +17,6 @@ import net.minecraft.world.SimpleMenuProvider
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.inventory.ChestMenu
 import net.minecraft.world.inventory.ContainerInput
-import net.minecraft.world.inventory.MenuConstructor
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.GameType
@@ -332,7 +331,7 @@ internal object InventorySlotGestureParity {
                     storage.set(container)
                     val provider =
                         SimpleMenuProvider(
-                            MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
+                            { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
                             Component.literal("Mirrored inventory slots"),
                         )
                     check(player.openMenu(provider).isPresent)

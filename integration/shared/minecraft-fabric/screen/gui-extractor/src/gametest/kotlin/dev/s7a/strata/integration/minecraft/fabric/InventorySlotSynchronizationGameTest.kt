@@ -13,7 +13,6 @@ import net.minecraft.world.Container
 import net.minecraft.world.SimpleContainer
 import net.minecraft.world.SimpleMenuProvider
 import net.minecraft.world.inventory.ChestMenu
-import net.minecraft.world.inventory.MenuConstructor
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
@@ -107,7 +106,7 @@ internal object InventorySlotSynchronizationGameTest {
             container.setItem(test.chargeSlotIndex, ItemStack(Items.REDSTONE, test.itemCount))
             val provider =
                 SimpleMenuProvider(
-                    MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
+                    { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
                     Component.literal("Coal Generator"),
                 )
             check(player.openMenu(provider).isPresent) { "The server-owned coal generator menu must open." }
@@ -215,7 +214,7 @@ internal object InventorySlotSynchronizationGameTest {
             container.setItem(test.containerSlotIndex, ItemStack(scenario.item, test.itemCount))
             val provider =
                 SimpleMenuProvider(
-                    MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
+                    { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
                     Component.literal(scenario.title),
                 )
             check(player.openMenu(provider).isPresent) { "The server-owned Container menu must open." }

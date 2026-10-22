@@ -64,14 +64,12 @@ internal class InventorySlotTestContext(
     ) {
         val completed = AtomicBoolean()
         val failure = AtomicReference<Throwable?>()
-        server.execute(
-            Runnable {
-                runCatching { operation(checkNotNull(server.playerList.getPlayer(playerId))) }
-                    .exceptionOrNull()
-                    ?.let(failure::set)
-                completed.set(true)
-            },
-        )
+        server.execute {
+            runCatching { operation(checkNotNull(server.playerList.getPlayer(playerId))) }
+                .exceptionOrNull()
+                ?.let(failure::set)
+            completed.set(true)
+        }
         client.waitFor { completed.get() }
         failure.get()?.let { throwable -> throw throwable }
     }
@@ -91,14 +89,12 @@ internal class InventorySlotTestContext(
                 true
             } else {
                 if (pending.compareAndSet(false, true)) {
-                    server.execute(
-                        Runnable {
-                            runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
-                                .exceptionOrNull()
-                                ?.let(failure::set)
-                            pending.set(false)
-                        },
-                    )
+                    server.execute {
+                        runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
+                            .exceptionOrNull()
+                            ?.let(failure::set)
+                        pending.set(false)
+                    }
                 }
                 false
             }
