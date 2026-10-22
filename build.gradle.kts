@@ -2237,9 +2237,13 @@ subprojects {
                 description = "Starts an isolated production Fabric server for paired public UI acceptance."
                 mods.from(project(target.runtimeProjectPath).tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar"))
                 runDir.set(layout.dir(providers.gradleProperty("strata.fabric.serverDirectory").map(::File)))
-                // Keep the game's bundled runtime inputs separate from fresh worlds and acceptance evidence.
-                jvmArgs.add("-DbundlerRepoDir=${temporaryDir.resolve("bundler").absolutePath}")
-                jvmArgs.add(providers.gradleProperty("strata.fabric.run").map { "-Dstrata.fabric.run=$it" })
+                val runId = providers.gradleProperty("strata.fabric.run")
+                // Keep each invocation's bundled inputs separate from fresh worlds and acceptance evidence.
+                jvmArgs.add(runId.map {
+                    val directory = temporaryDir.resolve("bundler").resolve(UUID.fromString(it).toString())
+                    "-DbundlerRepoDir=${directory.absolutePath}"
+                })
+                jvmArgs.add(runId.map { "-Dstrata.fabric.run=$it" })
                 jvmArgs.add(providers.gradleProperty("strata.fabric.serverReceipt").map { "-Dstrata.fabric.receipt=$it" })
                 jvmArgs.add(providers.gradleProperty("strata.fabric.serverStop").map { "-Dstrata.fabric.stop=$it" })
                 val settingsDirectory = providers.gradleProperty("strata.fabric.serverSettings").map(::File)
