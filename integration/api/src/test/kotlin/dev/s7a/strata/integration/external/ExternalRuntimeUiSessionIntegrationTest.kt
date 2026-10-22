@@ -35,29 +35,27 @@ internal class ExternalRuntimeUiSessionIntegrationTest {
         val materialized = ArrayList<Int>()
         val activations = ArrayList<Int>()
         var contentCalls = 0
-        val session =
-            createRuntimeUiSession {
-                contentCalls += 1
-                evaluateComponentTree {
-                    VirtualList(
-                        itemCount = 10_000,
-                        itemAt = { index -> index },
-                        keyAt = { index -> index },
-                        state = state,
-                        viewportSize = IntSize(80, 30),
-                        rowHeight = 10,
-                    ) { item ->
-                        materialized += item
-                        Spacer(
-                            modifier =
-                                Modifier
-                                    .size(80, 10)
-                                    .onActivate { activations += item },
-                        )
-                    }
+        createRuntimeUiSession {
+            contentCalls += 1
+            evaluateComponentTree {
+                VirtualList(
+                    itemCount = 10_000,
+                    itemAt = { index -> index },
+                    keyAt = { index -> index },
+                    state = state,
+                    viewportSize = IntSize(80, 30),
+                    rowHeight = 10,
+                ) { item ->
+                    materialized += item
+                    Spacer(
+                        modifier =
+                            Modifier
+                                .size(80, 10)
+                                .onActivate { activations += item },
+                    )
                 }
             }
-        try {
+        }.use { session ->
             session.attach()
             session.frame(Constraints.fixed(80, 30))
             assertEquals(InputResult.Consumed, session.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
@@ -88,8 +86,6 @@ internal class ExternalRuntimeUiSessionIntegrationTest {
 
             assertEquals(listOf(0, 0, 1, 5_000, 9_002), activations)
             assertEquals(1, contentCalls)
-        } finally {
-            session.close()
         }
     }
 

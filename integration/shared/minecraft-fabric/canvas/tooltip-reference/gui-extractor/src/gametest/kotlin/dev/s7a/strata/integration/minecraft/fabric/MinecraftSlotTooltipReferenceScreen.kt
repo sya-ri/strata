@@ -40,7 +40,7 @@ internal class MinecraftSlotTooltipReferenceScreen(
         mouseY: Int,
         delta: Float,
     ) {
-        graphics.fill(0, 0, width, height, black)
+        graphics.fill(0, 0, width, height, BLACK)
         super.extractCarriedItem(graphics, mouseX, mouseY)
         super.extractTooltip(graphics, mouseX, mouseY)
         frames += 1L
@@ -49,6 +49,6 @@ internal class MinecraftSlotTooltipReferenceScreen(
     override fun removed() = Unit
 
     private companion object {
-        private val black = 0xFF000000.toInt()
+        private const val BLACK = 0xFF000000.toInt()
     }
 }

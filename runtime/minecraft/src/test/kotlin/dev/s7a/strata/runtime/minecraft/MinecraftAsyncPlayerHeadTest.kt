@@ -143,8 +143,7 @@ internal class MinecraftAsyncPlayerHeadTest {
     fun arbitraryLegacySizeFiltersEachAsynchronouslyPublishedSkin() {
         val source = PlayerSkinSource.Name("FilteredPlayer")
         val platform = FakeSkinPlatform(source)
-        val host = createMinecraftUiHost(legacyDefinition(source, 10), MinecraftProfileFixture.create(), platform)
-        try {
+        createMinecraftUiHost(legacyDefinition(source, 10), MinecraftProfileFixture.create(), platform).use { host ->
             host.attach()
             val firstSkin = skin(0xFFFF0000.toInt())
             platform.binding.enqueue(MinecraftPlayerSkinBinding.Snapshot.Ready(firstSkin))
@@ -162,8 +161,6 @@ internal class MinecraftAsyncPlayerHeadTest {
             val second = host.frame(IntSize(10, 10)).drawCommands.filterIsInstance<DrawCommand.SampledImage>()
             assertNotSame(first.first().image, second.first().image)
             assertEquals(0xFF0000FF.toInt(), second.first().image.argbAt(5, 5))
-        } finally {
-            host.close()
         }
     }
 

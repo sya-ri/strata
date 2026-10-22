@@ -35,7 +35,7 @@ internal class RuntimeExecutionOwnerTest {
                     assertFailsWith<IllegalStateException> { state.value }
                     assertFailsWith<IllegalStateException> { physical.value }
                     owner.run {
-                        assertEquals(ownerId, RuntimeExecutionOwner.current())
+                        assertEquals(expected = ownerId, actual = RuntimeExecutionOwner.current())
                         state.value += 1
                         text.value = "after"
                         assertEquals("after", text.value)

@@ -1,0 +1,6 @@
+@Suppress("unused")
+fun build(value: String): Map<String, String> {
+    val map = mapOf("ready" to value)
+    val text = "state: $value"
+    return map + ("text" to text)
+}

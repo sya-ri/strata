@@ -61,7 +61,7 @@ Performance collection is serial and runs without other builds or clients on the
 Combining that property with an explicitly fixed parallel ceiling fails during configuration.
 Passing correctness checks in parallel does not establish controlled performance evidence.
 
-Client tasks seed disposable project-build run directories after cleanup, disabling accessibility onboarding, tutorials, narration, and sound.
+Client tasks seed disposable project-build run directories after cleanup, disabling accessibility onboarding, tutorials, narration, sound, and pausing when the test window loses focus.
 The Canvas/Slot oracle temporarily hides the HUD and restores it even on failure, preventing late tutorial/recipe toasts from covering pixels.
 Ordinary client launches and personal settings are unaffected; frame fences and pixel assertions remain enabled.
 
@@ -150,6 +150,7 @@ Superseded JVM and Qodana runs on the same ref are cancelled.
 Qodana runs for PRs changing analyzed code or analysis configuration, manual full runs, and first release preparation.
 It uses its recommended JVM profile without a baseline and receives every catalog-declared Java toolchain.
 Each run analyzes the complete selected revision once with a zero-problem threshold; PR differential mode is disabled so it does not rebuild and reindex the base commit.
+The product scan lifts the recommended profile's default test-source exclusion so imported test roots receive the same configured inspections.
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
 The included `build-logic` build also receives a standalone native Gradle import, covering its production and test sources, resources, and linked game-independent pacing tests with their actual dependencies.
 This scan lifts the recommended profile's default test-source exclusion while preserving test source roles and dependencies.
@@ -162,7 +163,7 @@ The declaration export validates each JVM owner's configured toolchain against a
 The bootstrap registers the SDK's actual JRT modules in a disposable IDE configuration; verification checks the generated table, imported SDKs and each module binding against the fresh declarations.
 The IDE may register its own SDK for source-free modules; every declared compiler SDK still requires one unchanged table entry and its original module bindings.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
-Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM implementation and test roots remain in the owning JVM module.
+Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM main and test compilations each retain their own module.
 Each common source-set fragment uses the owning JVM main compilation's platform, binary libraries and project dependencies, with the original compile/runtime scopes and no test dependencies.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Detekt reads each project's declared Kotlin source sets, including shared roots and compiled documentation examples.
@@ -179,18 +180,20 @@ No synthetic fallback library or cross-variant friend relationship substitutes f
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
 Every SARIF run must identify the selected revision and explicitly record successful analysis invocations.
 The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
-Kotlin facets retain the owning JVM compilation's module name, explicit API mode and bytecode target; common fragments identify their source set and declared refinement edges, while the owning JVM module retains its test friend paths.
+Kotlin facets retain the owning JVM compilation's module name, explicit API mode, bytecode target and friend paths; common fragments identify their source set and declared refinement edges.
 `UnusedSymbol` and `RedundantVisibilityModifier` remain enabled without path exclusions; Mixin annotations identify framework entry points.
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.
 The latter preserves mapped binaries without optional source remapping.
-The generated IDEA model assigns linked source roots, real compile/test/GameTest classpaths, and language levels to each owner; `rootJavaProjects` opens that model directly.
+The generated IDEA model assigns linked source roots, compiler classpaths, and language levels to each compilation; `rootJavaProjects` opens that model directly.
 Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
 Module registration and project SDK validation read XML structure rather than attribute order or line layout.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
-The shared JVM model exports configured auxiliary Java/Kotlin inputs and resources as `TestSource`/`TestResource` in their actual owner, including nondefault directories, and retains their real compile/runtime configurations in IDEA's TEST scope.
-Roots already admitted by production keep that ownership once.
-This IDE view is an analysis union; isolated Gradle compilations and `checkStrataSkillExampleClasspath` still enforce API-only skill dependencies.
+Production, ordinary tests, GameTests, benchmarks, and compiled documentation examples have separate modules derived from their actual source sets.
+Each module retains its own compile/runtime dependencies, Kotlin compiler identity, and friend paths; test modules identify their production owner through IDEA's test-module metadata.
+A dependency on another project's production module cannot expose that project's test stubs.
+Shared physical roots retain distinct compiler-selected views for every compilation that consumes them, including roots compiled as both production and auxiliary input.
+Isolated Gradle compilations and `checkStrataSkillExampleClasspath` also enforce API-only skill dependencies.
 `qodanaDeclarationInventory` discovers owners from the configured Gradle plugin/source-set model and records actual module identities, Java requirements, source/resource declarations, file membership and hashes, and resolved project/library dependency identities independently of IML and Qodana JSON.
 After compilation finishes, the inventory shares directory membership and fingerprints only within its current task action; each execution reads them afresh.
 Each JVM project resolves its compiler and runtime configurations in its own export task, and the root inventory consumes those revision-bound outputs without resolving another project's configurations.
@@ -204,8 +207,9 @@ Native consumers retain their exact canonical component `TestSource` links.
 Other shared roots, including authored showcase inputs, are accepted only when the foreign owner independently declares the same exact root and kind in the configured project inventory.
 
 Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
-IDE indexes are restored for matching build-model inputs and saved only after successful analysis and complete-model verification.
-Their identity follows Gradle configuration, wrapper and catalog inputs, model-generation scripts, and the analysis profile and workflow; other CI scripts and Python regression tests do not invalidate compatible indexes.
+IDE indexes are restored for matching build-model inputs.
+Both indexes and complete Loom inputs are saved after current-revision analysis completes and independent complete-model verification passes, including runs that fail solely on ordinary findings.
+Index identity follows Gradle configuration, wrapper and catalog inputs, model-generation scripts, and the analysis profile and workflow; other CI scripts and Python regression tests do not invalidate compatible indexes.
 Private build-logic test sources and fixtures retain their standalone verification without invalidating product indexes.
 Keeping matrix Gradle caches read-only limits storage pressure so these indexes and the complete Loom project cache can coexist.
 Every run recreates the project model and analysis reports and verifies every expected module.

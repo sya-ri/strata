@@ -82,7 +82,7 @@ internal object ProvenanceHashingCorpus {
      * A full JDK compiler is required; construction failures preserve the partial directory for diagnosis.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         require(args.size == 1)
         val root = Path.of(args.single()).toAbsolutePath().normalize()
         require(Files.exists(root).not()) { "Provenance corpus output must be fresh" }

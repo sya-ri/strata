@@ -62,7 +62,7 @@ internal class RemoteShowcaseParityTest {
             }
         return server.use {
             server.tick()
-            RemoteClientSession(serverMessages.removeFirst() as RemoteMessage.Snapshot, registry, limits, { message -> clientMessages.add(codec.decode(codec.encode(message))) }).use { client ->
+            RemoteClientSession(serverMessages.removeFirst() as RemoteMessage.Snapshot, registry, limits) { message -> clientMessages.add(codec.decode(codec.encode(message))) }.use { client ->
                 createMinecraftUiHost(client.definition(definition.title), assets.profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
                     host.attach()
                     val pointer = if (scenario.component == DocumentedComponent.Slot) IntOffset(32, 32) else IntOffset.Zero

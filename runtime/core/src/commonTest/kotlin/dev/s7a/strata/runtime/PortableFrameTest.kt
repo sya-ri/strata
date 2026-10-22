@@ -91,11 +91,9 @@ internal class PortableFrameTest {
         val second = TestProbe.ProbeId("second")
         val children = mutableStateOf(listOf(first, second))
         var disposals = 0
-        val session =
-            createRuntimeUiSession {
-                probe.root(children.value.map { key -> probe.element(key, key = key, onDispose = { disposals += 1 }) })
-            }
-        try {
+        createRuntimeUiSession {
+            probe.root(children.value.map { key -> probe.element(key, key = key, onDispose = { disposals += 1 }) })
+        }.use { session ->
             session.attach()
             val constraints = Constraints.fixed(4, 1)
             val initial = session.frame(constraints)
@@ -125,8 +123,6 @@ internal class PortableFrameTest {
             assertSame(failure, assertFailsWith<IllegalStateException> { session.frame(constraints) })
             assertEquals(expected, initial.semantics)
             assertEquals(2, disposals)
-        } finally {
-            session.close()
         }
         assertEquals(2, disposals)
     }

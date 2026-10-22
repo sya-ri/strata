@@ -53,8 +53,7 @@ internal class RootOverlayScopePaintingTest {
             probe.scopes.dropLast(1).forEach { old -> assertFailsWith<IllegalStateException> { old.anchorBounds } }
             scope.fillRectangle(scope.anchorBounds, ArgbColor(3))
         }
-        val session = createRuntimeUiSession { probe.element() }
-        try {
+        createRuntimeUiSession { probe.element() }.use { session ->
             session.attach()
             val first = session.frame(Constraints.fixed(4, 4))
             repeat(3) { assertSame(first, session.frame(Constraints.fixed(4, 4))) }
@@ -67,8 +66,6 @@ internal class RootOverlayScopePaintingTest {
             assertEquals(listOf(2, 2, 2), listOf(probe.paintCalls, probe.overlayCalls, probe.rootOverlayCalls))
             assertNotSame(probe.scopes[0], probe.scopes[1])
             localScopes.forEach { scope -> assertFailsWith<IllegalStateException> { scope.withClip(IntRect(0, 0, 1, 1)) { error("Expired clip callback") } } }
-        } finally {
-            session.close()
         }
     }
 
@@ -149,8 +146,7 @@ internal class RootOverlayScopePaintingTest {
                 scope.fillRectangle(IntRect(4, 0, 6, 6), ArgbColor(6))
             }
         }
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(root.element(listOf(child.element())))
             tree.measure(Constraints.fixed(6, 6))
             tree.layout()
@@ -183,8 +179,6 @@ internal class RootOverlayScopePaintingTest {
             }
             assertEquals(commands, tree.paint())
             assertEquals(1, child.rootOverlayCalls)
-        } finally {
-            tree.close()
         }
     }
 

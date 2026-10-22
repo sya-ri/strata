@@ -161,7 +161,7 @@ internal class MinecraftTextAreaViewportTest {
                 tree.update(fixture.description(TextAreaState("A\nA\nA\nA"), size, focused = false))
                 val commands = fixture.frame(tree, size)
                 val glyphs = commands.filterIsInstance<DrawCommand.SampledImage>()
-                assertTrue(2 <= glyphs.size && glyphs.size <= 4)
+                assertTrue(glyphs.size in 2..4)
                 assertTrue(glyphs.any { it.destination.top == 4f })
                 assertEquals(0xFFE0E0E0.toInt(), rasterizeHeadless(commands, size).argbAt(4, 4))
             }

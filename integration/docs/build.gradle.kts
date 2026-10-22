@@ -97,8 +97,8 @@ dependencies {
     add(skillRecheckFirst.compileOnlyConfigurationName, project(":api"))
     testImplementation(skillRecheckFirst.output)
     testImplementation(skillForwardFirst.output)
-    testImplementation(skillExamples.output)
     add(readmeExamples.compileOnlyConfigurationName, project(":api"))
+    implementation(readmeExamples.output)
 }
 
 val apiMainClasses =
@@ -122,9 +122,16 @@ val showcaseExampleSources = objects.sourceDirectorySet("showcaseExamples", "API
     srcDir(rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin"))
 }
 extensions.configure<KotlinJvmProjectExtension> {
+    val readmeCompilation = target.compilations.getByName(readmeExamples.name)
+    target.compilations.named("main") {
+        associateWith(readmeCompilation)
+    }
+    val skillCompilation = target.compilations.getByName(skillExamples.name)
+    target.compilations.named("test") {
+        associateWith(skillCompilation)
+    }
     sourceSets.named("main") {
         kotlin.source(showcaseExampleSources)
-        kotlin.srcDir("src/readmeExamples/kotlin")
     }
 }
 
@@ -180,7 +187,7 @@ val showcaseAssetInputs = files(showcaseClientJar, showcaseAssetIndex, showcaseA
  * Every invocation recreates its evidence; generation alone may synchronize the checked outputs.
  */
 fun JavaExec.configureReadmeDemo(mainClassName: String, stagingName: String) {
-    dependsOn("classes", "compileReadmeExamplesKotlin", showcaseAssetInputs)
+    dependsOn("classes", showcaseAssetInputs)
     mainClass.set(mainClassName)
     classpath = sourceSets.main.get().runtimeClasspath
     val staging = layout.buildDirectory.dir("readme-demo/$stagingName")
@@ -432,10 +439,10 @@ val checkStrataSkill =
 val checkStrataSkillExampleClasspath =
     tasks.register("checkStrataSkillExampleClasspath") {
         group = "verification"
-        description = "Verifies that public-skill examples compile against only the API project."
-        dependsOn("compileSkillExamplesKotlin", "compileSkillForwardFirstKotlin", "compileSkillRecheckFirstKotlin")
+        description = "Verifies that documentation examples compile against only the API project."
+        dependsOn("compileSkillExamplesKotlin", "compileSkillForwardFirstKotlin", "compileSkillRecheckFirstKotlin", "compileReadmeExamplesKotlin")
         doLast {
-            listOf(skillExamples, skillForwardFirst, skillRecheckFirst).forEach { examples ->
+            listOf(skillExamples, skillForwardFirst, skillRecheckFirst, readmeExamples).forEach { examples ->
                 val projectDependencies =
                     configurations
                         .getByName(examples.compileClasspathConfigurationName)

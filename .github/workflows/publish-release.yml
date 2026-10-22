@@ -99,9 +99,11 @@ jobs:
       with:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Install native dependencies
+      timeout-minutes: 10
       run: |-
-        sudo apt-get update
-        sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
+        apt_options=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+        sudo apt-get "${apt_options[@]}" update
+        sudo apt-get "${apt_options[@]}" install --yes --no-install-recommends libegl1 libegl-mesa0
     - name: Install tagged browser dependencies
       run: |-
         bash ./gradlew kotlinNpmInstall

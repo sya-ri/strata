@@ -9,7 +9,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasContext
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasRenderer
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureLease
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureOrigin
-import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureProvider
 import dev.s7a.strata.runtime.minecraft.fabric.canvasSource
 
 /**
@@ -108,7 +107,7 @@ internal class MinecraftCanvasGenerationFixture(
     /**
      * Externally reusable texture source whose leases alternate the normalization of immutable native input pixels.
      */
-    internal val textureSource: CanvasSource = canvasSource(MinecraftCanvasTextureProvider { acquireTexture() })
+    internal val textureSource: CanvasSource = canvasSource(provider = { acquireTexture() })
 
     /**
      * Externally reusable depth-enabled factory with one independently fenced renderer per attachment.

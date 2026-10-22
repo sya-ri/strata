@@ -14,7 +14,7 @@ import kotlin.test.assertFails
 /**
  * Preserves class-archive and CPU/native provenance rejection contracts with detached fixture resources.
  */
-class NativePerformanceEvidenceTest {
+internal class NativePerformanceEvidenceTest {
     @field:TempDir lateinit var directory: Path
 
     @Test

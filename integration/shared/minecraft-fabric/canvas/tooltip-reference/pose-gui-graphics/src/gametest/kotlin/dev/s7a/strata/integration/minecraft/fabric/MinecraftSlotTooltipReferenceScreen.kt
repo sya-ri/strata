@@ -40,15 +40,15 @@ internal class MinecraftSlotTooltipReferenceScreen(
         mouseY: Int,
         delta: Float,
     ) {
-        graphics.fill(0, 0, width, height, black)
+        graphics.fill(0, 0, width, height, BLACK)
         val carried = menu.carried
         if (carried.isEmpty.not()) {
             // The original floating-item method owns a 232-depth pose on this native API family.
             graphics.pose().pushPose()
             try {
-                graphics.pose().translate(0.0f, 0.0f, carriedDepth)
-                graphics.renderItem(carried, mouseX - itemHalfSize, mouseY - itemHalfSize)
-                graphics.renderItemDecorations(checkNotNull(minecraft).font, carried, mouseX - itemHalfSize, mouseY - itemHalfSize)
+                graphics.pose().translate(0.0f, 0.0f, CARRIED_DEPTH)
+                graphics.renderItem(carried, mouseX - ITEM_HALF_SIZE, mouseY - ITEM_HALF_SIZE)
+                graphics.renderItemDecorations(checkNotNull(minecraft).font, carried, mouseX - ITEM_HALF_SIZE, mouseY - ITEM_HALF_SIZE)
             } finally {
                 graphics.pose().popPose()
             }
@@ -67,12 +67,10 @@ internal class MinecraftSlotTooltipReferenceScreen(
     override fun removed() = Unit
 
     private companion object {
-        private val black = 0xFF000000.toInt()
+        private const val BLACK = 0xFF000000.toInt()
 
-        @Suppress("MayBeConstant")
-        private val carriedDepth = 232.0f
+        private const val CARRIED_DEPTH = 232.0f
 
-        @Suppress("MayBeConstant")
-        private val itemHalfSize = 8
+        private const val ITEM_HALF_SIZE = 8
     }
 }

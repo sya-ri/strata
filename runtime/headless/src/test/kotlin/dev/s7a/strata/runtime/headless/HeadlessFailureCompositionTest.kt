@@ -17,7 +17,7 @@ internal class HeadlessFailureCompositionTest {
             assertThrows<IllegalStateException> {
                 val result =
                     completeWithClose(
-                        work = { Unit },
+                        work = {},
                         close = { throw closeFailure },
                     )
                 assertEquals(Unit, result)

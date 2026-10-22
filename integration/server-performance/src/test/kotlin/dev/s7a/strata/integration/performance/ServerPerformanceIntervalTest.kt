@@ -37,11 +37,11 @@ public class ServerPerformanceIntervalTest {
             val interval =
                 create(
                     loader,
-                    IntFunction {
+                    operation = {
                         operations += 1
                         1
                     },
-                    IntConsumer { verified += 1 },
+                    verify = { verified += 1 },
                 )
             try {
                 assertFailsWith<InvocationTargetException> { call(interval, "write", directory.resolve("partial.json"), runId, "test-owner") }
@@ -98,7 +98,7 @@ public class ServerPerformanceIntervalTest {
     @Test
     public fun operationFailureCannotCreateSuccessAndDoesNotRetainAnOpenLoader() {
         withFixture { loader, directory ->
-            val interval = create(loader, IntFunction { error("warmup failed") }, IntConsumer {})
+            val interval = create(loader, operation = { error("warmup failed") }, verify = {})
             try {
                 val failure = assertFailsWith<InvocationTargetException> { call(interval, "advance") }
                 assertEquals("warmup failed", failure.targetException.message)
@@ -137,7 +137,7 @@ public class ServerPerformanceIntervalTest {
             val report = runDirectory.resolve("test-interval.json")
             val runId = UUID.randomUUID().toString()
             listOf("test-interval", "test-secondary").forEach { name ->
-                val interval = create(loader, IntFunction { 1 }, IntConsumer {}, name)
+                val interval = create(loader, operation = { 1 }, verify = {}, name = name)
                 try {
                     repeat(90) { call(interval, "advance") }
                     call(interval, "write", runDirectory.resolve("$name.json"), runId, "test-owner")

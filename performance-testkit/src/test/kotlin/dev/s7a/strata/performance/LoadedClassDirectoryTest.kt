@@ -97,7 +97,7 @@ internal class LoadedClassDirectoryTest {
             location.addProperty("hashedUrl", alias)
             assertFails { NativePerformanceEvidence.verify(native, wrap(changed), setOf("directoryfixture.Probe"), emptySet()) }
         }
-        object : URLClassLoader(arrayOf(root.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
+        object : URLClassLoader(arrayOf(root.toUri().toURL()), getPlatformClassLoader()) {
             override fun getResource(name: String): URL? = if (name == representativeResource) URL(resourceAlias) else super.getResource(name)
         }.use { loader ->
             val alias = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "directoryfixture.Probe"), emptySet())
@@ -174,7 +174,7 @@ internal class LoadedClassDirectoryTest {
         val outside = temporary.resolve("outside.class")
         Files.copy(root.resolve("directoryfixture/Probe.class"), outside)
         listOf(outside.toUri().toURL(), URL("https://example.invalid/Probe.class")).forEach { shadow ->
-            object : URLClassLoader(arrayOf(root.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
+            object : URLClassLoader(arrayOf(root.toUri().toURL()), getPlatformClassLoader()) {
                 override fun getResource(name: String): URL? = if (name == representativeResource) shadow else super.getResource(name)
             }.use { loader ->
                 assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "directoryfixture.Probe"), emptySet())) }
@@ -260,7 +260,7 @@ internal class LoadedClassDirectoryTest {
         val other = temporary.resolve("same-bytes.jar")
         Files.copy(jar, other)
         val shadow = URL("jar:${other.toUri().toURL()}!/directoryfixture/Probe.class")
-        object : URLClassLoader(arrayOf(jar.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
+        object : URLClassLoader(arrayOf(jar.toUri().toURL()), getPlatformClassLoader()) {
             override fun getResource(name: String): URL? = if (name == representativeResource) shadow else super.getResource(name)
         }.use { loader ->
             val shadowed = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "directoryfixture.Probe"), setOf("fixture"))
@@ -320,7 +320,7 @@ internal class LoadedClassDirectoryTest {
         streams: MutableList<ObservedStream>,
         forged: Boolean = false,
     ): URLClassLoader =
-        object : URLClassLoader(arrayOf(root.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
+        object : URLClassLoader(arrayOf(root.toUri().toURL()), getPlatformClassLoader()) {
             override fun getResource(name: String): URL? {
                 val actual = super.getResource(name) ?: return null
                 return URL(

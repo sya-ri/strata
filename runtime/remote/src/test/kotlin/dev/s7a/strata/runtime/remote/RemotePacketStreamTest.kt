@@ -34,7 +34,7 @@ internal class RemotePacketStreamTest {
     fun rejectsConflictingDuplicatesAndExcessPendingWork() {
         val address = RemoteAddress(RemoteEndpoint.Server)
         val limits = RemoteLimits(frameBytes = 64, messageBytes = 64, pendingBytes = 128, collectionEntries = 2, treeNodes = 1)
-        RemotePacketStream(address, limits, {}).use { stream ->
+        RemotePacketStream(address, limits) {}.use { stream ->
             val frame = RemotePacket.Frame(address, 2, ByteArray(17))
             stream.offer(frame, 0)
             assertThrows(IllegalArgumentException::class.java) { stream.offer(RemotePacket.Frame(address, 2, ByteArray(17) { 1 }), 0) }
@@ -48,7 +48,7 @@ internal class RemotePacketStreamTest {
     fun missingSequencesExpireAndCloseDiscardsBufferedFrames() {
         val address = RemoteAddress(RemoteEndpoint.Server)
         val limits = RemotePacket.limits.copy(assemblyMillis = 10)
-        val stream = RemotePacketStream(address, limits, {})
+        val stream = RemotePacketStream(address, limits) {}
         stream.offer(RemotePacket.Frame(address, 2, ByteArray(17)), 1)
         val failure = assertThrows(RemoteProtocolException::class.java) { stream.drain(11) { error("A gap cannot deliver data.") } }
         assertEquals(RemoteFailure.TimedOut, failure.reason)

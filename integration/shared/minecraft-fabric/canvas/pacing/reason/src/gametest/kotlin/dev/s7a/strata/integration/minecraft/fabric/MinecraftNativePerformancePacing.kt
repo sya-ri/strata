@@ -42,12 +42,11 @@ internal fun Minecraft.nativePerformancePacing(): MinecraftNativePerformancePaci
             FramerateThrottleReason.SHORT_AFK -> MinecraftNativePerformancePacing.Reason.SHORT_AFK
             FramerateThrottleReason.OUT_OF_LEVEL_MENU -> MinecraftNativePerformancePacing.Reason.OUT_OF_LEVEL_MENU
         }
-    val applied = selected
     return MinecraftNativePerformancePacing(
         mode,
         reason,
         selected,
-        applied,
+        selected,
         MinecraftNativePerformancePacing.AppliedLimitSource.DIRECT_SELECTOR,
         window.isIconified,
     )

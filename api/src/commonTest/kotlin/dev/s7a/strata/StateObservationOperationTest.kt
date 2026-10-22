@@ -118,28 +118,28 @@ internal class StateObservationOperationTest {
 
     @Test
     fun deeplyNestedGuardsValidateIterativelyAndCanBeReusedAfterRelease() {
-        var expected = 0
+        var validations = 0
         val observations =
             List(4_096) { index ->
                 StateObservation({}, {}, {}, {
-                    assertEquals(index, expected)
-                    expected += 1
+                    assertEquals(index, validations)
+                    validations += 1
                 })
             }
         val state = mutableStateOf(0)
         try {
             repeat(2) { revision ->
-                expected = 0
+                validations = 0
                 observations.forEach(StateObservation::enterOperation)
                 try {
                     state.value = revision + 1
-                    assertEquals(observations.size, expected)
+                    assertEquals(observations.size, validations)
                 } finally {
                     observations.asReversed().forEach(StateObservation::leaveOperation)
                 }
             }
             state.value = 3
-            assertEquals(observations.size, expected)
+            assertEquals(observations.size, validations)
         } finally {
             observations.forEach(StateObservation::close)
         }

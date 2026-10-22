@@ -36,7 +36,7 @@ internal class ModifierDeclarationParityTest {
             val expectedSize = IntSize(side, side * CHILD_COUNT)
             val nodeCount = 1 + CHILD_COUNT * (length + 1)
             val tree = UiTree()
-            try {
+            tree.use { _ ->
                 tree.update(declaration(descriptions))
                 assertFrame(tree, expectedSize)
                 val initial = tree.projectDeclarations { root -> listOf(root.identity) + root.children.flatMap { listOf(it.identity) + it.modifiers.map { modifier -> modifier.identity } } }
@@ -52,8 +52,6 @@ internal class ModifierDeclarationParityTest {
                 val removed = tree.projectDeclarations { root -> listOf(root.identity) + root.children.map { it.identity } }
                 assertEquals(1 + CHILD_COUNT, removed.size)
                 assertTrue(initial.containsAll(removed))
-            } finally {
-                tree.close()
             }
             assertEquals(TreeState.Closed, tree.state)
         }

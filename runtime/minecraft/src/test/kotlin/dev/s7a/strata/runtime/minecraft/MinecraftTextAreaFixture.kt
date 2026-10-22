@@ -19,7 +19,6 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.minecraft.font.FontTestBackend
 import dev.s7a.strata.runtime.minecraft.font.FontTestResources
-import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
@@ -77,7 +76,7 @@ internal class MinecraftTextAreaFixture(
             "assets/test/font/area.ttf" to byteArrayOf(1),
         )
     private val profile = MinecraftProfileFixture.create(fontSnapshot = snapshot)
-    private val renderer = MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = cacheEntries))
+    private val renderer = MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = cacheEntries))
 
     /**
      * Supplies borrowed controller inputs for direct invalidation-count tests without adding production instrumentation.

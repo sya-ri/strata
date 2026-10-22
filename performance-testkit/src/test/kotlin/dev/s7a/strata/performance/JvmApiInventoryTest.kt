@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 /**
  * Exercises actual compiled archives rather than a hand-written inventory fixture.
  */
-class JvmApiInventoryTest {
+internal class JvmApiInventoryTest {
     @TempDir
     lateinit var temporary: Path
 
@@ -28,7 +28,7 @@ class JvmApiInventoryTest {
             assertTrue(surface.any { "#method:1:draw:(I)V" in it })
             assertTrue(surface.any { "#method:1:draw:(J)V" in it })
             assertTrue(surface.any { "#field:4:count:I" in it })
-            assertTrue(surface.any { it.startsWith("inventory.Probe\$Nested#type:") })
+            assertTrue(surface.any { it.startsWith($$"inventory.Probe$Nested#type:") })
             assertTrue(surface.none { "Hidden" in it || "privateValue" in it })
             assertNull(System.getProperty("strata.testkit.inventory.initialized"))
         }

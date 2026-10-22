@@ -38,27 +38,25 @@ internal class PortableVirtualRowObservationTest {
         val probe = TestProbe()
         var factories = 0
         var publishedDuringEvaluation = false
-        val session =
-            createRuntimeUiSession {
-                evaluateComponentTree {
-                    Stack {
-                        if (visible.value) {
-                            VirtualList(items, { it.index }, state, IntSize(8, 20), rowHeight = 10) { item ->
-                                factories += 1
-                                Observe(source) { version ->
-                                    val captured = local.value
-                                    if (version == 1 && item.index == 100 && publishedDuringEvaluation.not()) {
-                                        publishedDuringEvaluation = true
-                                        source.publish(2)
-                                    }
-                                    element(probe.element(TestProbe.ProbeId("${item.index}:$version:$captured")))
+        createRuntimeUiSession {
+            evaluateComponentTree {
+                Stack {
+                    if (visible.value) {
+                        VirtualList(items, { it.index }, state, IntSize(8, 20), rowHeight = 10) { item ->
+                            factories += 1
+                            Observe(source) { version ->
+                                val captured = local.value
+                                if (version == 1 && item.index == 100 && publishedDuringEvaluation.not()) {
+                                    publishedDuringEvaluation = true
+                                    source.publish(2)
                                 }
+                                element(probe.element(TestProbe.ProbeId("${item.index}:$version:$captured")))
                             }
                         }
                     }
                 }
             }
-        try {
+        }.use { session ->
             session.attach()
             val constraints = Constraints.fixed(8, 20)
             session.frame(constraints)
@@ -83,8 +81,6 @@ internal class PortableVirtualRowObservationTest {
             visible.value = false
             session.frame(constraints)
             assertEquals(1, source.releases)
-        } finally {
-            session.close()
         }
         assertEquals(source.subscriptions, source.releases)
         local.value = 8
@@ -127,23 +123,21 @@ internal class PortableVirtualRowObservationTest {
             val models = List(100) { Model(it) }
             var fail = false
             val failure = IllegalArgumentException("Row callback failed")
-            val session =
-                createRuntimeUiSession {
-                    evaluateComponentTree {
-                        VirtualList(
-                            itemCount = models.size,
-                            itemAt = models::get,
-                            keyAt = { index -> if (fail && duplicate) 0 else index },
-                            state = state,
-                            viewportSize = IntSize(8, 20),
-                            rowHeight = 10,
-                        ) {
-                            if (fail && duplicate.not()) throw failure
-                            Observe(source) { Spacer() }
-                        }
+            createRuntimeUiSession {
+                evaluateComponentTree {
+                    VirtualList(
+                        itemCount = models.size,
+                        itemAt = models::get,
+                        keyAt = { index -> if (fail && duplicate) 0 else index },
+                        state = state,
+                        viewportSize = IntSize(8, 20),
+                        rowHeight = 10,
+                    ) {
+                        if (fail && duplicate.not()) throw failure
+                        Observe(source) { Spacer() }
                     }
                 }
-            try {
+            }.use { session ->
                 session.attach()
                 val constraints = Constraints.fixed(8, 20)
                 session.frame(constraints)
@@ -153,8 +147,6 @@ internal class PortableVirtualRowObservationTest {
                 if (duplicate.not()) assertSame(failure, thrown)
                 assertEquals(source.subscriptions, source.releases)
                 assertTrue(state.jumpToIndex(0))
-            } finally {
-                session.close()
             }
             assertEquals(source.subscriptions, source.releases)
         }

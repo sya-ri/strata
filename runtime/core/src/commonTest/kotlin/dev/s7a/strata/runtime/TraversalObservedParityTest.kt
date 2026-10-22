@@ -32,8 +32,7 @@ internal class TraversalObservedParityTest {
                 val sources = List(8) { Source(0) }
                 val calls = IntArray(sources.size)
                 val generation = mutableStateOf(0)
-                val session = createRuntimeUiSession { description(fixture, sources, calls, participants, depth, generation.value) }
-                try {
+                createRuntimeUiSession { description(fixture, sources, calls, participants, depth, generation.value) }.use { session ->
                     session.attach()
                     val initial = session.frame(Constraints.fixed(20, 20))
                     assertEquals(List(8) { 1 }, calls.toList())
@@ -51,8 +50,6 @@ internal class TraversalObservedParityTest {
                     assertEquals(List(8) { if (it == 3) 3 else 2 }, calls.toList())
                     assertEquals(participants, full.semantics.size)
                     assertTrue(sources.all { it.active == 1 })
-                } finally {
-                    session.close()
                 }
                 assertTrue(sources.all { it.active == 0 && it.releases == 1 })
             }
@@ -78,15 +75,13 @@ internal class TraversalObservedParityTest {
             source.publish(1)
             fixture.callbacks.remove(event)
         }
-        try {
+        session.use { _ ->
             session.attach()
             session.frame(Constraints.fixed(20, 20))
             assertEquals(listOf(0), seen)
             session.frame(Constraints.fixed(20, 20))
             assertEquals(listOf(0, 1), seen)
             assertEquals(1, source.active)
-        } finally {
-            session.close()
         }
         assertEquals(0, source.active)
     }

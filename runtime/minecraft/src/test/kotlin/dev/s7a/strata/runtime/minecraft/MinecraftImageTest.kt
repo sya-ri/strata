@@ -69,14 +69,12 @@ internal class MinecraftImageTest {
                     0xFFFFFFFF.toInt(),
                 ),
             )
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Image") {
-                    Image(ImageSource.Pixels(source), IntSize(4, 4))
-                },
-                MinecraftProfileFixture.create(),
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Image") {
+                Image(ImageSource.Pixels(source), IntSize(4, 4))
+            },
+            MinecraftProfileFixture.create(),
+        ).use { host ->
             host.attach()
             val frame = host.frame(IntSize(4, 4))
             val command = frame.drawCommands.single() as DrawCommand.SampledImage
@@ -89,8 +87,6 @@ internal class MinecraftImageTest {
             assertEquals(0xFF00FF00.toInt(), rendered.argbAt(3, 0))
             assertEquals(0xFF0000FF.toInt(), rendered.argbAt(0, 3))
             assertEquals(0xFFFFFFFF.toInt(), rendered.argbAt(3, 3))
-        } finally {
-            host.close()
         }
     }
 
@@ -104,18 +100,16 @@ internal class MinecraftImageTest {
             FakeImagePlatform { _, call ->
                 solidImage(0xFF123400.toInt() + call)
             }
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Shared resource image") {
-                    Stack(modifier = Modifier.imageBackground(firstSource, ImageScale.Stretch)) {
-                        Image(equalSource, IntSize(2, 2))
-                        Image(firstSource, IntSize(2, 2))
-                    }
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Shared resource image") {
+                Stack(modifier = Modifier.imageBackground(firstSource, ImageScale.Stretch)) {
+                    Image(equalSource, IntSize(2, 2))
+                    Image(firstSource, IntSize(2, 2))
+                }
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             val commands = host.frame(IntSize(2, 2)).drawCommands
             assertEquals(listOf(firstId), platform.imageCalls)
@@ -125,8 +119,6 @@ internal class MinecraftImageTest {
             val secondImage = commands[2] as DrawCommand.SampledImage
             assertSame(background.image, firstImage.image)
             assertSame(background.image, secondImage.image)
-        } finally {
-            host.close()
         }
         assertEquals(1, platform.closeCalls)
     }
@@ -139,22 +131,20 @@ internal class MinecraftImageTest {
         val state = VirtualListState<Int>()
         lateinit var evaluator: ComponentEvaluator
         var resourceImages: Any? = null
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Deferred resource images") {
-                    val runtime = ComponentRuntimeBridge.current()
-                    evaluator = runtime.retainEvaluator()
-                    resourceImages = captureResourceImages(runtime)
-                    Stack(modifier = Modifier.imageBackground(ImageSource.Resource(firstId))) {
-                        VirtualList(listOf(0, 1), { item -> item }, state, IntSize(2, 4), rowHeight = 2) {
-                            Image(ImageSource.Resource(equalId), IntSize(2, 2))
-                        }
+        createMinecraftUiHost(
+            ScreenDefinition("Deferred resource images") {
+                val runtime = ComponentRuntimeBridge.current()
+                evaluator = runtime.retainEvaluator()
+                resourceImages = captureResourceImages(runtime)
+                Stack(modifier = Modifier.imageBackground(ImageSource.Resource(firstId))) {
+                    VirtualList(listOf(0, 1), { item -> item }, state, IntSize(2, 4), rowHeight = 2) {
+                        Image(ImageSource.Resource(equalId), IntSize(2, 2))
                     }
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+                }
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             assertEquals(listOf(firstId), platform.imageCalls)
             val commands = host.frame(IntSize(2, 4)).drawCommands
@@ -163,8 +153,6 @@ internal class MinecraftImageTest {
             val images = commands.filterIsInstance<DrawCommand.SampledImage>()
             assertEquals(2, images.size)
             assertTrue(images.all { command -> command.image === background.image })
-        } finally {
-            host.close()
         }
 
         assertResourceImagesReleased(checkNotNull(resourceImages))
@@ -191,18 +179,16 @@ internal class MinecraftImageTest {
                     else -> error("Unexpected image resource: $resource")
                 }
             }
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Different resource images") {
-                    Stack {
-                        Image(ImageSource.Resource(firstId), IntSize(2, 2))
-                        Image(ImageSource.Resource(secondId), IntSize(2, 2))
-                    }
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Different resource images") {
+                Stack {
+                    Image(ImageSource.Resource(firstId), IntSize(2, 2))
+                    Image(ImageSource.Resource(secondId), IntSize(2, 2))
+                }
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             val commands = host.frame(IntSize(2, 2)).drawCommands.map { command -> command as DrawCommand.SampledImage }
             assertEquals(listOf(firstId, secondId), platform.imageCalls)
@@ -210,8 +196,6 @@ internal class MinecraftImageTest {
             assertSame(firstImage, commands[0].image)
             assertSame(secondImage, commands[1].image)
             assertNotSame(commands[0].image, commands[1].image)
-        } finally {
-            host.close()
         }
     }
 
@@ -219,24 +203,20 @@ internal class MinecraftImageTest {
     fun pixelImagesBypassPlatformResourceResolution() {
         val source = solidImage(0xFF778899.toInt())
         val platform = FakeImagePlatform { resource, _ -> error("Pixel images must not resolve a resource: $resource") }
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Pixel images") {
-                    Stack(modifier = Modifier.imageBackground(ImageSource.Pixels(source))) {
-                        Image(ImageSource.Pixels(source), IntSize(2, 2))
-                    }
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Pixel images") {
+                Stack(modifier = Modifier.imageBackground(ImageSource.Pixels(source))) {
+                    Image(ImageSource.Pixels(source), IntSize(2, 2))
+                }
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             val commands = host.frame(IntSize(2, 2)).drawCommands
             assertEquals(emptyList<ResourceId>(), platform.imageCalls)
             assertSame(source, (commands[0] as DrawCommand.BlitImage).image)
             assertSame(source, (commands[1] as DrawCommand.SampledImage).image)
-        } finally {
-            host.close()
         }
     }
 
@@ -252,23 +232,19 @@ internal class MinecraftImageTest {
                 resolved
             }
         var observed: Throwable? = null
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Retry resource image") {
-                    observed = runCatching { Modifier.imageBackground(source) }.exceptionOrNull()
-                    Image(source, IntSize(2, 2))
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Retry resource image") {
+                observed = runCatching { Modifier.imageBackground(source) }.exceptionOrNull()
+                Image(source, IntSize(2, 2))
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             assertSame(expected, observed)
             assertEquals(listOf(id, id), platform.imageCalls)
             val command = host.frame(IntSize(2, 2)).drawCommands.single() as DrawCommand.SampledImage
             assertSame(resolved, command.image)
-        } finally {
-            host.close()
         }
     }
 
@@ -285,7 +261,7 @@ internal class MinecraftImageTest {
                     val background = Modifier.imageBackground(source)
                     val runtime = ComponentRuntimeBridge.current()
                     val task =
-                        FutureTask<Throwable?> {
+                        FutureTask {
                             runCatching {
                                 runtime.image(source, null, null, Modifier, null)
                             }.exceptionOrNull()
@@ -357,21 +333,17 @@ internal class MinecraftImageTest {
         val firstPlatform = FakeImagePlatform { _, _ -> firstResolved }
         val firstHost = createMinecraftUiHost(ScreenDefinition("First image host") { Image(source) }, profile, firstPlatform)
         val firstCommand =
-            try {
+            firstHost.use { _ ->
                 firstHost.attach()
                 firstHost.frame(IntSize(2, 2)).drawCommands.single() as DrawCommand.SampledImage
-            } finally {
-                firstHost.close()
             }
 
         val secondPlatform = FakeImagePlatform { _, _ -> secondResolved }
         val secondHost = createMinecraftUiHost(ScreenDefinition("Second image host") { Image(source) }, profile, secondPlatform)
         val secondCommand =
-            try {
+            secondHost.use { _ ->
                 secondHost.attach()
                 secondHost.frame(IntSize(2, 2)).drawCommands.single() as DrawCommand.SampledImage
-            } finally {
-                secondHost.close()
             }
 
         assertEquals(listOf(id), firstPlatform.imageCalls)
@@ -386,14 +358,12 @@ internal class MinecraftImageTest {
     @Test
     fun imageMapsOnlyTheRequestedSourceRegionAndValidatesBounds() {
         val source = createDrawImage(IntSize(3, 2), IntArray(6) { index -> 0xFF000000.toInt() or index })
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Image region") {
-                    Image(ImageSource.Pixels(source), IntRect(1, 0, 3, 2), IntSize(4, 2))
-                },
-                MinecraftProfileFixture.create(),
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Image region") {
+                Image(ImageSource.Pixels(source), IntRect(1, 0, 3, 2), IntSize(4, 2))
+            },
+            MinecraftProfileFixture.create(),
+        ).use { host ->
             host.attach()
             val frame = host.frame(IntSize(4, 2))
             val command = frame.drawCommands.single() as DrawCommand.SampledImage
@@ -404,8 +374,6 @@ internal class MinecraftImageTest {
             val rendered = rasterizeHeadless(frame.drawCommands, IntSize(4, 2))
             assertEquals(source.argbAt(1, 0), rendered.argbAt(0, 0))
             assertEquals(source.argbAt(2, 1), rendered.argbAt(3, 1))
-        } finally {
-            host.close()
         }
 
         listOf(
@@ -474,8 +442,7 @@ internal class MinecraftImageTest {
                 IntSize(4, 4),
                 IntArray(16) { index -> 0xFF000000.toInt() or index },
             )
-        val host = hostWithNineSliceBackground(source, Insets.all(1), NineSliceCenterMode.Tiled)
-        try {
+        hostWithNineSliceBackground(source, Insets.all(1), NineSliceCenterMode.Tiled).use { host ->
             host.attach()
             val commands = host.frame(IntSize(4, 7)).drawCommands.map { command -> command as DrawCommand.BlitImage }
             assertEquals(
@@ -503,16 +470,13 @@ internal class MinecraftImageTest {
             assertEquals(source.argbAt(2, 0), rendered.argbAt(2, 0))
             assertEquals(source.argbAt(2, 1), rendered.argbAt(2, 5))
             assertEquals(source.argbAt(2, 3), rendered.argbAt(2, 6))
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun nineSliceUsesRowMajorGridAndValidatesSourceCenters() {
         val source = createDrawImage(IntSize(3, 3), IntArray(9) { index -> 0xFF101010.toInt() + index })
-        val host = hostWithNineSliceBackground(source, Insets.all(1), NineSliceCenterMode.Stretched)
-        try {
+        hostWithNineSliceBackground(source, Insets.all(1), NineSliceCenterMode.Stretched).use { host ->
             host.attach()
             val commands = host.frame(IntSize(5, 5)).drawCommands.map { command -> command as DrawCommand.BlitImage }
             assertEquals(9, commands.size)
@@ -530,8 +494,6 @@ internal class MinecraftImageTest {
                 ),
                 commands.map { command -> command.destination },
             )
-        } finally {
-            host.close()
         }
 
         val invalid = hostWithNineSliceBackground(source, Insets(left = 1, right = 2), NineSliceCenterMode.Tiled)

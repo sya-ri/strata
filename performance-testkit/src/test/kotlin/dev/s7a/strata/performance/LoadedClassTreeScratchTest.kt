@@ -234,7 +234,7 @@ internal class LoadedClassTreeScratchTest {
         failingEntry: String? = null,
         onRead: (() -> Unit)? = null,
     ): URLClassLoader =
-        object : URLClassLoader(arrayOf(jar.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
+        object : URLClassLoader(arrayOf(jar.toUri().toURL()), getPlatformClassLoader()) {
             override fun getResource(name: String): URL? {
                 val actual = super.getResource(name) ?: return null
                 return URL(

@@ -456,7 +456,7 @@ internal class ModifierRuntimeLifecycleTest {
         val element = modifierFixture.modifier(probe, 60, ModifierTestFixture.Kind.First)
         tree.update(TestProbe().root(emptyList(), modifier = Modifier.then(element)))
         node = probe.nodes.getValue(60)
-        val retainedNode = checkNotNull(node)
+        val retainedNode = node
 
         val thrown = assertThrows(IllegalStateException::class.java) { tree.close() }
         assertSame(disposeFailure, thrown)

@@ -340,13 +340,11 @@ internal class TextLineLayoutFixture(
         val snapshot = TextLineLayoutAccess.snapshot(layout)
         val previous = frame()
         val expected = pixels(previous)
-        try {
+        host.use { _ ->
             host.detach()
             TextLineLayoutAccess.verifySnapshot(layout, snapshot)
             check(host.textInputFocus == null)
             check(owner() === current)
-        } finally {
-            host.close()
         }
         TextLineLayoutAccess.verifyReleased(current, consumer)
         TextLineLayoutAccess.verifySnapshot(layout, snapshot)

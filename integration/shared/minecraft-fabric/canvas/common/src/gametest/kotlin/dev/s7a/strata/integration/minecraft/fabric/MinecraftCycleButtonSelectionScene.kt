@@ -75,11 +75,11 @@ internal class MinecraftCycleButtonSelectionScene(
                     enabled = enabled,
                     label = { value -> label(value, alternateLabel) },
                     modifier =
-                        Modifier.onCycle<Choice>({ value ->
+                        Modifier.onCycle<Choice> { value ->
                             events.add(Event.Action to value.id)
                             actionValues.add(value.id)
                             if (case == MinecraftCycleButtonSelectionCase.ActionReentry) selection.value.value = values[1]
-                        }),
+                        },
                 )
             }
         }

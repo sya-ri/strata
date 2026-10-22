@@ -48,7 +48,7 @@ internal object MinecraftFontParityFixture {
     /**
      * Opaque background exposes color and coverage blending independently of framebuffer transparency.
      */
-    val background: Int = 0xFF285FAA.toInt()
+    const val BACKGROUND: Int = 0xFF285FAA.toInt()
 
     /**
      * Shared left origin of every native and portable text row.
@@ -102,7 +102,7 @@ internal object MinecraftFontParityFixture {
             "scene.sha256" to
                 sha256(
                     buildString {
-                        appendLine("${viewport.width},${viewport.height},$background,$LEFT")
+                        appendLine("${viewport.width},${viewport.height},$BACKGROUND,$LEFT")
                         rows.forEach { row -> appendLine("${row.font},${row.style},${row.top},${row.text}") }
                     }.toByteArray(),
                 ),
@@ -180,7 +180,7 @@ internal object MinecraftFontParityFixture {
      */
     fun definition(): ScreenDefinition =
         ScreenDefinition("Independent font parity") {
-            Stack(modifier = Modifier.fillMaxSize().background(ArgbColor(background))) {
+            Stack(modifier = Modifier.fillMaxSize().background(ArgbColor(BACKGROUND))) {
                 rows.forEach { row ->
                     Text(
                         row.text,

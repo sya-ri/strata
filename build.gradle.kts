@@ -165,14 +165,14 @@ private data class MinecraftFabricTarget(
             CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor"
         }
     val canvasTestSourcePaths: List<String> =
-        (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
+        (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) +
+            canvasTestExtraction.sourceRoots.map { "integration/shared/minecraft-fabric/canvas/extraction/$it" } + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
             "integration/shared/minecraft-fabric/canvas/pacing/common",
             tooltipReferenceSourcePath,
             "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
-            "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
             when (canvasFamily) {
                 CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
                 CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers, CanvasFamily.Blaze3dGuiExtractor -> "integration/shared/minecraft-fabric/canvas/consumption/buffer-source"
@@ -208,12 +208,12 @@ private data class MinecraftFabricTarget(
     }
 
     /** Verified test-only native GUI constructor and traversal contracts, independent of the GPU driver family. */
-    enum class CanvasTestExtraction(val sourceRoot: String) {
+    enum class CanvasTestExtraction(vararg val sourceRoots: String) {
         Flush("flush"),
-        BufferedLayered("layered-buffer-source"),
-        Buffered("buffer-source"),
-        BufferedPointer("pointer-buffer-source"),
-        GuiExtractor("gui-extractor"),
+        BufferedLayered("common", "layered-buffer-source"),
+        Buffered("common", "buffer-source"),
+        BufferedPointer("common", "pointer-buffer-source"),
+        GuiExtractor("common", "gui-extractor"),
     }
 
     /** Publication support exposed by the Paper distribution table. */
@@ -1475,12 +1475,7 @@ if (completeIdeaModelActive) {
                     val multiplatform = owner.extensions.findByType<KotlinMultiplatformExtension>()
                     val compilations = kotlin?.target?.compilations.orEmpty() + multiplatform?.targets
                         ?.filter { it.platformType == KotlinPlatformType.jvm }?.flatMap { it.compilations }.orEmpty()
-                    val auxiliary = owner.workingAuxiliarySourceSets()
-                    val selected = sourceSets.filter { sourceSet ->
-                        sourceSet.name == "main" || compilations.any { it.name == "main" && it.defaultSourceSet.name == sourceSet.name } ||
-                            (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSet.name == "jmh") || sourceSet in auxiliary
-                    }
-                    val declarations = selected.associate { sourceSet ->
+                    val declarations = sourceSets.associate { sourceSet ->
                         val matching = compilations.filter { it.defaultSourceSet.name == sourceSet.name }
                         require(matching.size <= 1) { "Ambiguous JVM compiler dependencies: ${owner.path}:${sourceSet.name}" }
                         val compilation = matching.singleOrNull()
@@ -1566,12 +1561,20 @@ if (completeIdeaModelActive) {
              */
             fun Project.declarationDependencies(sourceSet: SourceSet): Map<String, Any> {
                 val sourceSets = extensions.getByType<SourceSetContainer>()
-                val ownOutputs = sourceSets.flatMap { it.output.files }.map { it.canonicalFile }.toSet()
+                val ownOutputs = sourceSets.flatMap { declared -> declared.output.files.map { it.canonicalFile to declared.name } }.toMap()
                 val input = dependencyInputs.getValue(path)[sourceSet.name] as Map<*, *>
                 val classpaths = (input["classpaths"] as Map<*, *>).entries.associate { (role, name) -> role as String to name as String }
                 val artifacts = (input["artifacts"] as List<*>).map { it as Map<*, *> }
                 val dependencies = (input["files"] as Map<*, *>).entries.associate { (name, paths) ->
-                    val requiredFiles = (paths as List<*>).map { File(it as String).canonicalFile }.toSet() - ownOutputs - absentOutputs
+                    val files = (paths as List<*>).map { File(it as String).canonicalFile }.toSet() - absentOutputs
+                    val requiredFiles = files - ownOutputs.keys
+                    val ownDependencies = (files.intersect(ownOutputs.keys).map { ownOutputs.getValue(it) }.toSet() - sourceSet.name).map { source ->
+                        val primary = source == "main" || extensions.findByType<KotlinMultiplatformExtension>()?.targets
+                            ?.filter { it.platformType == KotlinPlatformType.jvm }?.flatMap { it.compilations }
+                            ?.any { it.name == "main" && it.defaultSourceSet.name == source } == true
+                        val module = extensions.getByType<IdeaModel>().module.name
+                        mapOf("kind" to "Module", "identity" to if (primary) module else "$source-$module", "project" to path)
+                    }
                     val resolved = artifacts.filter { File(it["path"] as String) in requiredFiles }
                     val resolvedFiles = resolved.map { File(it["path"] as String) }.toSet()
                     val identities = resolved.map { artifact ->
@@ -1586,7 +1589,7 @@ if (completeIdeaModelActive) {
                     }.distinct() + (requiredFiles - resolvedFiles).sortedBy { it.path }.map { file ->
                         mapOf("kind" to "Library", "identity" to "file:${file.canonicalPath}", "path" to file.canonicalPath.replace(File.separatorChar, '/'), "sha256" to file.sha256())
                     }
-                    name as String to identities
+                    name as String to (identities + ownDependencies)
                 }
                 return mapOf("classpaths" to classpaths, "dependencies" to dependencies)
             }
@@ -1596,7 +1599,7 @@ if (completeIdeaModelActive) {
                 val sourceSets = owner.extensions.findByType<SourceSetContainer>()
                 val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
                 val multiplatform = owner.extensions.findByType<KotlinMultiplatformExtension>()
-                val platformCompilations = multiplatform?.targets?.flatMap { it.compilations }.orEmpty()
+                val platformCompilations = multiplatform?.targets?.filter { it.platformType == KotlinPlatformType.jvm }?.flatMap { it.compilations }.orEmpty()
                 val roots = sourceSets?.flatMap { sourceSet ->
                     val matching = platformCompilations.filter { it.name == sourceSet.name || it.defaultSourceSet.name == sourceSet.name }
                     val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() + matching.flatMap { it.allKotlinSourceSets }
@@ -1675,9 +1678,30 @@ if (completeIdeaModelActive) {
                         null -> null
                     }
                 require(explicitApi == null || explicitApi in setOf("strict", "warning", "disable")) { "Unsupported explicit API compiler mode: $explicitApi" }
-                val friends = owner.tasks.withType<KotlinJvmCompile>().flatMap { it.friendPaths.files }.map { it.canonicalFile }.distinct().sortedBy { it.path }.map { input ->
+                val friends = compiler?.friendPaths?.files.orEmpty().map { it.canonicalFile }.distinct().sortedBy { it.path }.map { input ->
                     require(input.exists() || input in absentOutputs) { "Missing required Kotlin friend input: ${owner.path}: $input" }
                     mapOf("path" to input.canonicalPath.replace(File.separatorChar, '/'), "exists" to input.exists(), "sha256" to input.takeIf { it.exists() }?.sha256())
+                }
+                val testCompilations = sourceSets.orEmpty().filter { sourceSet ->
+                    sourceSet.name != "main" && platformCompilations.none { it.name == "main" && it.defaultSourceSet.name == sourceSet.name } &&
+                        roots.any { sourceSet.name in it["sourceSets"] as List<*> && it["exists"] == true && it["generated"] == false && (it["inputs"] as List<*>).isNotEmpty() }
+                }.map { sourceSet ->
+                    val compilation = (kotlin?.target?.compilations.orEmpty() + platformCompilations)
+                        .singleOrNull { it.defaultSourceSet.name == sourceSet.name }
+                    val task = compilation?.compileTaskProvider?.name?.let { owner.tasks.named<KotlinJvmCompile>(it).get() }
+                    val testExplicitApi = task?.compilerOptions?.freeCompilerArgs?.get()?.lastOrNull { it.startsWith("-Xexplicit-api=") }?.substringAfter('=')
+                    val compilerFriends = task?.friendPaths?.files.orEmpty().map { it.canonicalFile }.distinct().sortedBy { it.path }.map { input ->
+                        require(input.exists() || input in absentOutputs) { "Missing required Kotlin friend input: ${owner.path}:${sourceSet.name}: $input" }
+                        mapOf("path" to input.invariantSeparatorsPath, "exists" to input.exists(), "sha256" to input.takeIf { it.exists() }?.sha256())
+                    }
+                    mapOf(
+                        "sourceSet" to sourceSet.name,
+                        "roots" to roots.filter { sourceSet.name in it["sourceSets"] as List<*> }.map { source ->
+                            source + mapOf("kind" to if ((source["kind"] as String).endsWith("Resource")) "TestResource" else "TestSource")
+                        },
+                        "compiler" to task?.let { mapOf("moduleName" to it.compilerOptions.moduleName.get(), "jvmTarget" to it.compilerOptions.jvmTarget.get().target,
+                            "explicitApi" to testExplicitApi, "friends" to compilerFriends, "expectActualClasses" to it.compilerOptions.freeCompilerArgs.get().contains("-Xexpect-actual-classes")) },
+                    ) + owner.declarationDependencies(sourceSet)
                 }
                 mapOf(
                     "project" to owner.path,
@@ -1706,6 +1730,7 @@ if (completeIdeaModelActive) {
                     }.map { sourceSet ->
                         mapOf("sourceSet" to sourceSet.name) + owner.declarationDependencies(sourceSet)
                     },
+                    "testCompilations" to testCompilations,
                     "jmh" to (owner.plugins.hasPlugin("me.champeau.jmh") && sourceSets?.findByName("jmh") != null),
                     "auxiliarySourceSets" to owner.workingAuxiliarySourceSets().map { it.name }.sorted(),
                 )
@@ -1754,11 +1779,11 @@ if (completeIdeaModelActive) {
                 mapOf(
                     "project" to owner.path,
                     "directory" to owner.projectDir.repositoryPath(),
-                    "module" to idea.name,
-                    "iml" to idea.outputFile.repositoryPath(),
+                    "module" to "jmh-${idea.name}",
+                    "iml" to idea.outputFile.resolveSibling("jmh-${idea.name}.iml").repositoryPath(),
                     "java" to java,
                     "toolchain" to mapOf("vendor" to compiler.vendor, "runtimeVersion" to compiler.javaRuntimeVersion, "installation" to compiler.installationPath.asFile.canonicalPath.replace(File.separatorChar, '/')),
-                    "roots" to roots,
+                    "roots" to roots.filter { it["sourceSet"] == "jmh" },
                     "compilations" to kotlin?.target?.compilations?.map { compilation ->
                         mapOf("name" to compilation.name, "sourceSets" to compilation.allKotlinSourceSets.map { it.name }.sorted(), "associatedWith" to compilation.associatedCompilations.map { it.name }.sorted())
                     }.orEmpty(),
@@ -1766,12 +1791,8 @@ if (completeIdeaModelActive) {
             }
             val auxiliary = allprojects.sortedBy { it.path }.flatMap { owner ->
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
-                val sourceSets = owner.extensions.findByType<SourceSetContainer>()
                 val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
                 val mainKotlin = kotlin?.target?.compilations?.findByName("main")?.allKotlinSourceSets.orEmpty()
-                val main = sourceSets?.findByName("main")
-                val mainSources = main?.java?.srcDirs.orEmpty() + mainKotlin.flatMap { it.kotlin.srcDirs }
-                val mainResources = main?.resources?.srcDirs.orEmpty() + mainKotlin.flatMap { it.resources.srcDirs }
                 owner.workingAuxiliarySourceSets().sortedBy { it.name }.map { sourceSet ->
                     val module = requireNotNull(idea)
                     val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() - mainKotlin
@@ -1786,17 +1807,17 @@ if (completeIdeaModelActive) {
                         if (generated) return@mapNotNull null
                         val files = directory.declarationFiles()
                         require(tracked.keys.containsAll(files.keys)) { "Authored auxiliary roots must belong to the selected revision: ${owner.path}: $directory" }
-                        val production = directory in if (kind == "TestSource") mainSources else mainResources
-                        mapOf("sourceSet" to sourceSet.name, "kind" to (if (production) kind.removePrefix("Test") else kind), "path" to relative, "exists" to directory.isDirectory, "generated" to false, "files" to files)
+                        mapOf("sourceSet" to sourceSet.name, "kind" to kind, "path" to relative, "exists" to directory.isDirectory, "generated" to false, "files" to files)
                     } }.distinctBy { it["kind"] to it["path"] }
                     val outputs = sourceSet.output.classesDirs.files.sortedBy { it.repositoryPath() }.map { directory ->
                         val files = directory.declarationFiles()
                         mapOf("path" to directory.repositoryPath(), "exists" to directory.isDirectory, "files" to files)
                     }
                     require(outputs.any { (it["files"] as Map<*, *>).isNotEmpty() }) { "Working auxiliary compilation produced no classes or metadata: ${owner.path}:${sourceSet.name}" }
-                    mapOf("project" to owner.path, "sourceSet" to sourceSet.name, "directory" to owner.projectDir.repositoryPath(), "module" to module.name,
+                    val name = "${sourceSet.name}-${module.name}"
+                    mapOf("project" to owner.path, "sourceSet" to sourceSet.name, "directory" to owner.projectDir.repositoryPath(), "module" to name,
                         "java" to owner.extensions.getByType<JavaPluginExtension>().toolchain.languageVersion.get().asInt(),
-                        "iml" to module.outputFile.repositoryPath(), "roots" to roots, "outputs" to outputs) + owner.declarationDependencies(sourceSet)
+                        "iml" to module.outputFile.resolveSibling("$name.iml").repositoryPath(), "roots" to roots, "outputs" to outputs) + owner.declarationDependencies(sourceSet)
                 }
             }
             require(owners.isNotEmpty()) { "The complete model must discover configured working JMH owners." }
@@ -1864,7 +1885,7 @@ subprojects {
             }
             compilerOptions {
                 allWarningsAsErrors.set(true)
-                freeCompilerArgs.add("-Xexpect-actual-classes")
+                freeCompilerArgs.addAll("-Xexpect-actual-classes", "-Xexplicit-api=strict")
             }
             sourceSets {
                 commonMain { kotlin.srcDir("src/main/kotlin") }
@@ -2067,6 +2088,7 @@ subprojects {
         extensions.configure<KotlinJvmProjectExtension> {
             sourceSets.matching { it.name == "gametest" }.configureEach {
                 kotlin.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+                kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/common/src/gametest/kotlin"))
             }
         }
     }
@@ -2103,10 +2125,9 @@ subprojects {
                 minecraftTargetByProjectPath[task.project.path]?.integrationProjectPath == task.project.path
         }
         .configureEach {
-            // Native custom payloads and external hosts use real asynchronous delivery instead of Fabric's paired test scheduler.
             when (this) {
-                is ClientProductionRunTask -> jvmArgs.add("-Dfabric.client.gametest.disableNetworkSynchronizer=true")
-                is JavaExec -> systemProperty("fabric.client.gametest.disableNetworkSynchronizer", true)
+                is ClientProductionRunTask -> jvmArgs.add("-Dstrata.clientVerification=true")
+                is JavaExec -> systemProperty("strata.clientVerification", true)
             }
             usesService(minecraftClientExecutionService)
             minecraftClientResourceService?.let { service ->
@@ -2376,18 +2397,20 @@ subprojects {
     }
 
     if (path in setOf(":integration:paper", ":integration:velocity")) {
-        val fixture = extensions.getByType<SourceSetContainer>().named("main")
-        val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("main")
         val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         }
-        tasks.named<Detekt>("detekt") {
-            // Host callbacks supply operations; only the isolated testkit collects owner costs.
-            source(fixtureKotlin.map { it.kotlin })
-            classpath.from(fixture.map { it.compileClasspath }, fixture.map { it.runtimeClasspath })
-            jvmTarget.set(javaVersion.toString())
-            jdkHome.set(analysisJava.map { it.metadata.installationPath })
+        listOf("main" to "detektMain", "test" to "detektTest").forEach { (sourceSetName, taskName) ->
+            val fixture = extensions.getByType<SourceSetContainer>().named(sourceSetName)
+            val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named(sourceSetName)
+            tasks.named<Detekt>(taskName) {
+                setSource(fixtureKotlin.map { it.kotlin })
+                classpath.setFrom(fixture.map { it.compileClasspath }, fixture.map { it.runtimeClasspath })
+                jvmTarget.set(javaVersion.toString())
+                jdkHome.set(analysisJava.map { it.metadata.installationPath })
+            }
         }
+        tasks.named("detekt") { dependsOn("detektMain", "detektTest") }
     }
 
     extensions.configure<JavaPluginExtension> {

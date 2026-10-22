@@ -9,12 +9,10 @@
   ],
   "entrypoints": {
     "main": ["dev.s7a.strata.integration.minecraft.fabric.FabricServerUiAcceptance"],
-    "fabric-client-gametest": [
-      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftLegacyClientGameTest"
-    ],
     "client": [
       "dev.s7a.strata.integration.minecraft.fabric.RemoteNativeCanvasFixture",
-      "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient"
+      "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient",
+      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientVerification"
     ]
   },
   "depends": {

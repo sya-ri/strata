@@ -80,7 +80,7 @@ internal class HeadlessGridTrackParityTest {
                 initial.copy(cells = initial.cells.take(1)),
                 initial.copy(cells = emptyList()),
             )
-        try {
+        session.use { _ ->
             for (scene in models) {
                 state.value = scene
                 for (viewport in listOf(IntSize(128, 128), IntSize(5, 4))) {
@@ -95,8 +95,6 @@ internal class HeadlessGridTrackParityTest {
             session.close()
             assertArrayEquals(oldPixels, oldImage.copyArgb())
             assertEquals(emptyList<DrawCommand>(), oldFrame.drawCommands)
-        } finally {
-            session.close()
         }
     }
 

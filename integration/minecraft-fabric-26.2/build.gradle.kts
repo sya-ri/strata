@@ -33,7 +33,7 @@ val runtimeFabricMain =
 val runtimeJar = runtimeFabricProject.tasks.named<Jar>("jar").flatMap { task -> task.archiveFile }
 
 extensions.configure<DetektExtension> {
-    source.from(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/blaze3d/src/gametest/kotlin"))
+    source.from(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/common/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"), rootProject.file("integration/shared/minecraft-fabric/font-parity/blaze3d/src/gametest/kotlin"))
 }
 
 loom {
@@ -45,7 +45,7 @@ fabricApi {
         createSourceSet = true
         modId = "strata-integration-minecraft-fabric-26-2"
         enableGameTests = false
-        enableClientGameTests = true
+        enableClientGameTests = false
         eula = true
     }
 }
@@ -57,11 +57,25 @@ extensions.configure<SourceSetContainer> {
     }
 }
 
+loom {
+    runs.register("clientGameTest") {
+        client()
+        sourceSet.set("gametest")
+        runDirectory.set(layout.buildDirectory.dir("run/clientGameTest"))
+        generateRunConfig.set(false)
+    }
+}
+
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/updated/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/gui-holder/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/named/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/gui-holder/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/terminal/gui-holder/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/inventory/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/canvas-scope/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"))
@@ -78,6 +92,7 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-extractor/src/gametest/kotlin"),
         )
         kotlin.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/common/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/blaze3d/src/gametest/kotlin"))
     }
@@ -142,13 +157,11 @@ tasks.named<ProcessResources>("processGametestResources") {
     from(rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf")) {
         into("assets/strata_font_test/font")
     }
-    val gameTestEntrypoint = "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftCanvasTerminalClientGameTest"
     val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.canvas.terminal.tests.mixins.json")
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft262)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-2")
     inputs.property("runtimeModId", "strata")
-    inputs.property("gameTestEntrypoint", gameTestEntrypoint)
     inputs.property("gameTestMixins", gameTestMixins)
     filesMatching("fabric.mod.json") {
         expand(
@@ -156,7 +169,6 @@ tasks.named<ProcessResources>("processGametestResources") {
             "minecraftVersion" to libs.versions.minecraft262.get(),
             "integrationModId" to "strata-integration-minecraft-fabric-26-2",
             "runtimeModId" to "strata",
-            "gameTestEntrypoint" to gameTestEntrypoint,
             "gameTestMixins" to JsonOutput.toJson(gameTestMixins),
         )
     }
@@ -247,7 +259,6 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     runDir.set(productionRunDirectory)
     programArgs.addAll(showcaseClientIdentityArguments)
     programArgs.addAll(canvasBackend.map { backend -> listOf("--graphicsBackend", backend.argument) }.orElse(emptyList()))
-    jvmArgs.add("-Dfabric.client.gametest")
     providers.gradleProperty("strata.paper.address").orNull?.let {
         jvmArgs.add("-Dstrata.paper.address=$it")
     }
@@ -290,7 +301,6 @@ tasks.register<ClientProductionRunTask>("runPublishedCoordinateClientGameTest") 
     mods.from(publishedRuntimeJar)
     runDir.set(publishedCoordinateRunDirectory)
     programArgs.addAll(showcaseClientIdentityArguments)
-    jvmArgs.add("-Dfabric.client.gametest")
     val verificationOutput = layout.buildDirectory.dir("minecraft-published-coordinate-parity")
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftParityOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft262.map { version -> "-Dstrata.minecraftVersion=$version" })
@@ -309,6 +319,7 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
+    args(showcaseClientIdentityArguments)
     providers.gradleProperty("strata.paper.address").orNull?.let {
         systemProperty("strata.paper.address", it)
     }

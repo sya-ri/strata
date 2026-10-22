@@ -1,0 +1,3 @@
+fun read(user: User): String = user.profile.name
+fun literal(): String = "java.util.UUID"
+val dependency = libs.versions.kotlin

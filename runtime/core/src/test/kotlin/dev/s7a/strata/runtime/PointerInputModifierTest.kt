@@ -157,7 +157,7 @@ internal class PointerInputModifierTest {
     @Test
     fun clearingRetainedHoverEmitsOneExitAndLeavesTheTreeUsable() {
         val transitions = ArrayList<PointerHoverEvent>()
-        val tree = tree(Modifier.size(10, 10).onHover({ value -> transitions.add(value) }))
+        val tree = tree(Modifier.size(10, 10).onHover { value -> transitions.add(value) })
         tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
 
         tree.clearInputState()
@@ -199,7 +199,7 @@ internal class PointerInputModifierTest {
                     }.onCapturedPointerEvent({ value -> cancellations.add(value) }) { event, local ->
                         observed += Observation.Raw(event, local)
                         if (event is PointerEvent.Press) InputResult.Consumed else InputResult.Ignored
-                    }.onHover({ value -> hover.add(value) }),
+                    }.onHover { value -> hover.add(value) },
             )
         tree.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
         observed.clear()

@@ -97,7 +97,7 @@ internal class ProvenanceHashingTarget(
     internal inner class Prepared(
         private val row: JsonObject,
     ) : AutoCloseable {
-        private val mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
+        private val mode = ProvenanceHashingCorpus.Mode.entries.single { it.name.contentEquals(row.get("mode").asString) }
         private val path = Path.of(row.get("path").asString)
         private val inputLoader = URLClassLoader("provenance-input", arrayOf(path.toUri().toURL()), ClassLoader.getPlatformClassLoader())
         private val representative = row.get("representative").asString

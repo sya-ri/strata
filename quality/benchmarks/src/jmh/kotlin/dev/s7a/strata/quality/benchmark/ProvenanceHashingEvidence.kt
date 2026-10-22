@@ -53,9 +53,9 @@ internal object ProvenanceHashingEvidence {
      * Every command preserves failed raw evidence; subset/quick collection is not supported.
      */
     @JvmStatic
-    public fun main(args: Array<String>) {
+    fun main(args: Array<String>) {
         require(args.isNotEmpty())
-        val command = enumValues<Command>().single { it.name.equals(args.first(), ignoreCase = true) }
+        val command = Command.entries.single { it.name.equals(args.first(), ignoreCase = true) }
         when (command) {
             Command.Collect -> {
                 require(args.size == 6)
@@ -100,7 +100,6 @@ internal object ProvenanceHashingEvidence {
                     collectAll(target, controlsManifest, corpusManifest, report)
                     report.addProperty("status", "passed")
                     validateReport(report)
-                    Unit
                 }
             report.add("complete_preparation_collection_verification", complete.evidence)
             PerformanceJson.writeNew(output, report)
@@ -278,9 +277,9 @@ internal object ProvenanceHashingEvidence {
             addProperty("available_processors", Runtime.getRuntime().availableProcessors())
         }
 
-    private fun mode(row: JsonObject): ProvenanceHashingCorpus.Mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
+    private fun mode(row: JsonObject): ProvenanceHashingCorpus.Mode = ProvenanceHashingCorpus.Mode.entries.single { it.name.contentEquals(row.get("mode").asString) }
 
-    private fun rowIdentity(row: JsonObject): ProvenanceHashingCorpus.Case = ProvenanceHashingCorpus.Case(mode(row), row.get("entries").asInt, enumValues<ProvenanceHashingCorpus.Shape>().single { it.name.contentEquals(row.get("shape").asString) })
+    private fun rowIdentity(row: JsonObject): ProvenanceHashingCorpus.Case = ProvenanceHashingCorpus.Case(mode(row), row.get("entries").asInt, ProvenanceHashingCorpus.Shape.entries.single { it.name.contentEquals(row.get("shape").asString) })
 
     private fun origin(type: Class<*>): Path = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI())
 }

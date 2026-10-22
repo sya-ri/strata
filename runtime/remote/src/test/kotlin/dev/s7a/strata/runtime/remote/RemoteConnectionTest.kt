@@ -115,7 +115,7 @@ internal class RemoteConnectionTest {
         }
         check(1 < packets.size)
         check(packets.all { it.size <= RemoteLimits().frameBytes })
-        RemoteConnection(types, RemotePacket.limits.copy(reconstructionMillis = 60_000), {}).use { receiver ->
+        RemoteConnection(types, RemotePacket.limits.copy(reconstructionMillis = 60_000)) {}.use { receiver ->
             packets.forEach { receiver.receive((RemotePacket.decode(it) as RemotePacket.Frame).bytes, 0) }
             assertEquals(types, receiver.capabilities?.types)
         }

@@ -12,7 +12,6 @@ import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.r
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.renderHeadless
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireExactPixels
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityRendering.requireImageSize
-import dev.s7a.strata.modifier.size
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
@@ -22,11 +21,6 @@ import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 import it.unimi.dsi.fastutil.booleans.BooleanConsumer
-import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonAlgorithm
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonOptions
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.ObjectSelectionList
@@ -41,67 +35,59 @@ import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.inventory.ChestMenu
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
-import java.util.concurrent.CompletableFuture
-import java.util.function.Predicate
 import kotlin.io.path.inputStream
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
  * Proves exact native, Fabric-adapter, and headless pixels for the supported Minecraft release.
  *
- * The test runs on Fabric's client GameTest thread and performs all Minecraft and common-host operations on the client thread through [ClientGameTestContext].
+ * The test runs on the standalone verification thread and performs all Minecraft and common-host operations on the client thread through [MinecraftLoadedTestContext].
  * It reads the active assets, font, and selected player skin, uses native screens as the oracle, and writes only deterministic evidence below the configured build directory.
  */
 @Suppress("TooManyFunctions")
-public class StrataMinecraftClientGameTest : FabricClientGameTest {
+internal class StrataMinecraftClientGameTest {
     /**
      * Executes the native/Fabric/headless acceptance comparisons and the dedicated component Fabric/headless comparisons, then writes their verified evidence.
      *
-     * @param context Fabric client GameTest context owning window, client-thread, and screenshot operations.
+     * @param context loaded-client context owning window, client-thread, and screenshot operations.
      * @throws AssertionError when version, geometry, or any native/Fabric/headless pixel differs.
      * @throws Throwable when Minecraft resource, rendering, input, or filesystem work fails.
      */
     @OptIn(InternalStrataRuntimeApi::class)
     @Suppress("LongMethod")
-    override fun runTest(context: ClientGameTestContext) {
+    fun runTest(context: MinecraftLoadedTestContext) {
         context.restoreDefaultGameOptions()
         resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                minecraft.options.guiScale().set(1)
-                minecraft.options.forceUnicodeFont().set(false)
-                minecraft.options.japaneseGlyphVariants().set(false)
-                minecraft.options.showAutosaveIndicator().set(false)
-                require(ParityLocale.parse(minecraft.options.languageCode) === ParityLocale.EnglishUnitedStates) {
-                    "Minecraft parity requires the en_us language profile."
-                }
-                require(
+        context.runOnClient { minecraft ->
+            minecraft.options.guiScale().set(1)
+            minecraft.options.forceUnicodeFont().set(false)
+            minecraft.options.japaneseGlyphVariants().set(false)
+            minecraft.options.showAutosaveIndicator().set(false)
+            require(ParityLocale.parse(minecraft.options.languageCode) === ParityLocale.EnglishUnitedStates) {
+                "Minecraft parity requires the en_us language profile."
+            }
+            require(
+                minecraft.options
+                    .forceUnicodeFont()
+                    .get()
+                    .not() &&
                     minecraft.options
-                        .forceUnicodeFont()
+                        .japaneseGlyphVariants()
                         .get()
                         .not() &&
-                        minecraft.options
-                            .japaneseGlyphVariants()
-                            .get()
-                            .not() &&
-                        Language.getInstance().isDefaultRightToLeft.not(),
-                ) { "Minecraft parity requires the explicit non-uniform, non-Japanese-variant, left-to-right font options." }
-                minecraft.resizeGui()
-            },
-        )
-        context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
+                    Language.getInstance().isDefaultRightToLeft.not(),
+            ) { "Minecraft parity requires the explicit non-uniform, non-Japanese-variant, left-to-right font options." }
+            minecraft.resizeGui()
+        }
+        context.movePointerRaw(pointer.x.toDouble(), pointer.y.toDouble())
 
         val profile =
-            context.computeOnClient(
-                FailableFunction<Minecraft, MinecraftUiProfile, RuntimeException> { extractMinecraftUiProfile() },
-            )
+            context.computeOnClient { extractMinecraftUiProfile() }
         val output = parityOutput()
         Files.createDirectories(output)
         if (System.getProperty("strata.performance.nativeOutput") != null) {
@@ -119,43 +105,34 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
         context.setScreen { DeterministicConfirmScreen() }
         context.waitForScreen(DeterministicConfirmScreen::class.java)
-        context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
+        context.movePointerRaw(pointer.x.toDouble(), pointer.y.toDouble())
         context.waitTicks(2)
         val nativePath =
             context.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-native")
-                    .disableCounterPrefix()
-                    .withSize(viewport.width, viewport.height)
-                    .withDestinationDir(output),
+                "strata-native",
+                output,
+                IntSize(viewport.width, viewport.height),
             )
 
         val confirmHeadless =
             NativeImage.read(nativePath.inputStream()).use { native ->
                 requireImageSize(native, viewport)
                 val headless =
-                    context.computeOnClient(
-                        FailableFunction<Minecraft, HeadlessImage, RuntimeException> { renderHeadless(profile, createConfirmScreenDefinition(), viewport) },
-                    )
+                    context.computeOnClient { renderHeadless(profile, createConfirmScreenDefinition(), viewport) }
                 Files.write(output.resolve("strata-headless.png"), headless.encodePng())
                 requireExactPixels(native, headless)
 
-                context.runOnClient(
-                    FailableConsumer<Minecraft, RuntimeException> {
-                        createConfirmScreenDefinition().open()
-                    },
-                )
+                context.runOnClient {
+                    createConfirmScreenDefinition().open()
+                }
                 context.waitForScreen(FabricMinecraftScreen::class.java)
-                context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
+                context.movePointerRaw(pointer.x.toDouble(), pointer.y.toDouble())
                 context.waitTicks(2)
                 context.assertScreenshotEquals(
-                    TestScreenshotComparisonOptions
-                        .of(native)
-                        .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                        .saveWithFileName("strata-fabric")
-                        .disableCounterPrefix()
-                        .withSize(viewport.width, viewport.height)
-                        .withDestinationDir(output),
+                    native,
+                    "strata-fabric",
+                    output,
+                    IntSize(viewport.width, viewport.height),
                 )
                 assertCleanFabricFrameReuse(context)
                 headless
@@ -168,19 +145,15 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         context.waitTicks(2)
         val scrollNativePath =
             context.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-scroll-native")
-                    .disableCounterPrefix()
-                    .withSize(viewport.width, viewport.height)
-                    .withDestinationDir(output),
+                "strata-scroll-native",
+                output,
+                IntSize(viewport.width, viewport.height),
             )
 
         NativeImage.read(scrollNativePath.inputStream()).use { native ->
             requireImageSize(native, viewport)
             val scrollHeadless =
-                context.computeOnClient(
-                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> { renderHeadless(profile, createScrollScreenDefinition(), viewport) },
-                )
+                context.computeOnClient { renderHeadless(profile, createScrollScreenDefinition(), viewport) }
             Files.write(output.resolve("strata-scroll-headless.png"), scrollHeadless.encodePng())
             requireExactPixels(native, scrollHeadless)
 
@@ -188,13 +161,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             context.waitForScreen(FabricMinecraftScreen::class.java)
             context.waitTicks(2)
             context.assertScreenshotEquals(
-                TestScreenshotComparisonOptions
-                    .of(native)
-                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                    .saveWithFileName("strata-scroll-fabric")
-                    .disableCounterPrefix()
-                    .withSize(viewport.width, viewport.height)
-                    .withDestinationDir(output),
+                native,
+                "strata-scroll-fabric",
+                output,
+                IntSize(viewport.width, viewport.height),
             )
             runDirectJoinParity(context, profile, output, confirmHeadless, scrollHeadless)
         }
@@ -205,7 +175,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
     @OptIn(InternalStrataRuntimeApi::class)
     private fun runSampledImagePixelParity(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ) {
@@ -213,28 +183,24 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             closeFabricScreen(context)
             val physicalSize = IntSize(viewport.width * scale, viewport.height * scale)
             resizeMinecraftTestWindow(context, IntSize(physicalSize.width, physicalSize.height))
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    minecraft.options.guiScale().set(scale)
-                    minecraft.resizeGui()
-                    minecraft.window.setGuiScale(scale)
-                    check(minecraft.window.guiScaledWidth == viewport.width && minecraft.window.guiScaledHeight == viewport.height)
-                },
-            )
+            context.runOnClient { minecraft ->
+                minecraft.options.guiScale().set(scale)
+                minecraft.resizeGui()
+                minecraft.window.guiScale = scale
+                check(minecraft.window.guiScaledWidth == viewport.width && minecraft.window.guiScaledHeight == viewport.height)
+            }
             SampledParityScene.entries.forEach { scene -> runSampledImagePixelParityAtScale(context, profile, output, scale, physicalSize, scene) }
         }
         resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                minecraft.options.guiScale().set(1)
-                minecraft.resizeGui()
-            },
-        )
+        context.runOnClient { minecraft ->
+            minecraft.options.guiScale().set(1)
+            minecraft.resizeGui()
+        }
     }
 
     @OptIn(InternalStrataRuntimeApi::class)
     private fun runSampledImagePixelParityAtScale(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
         scale: Int,
@@ -243,11 +209,9 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     ) {
         closeFabricScreen(context)
         val headless =
-            context.computeOnClient(
-                FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                    renderHeadless(profile, scene.definition(viewport), viewport, scale = scale)
-                },
-            )
+            context.computeOnClient {
+                renderHeadless(profile, scene.definition(viewport), viewport, scale = scale)
+            }
         Files.write(output.resolve("${scene.slug}-scale-$scale-headless.png"), headless.encodePng())
 
         val presentation =
@@ -260,20 +224,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     )
                 }
                 context.waitForScreen(FabricMinecraftScreen::class.java)
-                context.waitFor(
-                    Predicate<Minecraft> { minecraft ->
-                        0L < readRenderWork(minecraft).renderExtractions && readRenderWork(minecraft).sources.isNotEmpty()
-                    },
-                )
+                context.waitFor { minecraft ->
+                    0L < readRenderWork(minecraft).renderExtractions && readRenderWork(minecraft).sources.isNotEmpty()
+                }
                 val observed = renderWork(context)
                 requireSampledImageParityWork(observed, scene)
                 val fabricPath =
                     context.takeScreenshot(
-                        TestScreenshotOptions
-                            .of("${scene.slug}-scale-$scale-fabric")
-                            .disableCounterPrefix()
-                            .withSize(physicalSize.width, physicalSize.height)
-                            .withDestinationDir(output),
+                        "${scene.slug}-scale-$scale-fabric",
+                        output,
+                        IntSize(physicalSize.width, physicalSize.height),
                     )
                 NativeImage.read(fabricPath.inputStream()).use { fabric ->
                     requireImageSize(fabric, physicalSize)
@@ -357,7 +317,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
     @OptIn(InternalStrataRuntimeApi::class)
     private fun runDirectJoinParity(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
         confirm: HeadlessImage,
@@ -365,53 +325,42 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     ) {
         closeFabricScreen(context)
         resizeMinecraftTestWindow(context, IntSize(directJoinViewport.width, directJoinViewport.height))
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                minecraft.options.lastMpIp = directJoinAddress
-                minecraft.resizeGui()
-            },
-        )
-        context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
+        context.runOnClient { minecraft ->
+            minecraft.options.lastMpIp = directJoinAddress
+            minecraft.resizeGui()
+        }
+        context.movePointerRaw(pointer.x.toDouble(), pointer.y.toDouble())
         context.setScreen { DeterministicDirectJoinScreen(directJoinAddress) }
         context.waitForScreen(DeterministicDirectJoinScreen::class.java)
-        context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                checkNotNull(MinecraftClientScreenAccess.currentScreen(minecraft)).setFocused(null)
-            },
-        )
+        context.movePointerRaw(pointer.x.toDouble(), pointer.y.toDouble())
+        context.runOnClient { minecraft ->
+            checkNotNull(MinecraftClientScreenAccess.currentScreen(minecraft)).focused = null
+        }
         context.waitTicks(2)
         val nativePath =
             context.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-direct-join-native")
-                    .disableCounterPrefix()
-                    .withSize(directJoinViewport.width, directJoinViewport.height)
-                    .withDestinationDir(output),
+                "strata-direct-join-native",
+                output,
+                IntSize(directJoinViewport.width, directJoinViewport.height),
             )
         NativeImage.read(nativePath.inputStream()).use { native ->
             requireImageSize(native, directJoinViewport)
             val directJoin =
-                context.computeOnClient(
-                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                        renderHeadless(profile, createDirectJoinScreenDefinition(), directJoinViewport)
-                    },
-                )
+                context.computeOnClient {
+                    renderHeadless(profile, createDirectJoinScreenDefinition(), directJoinViewport)
+                }
             Files.write(output.resolve("strata-direct-join-headless.png"), directJoin.encodePng())
             requireExactPixels(native, directJoin)
 
             context.setScreen { createMinecraftScreen(createDirectJoinScreenDefinition(), profile, parent = null) }
             context.waitForScreen(FabricMinecraftScreen::class.java)
-            context.input.setCursorPos(pointer.x.toDouble(), pointer.y.toDouble())
+            context.movePointerRaw(pointer.x.toDouble(), pointer.y.toDouble())
             context.waitTicks(2)
             context.assertScreenshotEquals(
-                TestScreenshotComparisonOptions
-                    .of(native)
-                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                    .saveWithFileName("strata-direct-join-fabric")
-                    .disableCounterPrefix()
-                    .withSize(directJoinViewport.width, directJoinViewport.height)
-                    .withDestinationDir(output),
+                native,
+                "strata-direct-join-fabric",
+                output,
+                IntSize(directJoinViewport.width, directJoinViewport.height),
             )
             runContainerParity(context, profile, output, confirm, scroll, directJoin)
         }
@@ -421,7 +370,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     @OptIn(InternalStrataRuntimeApi::class)
     @Suppress("LongMethod", "LongParameterList")
     private fun runContainerParity(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
         confirm: HeadlessImage,
@@ -429,41 +378,35 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         directJoin: HeadlessImage,
     ) {
         closeFabricScreen(context)
-        val world = context.worldBuilder().setUseConsistentSettings(true).create()
+        val world = context.createSingleplayerWorld()
         val result =
             runCatching {
                 resizeMinecraftTestWindow(context, IntSize(containerViewport.width, containerViewport.height))
-                context.runOnClient(
-                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                        minecraft.resizeGui()
-                    },
-                )
-                context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                context.runOnClient { minecraft ->
+                    minecraft.resizeGui()
+                }
+                context.movePointerRaw(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
                 context.setScreen {
                     val inventory = checkNotNull(Minecraft.getInstance().player).inventory
                     inventory.clearContent()
                     DeterministicContainerScreen(inventory)
                 }
                 context.waitForScreen(DeterministicContainerScreen::class.java)
-                context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                context.movePointerRaw(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
                 context.waitTicks(2)
                 val backgroundNativePath =
                     context.takeScreenshot(
-                        TestScreenshotOptions
-                            .of("strata-container-background-native")
-                            .disableCounterPrefix()
-                            .withSize(containerViewport.width, containerViewport.height)
-                            .withDestinationDir(output),
+                        "strata-container-background-native",
+                        output,
+                        IntSize(containerViewport.width, containerViewport.height),
                     )
-                context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                context.movePointerRaw(containerPointer.x.toDouble(), containerPointer.y.toDouble())
                 context.waitTicks(2)
                 val slotNativePath =
                     context.takeScreenshot(
-                        TestScreenshotOptions
-                            .of("strata-slot-native")
-                            .disableCounterPrefix()
-                            .withSize(containerViewport.width, containerViewport.height)
-                            .withDestinationDir(output),
+                        "strata-slot-native",
+                        output,
+                        IntSize(containerViewport.width, containerViewport.height),
                     )
 
                 val (containerBackground, slot) =
@@ -472,51 +415,41 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                             requireImageSize(backgroundNative, containerViewport)
                             requireImageSize(slotNative, containerViewport)
                             val containerBackground =
-                                context.computeOnClient(
-                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                        renderHeadless(profile, createContainerBackgroundScreenDefinition(), containerViewport, containerOutsidePointer)
-                                    },
-                                )
+                                context.computeOnClient {
+                                    renderHeadless(profile, createContainerBackgroundScreenDefinition(), containerViewport, containerOutsidePointer)
+                                }
                             val slot =
-                                context.computeOnClient(
-                                    FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                        renderHeadless(profile, createSlotScreenDefinition(), containerViewport, containerPointer)
-                                    },
-                                )
+                                context.computeOnClient {
+                                    renderHeadless(profile, createSlotScreenDefinition(), containerViewport, containerPointer)
+                                }
                             Files.write(output.resolve("strata-container-background-headless.png"), containerBackground.encodePng())
                             Files.write(output.resolve("strata-slot-headless.png"), slot.encodePng())
                             requireExactPixels(backgroundNative, containerBackground)
                             requireExactPixels(slotNative, slot)
 
-                            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                            context.movePointerRaw(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
                             context.setScreen { createMinecraftScreen(createContainerBackgroundScreenDefinition(), profile, parent = null) }
                             context.waitForScreen(FabricMinecraftScreen::class.java)
-                            context.input.setCursorPos(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
+                            context.movePointerRaw(containerOutsidePointer.x.toDouble(), containerOutsidePointer.y.toDouble())
                             context.waitTicks(2)
                             context.assertScreenshotEquals(
-                                TestScreenshotComparisonOptions
-                                    .of(backgroundNative)
-                                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                                    .saveWithFileName("strata-container-background-fabric")
-                                    .disableCounterPrefix()
-                                    .withSize(containerViewport.width, containerViewport.height)
-                                    .withDestinationDir(output),
+                                backgroundNative,
+                                "strata-container-background-fabric",
+                                output,
+                                IntSize(containerViewport.width, containerViewport.height),
                             )
                             closeFabricScreen(context)
 
-                            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                            context.movePointerRaw(containerPointer.x.toDouble(), containerPointer.y.toDouble())
                             context.setScreen { createMinecraftScreen(createSlotScreenDefinition(), profile, parent = null) }
                             context.waitForScreen(FabricMinecraftScreen::class.java)
-                            context.input.setCursorPos(containerPointer.x.toDouble(), containerPointer.y.toDouble())
+                            context.movePointerRaw(containerPointer.x.toDouble(), containerPointer.y.toDouble())
                             context.waitTicks(2)
                             context.assertScreenshotEquals(
-                                TestScreenshotComparisonOptions
-                                    .of(slotNative)
-                                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                                    .saveWithFileName("strata-slot-fabric")
-                                    .disableCounterPrefix()
-                                    .withSize(containerViewport.width, containerViewport.height)
-                                    .withDestinationDir(output),
+                                slotNative,
+                                "strata-slot-fabric",
+                                output,
+                                IntSize(containerViewport.width, containerViewport.height),
                             )
                             containerBackground to slot
                         }
@@ -548,37 +481,33 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
     @OptIn(InternalStrataRuntimeApi::class)
     private fun verifyContinuousInput(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ) {
-        val probe = context.computeOnClient(FailableFunction<Minecraft, MinecraftContinuousInputProbe, RuntimeException> { MinecraftContinuousInputProbe() })
-        val screen = context.computeOnClient(FailableFunction<Minecraft, FabricMinecraftScreen, RuntimeException> { createMinecraftScreen(probe.definition(), profile, parent = null) })
+        val probe = context.computeOnClient { MinecraftContinuousInputProbe() }
+        val screen = context.computeOnClient { createMinecraftScreen(probe.definition(), profile, parent = null) }
         val outcome =
             runCatching {
-                context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftClientScreenAccess.setScreen(it, screen) })
-                context.waitFor(
-                    Predicate<Minecraft> { minecraft ->
-                        MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() &&
-                            readRenderWork(minecraft).let { 0L < it.renderExtractions && it.inputs != null }
-                    },
-                )
-                context.computeOnClient(
-                    FailableFunction<Minecraft, String, RuntimeException> { minecraft ->
-                        probe.verify(
-                            frameCount = { readRenderWork(minecraft).renderExtractions },
-                            scroll = { scrollMinecraftScreen(screen, probe.position) },
-                            move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
-                            click = {
-                                val event = MouseButtonEvent(probe.position.x.toDouble(), probe.position.y.toDouble(), MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0))
-                                check(screen.mouseClicked(event, false)) { "The Strata content must consume its native primary press." }
-                                screen.mouseReleased(event)
-                            },
-                        )
-                    },
-                )
+                context.runOnClient { MinecraftClientScreenAccess.setScreen(it, screen) }
+                context.waitFor { minecraft ->
+                    MinecraftClientScreenAccess.currentScreen(minecraft) === screen && probe.isReady() &&
+                        readRenderWork(minecraft).let { 0L < it.renderExtractions && it.inputs != null }
+                }
+                context.computeOnClient { minecraft ->
+                    probe.verify(
+                        frameCount = { readRenderWork(minecraft).renderExtractions },
+                        scroll = { scrollMinecraftScreen(screen, probe.position) },
+                        move = { screen.mouseMoved(probe.position.x.toDouble(), probe.position.y.toDouble()) },
+                        click = {
+                            val event = MouseButtonEvent(probe.position.x.toDouble(), probe.position.y.toDouble(), MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0))
+                            check(screen.mouseClicked(event, false)) { "The Strata content must consume its native primary press." }
+                            screen.mouseReleased(event)
+                        },
+                    )
+                }
             }
-        val cleanup = runCatching { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { screen.onClose() }) }
+        val cleanup = runCatching { context.runOnClient { screen.onClose() } }
         val receipt =
             outcome.getOrElse { failure ->
                 cleanup.exceptionOrNull()?.let { if (it !== failure) failure.addSuppressed(it) }
@@ -591,17 +520,17 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     @OptIn(InternalStrataRuntimeApi::class)
     @Suppress("DEPRECATION") // Reactive regression fixtures retain the legacy screen-opening contract.
     private fun verifyReactiveRendering(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ) {
         val receipt =
             ReactiveRenderScenario.verify(
                 object : ReactiveRenderTestDriver {
-                    override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient(FailableFunction<Minecraft, T, RuntimeException> { action() })
+                    override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient { action() }
 
                     override fun await(condition: () -> Boolean) {
-                        context.waitFor(Predicate<Minecraft> { condition() })
+                        context.waitFor { condition() }
                     }
 
                     override fun open(definition: ScreenDefinition): FabricMinecraftScreen {
@@ -619,7 +548,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                         val expected = onClient { ReactiveRenderPixels.reference(definition, profile, capture) }
                         val screenshot =
                             context.takeScreenshot(
-                                TestScreenshotOptions.of("${capture.artifactName}-native").disableCounterPrefix().withDestinationDir(output),
+                                "${capture.artifactName}-native",
+                                output,
                             )
                         ReactiveRenderPixels.verify(expected, screenshot, output, capture)
                     }
@@ -633,25 +563,23 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     }
 
     private fun verifyProfileCache(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         output: Path,
     ) {
         val probe = MinecraftProfileCacheProbe(MinecraftClientScreenAccess::currentScreen) { MinecraftClientScreenAccess.setScreen(it, null) }
         val outcome =
             runCatching {
                 val reload =
-                    context.computeOnClient(
-                        FailableFunction<Minecraft, CompletableFuture<Void>, RuntimeException> { probe.begin(it) },
-                    )
-                context.waitFor(Predicate<Minecraft> { reload.isDone })
+                    context.computeOnClient { probe.begin(it) }
+                context.waitFor { reload.isDone }
                 reload.join()
                 // The reload future completes before LoadingOverlay finishes its native fade-out.
-                context.waitFor(Predicate<Minecraft> { MinecraftClientScreenAccess.hasOverlay(it).not() })
-                context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { probe.afterReload(it) })
-                context.waitFor(Predicate<Minecraft> { probe.collected() })
+                context.waitFor { MinecraftClientScreenAccess.hasOverlay(it).not() }
+                context.runOnClient { probe.afterReload(it) }
+                context.waitFor { probe.collected() }
                 probe.writeReceipt(output)
             }
-        val cleanup = runCatching { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { probe.close() }) }
+        val cleanup = runCatching { context.runOnClient { probe.close() } }
         outcome.exceptionOrNull()?.let { failure ->
             cleanup.exceptionOrNull()?.let(failure::addSuppressed)
             throw failure
@@ -707,7 +635,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
     private class DeterministicScrollScreen : Screen(Component.literal("Strata Scroll parity")) {
         override fun init() {
-            addRenderableWidget(DeterministicSelectionList(checkNotNull(minecraft)))
+            addRenderableWidget(DeterministicSelectionList(minecraft))
         }
 
         override fun extractBackground(
@@ -733,10 +661,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             mouseY: Int,
             partialTick: Float,
         ) {
-            graphics.fill(0, 0, width, height, opaqueBlack)
-            Screen.extractMenuBackgroundTexture(
+            graphics.fill(0, 0, width, height, OPAQUE_BLACK)
+            extractMenuBackgroundTexture(
                 graphics,
-                Screen.MENU_BACKGROUND,
+                MENU_BACKGROUND,
                 0,
                 0,
                 0.0f,
@@ -796,7 +724,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             hovered: Boolean,
             partialTick: Float,
         ) {
-            graphics.centeredText(Minecraft.getInstance().font, Component.literal(label), 160, getContentYMiddle() - 4, -1)
+            graphics.centeredText(Minecraft.getInstance().font, Component.literal(label), 160, contentYMiddle - 4, -1)
         }
 
         override fun getNarration(): Component = Component.literal(label)
@@ -847,7 +775,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 "Entry 11",
                 "Entry 12",
             )
-        private val opaqueBlack = 0xFF000000.toInt()
+        private const val OPAQUE_BLACK = 0xFF000000.toInt()
         private val hexFormat: HexFormat = HexFormat.of()
         private val containerBackgroundIdentifier = Identifier.withDefaultNamespace("textures/gui/container/generic_54.png")
     }

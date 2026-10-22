@@ -36,7 +36,7 @@ public object MinecraftCanvasTerminalTestHooks {
         check(armed == null) { "The terminal Canvas proof is already armed." }
         val receipt = Path.of(requiredProperty("strata.canvas.shutdown.receipt"))
         require(receipt.isAbsolute) { "The terminal Canvas receipt path must be absolute." }
-        val menuBackgroundBlurriness = Minecraft.getInstance().options.getMenuBackgroundBlurriness()
+        val menuBackgroundBlurriness = Minecraft.getInstance().options.menuBackgroundBlurriness
         armed =
             Configuration(
                 receipt = receipt,
@@ -61,7 +61,7 @@ public object MinecraftCanvasTerminalTestHooks {
         val configuration = armed ?: return null
         armed = null
         FabricMinecraftCanvasHooks.requireRunning()
-        check(client.options.getMenuBackgroundBlurriness() == configuration.menuBackgroundBlurriness) {
+        check(client.options.menuBackgroundBlurriness == configuration.menuBackgroundBlurriness) {
             "The menu background blur option changed before terminal Canvas verification."
         }
         val fixture = MinecraftCanvasTerminalFixture()

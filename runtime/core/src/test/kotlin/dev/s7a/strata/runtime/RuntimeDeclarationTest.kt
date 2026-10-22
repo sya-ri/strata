@@ -105,7 +105,7 @@ internal class RuntimeDeclarationTest {
         val failure = IllegalArgumentException("projection failed")
         val session = createRuntimeUiSession { probe.root(emptyList()) }
         session.attach()
-        assertSame(failure, assertThrows(IllegalArgumentException::class.java) { session.projectDeclarations<Unit> { throw failure } })
+        assertSame(failure, assertThrows(IllegalArgumentException::class.java) { session.projectDeclarations { throw failure } })
         session.close()
         session.close()
         assertEquals(1, probe.events.count { it is TestProbe.Event.Dispose })

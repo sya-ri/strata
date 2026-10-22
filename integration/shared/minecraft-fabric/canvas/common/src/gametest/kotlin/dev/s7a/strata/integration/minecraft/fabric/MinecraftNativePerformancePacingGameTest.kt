@@ -119,18 +119,13 @@ internal object MinecraftNativePerformancePacingGameTest {
     }
 
     private fun verifyQueryFailure(context: MinecraftCanvasTestContext): String {
-        val adapter =
-            try {
-                Class.forName("dev.s7a.strata.integration.minecraft.fabric.MinecraftGpuPerformanceProbe")
-            } catch (_: ClassNotFoundException) {
-                return "unavailable"
-            }
+        val createProbe = minecraftNativeGpuProbeFactory.create ?: return "unavailable"
         val failure =
             runCatching {
                 withBorrowedOptions(context) {
                     val outcome =
                         context.onClient {
-                            val probe = adapter.getConstructor(Int::class.javaPrimitiveType).newInstance(1) as MinecraftNativeGpuProbe
+                            val probe = createProbe(1)
                             val result = runCatching { probe.append(JsonObject()) }
                             runCanvasTestCleanup(result.exceptionOrNull(), probe::close)
                             result

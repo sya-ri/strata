@@ -191,7 +191,7 @@ internal object MinecraftCanvasConsumptionGameTest {
         name: String,
     ): Any? {
         val field = owner.javaClass.getDeclaredField(name)
-        check(field.trySetAccessible()) { "The native presentation cache field is inaccessible: " + name }
+        check(field.trySetAccessible()) { "The native presentation cache field is inaccessible: $name" }
         return field.get(owner)
     }
 

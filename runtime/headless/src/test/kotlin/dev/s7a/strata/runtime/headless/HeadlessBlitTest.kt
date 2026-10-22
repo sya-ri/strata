@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
+import kotlin.math.nextUp
 
 /**
  * Verifies nearest pixel-center image sampling, clipping, blending, ordering, and physical replication.
@@ -157,7 +158,7 @@ internal class HeadlessBlitTest {
         )
         assertEquals(
             0,
-            rasterizeHeadless(listOf(tinted.copy(alphaCutoff = Math.nextUp(multipliedAlpha))), IntSize(1, 1)).argbAt(0, 0),
+            rasterizeHeadless(listOf(tinted.copy(alphaCutoff = multipliedAlpha.nextUp())), IntSize(1, 1)).argbAt(0, 0),
         )
         val tiny = image(IntSize(1, 1), intArrayOf(0x01FFFFFF))
         assertEquals(

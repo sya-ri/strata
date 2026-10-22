@@ -8,22 +8,16 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
-import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.world.Container
 import net.minecraft.world.SimpleContainer
 import net.minecraft.world.SimpleMenuProvider
 import net.minecraft.world.inventory.ChestMenu
-import net.minecraft.world.inventory.MenuConstructor
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import org.apache.commons.lang3.function.FailableConsumer
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Predicate
 
 /**
  * Verifies player-inventory, logical Container, and raw active-menu Slot locators against the loaded client and integrated server.
@@ -32,50 +26,6 @@ import java.util.function.Predicate
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object InventorySlotSynchronizationGameTest {
-    /**
-     * Runs only the existing native Canvas/Slot ordering case in the caller-owned integrated world.
-     *
-     * The runner thread transports the original stack without inspecting or mutating it; seeding and restoration occur on the server thread.
-     * Native screens, screenshots, and pixels retain the existing Canvas fixture and independent item oracle.
-     * Cleanup closes any surviving Strata screen and restores the original server stack even when the scene fails.
-     *
-     * @param context Fabric coordinator already connected to a temporary integrated world.
-     * @param profile immutable UI profile extracted from the active native resources.
-     * @param output contained build directory for the existing Canvas/Slot evidence.
-     * @throws Throwable preserving the primary scene failure while attempting independent screen and inventory cleanup.
-     */
-    internal fun runCanvasOrdering(
-        context: ClientGameTestContext,
-        profile: MinecraftUiProfile,
-        output: Path,
-    ) {
-        val test = InventorySlotTestContext(context)
-        val previous = AtomicReference<ItemStack?>()
-        val result =
-            runCatching {
-                test.onServer { player ->
-                    previous.set(player.inventory.getItem(test.playerInventoryIndex).copy())
-                    player.inventory.setItem(test.playerInventoryIndex, ItemStack(Items.DIRT, test.itemCount))
-                    player.inventoryMenu.broadcastChanges()
-                }
-                test.waitForPlayerItem(test.playerInventoryIndex, Items.DIRT)
-                runMinecraftCanvasSlotTest(context, profile, output, test.playerInventoryIndex)
-            }
-        runCanvasTestCleanup(
-            result.exceptionOrNull(),
-            { test.closeScreen() },
-            {
-                previous.get()?.let { original ->
-                    test.onServer { player ->
-                        player.inventory.setItem(test.playerInventoryIndex, original)
-                        player.inventoryMenu.broadcastChanges()
-                    }
-                }
-            },
-        )
-        result.getOrThrow()
-    }
-
     /**
      * Executes live player, custom Container, and ender-chest synchronization scenarios.
      *
@@ -86,7 +36,7 @@ internal object InventorySlotSynchronizationGameTest {
      * @throws Throwable when Minecraft screen, network, menu, input, rendering, or filesystem work fails.
      */
     internal fun run(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ) {
@@ -112,30 +62,26 @@ internal object InventorySlotSynchronizationGameTest {
             container.setItem(test.chargeSlotIndex, ItemStack(Items.REDSTONE, test.itemCount))
             val provider =
                 SimpleMenuProvider(
-                    MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
+                    { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
                     Component.literal("Coal Generator"),
                 )
             check(player.openMenu(provider).isPresent) { "The server-owned coal generator menu must open." }
         }
-        test.client.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                menu is ChestMenu &&
-                    test.stackMatches(menu.getSlot(test.fuelSlotIndex).item, Items.COAL) &&
-                    test.stackMatches(menu.getSlot(test.chargeSlotIndex).item, Items.REDSTONE)
-            },
-        )
+        test.client.waitFor { minecraft ->
+            val menu = minecraft.player?.containerMenu ?: return@waitFor false
+            menu is ChestMenu &&
+                test.stackMatches(menu.getSlot(test.fuelSlotIndex).item, Items.COAL) &&
+                test.stackMatches(menu.getSlot(test.chargeSlotIndex).item, Items.REDSTONE)
+        }
         resizeMinecraftTestWindow(test.client, industrialViewport)
-        test.client.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
+        test.client.runOnClient { minecraft -> minecraft.resizeGui() }
         test.client.setScreen { createMinecraftScreen(createIndustrialScreenDefinition(), profile, parent = null) }
         test.client.waitForScreen(FabricMinecraftScreen::class.java)
         test.client.waitTicks(2)
         test.client.takeScreenshot(
-            TestScreenshotOptions
-                .of("strata-industrial-synchronized-fabric")
-                .disableCounterPrefix()
-                .withSize(industrialViewport.width, industrialViewport.height)
-                .withDestinationDir(output),
+            "strata-industrial-synchronized-fabric",
+            output,
+            IntSize(industrialViewport.width, industrialViewport.height),
         )
 
         test.clickSlot(test.industrialFuelPointer)
@@ -185,11 +131,9 @@ internal object InventorySlotSynchronizationGameTest {
         test.waitForPlayerItem(test.playerInventoryIndex, Items.DIRT)
         showBoundScreen(test, profile, Slots.playerInventory(test.playerInventoryIndex))
         test.client.takeScreenshot(
-            TestScreenshotOptions
-                .of("strata-inventory-slot-fabric")
-                .disableCounterPrefix()
-                .withSize(viewport.width, viewport.height)
-                .withDestinationDir(output),
+            "strata-inventory-slot-fabric",
+            output,
+            IntSize(viewport.width, viewport.height),
         )
 
         test.clickSlot(playerSlotPointer)
@@ -226,17 +170,15 @@ internal object InventorySlotSynchronizationGameTest {
             container.setItem(test.containerSlotIndex, ItemStack(scenario.item, test.itemCount))
             val provider =
                 SimpleMenuProvider(
-                    MenuConstructor { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
+                    { containerId, inventory, _ -> ChestMenu.threeRows(containerId, inventory, container) },
                     Component.literal(scenario.title),
                 )
             check(player.openMenu(provider).isPresent) { "The server-owned Container menu must open." }
         }
-        test.client.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val player = minecraft.player
-                player != null && player.containerMenu is ChestMenu && test.stackMatches(player.containerMenu.getSlot(0).item, scenario.item)
-            },
-        )
+        test.client.waitFor { minecraft ->
+            val player = minecraft.player
+            player != null && player.containerMenu is ChestMenu && test.stackMatches(player.containerMenu.getSlot(0).item, scenario.item)
+        }
 
         showBoundScreen(
             test,
@@ -246,11 +188,9 @@ internal object InventorySlotSynchronizationGameTest {
         )
         if (scenario == ContainerScenario.Custom) {
             test.client.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-custom-container-slot-fabric")
-                    .disableCounterPrefix()
-                    .withSize(viewport.width, viewport.height)
-                    .withDestinationDir(output),
+                "strata-custom-container-slot-fabric",
+                output,
+                IntSize(viewport.width, viewport.height),
             )
         }
         test.clickSlot(containerSlotPointer)
@@ -282,13 +222,11 @@ internal object InventorySlotSynchronizationGameTest {
             player.inventoryMenu.broadcastChanges()
             expected.set(Pair(stack.copy(), carried.copy()))
         }
-        test.client.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val player = minecraft.player
-                val snapshot = expected.get()
-                player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(test.playerInventoryIndex), snapshot.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, snapshot.second)
-            },
-        )
+        test.client.waitFor { minecraft ->
+            val player = minecraft.player
+            val snapshot = expected.get()
+            player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(test.playerInventoryIndex), snapshot.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, snapshot.second)
+        }
     }
 
     private fun showBoundScreen(
@@ -306,7 +244,7 @@ internal object InventorySlotSynchronizationGameTest {
         }
         test.client.waitForScreen(FabricMinecraftScreen::class.java)
         // Native window transitions can center the pointer over a Slot; screenshots require a fixed non-hover position.
-        test.client.input.setCursorPos(0.0, 0.0)
+        test.client.movePointerRaw(0.0, 0.0)
         test.client.waitTicks(2)
     }
 

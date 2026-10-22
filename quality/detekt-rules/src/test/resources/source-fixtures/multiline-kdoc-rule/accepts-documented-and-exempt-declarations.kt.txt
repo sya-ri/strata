@@ -1,0 +1,24 @@
+@Test
+fun testFunction() = Unit
+
+private fun hiddenFunction() = Unit
+
+/**
+ * A documented screen.
+ */
+open class Screen {
+    /**
+     * Draws the screen.
+     */
+    open fun render() = Unit
+
+    override fun toString() = "screen"
+
+    /**
+     * Draws with a local helper.
+     */
+    fun renderWithLocalHelper() {
+        fun localHelper() = Unit
+        localHelper()
+    }
+}

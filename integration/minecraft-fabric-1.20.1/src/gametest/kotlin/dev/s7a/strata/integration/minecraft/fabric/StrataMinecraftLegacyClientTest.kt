@@ -15,6 +15,7 @@ public class StrataMinecraftLegacyClientTest : ClientModInitializer {
      * Starts the standalone loaded-client test after Fabric initializes the client.
      */
     override fun onInitializeClient() {
+        if (System.getProperty("strata.clientVerification").toBoolean().not()) return
         val context = StandaloneMinecraftLoadedTestContext()
         Thread(
             {
@@ -22,7 +23,7 @@ public class StrataMinecraftLegacyClientTest : ClientModInitializer {
                     context.waitFor(CLIENT_START_TIMEOUT_TICKS) { minecraft ->
                         minecraft.overlay == null && minecraft.screen != null
                     }
-                    context.runLegacySuite()
+                    context.runLoadedSuite()
                 }.onSuccess {
                     logger.info("Strata loaded-client verification passed")
                     context.computeOnClient { minecraft -> minecraft.stop() }

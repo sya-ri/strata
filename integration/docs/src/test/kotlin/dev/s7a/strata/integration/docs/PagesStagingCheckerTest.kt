@@ -345,7 +345,7 @@ internal class PagesStagingCheckerTest {
     @Test
     fun ignoresTemplatedPagesUrlPrefix() {
         val (project, site) = createBaseTrees("templated-pages-url")
-        Files.writeString(project.resolve("README.md"), "${PAGES_BASE}older/${'$'}{version}/")
+        Files.writeString(project.resolve("README.md"), $$"$${PAGES_BASE}older/${version}/")
         val inventory = writeInventory(project, site)
 
         PagesStagingChecker.check(project, site, inventory)
@@ -357,7 +357,7 @@ internal class PagesStagingCheckerTest {
         val (project, site) = createBaseTrees("bash-parameter-pages-url")
         Files.writeString(
             project.resolve("workflow.yml"),
-            "pages_base=\"${PAGES_BASE}older/${'$'}{previous_tag#v}\"",
+            $$"pages_base=\"$${PAGES_BASE}older/${previous_tag#v}\"",
         )
         val inventory = writeInventory(project, site)
 

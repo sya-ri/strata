@@ -1,0 +1,2 @@
+fun create() = java.io.File("fixture")
+fun values() = kotlin.collections.listOf("value")

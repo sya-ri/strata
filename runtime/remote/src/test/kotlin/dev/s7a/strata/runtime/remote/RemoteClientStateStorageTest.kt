@@ -10,9 +10,8 @@ internal class RemoteClientStateStorageTest : RemoteClientStateReentryTest() {
         super.assertStorageReleased(states)
         val field = RemoteClientStates::class.java.getDeclaredField("editable")
         field.isAccessible = true
-        val members = field.get(states)
         val empty =
-            when (members) {
+            when (val members = field.get(states)) {
                 is Map<*, *> -> members.isEmpty()
                 is Collection<*> -> members.isEmpty()
                 else -> error("Unsupported membership collection")

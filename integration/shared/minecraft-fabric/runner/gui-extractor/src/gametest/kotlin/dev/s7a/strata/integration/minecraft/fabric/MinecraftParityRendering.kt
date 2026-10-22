@@ -53,7 +53,7 @@ internal object MinecraftParityRendering {
         native: NativeImage,
         headless: HeadlessImage,
     ): Boolean {
-        val expected = IntSize(native.getWidth(), native.getHeight())
+        val expected = IntSize(native.width, native.height)
         if (headless.size != expected) return false
         for (y in 0 until expected.height) {
             for (x in 0 until expected.width) {
@@ -70,8 +70,8 @@ internal object MinecraftParityRendering {
         image: NativeImage,
         expected: IntSize,
     ) {
-        if (image.getWidth() == expected.width && image.getHeight() == expected.height) return
-        throw AssertionError("Native screenshot size was ${image.getWidth()}x${image.getHeight()}, expected ${expected.width}x${expected.height}.")
+        if (image.width == expected.width && image.height == expected.height) return
+        throw AssertionError("Native screenshot size was ${image.width}x${image.height}, expected ${expected.width}x${expected.height}.")
     }
 
     /**
@@ -81,7 +81,7 @@ internal object MinecraftParityRendering {
         native: NativeImage,
         headless: HeadlessImage,
     ) {
-        val expected = IntSize(native.getWidth(), native.getHeight())
+        val expected = IntSize(native.width, native.height)
         if ((headless.size == expected).not()) {
             throw AssertionError("Headless size was ${headless.size}, expected $expected.")
         }

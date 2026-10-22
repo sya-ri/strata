@@ -8,6 +8,7 @@ dependencies {
     testImplementation(libs.velocity.api)
     testImplementation(project(":performance-testkit"))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.kotlin.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

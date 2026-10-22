@@ -6,11 +6,6 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
-import net.minecraft.client.Minecraft
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -25,57 +20,51 @@ internal object MinecraftNumericFontParitySuite {
      * Recreates numeric evidence using standard native providers and Font rendering without a global resource reload.
      */
     fun run(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         output: Path,
     ) {
         Files.createDirectories(output)
         Files.deleteIfExists(output.resolve("numeric-parity.properties"))
         val fonts =
-            context.computeOnClient(
-                FailableFunction<Minecraft, MinecraftNativeNumericFonts, RuntimeException> {
-                    Files.writeString(output.resolve("native-resource-inputs.tsv"), MinecraftNativeFontOracle.verifyResources())
-                    MinecraftNativeNumericFonts()
-                },
-            )
+            context.computeOnClient {
+                Files.writeString(output.resolve("native-resource-inputs.tsv"), MinecraftNativeFontOracle.verifyResources())
+                MinecraftNativeNumericFonts()
+            }
         MinecraftNumericFontCleanup.preserving({
             val profile = observations(context, output, fonts)
             val portable = captureNative(context, output, fonts, profile)
             compareFabric(context, output, profile, portable)
             MinecraftNumericFontEvidence.writeReceipt(output)
         }) {
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    MinecraftNumericFontCleanup.preserving({ MinecraftClientScreenAccess.setScreen(minecraft, null) }, fonts::close)
-                },
-            )
+            context.runOnClient { minecraft ->
+                MinecraftNumericFontCleanup.preserving({ MinecraftClientScreenAccess.setScreen(minecraft, null) }, fonts::close)
+            }
         }
     }
 
     private fun observations(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         output: Path,
         fonts: MinecraftNativeNumericFonts,
     ): MinecraftUiProfile =
-        context.computeOnClient(
-            FailableFunction<Minecraft, MinecraftUiProfile, RuntimeException> {
-                Files.writeString(output.resolve("native-gpu-state.txt"), MinecraftNativeFontOracle.graphicsState())
-                val compatibility = MinecraftFontParityFixture.target.compatibility
-                val native = MinecraftNumericFontEvidence.capture(compatibility, fonts::glyph, fonts::width)
-                MinecraftNumericFontEvidence.write(output.resolve("numeric-native.properties"), native)
-                val portable = MinecraftNumericFontEvidence.portable(compatibility)
-                MinecraftNumericFontEvidence.write(output.resolve("numeric-portable.properties"), portable)
-                MinecraftNumericFontEvidence.verify(native, portable)
-                MinecraftFontParityFixture.profile(MinecraftNumericFontFixture.snapshot(compatibility))
-            },
-        )
+        context.computeOnClient {
+            Files.writeString(output.resolve("native-gpu-state.txt"), MinecraftNativeFontOracle.graphicsState())
+            val compatibility = MinecraftFontParityFixture.target.compatibility
+            val native = MinecraftNumericFontEvidence.capture(compatibility, fonts::glyph, fonts::width)
+            MinecraftNumericFontEvidence.write(output.resolve("numeric-native.properties"), native)
+            val portable = MinecraftNumericFontEvidence.portable(compatibility)
+            MinecraftNumericFontEvidence.write(output.resolve("numeric-portable.properties"), portable)
+            MinecraftNumericFontEvidence.verify(native, portable)
+            MinecraftFontParityFixture.profile(MinecraftNumericFontFixture.snapshot(compatibility))
+        }
 
     private fun captureNative(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         output: Path,
         fonts: MinecraftNativeNumericFonts,
         profile: MinecraftUiProfile,
     ): Map<Int, HeadlessImage> {
-        val capture = context.computeOnClient(FailableFunction<Minecraft, MinecraftNativeFontFloatTarget, RuntimeException> { MinecraftNativeFontFloatTarget() })
+        val capture = context.computeOnClient { MinecraftNativeFontFloatTarget() }
         val images = mutableMapOf<Int, HeadlessImage>()
         val failures = mutableListOf<String>()
         try {
@@ -86,25 +75,23 @@ internal object MinecraftNumericFontParitySuite {
                 setScale(context, scale, size)
                 val native = screenshot(context, output, "font-native-$scale", size)
                 val comparison =
-                    context.computeOnClient(
-                        FailableFunction<Minecraft, MinecraftFontGpuImageComparison.Result, RuntimeException> {
-                            capture.captureScene(output, scale, fonts::draw, fonts::atlasSize)
-                            val portable = MinecraftNumericFontFixture.render(profile, scale)
-                            images[scale] = portable
-                            MinecraftFontGpuImageComparison.compare(native, portable, output.resolve("font-headless-$scale.png"), MinecraftNumericFontFixture.commands(profile), scale)
-                        },
-                    )
+                    context.computeOnClient {
+                        capture.captureScene(output, scale, fonts::draw, fonts::atlasSize)
+                        val portable = MinecraftNumericFontFixture.render(profile, scale)
+                        images[scale] = portable
+                        MinecraftFontGpuImageComparison.compare(native, portable, output.resolve("font-headless-$scale.png"), MinecraftNumericFontFixture.commands(profile), scale)
+                    }
                 if (0 < comparison.unverified) failures += "scale=$scale unverified=${comparison.unverified}; ${comparison.firstFailure}"
             }
         } finally {
-            context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { capture.close() })
+            context.runOnClient { capture.close() }
         }
         check(failures.isEmpty()) { failures.joinToString("\n", prefix = "Unclassified native numeric pixels:\n") }
         return images
     }
 
     private fun compareFabric(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         output: Path,
         profile: MinecraftUiProfile,
         images: Map<Int, HeadlessImage>,
@@ -123,34 +110,30 @@ internal object MinecraftNumericFontParitySuite {
     private fun physicalSize(scale: Int): IntSize = IntSize(MinecraftFontParityFixture.viewport.width * scale, MinecraftFontParityFixture.viewport.height * scale)
 
     private fun setScale(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         scale: Int,
         size: IntSize,
     ) {
         resizeMinecraftTestWindow(context, IntSize(size.width, size.height))
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                minecraft.options.guiScale().set(scale)
-                minecraft.options.forceUnicodeFont().set(false)
-                minecraft.resizeGui()
-                check(minecraft.window.guiScale == scale) { "Numeric native GUI density differs from the requested scene." }
-            },
-        )
-        context.input.setCursorPos(0.0, 0.0)
+        context.runOnClient { minecraft ->
+            minecraft.options.guiScale().set(scale)
+            minecraft.options.forceUnicodeFont().set(false)
+            minecraft.resizeGui()
+            check(minecraft.window.guiScale == scale) { "Numeric native GUI density differs from the requested scene." }
+        }
+        context.movePointerRaw(0.0, 0.0)
         context.waitTicks(3)
     }
 
     private fun screenshot(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         output: Path,
         name: String,
         size: IntSize,
     ): Path =
         context.takeScreenshot(
-            TestScreenshotOptions
-                .of(name)
-                .disableCounterPrefix()
-                .withSize(size.width, size.height)
-                .withDestinationDir(output),
+            name,
+            output,
+            IntSize(size.width, size.height),
         )
 }

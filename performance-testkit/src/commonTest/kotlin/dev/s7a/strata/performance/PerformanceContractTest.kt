@@ -7,7 +7,7 @@ import kotlin.test.assertFailsWith
 /**
  * Regression coverage for the shared collection and evidence contract.
  */
-class PerformanceContractTest {
+internal class PerformanceContractTest {
     @Test
     fun coverageRejectsNewFeaturesAndMissingHosts() {
         val existing = scenario("old", "existing", PerformanceHost.Jvm)

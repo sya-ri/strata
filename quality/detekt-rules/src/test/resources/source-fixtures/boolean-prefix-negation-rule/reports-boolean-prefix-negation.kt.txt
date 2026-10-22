@@ -1,0 +1,5 @@
+fun ready(): Boolean = true
+fun check(value: Boolean): Boolean {
+    val other: Boolean = false
+    return !value || !other || !ready() || !(value == other)
+}

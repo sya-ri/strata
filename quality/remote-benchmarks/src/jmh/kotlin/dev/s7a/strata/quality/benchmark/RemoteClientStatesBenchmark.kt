@@ -329,11 +329,11 @@ public open class RemoteClientStatesBenchmark {
         /**
          * Shares only the independent value-iterator counter and retained collection checks.
          */
-        private abstract class VisitCounter {
-            var visits = 0L
-            abstract val size: Int
+        private interface VisitCounter {
+            var visits: Long
+            val size: Int
 
-            abstract fun isEmpty(): Boolean
+            fun isEmpty(): Boolean
         }
 
         /**
@@ -341,8 +341,10 @@ public open class RemoteClientStatesBenchmark {
          */
         private class VisitMap<K, V>(
             private val backing: MutableMap<K, V>,
-        ) : VisitCounter(),
+        ) : VisitCounter,
             MutableMap<K, V> by backing {
+            override var visits: Long = 0L
+
             override val size: Int get() = backing.size
 
             override fun isEmpty(): Boolean = backing.isEmpty()
@@ -374,12 +376,28 @@ public open class RemoteClientStatesBenchmark {
          */
         private class VisitList<V>(
             private val backing: MutableList<V>,
-        ) : VisitCounter(),
-            MutableList<V> by backing,
+        ) : AbstractMutableList<V>(),
+            VisitCounter,
             RandomAccess {
+            override var visits: Long = 0L
+
             override val size: Int get() = backing.size
 
             override fun isEmpty(): Boolean = backing.isEmpty()
+
+            override fun get(index: Int): V = backing[index]
+
+            override fun set(
+                index: Int,
+                element: V,
+            ): V = backing.set(index, element)
+
+            override fun add(
+                index: Int,
+                element: V,
+            ) = backing.add(index, element)
+
+            override fun removeAt(index: Int): V = backing.removeAt(index)
 
             override fun iterator(): MutableIterator<V> {
                 val iterator = backing.iterator()
@@ -429,11 +447,9 @@ public open class RemoteClientStatesBenchmark {
                     val scene = Scene()
                     scene.entries = entries
                     scene.membership = membership
-                    try {
+                    scene.use { _ ->
                         scene.setUp()
                         scene.verifyWork()
-                    } finally {
-                        scene.close()
                     }
                 }
             }

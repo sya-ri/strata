@@ -62,7 +62,7 @@ internal class ShowcaseMinecraftAssetFixture(
                 Files.write(target, bytes)
             } else {
                 clientFiles[path] = bytes
-                metadata(asset.metadata, asset.size)?.let { document -> clientFiles[path + ".mcmeta"] = document.toString().toByteArray() }
+                metadata(asset.metadata, asset.size)?.let { document -> clientFiles["$path.mcmeta"] = document.toString().toByteArray() }
             }
         }
         addFontObjects()

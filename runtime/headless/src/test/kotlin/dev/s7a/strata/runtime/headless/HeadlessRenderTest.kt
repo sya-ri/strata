@@ -14,14 +14,12 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
-import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -64,12 +62,10 @@ internal class HeadlessRenderTest {
         val latest = createDrawImage(IntSize(1, 1), intArrayOf(0xFF00FF00.toInt()))
         var closes = 0
         val source =
-            canvasSource(
-                StateSource<DrawImage> { observer ->
-                    observer(StateSnapshot(StateRevision(2), latest))
-                    StateSubscription(StateSnapshot(StateRevision(1), initial)) { closes += 1 }
-                },
-            )
+            canvasSource { observer ->
+                observer(StateSnapshot(StateRevision(2), latest))
+                StateSubscription(StateSnapshot(StateRevision(1), initial)) { closes += 1 }
+            }
         val description = evaluateComponentTree { Canvas(source, IntSize(1, 1)) }
 
         assertEquals(0xFF00FF00.toInt(), renderHeadless(description, IntSize(1, 1)).image.argbAt(0, 0))

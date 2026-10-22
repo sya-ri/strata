@@ -42,7 +42,6 @@ import dev.s7a.strata.velocity.Strata
 import dev.s7a.strata.velocity.event.StrataClientReadyEvent
 import dev.s7a.strata.velocity.event.StrataUiClosedEvent
 import dev.s7a.strata.velocity.event.StrataUiOpenedEvent
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -60,6 +59,7 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.test.assertEquals
 
 /**
  * Runs the actual Velocity plugin API, worker, routing, and common protocol against authenticated API doubles.
@@ -203,7 +203,7 @@ internal class VelocityScreensTest {
                         ScreenDefinition("Proxy") {
                             Spacer(
                                 Modifier.onActivate {
-                                    assertEquals(createdOn.get(), Thread.currentThread())
+                                    assertEquals(expected = createdOn.get(), actual = Thread.currentThread())
                                     field.value = "after"
                                     calls.incrementAndGet()
                                 },

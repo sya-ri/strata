@@ -5,7 +5,6 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
-import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
@@ -43,6 +42,31 @@ import java.util.zip.ZipOutputStream
  */
 internal class FabricMinecraftFontSnapshotTest {
     @Test
+    fun nativeConvenienceReadsKeepObservationAndStreamOwnership(
+        @TempDir directory: Path,
+    ) {
+        val text = "observed resource"
+        val contents = text.toByteArray()
+        val location = Identifier.parse("test:font/default.json")
+        val pack = resourceFontPack(directory.resolve("convenience"), mapOf("assets/test/font/default.json" to contents))
+        MultiPackResourceManager(PackType.CLIENT_RESOURCES, listOf(pack)).use { manager ->
+            val reads = ArrayList<Identifier>()
+            val streams = ArrayList<TrackedFontStream>()
+            var checks = 0
+            val observed = observedFontResources(manager, reads, transform = { resource -> trackedFontResource(resource, streams) }) { checks += 1 }
+
+            observed.getResourceOrThrow(location).open().use { stream -> assertArrayEquals(contents, stream.readAllBytes()) }
+            observed.open(location).use { stream -> assertArrayEquals(contents, stream.readAllBytes()) }
+            observed.openAsReader(location).use { reader -> assertEquals(text, reader.readText()) }
+
+            assertEquals(List(3) { location }, reads)
+            assertEquals(3, checks)
+            assertEquals(3, streams.size)
+            assertTrue(streams.all(TrackedFontStream::closed))
+        }
+    }
+
+    @Test
     fun capturesFontStacksAndExactProviderAssetsWithoutRootEnumeration(
         @TempDir directory: Path,
     ) {
@@ -74,7 +98,7 @@ internal class FabricMinecraftFontSnapshotTest {
             ),
             reads.toSet(),
         )
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { ResourceFontBackend() }).use { engine ->
+        MinecraftFontEngine(snapshot, { ResourceFontBackend() }).use { engine ->
             val font = ResourceId("minecraft", "default")
             assertEquals(9.0f, engine.glyph(font, 'A'.code).advance)
             assertEquals(2.0f, engine.glyph(font, 'L'.code).advance)

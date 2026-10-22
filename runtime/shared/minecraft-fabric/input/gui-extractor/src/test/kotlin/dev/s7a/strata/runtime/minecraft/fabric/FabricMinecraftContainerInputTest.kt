@@ -47,13 +47,10 @@ internal class FabricMinecraftContainerInputTest {
     fun failedNativeCompletionDoesNotPoisonTheNextInputTransaction() {
         for (consumed in listOf(false, true)) {
             val failure = IllegalStateException("native completion")
-            val bridge = bridgeWithFailingCompletion(failure)
-            try {
+            bridgeWithFailingCompletion(failure).use { bridge ->
                 val actual = assertThrows(IllegalStateException::class.java) { bridge.withMouseRelease(mouse()) { consumed } }
                 assertSame(failure, actual)
                 assertTrue(bridge.withPointerMove { true })
-            } finally {
-                bridge.close()
             }
         }
     }
@@ -62,13 +59,10 @@ internal class FabricMinecraftContainerInputTest {
     fun failedHostDispatchSkipsNativeCompletionAndAllowsTheNextTransaction() {
         val nativeFailure = IllegalArgumentException("native completion")
         val hostFailure = IllegalStateException("host dispatch")
-        val bridge = bridgeWithFailingCompletion(nativeFailure)
-        try {
+        bridgeWithFailingCompletion(nativeFailure).use { bridge ->
             val actual = assertThrows(IllegalStateException::class.java) { bridge.withMouseRelease(mouse()) { throw hostFailure } }
             assertSame(hostFailure, actual)
             assertTrue(bridge.withPointerMove { true })
-        } finally {
-            bridge.close()
         }
     }
 

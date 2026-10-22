@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import kotlin.math.nextDown
+import kotlin.math.nextUp
 
 /**
  * Verifies bounded fractional-source admission independently of native textures.
@@ -20,7 +22,7 @@ internal class FabricMinecraftSourceSamplingTest {
     @Test
     fun sourceTexelBoundaryUsesFallbackWhileEvenDensityKeepsDirectSampling() {
         for (scale in 1..4) assertEquals(scale == 2 || scale == 4, isDirectFabricSampledImage(crop, scale, fractionalSource = true))
-        val close = crop.copy(source = FloatRect(0.25f, 0.25f, Math.nextUp(1.75f), 1.75f))
+        val close = crop.copy(source = FloatRect(0.25f, 0.25f, 1.75f.nextUp(), 1.75f))
         assertFalse(isDirectFabricSampledImage(close, 1, fractionalSource = true))
         val mixed = crop.copy(image = createDrawImage(IntSize(2, 4), IntArray(8) { -1 }), source = FloatRect(0.5f, 0f, 1.5f, 4f))
         for (scale in 1..4) assertEquals(scale == 4, isDirectFabricSampledImage(mixed, scale, fractionalSource = true))
@@ -52,7 +54,7 @@ internal class FabricMinecraftSourceSamplingTest {
         assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 0.5f), exactSampling = true))
         assertTrue(isDirectFabricSampledImage(crop.copy(alphaCutoff = 1f), exactSampling = true))
         assertTrue(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 1f), exactSampling = true))
-        assertFalse(isDirectFabricSampledImage(crop.copy(alphaCutoff = Math.nextDown(1f)), exactSampling = true))
+        assertFalse(isDirectFabricSampledImage(crop.copy(alphaCutoff = 1f.nextDown()), exactSampling = true))
         assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF7FFFFF.toInt())), exactSampling = true))
         assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF00FFFF.toInt())), fractionalSource = true))
         assertFalse(isDirectFabricSampledImage(crop.copy(destination = FloatRect(0f, 0f, 4097f, 5f)), exactSampling = true))

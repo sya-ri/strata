@@ -100,7 +100,7 @@ internal class MinecraftTextFieldTest {
         val state = TextFieldState("A")
         val compactSize = IntSize(200, 15)
         val host = host(state, size = compactSize)
-        try {
+        host.use { _ ->
             host.attach()
             val frame = host.frame(compactSize)
             val commands = frame.drawCommands.map { command -> command as DrawCommand.BlitImage }
@@ -123,8 +123,6 @@ internal class MinecraftTextFieldTest {
             val image = rasterizeHeadless(frame.drawCommands, compactSize)
             assertEquals(0xFFE0E0E0.toInt(), image.argbAt(4, 3))
             assertEquals(0xFF383838.toInt(), image.argbAt(5, 4))
-        } finally {
-            host.close()
         }
 
         val invalid = host(state, size = IntSize(8, 15))
@@ -136,8 +134,7 @@ internal class MinecraftTextFieldTest {
     fun focusedEmptyFieldUsesTheNativeAppendCursorGlyphAndSelectedTextStyle() {
         val compactSize = IntSize(200, 15)
         val state = TextFieldState("", maxLength = 16)
-        val host = host(state, Modifier.initialFocus(), compactSize, TextStyle.Normal)
-        try {
+        host(state, Modifier.initialFocus(), compactSize, TextStyle.Normal).use { host ->
             host.attach()
             val commands = host.frame(compactSize).drawCommands
             assertTrue(commands.all { command -> command is DrawCommand.BlitImage })
@@ -148,8 +145,6 @@ internal class MinecraftTextFieldTest {
             val cursorCommands = commands.takeLast(2).map { command -> command as DrawCommand.BlitImage }
             assertTrue(cursorCommands[0].image.copyArgb().contains(0xFF3F3F3F.toInt()))
             assertTrue(cursorCommands[1].image.copyArgb().contains(0xFFFFFFFF.toInt()))
-        } finally {
-            host.close()
         }
     }
 
@@ -199,15 +194,12 @@ internal class MinecraftTextFieldTest {
     @Test
     fun backspaceThenInsertionMovesTheCursorOnlyOnce() {
         val state = TextFieldState("ABC")
-        val host = host(state, Modifier.initialFocus())
-        try {
+        host(state, Modifier.initialFocus()).use { host ->
             host.attach()
             host.frame(fieldSize)
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Backspace, 0))
             host.dispatchTextInput(TextInputEvent.Character('D'.code))
             assertEquals("ABD", state.value)
-        } finally {
-            host.close()
         }
     }
 
@@ -215,15 +207,12 @@ internal class MinecraftTextFieldTest {
     fun pointerCursorPlacementStartsAtTheVisibleScrolledText() {
         val state = TextFieldState("AAAAAAA")
         val compactSize = IntSize(12, 20)
-        val host = host(state, Modifier.initialFocus(), compactSize)
-        try {
+        host(state, Modifier.initialFocus(), compactSize).use { host ->
             host.attach()
             host.frame(compactSize)
             host.dispatchPointer(PointerEvent.Press(IntOffset(4, 10), PointerButton.Primary))
             host.dispatchTextInput(TextInputEvent.Character('B'.code))
             assertEquals("AAAAABAA", state.value)
-        } finally {
-            host.close()
         }
     }
 

@@ -107,7 +107,7 @@ internal class RuntimeUiSessionBridgeTest {
                         modifier =
                             Modifier
                                 .size(2, 1)
-                                .onHover({ value -> transitions.add(value) }),
+                                .onHover { value -> transitions.add(value) },
                     )
                 }
             }
@@ -280,7 +280,7 @@ internal class RuntimeUiSessionBridgeTest {
     }
 
     private fun wrongThread(action: () -> Unit): Throwable? {
-        val task = FutureTask<Throwable?> { runCatching(action).exceptionOrNull() }
+        val task = FutureTask { runCatching(action).exceptionOrNull() }
         val thread = Thread(task)
         thread.start()
         return task.get(5, TimeUnit.SECONDS)

@@ -62,8 +62,7 @@ internal class PortableContractsTest {
         val text = "01234567-89ab-cdef-8123-456789abcdef"
         val state = mutableStateOf(PlayerSkinSource.Uuid(parseUuid(text)))
         var invalidations = 0
-        val observation = StateObservation({}, {}, { invalidations += 1 }, {})
-        try {
+        StateObservation({}, {}, { invalidations += 1 }, {}).use { observation ->
             observation.evaluate { state.value }
             state.value = PlayerSkinSource.Uuid(parseUuid(text.uppercase()))
             assertEquals(0, invalidations)
@@ -71,8 +70,6 @@ internal class PortableContractsTest {
             state.value = PlayerSkinSource.Uuid(changed)
             assertEquals(1, invalidations)
             assertEquals(changed, state.value.value)
-        } finally {
-            observation.close()
         }
     }
 }

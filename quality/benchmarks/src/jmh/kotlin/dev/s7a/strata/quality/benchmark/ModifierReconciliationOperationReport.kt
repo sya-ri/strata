@@ -9,7 +9,6 @@ import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Mutation
 import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Scene
 import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Workload
-import dev.s7a.strata.runtime.UiTree
 import java.nio.file.Path
 
 /**
@@ -39,7 +38,7 @@ public object ModifierReconciliationOperationReport : JvmOperationReportAdapter 
             try {
                 scene.setUp()
                 val sample =
-                    JvmPerformanceRunner.measure<UiTree>(row.id, plan) {
+                    JvmPerformanceRunner.measure(row.id, plan) {
                         benchmark.update(scene)
                     }
                 row.id to sample.evidence

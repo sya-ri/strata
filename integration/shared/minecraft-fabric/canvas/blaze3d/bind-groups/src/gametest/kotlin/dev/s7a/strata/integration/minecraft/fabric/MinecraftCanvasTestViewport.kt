@@ -1,53 +1,44 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.mixin.canvas.MinecraftCanvasWindowTestAccess
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.minecraft.client.Minecraft
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 
 /**
- * Configures the requested logical and framebuffer test extents while preserving a stable native Vulkan surface.
- *
- * OpenGL delegates native resize ownership and framebuffer scaling to Fabric.
- * Vulkan borrows the active client window on the render thread, applies [logicalSize] and [framebufferSize] independently, and resizes the main target without changing the platform window or swapchain.
- * Invalid dimensions fail before scheduling; unsupported backends, scheduling failures, and target resize failures propagate unchanged.
+ * Resizes the native OpenGL window and waits for its framebuffer and main render target to settle.
+ * Vulkan retains its platform surface while updating the independently owned test viewport and target.
+ * Callers own restoration; invalid dimensions, native failures, and bounded readiness failures propagate unchanged.
  */
 internal fun resizeMinecraftTestWindow(
-    context: ClientGameTestContext,
+    context: MinecraftLoadedTestContext,
     logicalSize: IntSize,
     framebufferSize: IntSize = logicalSize,
 ) {
     require(0 < logicalSize.width && 0 < logicalSize.height) { "Minecraft acceptance requires a positive logical viewport." }
     require(0 < framebufferSize.width && 0 < framebufferSize.height) { "Minecraft acceptance requires a positive framebuffer." }
-    val backend =
-        context.computeOnClient(
-            FailableFunction<Minecraft, MinecraftCanvasTestBackend, RuntimeException> {
-                MinecraftCanvasTestBackend.parse(RenderSystem.getDevice().deviceInfo.backendName())
-            },
-        )
-    when (backend) {
-        MinecraftCanvasTestBackend.OpenGl -> {
-            context.input.resizeWindow(logicalSize.width, logicalSize.height)
+    val backend = context.computeOnClient { MinecraftCanvasTestBackend.parse(RenderSystem.getDevice().deviceInfo.backendName()) }
+    if (backend == MinecraftCanvasTestBackend.Vulkan) {
+        context.runOnClient { minecraft ->
+            val window = minecraft.window
+            val access = MinecraftCanvasWindowTestAccess::class.java.cast(window)
+            access.strataCanvasSetScreenWidth(logicalSize.width)
+            access.strataCanvasSetScreenHeight(logicalSize.height)
+            window.width = framebufferSize.width
+            window.height = framebufferSize.height
+            minecraft.gameRenderer.mainRenderTarget().resize(framebufferSize.width, framebufferSize.height)
         }
-
-        MinecraftCanvasTestBackend.Vulkan -> {
-            context.runOnClient(
-                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                    val window = minecraft.window
-                    val access = window as Any as MinecraftCanvasWindowTestAccess
-                    access.strataCanvasSetScreenWidth(logicalSize.width)
-                    access.strataCanvasSetScreenHeight(logicalSize.height)
-                    window.setWidth(framebufferSize.width)
-                    window.setHeight(framebufferSize.height)
-                    minecraft.gameRenderer.mainRenderTarget().resize(framebufferSize.width, framebufferSize.height)
-                },
-            )
-        }
+        return
+    }
+    context.runOnClient { minecraft -> minecraft.window.setWindowed(logicalSize.width, logicalSize.height) }
+    var matches = 0
+    context.waitFor { minecraft ->
+        val window = minecraft.window
+        val target = minecraft.gameRenderer.mainRenderTarget()
+        val settled =
+            window.screenWidth == logicalSize.width && window.screenHeight == logicalSize.height &&
+                window.width == framebufferSize.width && window.height == framebufferSize.height &&
+                target.width == framebufferSize.width && target.height == framebufferSize.height
+        matches = if (settled) matches + 1 else 0
+        2 <= matches
     }
 }

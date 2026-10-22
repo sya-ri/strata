@@ -10,7 +10,7 @@ import kotlin.test.assertFails
 /**
  * Verifies owner/overload identity and fail-closed compiler-format decoding without timing assertions.
  */
-class CompilerApiInventoryTest {
+internal class CompilerApiInventoryTest {
     @field:TempDir lateinit var directory: Path
 
     @Test

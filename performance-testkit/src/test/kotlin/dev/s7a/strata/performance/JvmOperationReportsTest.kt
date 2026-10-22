@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 /**
  * Exercises compiled hook admission and complete operation boundaries without starting JMH forks.
  */
-class JvmOperationReportsTest {
+internal class JvmOperationReportsTest {
     @Test
     fun failedOriginalWorkCannotStartSupplementalSampling() {
         val failure = IllegalStateException("Original work failed")

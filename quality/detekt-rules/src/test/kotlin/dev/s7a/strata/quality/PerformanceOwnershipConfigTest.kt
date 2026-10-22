@@ -23,20 +23,7 @@ internal class PerformanceOwnershipConfigTest {
             val source =
                 engine.compile(
                     code =
-                        """
-                        import kotlin.time.*
-                        import kotlin.time.TimeSource.Monotonic.markNow as clock
-                        fun clocks(source: TimeSource, mark: TimeMark, comparable: ComparableTimeMark, value: TimeSource.Monotonic.ValueTimeMark) {
-                            source.markNow()
-                            TimeSource.Monotonic.markNow()
-                            clock()
-                            mark.elapsedNow()
-                            comparable.elapsedNow()
-                            value.elapsedNow()
-                            val capture = TimeSource.Monotonic::markNow
-                            val elapsed = mark::elapsedNow
-                        }
-                        """.trimIndent(),
+                        DetektTestSources.read("performance-ownership-config/monotonic-marks-aliases-and-references-cannot-become-independent-collectors"),
                 )
             assertEquals(8, ForbiddenMethodCall(config).visitFile(source, LanguageVersionSettingsImpl.DEFAULT).size)
         }
@@ -55,28 +42,13 @@ internal class PerformanceOwnershipConfigTest {
             val source =
                 engine.compile(
                     code =
-                        """
-                        import java.lang.management.ManagementFactory
-                        fun clocks() {
-                            System.nanoTime()
-                            System.currentTimeMillis()
-                            val clock = System::nanoTime
-                            clock()
-                            ManagementFactory.getThreadMXBean().currentThreadCpuTime
-                            ManagementFactory.getGarbageCollectorMXBeans()
-                        }
-                        """.trimIndent(),
+                        DetektTestSources.read("performance-ownership-config/clocks-and-accounting-cannot-become-independent-jmh-collectors"),
                 )
             assertEquals(6, ForbiddenMethodCall(config).visitFile(source, LanguageVersionSettingsImpl.DEFAULT).size)
             val allowed =
                 engine.compile(
                     code =
-                        """
-                        import java.lang.management.ManagementFactory
-                        class InputClock { fun nanoTime(): Long = 1 }
-                        fun input() = InputClock().nanoTime()
-                        fun configuration() = ManagementFactory.getRuntimeMXBean().inputArguments
-                        """.trimIndent(),
+                        DetektTestSources.read("performance-ownership-config/clocks-and-accounting-cannot-become-independent-jmh-collectors-2"),
                 )
             assertEquals(0, ForbiddenMethodCall(config).visitFile(allowed, LanguageVersionSettingsImpl.DEFAULT).size)
         }

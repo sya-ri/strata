@@ -3,12 +3,13 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.runtime.minecraft.font.FontTestBackend
 import dev.s7a.strata.runtime.minecraft.font.FontTestFace
 import dev.s7a.strata.runtime.minecraft.font.FontTestResources
-import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.Random
+import kotlin.math.nextDown
+import kotlin.math.nextUp
 
 /**
  * Checks attained-extrema suffix searches against independent scalar-order native rounding.
@@ -96,7 +97,7 @@ internal class MinecraftScalarSuffixTest {
         val alphabet = listOf("A", "B", "C", "D", "🙂")
         for (saturating in listOf(false, true)) {
             repeat(32) {
-                val values = List(3) { Float.fromBits(random.nextInt()) } + listOf(Math.nextDown(Int.MAX_VALUE.toFloat()), Math.nextUp(Int.MAX_VALUE.toFloat()))
+                val values = List(3) { Float.fromBits(random.nextInt()) } + listOf(Int.MAX_VALUE.toFloat().nextDown(), Int.MAX_VALUE.toFloat().nextUp())
                 val metrics = alphabet.mapIndexed { index, text -> text.codePointAt(0) to values[index] }.toMap()
                 renderer(metrics, saturating).use { renderer ->
                     val text = List(32) { alphabet[random.nextInt(alphabet.size)] }.joinToString("")
@@ -149,6 +150,6 @@ internal class MinecraftScalarSuffixTest {
                     MinecraftFontGlyph(metrics.getValue(codePoint), 0f, 0f, 0f, 0f, null)
                 })
             })
-        return MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0))
+        return MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0))
     }
 }

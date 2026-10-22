@@ -17,7 +17,7 @@ internal class MinecraftNativeNumericFontScreen(
         mouseY: Int,
         partialTick: Float,
     ) {
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.background)
+        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.BACKGROUND)
     }
 
     override fun extractRenderState(

@@ -20,7 +20,7 @@ internal class UiTextCompositionTest {
         val font = first.withFont(ResourceId("test", "font"))
         val translated = UiText.Translated("test.label", listOf(UiTextArgument.Text(first)), TranslationFallback.UseKey)
         val nested = UiText.Concatenated(first, translated)
-        val source = mutableListOf<UiText>(first, font, translated, nested, first)
+        val source = mutableListOf(first, font, translated, nested, first)
         val expected = source.toList()
         val values = listOf(UiText.Concatenated(source), UiText.Concatenated(*source.toTypedArray()), UiText.concat(*source.toTypedArray()))
         source.clear()
@@ -59,7 +59,7 @@ internal class UiTextCompositionTest {
     @Test
     fun emptyAndSingletonFactoriesKeepTheirExistingContracts() {
         val singleton = UiText.Translated("test.singleton", "fallback")
-        assertEquals(UiText.Literal(""), UiText.concat())
+        assertEquals(expected = UiText.Literal(""), actual = UiText.concat())
         assertSame(singleton, UiText.concat(singleton))
         assertSame(singleton, UiText.Concatenated(singleton).parts.single())
         assertSame(singleton, UiText.Concatenated(listOf(singleton)).parts.single())

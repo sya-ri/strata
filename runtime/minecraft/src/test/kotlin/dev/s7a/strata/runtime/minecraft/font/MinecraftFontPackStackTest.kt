@@ -275,6 +275,6 @@ internal class MinecraftFontPackStackTest {
         snapshot: MinecraftFontSnapshot,
         action: (MinecraftFontEngine) -> Unit,
     ) {
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { FontTestBackend() }).use(action)
+        MinecraftFontEngine(snapshot, { FontTestBackend() }).use(action)
     }
 }

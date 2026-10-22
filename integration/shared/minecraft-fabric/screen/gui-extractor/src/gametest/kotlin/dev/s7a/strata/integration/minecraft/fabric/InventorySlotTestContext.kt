@@ -3,20 +3,14 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.minecraft.client.Minecraft
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.input.MouseButtonInfo
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Predicate
 
 /**
  * Borrows one loaded client and integrated-server player for a single inventory verification invocation.
@@ -25,19 +19,15 @@ import java.util.function.Predicate
  * The caller retains the world lifetime and is responsible for restoring scenario state.
  */
 internal class InventorySlotTestContext(
-    internal val client: ClientGameTestContext,
+    internal val client: MinecraftLoadedTestContext,
 ) {
     /**
      * Borrowed integrated server; access native state only inside a scheduled server callback.
      */
     internal val server: MinecraftServer =
-        client.computeOnClient(
-            FailableFunction<Minecraft, MinecraftServer, RuntimeException> { minecraft -> checkNotNull(minecraft.singleplayerServer) },
-        )
+        client.computeOnClient { minecraft -> checkNotNull(minecraft.singleplayerServer) }
     private val playerId =
-        client.computeOnClient(
-            FailableFunction<Minecraft, UUID, RuntimeException> { minecraft -> checkNotNull(minecraft.player).uuid },
-        )
+        client.computeOnClient { minecraft -> checkNotNull(minecraft.player).uuid }
 
     /**
      * Waits until the client inventory reflects the requested item in one native slot.
@@ -46,12 +36,10 @@ internal class InventorySlotTestContext(
         index: Int,
         item: Item,
     ) {
-        client.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val player = minecraft.player ?: return@Predicate false
-                player.inventory.getItem(index).`is`(item)
-            },
-        )
+        client.waitFor { minecraft ->
+            val player = minecraft.player ?: return@waitFor false
+            player.inventory.getItem(index).`is`(item)
+        }
     }
 
     /**
@@ -60,14 +48,12 @@ internal class InventorySlotTestContext(
     internal fun clickSlot(
         pointer: IntOffset,
     ) {
-        client.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen ?: error("The synchronized Slot screen is not active.")
-                val event = mouseEvent(pointer, InputConstants.MOUSE_BUTTON_LEFT)
-                check(screen.mouseClicked(event, false)) { "The synchronized Slot must consume a primary press." }
-                check(screen.mouseReleased(event)) { "The synchronized Slot must consume the matching release." }
-            },
-        )
+        client.runOnClient { minecraft ->
+            val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen ?: error("The synchronized Slot screen is not active.")
+            val event = mouseEvent(pointer, InputConstants.MOUSE_BUTTON_LEFT)
+            check(screen.mouseClicked(event, false)) { "The synchronized Slot must consume a primary press." }
+            check(screen.mouseReleased(event)) { "The synchronized Slot must consume the matching release." }
+        }
     }
 
     /**
@@ -78,15 +64,13 @@ internal class InventorySlotTestContext(
     ) {
         val completed = AtomicBoolean()
         val failure = AtomicReference<Throwable?>()
-        server.execute(
-            Runnable {
-                runCatching { operation(checkNotNull(server.playerList.getPlayer(playerId))) }
-                    .exceptionOrNull()
-                    ?.let(failure::set)
-                completed.set(true)
-            },
-        )
-        client.waitFor(Predicate<Minecraft> { completed.get() })
+        server.execute {
+            runCatching { operation(checkNotNull(server.playerList.getPlayer(playerId))) }
+                .exceptionOrNull()
+                ?.let(failure::set)
+            completed.set(true)
+        }
+        client.waitFor { completed.get() }
         failure.get()?.let { throwable -> throw throwable }
     }
 
@@ -99,26 +83,22 @@ internal class InventorySlotTestContext(
         val matched = AtomicBoolean()
         val pending = AtomicBoolean()
         val failure = AtomicReference<Throwable?>()
-        client.waitFor(
-            Predicate<Minecraft> {
-                failure.get()?.let { throwable -> throw throwable }
-                if (matched.get()) {
-                    true
-                } else {
-                    if (pending.compareAndSet(false, true)) {
-                        server.execute(
-                            Runnable {
-                                runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
-                                    .exceptionOrNull()
-                                    ?.let(failure::set)
-                                pending.set(false)
-                            },
-                        )
+        client.waitFor {
+            failure.get()?.let { throwable -> throw throwable }
+            if (matched.get()) {
+                true
+            } else {
+                if (pending.compareAndSet(false, true)) {
+                    server.execute {
+                        runCatching { matched.set(condition(checkNotNull(server.playerList.getPlayer(playerId)))) }
+                            .exceptionOrNull()
+                            ?.let(failure::set)
+                        pending.set(false)
                     }
-                    false
                 }
-            },
-        )
+                false
+            }
+        }
         failure.get()?.let { throwable -> throw throwable }
     }
 
@@ -126,13 +106,11 @@ internal class InventorySlotTestContext(
      * Closes the active Strata screen on the client and waits for its removal.
      */
     internal fun closeScreen() {
-        client.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                if (current is FabricMinecraftScreen) current.onClose()
-            },
-        )
-        client.waitFor(Predicate<Minecraft> { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() })
+        client.runOnClient { minecraft ->
+            val current = MinecraftClientScreenAccess.currentScreen(minecraft)
+            if (current is FabricMinecraftScreen) current.onClose()
+        }
+        client.waitFor { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() }
     }
 
     /**

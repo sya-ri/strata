@@ -76,7 +76,7 @@ internal class HeadlessTranslucentFillTest {
                 IntArray(viewport.width * viewport.height * scale * scale) { index ->
                     val x = index % (viewport.width * scale) / scale
                     var color = if (x < 2) over(imageColor, uniform) else uniform
-                    if (1 <= x && x < 3) color = over(0x80334455.toInt(), color)
+                    if (x in 1..<3) color = over(0x80334455.toInt(), color)
                     over(0x80112233.toInt(), color)
                 }
             assertArrayEquals(expected, rasterizeHeadless(commands, viewport, scale).copyArgb())
@@ -118,7 +118,7 @@ internal class HeadlessTranslucentFillTest {
                                 var color = over(palette[if (uniform) 2 else (x.toInt() + y.toInt()) % palette.size], 0)
                                 val withinX = bounds.left <= x && x < bounds.right
                                 val withinY = bounds.top <= y && y < bounds.bottom
-                                val integerClipX = 1 <= x && x < 7
+                                val integerClipX = x in 1.0..<7.0
                                 val fractionalClipX = clip.left <= x && x < clip.right
                                 val fractionalClipY = clip.top <= y && y < clip.bottom
                                 val covered = withinX && withinY && integerClipX

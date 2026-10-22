@@ -1,0 +1,1 @@
+fun create(): java.util.UUID = java.util.UUID.randomUUID()

@@ -1,0 +1,3 @@
+fun check(text: String, values: List<String>, value: Any): Boolean {
+    return text != "" || text !in values || value !is String
+}

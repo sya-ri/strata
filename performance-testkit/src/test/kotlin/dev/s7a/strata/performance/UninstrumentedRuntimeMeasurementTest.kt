@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 /**
  * External collection remains usable without runtime hooks and never substitutes zero for unavailable work.
  */
-class UninstrumentedRuntimeMeasurementTest {
+internal class UninstrumentedRuntimeMeasurementTest {
     @Test
     fun workWindowExecutesRealOperationsWithoutCreatingRuntimeCounters() {
         val owner = UninstrumentedOwner()

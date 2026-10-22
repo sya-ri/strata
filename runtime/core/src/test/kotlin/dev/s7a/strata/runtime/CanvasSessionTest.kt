@@ -169,12 +169,10 @@ internal class CanvasSessionTest {
         val later = image(3)
         lateinit var observer: (StateSnapshot<ComparisonValue>) -> Unit
         val session = session(source)
-        session.bind(
-            StateSource { callback ->
-                observer = callback
-                StateSubscription(StateSnapshot(StateRevision(1), ComparisonValue(1) { frames.publish(later) })) {}
-            },
-        )
+        session.bind { callback ->
+            observer = callback
+            StateSubscription(StateSnapshot(StateRevision(1), ComparisonValue(1) { frames.publish(later) })) {}
+        }
         session.attach()
         session.frame(Constraints.fixed(1, 1))
         frames.publish(cutoff)

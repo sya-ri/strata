@@ -37,15 +37,13 @@ internal class CanvasSourceTest {
         pixels.fill(0)
         image.copyArgb().fill(0)
         val scope = Scope(IntSize(8, 6))
-        try {
+        binding.use { _ ->
             binding.paint(scope)
             assertSame(image, scope.image)
             assertEquals(0xFFFF0000.toInt(), scope.image?.argbAt(0, 0))
             assertEquals(0xFF0000FF.toInt(), scope.image?.argbAt(1, 0))
             assertEquals(IntRect(0, 0, 2, 1), scope.source)
             assertEquals(IntRect(0, 0, 8, 6), scope.destination)
-        } finally {
-            binding.close()
         }
     }
 
@@ -55,12 +53,10 @@ internal class CanvasSourceTest {
         var subscriptions = 0
         var closes = 0
         val source =
-            canvasSource(
-                StateSource {
-                    subscriptions += 1
-                    StateSubscription(initial) { closes += 1 }
-                },
-            )
+            canvasSource {
+                subscriptions += 1
+                StateSubscription(initial) { closes += 1 }
+            }
         assertEquals(0, subscriptions)
 
         val first = source.open(CanvasId(1))
@@ -78,20 +74,17 @@ internal class CanvasSourceTest {
         val initial = snapshot(1)
         val latest = snapshot(2)
         val source =
-            StateSource<DrawImage> { observer ->
+            StateSource { observer ->
                 observer(latest)
                 StateSubscription(initial) {}
             }
-        val binding = canvasSource(source).open(CanvasId(1))
-        try {
+        canvasSource(source).open(CanvasId(1)).use { binding ->
             assertSame(initial.value, paintedImage(binding))
             binding.captureFrame()
             assertTrue(binding.commitFrame())
             assertSame(latest.value, paintedImage(binding))
             binding.captureFrame()
             assertFalse(binding.commitFrame())
-        } finally {
-            binding.close()
         }
     }
 
@@ -99,16 +92,14 @@ internal class CanvasSourceTest {
     fun arbitraryThreadCallbacksOnlyReplaceTheLatestPendingRevision() {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
         val binding =
-            canvasSource(
-                StateSource { callback ->
-                    observer = callback
-                    StateSubscription(snapshot(1)) {}
-                },
-            ).open(CanvasId(1))
-        try {
+            canvasSource { callback ->
+                observer = callback
+                StateSubscription(snapshot(1)) {}
+            }.open(CanvasId(1))
+        binding.use { _ ->
             val initialImage = paintedImage(binding)
             val task =
-                FutureTask<Unit> {
+                FutureTask {
                     (2..500).forEach { revision -> observer(snapshot(revision.toLong())) }
                 }
             Thread(task).start()
@@ -124,8 +115,6 @@ internal class CanvasSourceTest {
             assertFalse(binding.commitFrame())
             assertEquals(snapshot(500).value, paintedImage(binding))
             assertEquals(listOf(500L), retainedSnapshots(binding).map { it.revision.value })
-        } finally {
-            binding.close()
         }
         observer(snapshot(600))
         assertTrue(retainedSnapshots(binding).isEmpty())
@@ -134,14 +123,10 @@ internal class CanvasSourceTest {
     @Test
     fun cutoffRetainsOnlyOneTemporaryObservationAndDoesNotConsumeALaterCallback() {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
-        val binding =
-            canvasSource(
-                StateSource { callback ->
-                    observer = callback
-                    StateSubscription(snapshot(1)) {}
-                },
-            ).open(CanvasId(1))
-        try {
+        canvasSource { callback ->
+            observer = callback
+            StateSubscription(snapshot(1)) {}
+        }.open(CanvasId(1)).use { binding ->
             observer(snapshot(2))
             binding.captureFrame()
             observer(snapshot(3))
@@ -153,8 +138,6 @@ internal class CanvasSourceTest {
             assertTrue(binding.commitFrame())
             assertEquals(snapshot(3).value, paintedImage(binding))
             assertEquals(listOf(3L), retainedSnapshots(binding).map { it.revision.value })
-        } finally {
-            binding.close()
         }
     }
 
@@ -163,12 +146,10 @@ internal class CanvasSourceTest {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
         var closes = 0
         val binding =
-            canvasSource(
-                StateSource { callback ->
-                    observer = callback
-                    StateSubscription(snapshot(1)) { closes += 1 }
-                },
-            ).open(CanvasId(1))
+            canvasSource { callback ->
+                observer = callback
+                StateSubscription(snapshot(1)) { closes += 1 }
+            }.open(CanvasId(1))
         observer(StateSnapshot(StateRevision(2), createDrawImage(IntSize.Zero, intArrayOf())))
         binding.captureFrame()
         assertThrows(IllegalArgumentException::class.java) { binding.commitFrame() }
@@ -183,14 +164,12 @@ internal class CanvasSourceTest {
         var closes = 0
         val empty = createDrawImage(IntSize.Zero, intArrayOf())
         val source =
-            canvasSource(
-                StateSource {
-                    StateSubscription(StateSnapshot(StateRevision(0), empty)) {
-                        closes += 1
-                        throw cleanupFailure
-                    }
-                },
-            )
+            canvasSource {
+                StateSubscription(StateSnapshot(StateRevision(0), empty)) {
+                    closes += 1
+                    throw cleanupFailure
+                }
+            }
         val failure = assertThrows(IllegalArgumentException::class.java) { source.open(CanvasId(1)) }
         assertEquals(listOf(cleanupFailure), failure.suppressed.toList())
         assertEquals(1, closes)

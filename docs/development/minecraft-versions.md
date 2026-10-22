@@ -124,7 +124,9 @@ Detekt checks every selected Kotlin main and test root instead of a list of indi
 ## Integration runner boundaries
 
 The nonpublished `integration:minecraft-fabric-1.21.11` through `integration:minecraft-fabric-1.20` modules compile the complete shared GUI-graphics loaded-client suite and the matching input-generation and version-name roots against their remapped adapters, required Java toolchains, and exact Fabric API dependencies.
-Minecraft 1.21.4 and later use the Fabric Client GameTest adapter source root, while 1.21.3 through 1.20 use a standalone client entrypoint because their exact official Fabric API fixtures predate that module; 1.20.4 through 1.20.2 share the runner bridge needed for their dirt-message and level-cleanup APIs, while 1.20 and 1.20.1 share the compiler-proven preceding readiness and level-clear variant in exact owning projects.
+Every supported version uses the shared standalone client coordinator for bounded client/server handoffs, tick waits, screenshots, and disposable-world ownership.
+Each target explicitly selects the native world, pointer, and screenshot adapters that compile against its exact APIs.
+Development and production tasks activate the verification entrypoint through `strata.clientVerification`; ordinary client launches do not start acceptance.
 Fabric API is required by both published runtimes and integration modules.
 The generated Minecraft CI plan invokes `ciMinecraftCheck` for every discovered version pair and writes version-qualified build evidence after exercising each remapped adapter inside its actual client.
 Those checks package and remap every applicable integration test Mod and runtime Mod, then repeat the loaded suite from the production jars with their nested common runtime jars.

@@ -26,13 +26,26 @@ fabricApi {
         createSourceSet = true
         modId = "strata-integration-minecraft-fabric-26-1"
         enableGameTests = false
-        enableClientGameTests = true
+        enableClientGameTests = false
         eula = true
+    }
+}
+
+loom {
+    runs.register("clientGameTest") {
+        client()
+        sourceSet.set("gametest")
+        runDirectory.set(layout.buildDirectory.dir("run/clientGameTest"))
+        generateRunConfig.set(false)
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/extracted/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/typed-rules/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/named/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDirs(
@@ -62,13 +75,11 @@ extensions.configure<SourceSetContainer> {
 
 val gametestSourceSet = extensions.getByType<SourceSetContainer>().named("gametest")
 tasks.named<ProcessResources>("processGametestResources") {
-    val gameTestEntrypoint = "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientGameTest"
     val gameTestMixins = listOf("strata.canvas.tests.mixins.json")
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft261)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-1")
     inputs.property("runtimeModId", "strata")
-    inputs.property("gameTestEntrypoint", gameTestEntrypoint)
     inputs.property("gameTestMixins", gameTestMixins)
     filesMatching("fabric.mod.json") {
         expand(
@@ -76,7 +87,6 @@ tasks.named<ProcessResources>("processGametestResources") {
             "minecraftVersion" to libs.versions.minecraft261.get(),
             "integrationModId" to "strata-integration-minecraft-fabric-26-1",
             "runtimeModId" to "strata",
-            "gameTestEntrypoint" to gameTestEntrypoint,
             "gameTestMixins" to JsonOutput.toJson(gameTestMixins),
         )
     }
@@ -119,7 +129,6 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     mods.from(runtimeJar)
     runDir.set(productionRunDirectory)
     programArgs.addAll(showcaseClientIdentityArguments)
-    jvmArgs.add("-Dfabric.client.gametest")
     providers.gradleProperty("strata.fabric.address").orNull?.let { jvmArgs.add("-Dstrata.fabric.address=$it") }
     providers.gradleProperty("strata.fabric.run").orNull?.let { jvmArgs.add("-Dstrata.fabric.run=$it") }
     val verificationOutput = layout.buildDirectory.dir("minecraft-production-parity")
@@ -136,6 +145,7 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 }
 
 tasks.named<JavaExec>("runClientGameTest") {
+    args(showcaseClientIdentityArguments)
     providers.gradleProperty("strata.fabric.address").orNull?.let { systemProperty("strata.fabric.address", it) }
     providers.gradleProperty("strata.fabric.run").orNull?.let { systemProperty("strata.fabric.run", it) }
     val parityOutput = layout.buildDirectory.dir("minecraft-parity")

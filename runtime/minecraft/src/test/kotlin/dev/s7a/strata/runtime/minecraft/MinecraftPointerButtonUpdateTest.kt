@@ -139,11 +139,9 @@ internal class MinecraftPointerButtonUpdateTest {
                 },
                 MinecraftProfileFixture.create(),
             )
-        try {
+        host.use { _ ->
             host.attach()
             host.frame(IntSize(150, 20))
-        } finally {
-            host.close()
         }
         assertEquals(null, readPrivateField(host, "evaluator"))
         assertEquals(null, readPrivateField(host, "metadata"))

@@ -452,7 +452,7 @@ internal object ShowcaseScenarioCatalog {
             ScreenScenario(
                 DocumentedScreen.PowerMilestones,
                 SourceReference(
-                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
+                    "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressExample.kt",
                     "progress-screen",
                 ),
                 ShowcaseViewport(IntSize(320, 180), 1),
@@ -548,13 +548,13 @@ internal object ShowcaseScenarioCatalog {
 
     private fun overviewSource(): SourceReference =
         SourceReference(
-            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
+            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
             "overview",
         )
 
     private fun industrialSource(): SourceReference =
         SourceReference(
-            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
+            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftIndustrialExample.kt",
             "industrial-screen",
         )
 

@@ -9,7 +9,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasContext
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasRenderer
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureLease
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureOrigin
-import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureProvider
 import dev.s7a.strata.runtime.minecraft.fabric.canvasSource
 
 /**
@@ -112,7 +111,7 @@ internal class MinecraftCanvasTestFixture(
 
     private fun textureSource(origin: MinecraftCanvasTextureOrigin): CanvasSource =
         canvasSource(
-            MinecraftCanvasTextureProvider {
+            provider = {
                 val lease = resources.lease(origin)
                 check(lease.snapshot == null) { "Native acceptance must not supply a CPU snapshot." }
                 leasesOpened++

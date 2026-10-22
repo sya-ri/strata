@@ -1,0 +1,2 @@
+val enabled: Boolean = true
+val disabled = !enabled

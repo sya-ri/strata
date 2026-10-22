@@ -154,7 +154,7 @@ internal class MinecraftNativePerformanceProbe(
                 gpu = createGpuProbe(plan.samples)
                 context.setScreen(screen)
                 meter = MinecraftPerformanceMeter(screen)
-                checkNotNull(meter).begin(
+                meter.begin(
                     "$name presented scale $scale",
                     plan,
                     NativePerformanceFixture(
@@ -209,10 +209,9 @@ internal class MinecraftNativePerformanceProbe(
         screen: FabricMinecraftScreen,
     ): JsonObject {
         val result = context.onClient { meter.result().apply { add("pacing", options.pacingEvidence()) } }
-        val queries = gpu
-        if (queries != null) {
-            context.waitFor(2400) { queries.completed }
-            context.onClient { queries.append(result) }
+        if (gpu != null) {
+            context.waitFor(2400) { gpu.completed }
+            context.onClient { gpu.append(result) }
         }
         check(context.onClient { meter.receipt().get("samples").asInt } == plan.samples)
         result.addProperty("case", name)
@@ -252,16 +251,9 @@ internal class MinecraftNativePerformanceProbe(
         }
     }
 
-    // The optional class is compiled only for the native timestamp-query family; other targets report unavailable.
     private fun createGpuProbe(samples: Int): MinecraftNativeGpuProbe? {
         if (gpuQueries.not()) return null
-        val adapter =
-            try {
-                Class.forName("dev.s7a.strata.integration.minecraft.fabric.MinecraftGpuPerformanceProbe")
-            } catch (_: ClassNotFoundException) {
-                return null
-            }
-        return adapter.getConstructor(Int::class.javaPrimitiveType).newInstance(samples) as MinecraftNativeGpuProbe
+        return minecraftNativeGpuProbeFactory.create?.invoke(samples)
     }
 
     private val viewport = IntSize(1920, 1080)

@@ -1,0 +1,55 @@
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.extensions.DetektExtension
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.testing.Test
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+
+plugins {
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.detekt) apply false
+}
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "dev.detekt")
+    repositories { mavenCentral() }
+    extensions.configure<KotlinJvmProjectExtension> { jvmToolchain(17) }
+    extensions.configure<DetektExtension> {
+        source.setFrom(providers.provider {
+            this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.map { it.kotlin }
+        })
+    }
+    val javaVersion = 17
+__HOST_ANALYSIS_DECLARATION__
+}
+project(":integration:paper") {
+    dependencies {
+        add("implementation", project(":library"))
+        add("testImplementation", rootProject.libs.junit.jupiter)
+        add("testRuntimeOnly", rootProject.libs.junit.platform.launcher)
+    }
+    extensions.configure<KotlinJvmProjectExtension> {
+        sourceSets.named("main") { kotlin.srcDir(rootProject.file("host-main")) }
+        sourceSets.named("test") { kotlin.srcDir(rootProject.file("host-test")) }
+    }
+    tasks.withType<Test>().configureEach { useJUnitPlatform() }
+    if (providers.gradleProperty("fixture.combineSourceContexts").isPresent) {
+        tasks.named<Detekt>("detektMain") {
+            source(project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("test").map { it.kotlin })
+            debug.set(true)
+        }
+    }
+}
+tasks.register("verifyHostDetektCompilations") {
+    dependsOn(":integration:paper:detekt", ":integration:paper:test")
+    doLast {
+        val host = project(":integration:paper")
+        val main = host.tasks.named<Detekt>("detektMain").get()
+        val test = host.tasks.named<Detekt>("detektTest").get()
+        check(main.source.files == setOf(file("host-main/fixture/HostValue.kt"))) { "Production analysis must not include test inputs" }
+        check(test.source.files == setOf(file("host-test/fixture/LibraryValue.kt"), file("host-test/fixture/HostContextTest.kt"))) { "Test analysis lost its authored inputs" }
+        check(main.classpath.none { it.name.startsWith("junit-jupiter-api") }) { "Test libraries entered production analysis" }
+        check(test.classpath.any { it.name.startsWith("junit-jupiter-api") }) { "Test analysis lost its compiler library" }
+    }
+}

@@ -33,8 +33,9 @@ internal class FabricMinecraftSampledBoundsTest {
         val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
         val source = FloatRect(0f, 0f, 1f, 1f)
         val viewport = IntRect(0, 0, 320, 240)
-        val horizontal = DrawCommand.SampledImage(image, source, FloatRect(-2147483648f, 0f, 2147483648f, 1f))
-        val vertical = DrawCommand.SampledImage(image, source, FloatRect(0f, -2147483648f, 1f, 2147483648f))
+        val minimumCoordinate = Int.MIN_VALUE.toFloat()
+        val horizontal = DrawCommand.SampledImage(image, source, FloatRect(minimumCoordinate, 0f, -minimumCoordinate, 1f))
+        val vertical = DrawCommand.SampledImage(image, source, FloatRect(0f, minimumCoordinate, 1f, -minimumCoordinate))
 
         assertEquals(IntRect(0, 0, 320, 1), horizontal.destination.enclosingFabricViewportBounds(viewport))
         assertEquals(IntRect(0, 0, 1, 240), vertical.destination.enclosingFabricViewportBounds(viewport))
@@ -74,7 +75,8 @@ internal class FabricMinecraftSampledBoundsTest {
     @Test
     fun clippedTextureEnvelopePreservesTheOriginalSourceMappingAfterFloatLocalization() {
         val image = createDrawImage(IntSize(4, 2), IntArray(8) { index -> 0xFF101010.toInt() + index * 0x101010 })
-        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 2f), FloatRect(-2147483648f, -0.75f, 2147483648f, 9.25f))
+        val minimumCoordinate = Int.MIN_VALUE.toFloat()
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 2f), FloatRect(minimumCoordinate, -0.75f, -minimumCoordinate, 9.25f))
         val clip = IntRect(7, 3, 13, 7)
         val bounds = checkNotNull(command.destination.enclosingFabricViewportBounds(clip))
         val offset = IntOffset(-bounds.left, -bounds.top)

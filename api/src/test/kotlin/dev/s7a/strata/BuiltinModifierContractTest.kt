@@ -29,11 +29,12 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
+import kotlin.test.assertEquals
 
 /**
  * Verifies the public built-in modifier factories and their typed update bridges.
@@ -50,16 +51,16 @@ internal class BuiltinModifierContractTest {
         assertThrows(ArithmeticException::class.java) { Insets(top = Int.MAX_VALUE, bottom = 1) }
 
         val source = Insets(left = 1, top = 2, right = 3, bottom = 4)
-        assertThrows(IllegalArgumentException::class.java) { source.copy(top = -1) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${source.copy(top = -1)}") }
         assertThrows(IllegalArgumentException::class.java) { Insets.all(-1) }
         assertThrows(IllegalArgumentException::class.java) { Insets.symmetric(horizontal = -1, vertical = 0) }
         assertThrows(IllegalArgumentException::class.java) { Insets.symmetric(horizontal = 0, vertical = -1) }
-        assertThrows(ArithmeticException::class.java) { source.copy(left = Int.MAX_VALUE, right = 1) }
+        assertThrows(ArithmeticException::class.java) { fail("Invalid copy was accepted: ${source.copy(left = Int.MAX_VALUE, right = 1)}") }
         assertThrows(ArithmeticException::class.java) { Insets.all(Int.MAX_VALUE) }
         assertThrows(ArithmeticException::class.java) { Insets.symmetric(Int.MAX_VALUE, 0) }
         assertEquals(Insets.Zero, Insets())
-        assertEquals(Insets(2, 2, 2, 2), Insets.all(2))
-        assertEquals(Insets(3, 4, 3, 4), Insets.symmetric(3, 4))
+        assertEquals(expected = Insets(2, 2, 2, 2), actual = Insets.all(2))
+        assertEquals(expected = Insets(3, 4, 3, 4), actual = Insets.symmetric(3, 4))
         assertEquals(source, Insets(left = 1, top = 2, right = 3, bottom = 4))
     }
 

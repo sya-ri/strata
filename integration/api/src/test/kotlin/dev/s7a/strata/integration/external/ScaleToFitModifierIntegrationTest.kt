@@ -119,7 +119,7 @@ internal class ScaleToFitModifierIntegrationTest {
     fun retainedPolicyUpdatesInvalidateOnlyRequiredGeometryPhase() {
         val probe = ExternalProbe()
         val tree = UiTree()
-        val key = ElementKey<String>("scale")
+        val key = ElementKey("scale")
         tree.update(element(probe, Modifier.scaleToFit(IntSize(100, 50)), key))
         tree.measure(Constraints.fixed(300, 200))
         tree.layout()
@@ -221,8 +221,8 @@ internal class ScaleToFitModifierIntegrationTest {
                     modifier =
                         Modifier
                             .scaleToFit(IntSize(3, 3))
-                            .onHover({ value -> hoverEvents.add(value) })
-                            .onFocusChanged({ value -> focusEvents.add(value) }),
+                            .onHover { value -> hoverEvents.add(value) }
+                            .onFocusChanged { value -> focusEvents.add(value) },
                 )
             },
         )

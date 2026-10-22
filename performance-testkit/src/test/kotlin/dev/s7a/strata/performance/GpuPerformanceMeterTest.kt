@@ -38,8 +38,8 @@ internal class GpuPerformanceMeterTest {
         for (period in listOf(0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY)) {
             assertFailsWith<IllegalArgumentException> { GpuPerformanceMeter(1, period, "GUI") { 0 } }
         }
-        for (pair in listOf(10L to 5L, Long.MIN_VALUE to Long.MAX_VALUE)) {
-            GpuPerformanceMeter(1, 1.0, "GUI") { if (it == 0) pair.first else pair.second }.use { meter ->
+        for ((start, end) in listOf(10L to 5L, Long.MIN_VALUE to Long.MAX_VALUE)) {
+            GpuPerformanceMeter(1, 1.0, "GUI") { if (it == 0) start else end }.use { meter ->
                 meter.begin()
                 meter.recorded()
                 assertFailsWith<RuntimeException> { meter.result() }

@@ -23,7 +23,7 @@ internal object ProvenanceHashingProbe {
         loader: ClassLoader,
         row: JsonObject,
     ): JsonObject {
-        val mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
+        val mode = ProvenanceHashingCorpus.Mode.entries.single { it.name.contentEquals(row.get("mode").asString) }
         val path = Path.of(row.get("path").asString)
         val buffers = IdentityHashMap<ByteArray, Boolean>()
         var reads = 0L

@@ -31,8 +31,7 @@ internal class MinecraftPlayerHeadTest {
     @Test
     fun faceAndHatUseNativeSourcesAndOrder() {
         val skin = testSkin()
-        val host = scaledHost(skin, showHat = true, scale = PlayerHeadScale(3))
-        try {
+        scaledHost(skin, showHat = true, scale = PlayerHeadScale(3)).use { host ->
             host.attach()
             val commands = host.frame(IntSize(24, 24)).drawCommands.map { command -> command as DrawCommand.SampledImage }
             assertEquals(2, commands.size)
@@ -44,16 +43,13 @@ internal class MinecraftPlayerHeadTest {
             val rendered = rasterizeHeadless(commands, IntSize(24, 24))
             assertEquals(0xFF7F0080.toInt(), rendered.argbAt(0, 0))
             assertEquals(0xFF7F0080.toInt(), rendered.argbAt(23, 23))
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun hatCanBeOmittedWithoutChangingFaceMapping() {
         val skin = testSkin()
-        val host = legacyHost(skin, showHat = false, size = 12)
-        try {
+        legacyHost(skin, showHat = false, size = 12).use { host ->
             host.attach()
             val command = host.frame(IntSize(12, 12)).drawCommands.single() as DrawCommand.SampledImage
             assertNotSame(skin, command.image)
@@ -62,16 +58,13 @@ internal class MinecraftPlayerHeadTest {
             assertEquals(FloatRect(0f, 0f, 12f, 12f), command.destination)
             assertEquals(0f, command.alphaCutoff)
             assertEquals(0xFFFF0000.toInt(), rasterizeHeadless(listOf(command), IntSize(12, 12)).argbAt(6, 6))
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun arbitraryLegacySizeUsesRegionClampedPremultipliedBilinearSampling() {
         val skin = splitFaceSkin()
-        val host = legacyHost(skin, showHat = false, size = 10)
-        try {
+        legacyHost(skin, showHat = false, size = 10).use { host ->
             host.attach()
             val command = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.SampledImage
             val reused = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.SampledImage
@@ -81,24 +74,19 @@ internal class MinecraftPlayerHeadTest {
             assertEquals(0xFFE6001A.toInt(), rendered.argbAt(4, 0))
             assertEquals(0xFF1A00E6.toInt(), rendered.argbAt(5, 0))
             assertEquals(0xFF0000FF.toInt(), rendered.argbAt(9, 0))
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun filteredAlphaInterpolatesPremultipliedChannelsWithoutTransparentColorBleed() {
         val skin = transparentSplitFaceSkin()
-        val host = legacyHost(skin, showHat = false, size = 10)
-        try {
+        legacyHost(skin, showHat = false, size = 10).use { host ->
             host.attach()
             val command = host.frame(IntSize(10, 10)).drawCommands.single() as DrawCommand.SampledImage
             assertEquals(0x00000000, command.image.argbAt(0, 0))
             assertEquals(0x1AFF0000, command.image.argbAt(4, 0))
             assertEquals(0xE6FF0000.toInt(), command.image.argbAt(5, 0))
             assertEquals(0xFFFF0000.toInt(), command.image.argbAt(9, 0))
-        } finally {
-            host.close()
         }
     }
 
@@ -130,31 +118,19 @@ internal class MinecraftPlayerHeadTest {
     @Test
     fun sourceSizeLogicalSizeAndConstraintsAreValidated() {
         val wrongSkin = createDrawImage(IntSize(63, 64), IntArray(63 * 64))
-        val wrongSource = scaledHost(wrongSkin, showHat = true, scale = PlayerHeadScale(3))
-        try {
+        scaledHost(wrongSkin, showHat = true, scale = PlayerHeadScale(3)).use { wrongSource ->
             assertThrows(IllegalArgumentException::class.java) { wrongSource.attach() }
-        } finally {
-            wrongSource.close()
         }
-        val wrongSize = legacyHost(testSkin(), showHat = true, size = 0)
-        try {
+        legacyHost(testSkin(), showHat = true, size = 0).use { wrongSize ->
             assertThrows(IllegalArgumentException::class.java) { wrongSize.attach() }
-        } finally {
-            wrongSize.close()
         }
-        val oversizedFiltered = legacyHost(testSkin(), showHat = true, size = 1025)
-        try {
+        legacyHost(testSkin(), showHat = true, size = 1025).use { oversizedFiltered ->
             assertThrows(IllegalArgumentException::class.java) { oversizedFiltered.attach() }
-        } finally {
-            oversizedFiltered.close()
         }
 
-        val host = scaledHost(testSkin(), showHat = true, scale = PlayerHeadScale(3))
-        try {
+        scaledHost(testSkin(), showHat = true, scale = PlayerHeadScale(3)).use { host ->
             host.attach()
             assertThrows(IllegalArgumentException::class.java) { host.frame(IntSize(23, 24)) }
-        } finally {
-            host.close()
         }
     }
 

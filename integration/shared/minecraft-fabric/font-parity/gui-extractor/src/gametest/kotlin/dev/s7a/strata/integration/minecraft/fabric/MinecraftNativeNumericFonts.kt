@@ -121,7 +121,7 @@ internal class MinecraftNativeNumericFonts : AutoCloseable {
      * Extracts the unchanged numeric scene through the standard native GUI text path.
      */
     fun draw(graphics: GuiGraphicsExtractor) {
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.background)
+        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.BACKGROUND)
         text(graphics)
     }
 

@@ -17,21 +17,12 @@ import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonAlgorithm
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonOptions
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
-import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.social.SocialInteractionsScreen
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.resources.Identifier
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.function.Predicate
 import kotlin.io.path.inputStream
 
 /**
@@ -43,7 +34,7 @@ internal object MinecraftSocialParity {
     /**
      * Captures the real one-player screen and requires exact full-frame equality with the primitive composition through both Strata backends.
      *
-     * @param context loaded Fabric client GameTest context.
+     * @param context loaded loaded-client context.
      * @param profile immutable active-resource Minecraft UI profile.
      * @param output contained build directory receiving evidence images.
      * @return detached verified headless pixels.
@@ -53,28 +44,26 @@ internal object MinecraftSocialParity {
     @OptIn(InternalStrataRuntimeApi::class)
     @Suppress("LongMethod")
     internal fun run(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ): HeadlessImage {
         val assets = loadAssets(context)
         resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
-        context.input.setCursorPos(0.0, 0.0)
+        context.runOnClient { minecraft -> minecraft.resizeGui() }
+        context.movePointerRaw(0.0, 0.0)
         context.setScreen { DeterministicSocialInteractionsScreen() }
         context.waitForScreen(DeterministicSocialInteractionsScreen::class.java)
         context.waitTicks(2)
         val nativePath =
             context.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-social-native")
-                    .disableCounterPrefix()
-                    .withSize(viewport.width, viewport.height)
-                    .withDestinationDir(output),
+                "strata-social-native",
+                output,
+                IntSize(viewport.width, viewport.height),
             )
         val headless =
             NativeImage.read(nativePath.inputStream()).use { native ->
-                require(native.getWidth() == viewport.width && native.getHeight() == viewport.height) {
+                require(native.width == viewport.width && native.height == viewport.height) {
                     "The native Social Interactions capture has the wrong size."
                 }
                 val rendered = renderHeadless(profile, assets)
@@ -84,13 +73,10 @@ internal object MinecraftSocialParity {
                 context.waitForScreen(FabricMinecraftScreen::class.java)
                 context.waitTicks(2)
                 context.assertScreenshotEquals(
-                    TestScreenshotComparisonOptions
-                        .of(native)
-                        .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                        .saveWithFileName("strata-social-fabric")
-                        .disableCounterPrefix()
-                        .withSize(viewport.width, viewport.height)
-                        .withDestinationDir(output),
+                    native,
+                    "strata-social-fabric",
+                    output,
+                    IntSize(viewport.width, viewport.height),
                 )
                 rendered
             }
@@ -98,23 +84,21 @@ internal object MinecraftSocialParity {
         return headless
     }
 
-    private fun loadAssets(context: ClientGameTestContext): SocialAssets =
-        context.computeOnClient(
-            FailableFunction<Minecraft, SocialAssets, RuntimeException> {
-                val skin = loadCurrentMinecraftPlayerSkin()
-                val fixtureSkin = loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png"))
-                assertTestValue("Player0", it.gameProfile.name, "The Social showcase requires the fixed test identity.")
-                require(skin.size == fixtureSkin.size && skin.copyArgb().contentEquals(fixtureSkin.copyArgb())) {
-                    "The Social showcase requires the fixed original Efe skin used by independent headless generation."
-                }
-                SocialAssets(
-                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png")),
-                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/icon/search.png")),
-                    skin,
-                    it.gameProfile.name,
-                )
-            },
-        )
+    private fun loadAssets(context: MinecraftLoadedTestContext): SocialAssets =
+        context.computeOnClient {
+            val skin = loadCurrentMinecraftPlayerSkin()
+            val fixtureSkin = loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png"))
+            assertTestValue("Player0", it.gameProfile.name, "The Social showcase requires the fixed test identity.")
+            require(skin.size == fixtureSkin.size && skin.copyArgb().contentEquals(fixtureSkin.copyArgb())) {
+                "The Social showcase requires the fixed original Efe skin used by independent headless generation."
+            }
+            SocialAssets(
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/social_interactions/background.png")),
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/icon/search.png")),
+                skin,
+                it.gameProfile.name,
+            )
+        }
 
     @OptIn(InternalStrataRuntimeApi::class)
     private fun renderHeadless(
@@ -161,14 +145,12 @@ internal object MinecraftSocialParity {
         }
     }
 
-    private fun closeFabricScreen(context: ClientGameTestContext) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                if (current is FabricMinecraftScreen) current.onClose()
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() })
+    private fun closeFabricScreen(context: MinecraftLoadedTestContext) {
+        context.runOnClient { minecraft ->
+            val current = MinecraftClientScreenAccess.currentScreen(minecraft)
+            if (current is FabricMinecraftScreen) current.onClose()
+        }
+        context.waitFor { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() }
     }
 
     private class DeterministicSocialInteractionsScreen : SocialInteractionsScreen() {
@@ -178,8 +160,8 @@ internal object MinecraftSocialParity {
             mouseY: Int,
             partialTick: Float,
         ) {
-            graphics.fill(0, 0, width, height, opaqueBlack)
-            Screen.extractMenuBackgroundTexture(graphics, Screen.MENU_BACKGROUND, 0, 0, 0.0f, 0.0f, width, height)
+            graphics.fill(0, 0, width, height, OPAQUE_BLACK)
+            extractMenuBackgroundTexture(graphics, MENU_BACKGROUND, 0, 0, 0.0f, 0.0f, width, height)
             val marginX = (width - 238) / 2
             val windowHeight = maxOf(52, height - 144)
             graphics.blitSprite(RenderPipelines.GUI_TEXTURED, socialBackground, marginX + 3, 64, 236, windowHeight + 16)
@@ -195,7 +177,7 @@ internal object MinecraftSocialParity {
     )
 
     private val viewport = IntSize(320, 240)
-    private val opaqueBlack = 0xFF000000.toInt()
+    private const val OPAQUE_BLACK = 0xFF000000.toInt()
     private val socialBackground = Identifier.withDefaultNamespace("social_interactions/background")
     private val searchIcon = Identifier.withDefaultNamespace("icon/search")
 }

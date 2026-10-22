@@ -81,7 +81,7 @@ internal class ResponsivePanelIntegrationTest {
                 IntSize(1, 1) to IntRect(0, 0, 1, 1),
                 IntSize(640, 360) to IntRect(160, 90, 480, 270),
             )
-        try {
+        tree.use { _ ->
             cases.forEach { (viewport, bounds) ->
                 assertEquals(viewport, tree.measure(Constraints.fixed(viewport.width, viewport.height)))
                 tree.layout()
@@ -111,8 +111,6 @@ internal class ResponsivePanelIntegrationTest {
                 assertEquals(InputResult.Ignored, press(tree, bounds.left, bounds.bottom))
                 assertEquals(InputResult.Ignored, press(tree, bounds.left - 1, bounds.top))
             }
-        } finally {
-            tree.close()
         }
     }
 
@@ -122,7 +120,7 @@ internal class ResponsivePanelIntegrationTest {
         val tree = UiTree()
         val constraints = Constraints.fixed(640, 360)
         tree.update(panel(probe))
-        try {
+        tree.use { _ ->
             tree.measure(constraints)
             tree.layout()
             val component = probe.componentNodes.getValue(ExternalNodeId.Root)
@@ -138,8 +136,6 @@ internal class ResponsivePanelIntegrationTest {
             assertSame(component, probe.componentNodes.getValue(ExternalNodeId.Root))
             assertEquals(Constraints.fixed(640, 360), probe.componentMeasureConstraints.last())
             assertEquals(IntRect(0, 0, 640, 360), tree.semantics().single().bounds)
-        } finally {
-            tree.close()
         }
     }
 
@@ -154,7 +150,7 @@ internal class ResponsivePanelIntegrationTest {
                 }
             },
         )
-        try {
+        tree.use { _ ->
             tree.measure(Constraints.fixed(640, 360))
             tree.layout()
             val commands = tree.paint()
@@ -164,8 +160,6 @@ internal class ResponsivePanelIntegrationTest {
             assertEquals(InputResult.Consumed, press(tree, 479, 91))
             assertEquals(InputResult.Ignored, press(tree, 480, 91))
             assertEquals(1, probe.componentNodes.getValue(ExternalNodeId.Root).presses)
-        } finally {
-            tree.close()
         }
     }
 
@@ -174,35 +168,28 @@ internal class ResponsivePanelIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         tree.update(panel(probe))
-        try {
+        tree.use { _ ->
             listOf(IntSize(0, 120), IntSize(120, 0), IntSize.Zero).forEach { viewport ->
                 assertEquals(viewport, tree.measure(Constraints.fixed(viewport.width, viewport.height)))
                 tree.layout()
                 assertEquals(Constraints.fixed(viewport.width, viewport.height), probe.componentMeasureConstraints.last())
                 assertEquals(InputResult.Ignored, press(tree, 0, 0))
             }
-        } finally {
-            tree.close()
         }
     }
 
     @Test
     fun invalidThresholdsAndUnboundedParentsFailExplicitly() {
         listOf(IntSize(0, 1), IntSize(1, 0)).forEach { threshold ->
-            val tree = UiTree()
-            try {
+            UiTree().use { tree ->
                 assertThrows<IllegalArgumentException> { tree.update(panel(ExternalProbe(), threshold)) }
-            } finally {
-                tree.close()
             }
         }
         listOf(Constraints(maxWidth = 640), Constraints(maxHeight = 360)).forEach { constraints ->
             val tree = UiTree()
             tree.update(panel(ExternalProbe()))
-            try {
+            tree.use { _ ->
                 assertThrows<IllegalArgumentException> { tree.measure(constraints) }
-            } finally {
-                tree.close()
             }
         }
     }

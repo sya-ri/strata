@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 
 /**
  * Verifies provider-specific scalar mapping, native metrics, and detached pipeline-ready pixels.
@@ -31,12 +32,12 @@ internal class MinecraftFontGlyphTest {
         assertTrue(glyph.advance.isNaN())
         assertTrue(glyph.left.isNaN())
         assertEquals(Float.NEGATIVE_INFINITY, glyph.top)
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(left = 2f, right = 1f) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(boldOffset = Float.NaN) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(shadowOffset = -1f) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(oversizedRasterSize = IntSize(256, 256)) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(oversizedRasterSize = IntSize(257, 0)) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(image = createDrawImage(IntSize(1, 1), intArrayOf(-1))) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(left = 2f, right = 1f)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(boldOffset = Float.NaN)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(shadowOffset = -1f)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(oversizedRasterSize = IntSize(256, 256))}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(oversizedRasterSize = IntSize(257, 0))}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(image = createDrawImage(IntSize(1, 1), intArrayOf(-1)))}") }
     }
 
     @Test
@@ -53,7 +54,7 @@ internal class MinecraftFontGlyphTest {
         pixels[6] = 0xFFABCDEF.toInt()
         val sheet = createDrawImage(IntSize(9, 4), pixels)
         val backend = FontTestBackend(decode = { sheet })
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(snapshot, { backend }).use { engine ->
             val japanese = engine.glyph(FontTestResources.defaultFont, '日'.code)
             assertEquals(5.0f, japanese.advance)
             assertEquals(0.0f, japanese.left)
@@ -83,7 +84,7 @@ internal class MinecraftFontGlyphTest {
                 "assets/test/textures/empty.png" to byteArrayOf(1),
             )
         val backend = FontTestBackend(decode = { createDrawImage(IntSize(2, 1), intArrayOf(0x00123456, 0)) })
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(snapshot, { backend }).use { engine ->
             val empty = engine.glyph(FontTestResources.defaultFont, 'A'.code)
             assertEquals(1.0f, empty.advance)
             assertEquals(0x00123456, requireNotNull(empty.image).argbAt(0, 0))
@@ -101,7 +102,7 @@ internal class MinecraftFontGlyphTest {
                     capabilities = FontTestResources.compatibility.copy(rasterizer = rasterizer),
                 )
             val backend = FontTestBackend(decode = { createDrawImage(IntSize(8, 8), IntArray(64) { -1 }) })
-            MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+            MinecraftFontEngine(snapshot, { backend }).use { engine ->
                 val glyph = engine.glyph(FontTestResources.defaultFont, '日'.code)
                 assertEquals(8.0f, glyph.advance)
                 assertEquals(1.0f, glyph.top)
@@ -121,7 +122,7 @@ internal class MinecraftFontGlyphTest {
                     capabilities = FontTestResources.compatibility.copy(rasterizer = rasterizer),
                 )
             val backend = FontTestBackend(decode = { createDrawImage(IntSize(8, 8), IntArray(64) { -1 }) })
-            MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+            MinecraftFontEngine(snapshot, { backend }).use { engine ->
                 val glyph = engine.glyph(FontTestResources.defaultFont, '日'.code)
                 assertEquals(1.0f, glyph.advance)
                 assertEquals(0.0f, glyph.left)
@@ -143,7 +144,7 @@ internal class MinecraftFontGlyphTest {
                     capabilities = FontTestResources.compatibility.copy(rasterizer = rasterizer),
                 )
             val backend = FontTestBackend(decode = { createDrawImage(IntSize(8, 8), pixels) })
-            MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+            MinecraftFontEngine(snapshot, { backend }).use { engine ->
                 val glyph = engine.glyph(FontTestResources.defaultFont, '日'.code)
                 assertEquals(-5f, glyph.advance)
                 assertEquals(-6.9999995f, glyph.left)
@@ -167,7 +168,7 @@ internal class MinecraftFontGlyphTest {
                     "assets/test/font/odd.zip" to FontTestResources.archive("odd.hex" to hex.toByteArray()),
                     capabilities = FontTestResources.compatibility.copy(fractionalUnihexAdvance = fractional),
                 )
-            MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { FontTestBackend() }).use { engine ->
+            MinecraftFontEngine(snapshot, { FontTestBackend() }).use { engine ->
                 val empty = engine.glyph(FontTestResources.defaultFont, 'E'.code)
                 assertEquals(if (fractional) 5.5f else 5.0f, empty.advance)
                 assertEquals(4.5f, empty.right)
@@ -193,7 +194,7 @@ internal class MinecraftFontGlyphTest {
                 FontTestResources.font("default", """{"type":"unihex","hex_file":"test:font/custom.zip"}"""),
                 "assets/test/font/custom.zip" to FontTestResources.archive("unicode.hex" to hex.toByteArray()),
             )
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { FontTestBackend() }).use { engine ->
+        MinecraftFontEngine(snapshot, { FontTestBackend() }).use { engine ->
             val japanese = engine.glyph(FontTestResources.defaultFont, '日'.code)
             assertEquals(2.0f, japanese.advance)
             assertEquals(1.0f, japanese.right)
@@ -230,7 +231,7 @@ internal class MinecraftFontGlyphTest {
                 ),
                 "assets/test/font/custom.zip" to FontTestResources.archive("unicode.hex" to "65E5:${"80".repeat(16)}\n".toByteArray()),
             )
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { FontTestBackend() }).use { engine ->
+        MinecraftFontEngine(snapshot, { FontTestBackend() }).use { engine ->
             val glyph = engine.glyph(FontTestResources.defaultFont, '日'.code)
             assertEquals(3.0f, glyph.advance)
             assertEquals(IntSize(4, 16), requireNotNull(glyph.image).size)
@@ -253,7 +254,7 @@ internal class MinecraftFontGlyphTest {
                 ),
                 "assets/test/font/padded.zip" to FontTestResources.archive("padded.hex" to "65E5:${"80000001".repeat(16)}".toByteArray()),
             )
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { FontTestBackend() }).use { engine ->
+        MinecraftFontEngine(snapshot, { FontTestBackend() }).use { engine ->
             val glyph = engine.glyph(FontTestResources.defaultFont, '日'.code)
             val image = requireNotNull(glyph.image)
             assertEquals(18.0f, glyph.advance)
@@ -293,7 +294,7 @@ internal class MinecraftFontGlyphTest {
                     override fun close() = Unit
                 }
             })
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(snapshot, { backend }).use { engine ->
             assertEquals(1.0f, engine.glyph(FontTestResources.defaultFont, 'A'.code).advance)
             assertEquals(2.0f, engine.glyph(FontTestResources.defaultFont, 0x1F600).advance)
             assertEquals(expected, engine.glyph(FontTestResources.defaultFont, '日'.code))
@@ -332,7 +333,7 @@ internal class MinecraftFontGlyphTest {
                         override fun close() = Unit
                     }
                 })
-            MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+            MinecraftFontEngine(snapshot, { backend }).use { engine ->
                 assertEquals(3f, engine.glyph(FontTestResources.defaultFont, 'A'.code).advance)
                 repeat(2) { assertSame(expected, engine.glyph(FontTestResources.defaultFont, '日'.code)) }
                 assertEquals(5f, engine.glyph(FontTestResources.defaultFont, 'B'.code).advance)
@@ -357,7 +358,7 @@ internal class MinecraftFontGlyphTest {
                 "assets/test/textures/small.png" to byteArrayOf(1),
             )
         val backend = FontTestBackend(decode = { createDrawImage(IntSize(1, 1), intArrayOf(-1)) })
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(snapshot, { backend }).use { engine ->
             repeat(5) { assertEquals(6.0f, engine.glyph(FontTestResources.defaultFont, 'A'.code).advance) }
             assertEquals(1, backend.decodeCalls)
             assertEquals(MinecraftFontDiagnostic.Kind.ProviderLoadFailure, engine.diagnostics.single().kind)
@@ -367,7 +368,7 @@ internal class MinecraftFontGlyphTest {
     @Test
     fun missingGlyphOutlineIsNativeAndSpaceProvidersHaveNoPixels() {
         val snapshot = FontTestResources.snapshot(FontTestResources.font("default", """{"type":"space","advances":{" ":4}}"""))
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { FontTestBackend() }).use { engine ->
+        MinecraftFontEngine(snapshot, { FontTestBackend() }).use { engine ->
             assertNull(engine.glyph(FontTestResources.defaultFont, ' '.code).image)
             val missing = engine.glyph(FontTestResources.defaultFont, '日'.code)
             assertEquals(6.0f, missing.advance)
@@ -409,7 +410,7 @@ internal class MinecraftFontGlyphTest {
                     }
                 },
             )
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(snapshot, { backend }).use { engine ->
             assertEquals(6.0f, engine.glyph(FontTestResources.defaultFont, 'A'.code).advance)
             assertEquals(4.0f, engine.glyph(FontJson.identifier("test:shared"), 'A'.code).advance)
             assertEquals(1, backend.openCalls)
@@ -438,7 +439,7 @@ internal class MinecraftFontGlyphTest {
                     }
                 }
             })
-        val engine = MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend })
+        val engine = MinecraftFontEngine(snapshot, { backend })
         val actual =
             assertThrows(IllegalStateException::class.java) {
                 engine.use { current -> current.glyph(FontTestResources.defaultFont, '日'.code) }
@@ -479,7 +480,7 @@ internal class MinecraftFontGlyphTest {
                     }
                 },
             )
-        val engine = MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend })
+        val engine = MinecraftFontEngine(snapshot, { backend })
         val actual =
             assertThrows(LinkageError::class.java) {
                 engine.use { current -> current.glyph(FontTestResources.defaultFont, 'A'.code) }

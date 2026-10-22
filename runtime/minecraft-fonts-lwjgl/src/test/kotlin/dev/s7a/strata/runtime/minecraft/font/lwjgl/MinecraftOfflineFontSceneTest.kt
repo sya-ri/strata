@@ -72,7 +72,7 @@ internal class MinecraftOfflineFontSceneTest {
             val image = MinecraftFontParityFixture.render(profile, scale)
             assertEquals(MinecraftFontParityFixture.viewport.width * scale, image.size.width)
             assertEquals(MinecraftFontParityFixture.viewport.height * scale, image.size.height)
-            assertTrue(image.copyArgb().any { it != MinecraftFontParityFixture.background })
+            assertTrue(image.copyArgb().any { it != MinecraftFontParityFixture.BACKGROUND })
             val imagePath = output.resolve("font-offline-$scale.png")
             val bytes = image.encodePng()
             Files.write(imagePath, bytes)

@@ -5,11 +5,15 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.w3c.dom.Document
 import org.w3c.dom.Element
+import org.w3c.dom.NodeList
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.xpath.XPathConstants
+import javax.xml.xpath.XPathFactory
 
 /**
  * Checks fixture-specific compiler evidence independently of the production declaration verifier.
@@ -39,7 +43,8 @@ internal class QodanaCompilerModelAssertions(
         assertCompiledOutputs()
         assertSelectedRoots(result)
         assertAuxiliary(result)
-        assertAuxiliaryModel()
+        assertTestBoundaries()
+        assertExampleOutput(result)
         assertCompilerModel()
         return inventory
     }
@@ -85,10 +90,10 @@ internal class QodanaCompilerModelAssertions(
         inventoried.forEach { value ->
             val owner = value as Map<*, *>
             val name = (owner["project"] as String).removePrefix(":")
-            assertEquals("resolved-$name", owner["module"])
+            assertEquals("jmh-resolved-$name", owner["module"])
             val roots = owner["roots"] as List<*>
             val existing = roots.map { it as Map<*, *> }.filter { it["exists"] == true }
-            assertEquals(setOf("$name/src/main/kotlin", "$name/authored/java", "$name/authored/kotlin", "$name/authored/resources", "shared-inputs/kotlin", "shared-inputs/resources"), existing.map { it["path"] }.toSet())
+            assertEquals(setOf("$name/authored/java", "$name/authored/kotlin", "$name/authored/resources", "shared-inputs/kotlin", "shared-inputs/resources"), existing.map { it["path"] }.toSet())
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:compileJmhKotlin")?.outcome)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:compileJmhJava")?.outcome)
             assertEquals(TaskOutcome.SUCCESS, result.task(":$name:processJmhResources")?.outcome)
@@ -230,14 +235,14 @@ internal class QodanaCompilerModelAssertions(
      * Requires the real auxiliary compiler outputs and complete dependency closure.
      */
     private fun assertAuxiliary(result: BuildResult) {
-        val auxiliary = (inventory["auxiliary"] as List<*>).map { it as Map<*, *> }.single()
+        val auxiliary = objects(inventory["auxiliary"]).indexed("project").getValue(":auxiliary-owner")
         assertEquals(":auxiliary-owner", auxiliary["project"])
         assertEquals("verification", auxiliary["sourceSet"])
         assertEquals(TaskOutcome.SUCCESS, result.task(":auxiliary-owner:compileVerificationKotlin")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":auxiliary-owner:compileVerificationJava")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":auxiliary-owner:processVerificationResources")?.outcome)
         val auxiliaryRoots = (auxiliary["roots"] as List<*>).map { it as Map<*, *> }
-        assertEquals("Source", root(auxiliaryRoots, "auxiliary-owner/shared-production")["kind"])
+        assertEquals("TestSource", root(auxiliaryRoots, "auxiliary-owner/shared-production")["kind"])
         assertEquals("TestSource", root(auxiliaryRoots, "auxiliary-owner/authored-kotlin")["kind"])
         assertEquals("TestSource", root(auxiliaryRoots, "auxiliary-owner/authored-java")["kind"])
         assertEquals("TestResource", root(auxiliaryRoots, "auxiliary-owner/authored-resources")["kind"])
@@ -252,31 +257,46 @@ internal class QodanaCompilerModelAssertions(
     }
 
     /**
-     * Keeps a root shared with production in its original analysis role.
+     * Keeps test fixtures out of every production dependency while retaining each compiled test context.
      */
-    private fun assertAuxiliaryModel() {
-        val auxiliary = objects(inventory["auxiliary"]).single()
-        val auxiliaryIml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(auxiliary["iml"] as String).toFile())
-        val auxiliaryFolders = auxiliaryIml.getElementsByTagName("sourceFolder")
-        val shared =
-            (0 until auxiliaryFolders.length)
-                .map { auxiliaryFolders.item(it) }
-                .filter {
-                    it.attributes
-                        .getNamedItem("url")
-                        .nodeValue
-                        .endsWith("/shared-production")
-                }
-        assertEquals(1, shared.size)
-        assertEquals(
-            "false",
-            shared
-                .single()
-                .attributes
-                .getNamedItem("isTestSource")
-                .nodeValue,
-        )
-        assertTrue((auxiliary["outputs"] as List<*>).any { ((it as Map<*, *>)["files"] as Map<*, *>).isNotEmpty() })
+    private fun assertTestBoundaries() {
+        val variant = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(projects.getValue(":variant-one")["iml"] as String).toFile())
+        val modules = variant.elements("/module/component[@name='NewModuleRootManager']/orderEntry[@type='module']").map { it.getAttribute("module-name") }
+        assertTrue("support-kotlin" in modules)
+        assertTrue("test-support-kotlin" !in modules, "Production consumers must not depend on a provider's test fixtures.")
+        projects.values.filter { it["iml"] != null }.forEach { project ->
+            val primary = directory.resolve(project["iml"] as String)
+            val production = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(primary.toFile())
+            assertTrue(production.elements("/module/component[@name='NewModuleRootManager']/content/sourceFolder[@isTestSource='true' or @type='java-test-resource']").isEmpty())
+            objects(project["testCompilations"]).forEach { compilation ->
+                val name = "${compilation["sourceSet"]}-${project["module"]}"
+                val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(primary.resolveSibling("$name.iml").toFile())
+                val association = document.elements("/module/component[@name='TestModuleProperties']").single()
+                assertEquals(project["module"], association.getAttribute("production-module"))
+            }
+        }
+    }
+
+    /**
+     * Retains the compiler's production dependency on an independent API-only example output.
+     */
+    private fun assertExampleOutput(result: BuildResult) {
+        assertEquals(TaskOutcome.SUCCESS, result.task(":example-consumer:compileExamplesKotlin")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":example-consumer:compileKotlin")?.outcome)
+        val primary = directory.resolve(projects.getValue(":example-consumer")["iml"] as String)
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(primary.toFile())
+        val edge = document.elements("/module/component[@name='NewModuleRootManager']/orderEntry[@module-name='examples-example-consumer']").single()
+        assertTrue(edge.hasAttribute("production-on-test"), "Production must resolve the independent example module's compiled test roots.")
+        assertEquals("", edge.getAttribute("production-on-test"))
+        assertTrue(edge.hasAttribute("scope").not(), "The example output is required at both compile time and runtime.")
+    }
+
+    /**
+     * Selects typed metadata elements at IDEA's XML serialization boundary.
+     */
+    private fun Document.elements(expression: String): List<Element> {
+        val nodes = XPathFactory.newInstance().newXPath().evaluate(expression, this, XPathConstants.NODESET) as NodeList
+        return (0 until nodes.length).map { nodes.item(it) as Element }
     }
 
     /**
@@ -295,7 +315,7 @@ internal class QodanaCompilerModelAssertions(
      * Reads the required compiled Kotlin library fingerprint from the current declaration export.
      */
     fun supportOutputHash(): String {
-        val auxiliary = (inventory["auxiliary"] as List<*>).single() as Map<*, *>
+        val auxiliary = objects(inventory["auxiliary"]).indexed("project").getValue(":auxiliary-owner")
         val dependencies = auxiliary["dependencies"] as Map<*, *>
         return (dependencies.values.first() as List<*>)
             .map { it as Map<*, *> }

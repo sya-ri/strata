@@ -11,6 +11,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.floor
+import kotlin.math.nextDown
+import kotlin.math.nextUp
 import kotlin.math.roundToInt
 
 /**
@@ -189,12 +191,10 @@ internal class HeadlessSampledRasterParityTest {
             val input =
                 IntArray(area) { index ->
                     val alpha =
-                        if (alphas == 1) {
-                            128
-                        } else if (alphas == 16) {
-                            alphaBytes[index % alphaBytes.size]
-                        } else {
-                            index and 255
+                        when (alphas) {
+                            1 -> 128
+                            16 -> alphaBytes[index % alphaBytes.size]
+                            else -> index and 255
                         }
                     (alpha shl 24) or (index * 73471 and 0xFFFFFF)
                 }
@@ -205,7 +205,7 @@ internal class HeadlessSampledRasterParityTest {
                     listOf(1, 16, 31, 32, 33, 64).map { prefix -> IntArray(area) { if (it < prefix) 0xFF234567.toInt() else 0x80123456.toInt() } }
             for (tint in listOf(-1, 0xFFBFD7EF.toInt(), 0x80A4C6E8.toInt(), 0x01020406)) {
                 val boundary = 128f / 255f * ((tint ushr 24).toFloat() / 255f)
-                for (cutoff in listOf(0f, Math.nextDown(boundary), boundary, Math.nextUp(boundary), 1f)) {
+                for (cutoff in listOf(0f, boundary.nextDown(), boundary, boundary.nextUp(), 1f)) {
                     val command = DrawCommand.SampledImage(image, rectangle, destination, ArgbColor(tint), cutoff)
                     for (background in backgrounds) {
                         val expected = reference(background, size, 1, command, clip)

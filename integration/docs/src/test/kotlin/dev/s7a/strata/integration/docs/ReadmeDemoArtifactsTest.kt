@@ -123,7 +123,7 @@ internal class ReadmeDemoArtifactsTest {
         assertTrue(after.startsWith("unchanged before\n"))
         assertTrue(after.endsWith("\nunchanged after"))
         assertFalse(after.contains("stale"))
-        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace(before + "\n<!-- strata-readme-demo:start -->") }
+        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace("$before\n<!-- strata-readme-demo:start -->") }
         assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace("no anchors") }
     }
 
@@ -146,7 +146,7 @@ internal class ReadmeDemoArtifactsTest {
         assertTrue(excerpt.contains(".menuBackground()"))
         assertTrue(excerpt.contains(".imageBackground("))
         assertTrue(excerpt.contains("NineSliceCenterMode.Tiled"))
-        assertTrue(excerpt.contains("Text(\"Players (\${players.size})\")"))
+        assertTrue(excerpt.contains($$"Text(\"Players (${players.size})\")"))
         assertFalse(excerpt.contains("rowColor"))
         assertTrue(excerpt.contains(".background(ArgbColor(0xFF4A4A4A.toInt()))"))
         assertTrue(excerpt.contains(".padding(6)"))

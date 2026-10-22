@@ -86,8 +86,7 @@ internal class MinecraftCycleButtonSelectionTest {
         val values = List(8) { Choice(it) {} }
         val state = CycleButtonState(values, values.last())
         var notifications = 0
-        val observer = state.observe { notifications += 1 }
-        try {
+        state.observe { notifications += 1 }.use { _ ->
             host(state).use { host ->
                 host.attach()
                 val first = host.frame(SIZE)
@@ -101,8 +100,6 @@ internal class MinecraftCycleButtonSelectionTest {
                 assertArrayEquals(pixels(first), pixels(host.frame(SIZE)))
                 assertEquals(0, notifications)
             }
-        } finally {
-            observer.close()
         }
     }
 
@@ -111,8 +108,7 @@ internal class MinecraftCycleButtonSelectionTest {
         val values = List(8) { Choice(it) {} }
         val state = CycleButtonState(values)
         val failure = IllegalArgumentException("earlier observer")
-        val earlier = state.observe { throw failure }
-        try {
+        state.observe { throw failure }.use { _ ->
             host(state).use { host ->
                 host.attach()
                 host.frame(SIZE)
@@ -126,8 +122,6 @@ internal class MinecraftCycleButtonSelectionTest {
                     assertArrayEquals(pixels(reference.frame(SIZE)), pixels(painted))
                 }
             }
-        } finally {
-            earlier.close()
         }
     }
 
@@ -139,30 +133,25 @@ internal class MinecraftCycleButtonSelectionTest {
         val host =
             host(
                 state,
-                Modifier.onCycle<Choice>(
-                    { value ->
-                        actions.add(value)
-                        state.value = values[6]
-                    },
-                ),
+                Modifier.onCycle<Choice> { value ->
+                    actions.add(value)
+                    state.value = values[6]
+                },
             )
         host.use {
             host.attach()
             host.frame(SIZE)
             var nested = false
-            val later =
-                state.observe {
+            state
+                .observe {
                     if (nested.not()) {
                         nested = true
                         state.value = values[7]
                     }
+                }.use { _ ->
+                    state.value = values[2]
+                    assertLabel(host.frame(SIZE), "V000007")
                 }
-            try {
-                state.value = values[2]
-                assertLabel(host.frame(SIZE), "V000007")
-            } finally {
-                later.close()
-            }
             host.dispatchPointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Primary))
             assertEquals(listOf(values[0]), actions)
             assertLabel(host.frame(SIZE), "V000006")

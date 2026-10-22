@@ -35,7 +35,7 @@ internal class MinecraftOfflineNumericFontSceneTest {
             val image = MinecraftNumericFontFixture.render(profile, scale)
             assertEquals(MinecraftFontParityFixture.viewport.width * scale, image.size.width)
             assertEquals(MinecraftFontParityFixture.viewport.height * scale, image.size.height)
-            assertTrue(image.copyArgb().any { it != MinecraftFontParityFixture.background }, "The ordinary prefix must remain visible in the numeric scene.")
+            assertTrue(image.copyArgb().any { it != MinecraftFontParityFixture.BACKGROUND }, "The ordinary prefix must remain visible in the numeric scene.")
             val path = output.resolve("font-offline-$scale.png")
             Files.write(path, image.encodePng())
             images["image.${path.fileName}.sha256"] = MinecraftNumericFontEvidence.hash(path)

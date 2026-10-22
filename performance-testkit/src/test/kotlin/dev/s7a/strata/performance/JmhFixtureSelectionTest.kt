@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 /**
  * Exercises selection boundaries and untimed verifier failures without running JMH measurement.
  */
-class JmhFixtureSelectionTest {
+internal class JmhFixtureSelectionTest {
     @Test
     fun exactNamesAndUnambiguousAliasesPreserveSelectionOrder() {
         assertEquals(
@@ -29,8 +29,8 @@ class JmhFixtureSelectionTest {
 
     @Test
     fun nestedBinaryNamesSupportUnambiguousSimpleNames() {
-        val first = "one.Outer\$Fixture"
-        val second = "two.Other\$Fixture"
+        val first = $$"one.Outer$Fixture"
+        val second = $$"two.Other$Fixture"
         assertEquals(listOf(first), JmhFixtureSelection.resolve(listOf("Fixture"), setOf(first)))
         assertEquals(listOf(second), JmhFixtureSelection.resolve(listOf(second), setOf(first, second)))
         assertFailsWith<IllegalArgumentException> { JmhFixtureSelection.resolve(listOf("Fixture"), setOf(first, second)) }

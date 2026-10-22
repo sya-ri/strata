@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.renderer.LightTexture
-import net.minecraft.client.renderer.MultiBufferSource
 import org.joml.Matrix4f
 
 /**
@@ -30,7 +29,7 @@ internal object MinecraftNativeFontVertices {
                     row.color,
                     row.shadow,
                     Matrix4f(),
-                    MultiBufferSource { collector },
+                    { _ -> collector },
                     Font.DisplayMode.NORMAL,
                     0,
                     LightTexture.FULL_BRIGHT,

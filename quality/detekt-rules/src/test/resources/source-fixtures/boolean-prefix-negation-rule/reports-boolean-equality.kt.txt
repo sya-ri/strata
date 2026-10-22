@@ -1,0 +1,1 @@
+fun check(value: Any, other: Any): Boolean = !(value == other)

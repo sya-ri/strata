@@ -41,8 +41,7 @@ internal class IdenticalModifierChainTest {
             val modifiers = ModifierProbe()
             val chain = chain(List(count) { CountingModifier(modifiers) })
             val components = TestProbe()
-            val tree = UiTree()
-            try {
+            UiTree().use { tree ->
                 tree.update(components.root(emptyList(), chain))
                 frame(tree)
                 val revision = tree.currentRevision()
@@ -61,8 +60,6 @@ internal class IdenticalModifierChainTest {
                 assertEquals(0, modifiers.updates)
                 assertEquals(count, modifiers.attaches)
                 nodes.forEachIndexed { index, node -> assertSame(node, modifiers.nodes[index]) }
-            } finally {
-                tree.close()
             }
             assertEquals(count, modifiers.detaches)
             assertEquals(count, modifiers.disposes)
@@ -75,8 +72,7 @@ internal class IdenticalModifierChainTest {
         val probe = ModifierProbe()
         val description = CountingModifier(probe)
         val components = TestProbe()
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(components.root(emptyList(), chain(listOf(description))))
             val node = probe.nodes.single()
             tree.update(components.root(emptyList(), chain(listOf(description))))
@@ -86,8 +82,6 @@ internal class IdenticalModifierChainTest {
             assertEquals(1, probe.updates)
             assertSame(node, probe.nodes.single())
             assertEquals(3, probe.validations)
-        } finally {
-            tree.close()
         }
     }
 
@@ -155,8 +149,7 @@ internal class IdenticalModifierChainTest {
         val components = TestProbe()
         val first = TestProbe.ProbeId("first")
         val second = TestProbe.ProbeId("second")
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(components.root(listOf(components.element(first, first, modifier = modifiers), components.element(second, second, modifier = modifiers))))
             frame(tree)
             val node = components.nodeForTag(first)
@@ -176,8 +169,6 @@ internal class IdenticalModifierChainTest {
             frame(tree)
             assertEquals(measures + 2, components.measureCalls)
             assertEquals(0, probe.updates)
-        } finally {
-            tree.close()
         }
     }
 
@@ -215,8 +206,7 @@ internal class IdenticalModifierChainTest {
         val modifiers = chain(listOf(CountingModifier(probe)))
         val components = TestProbe()
         val key = TestProbe.ProbeId("duplicate")
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(components.root(emptyList(), modifiers))
             frame(tree)
             val paint = tree.paint()
@@ -234,8 +224,6 @@ internal class IdenticalModifierChainTest {
             assertEquals(paint, tree.paint())
             tree.update(components.root(emptyList(), modifiers))
             assertEquals(1, components.updateCalls)
-        } finally {
-            tree.close()
         }
     }
 
@@ -295,7 +283,7 @@ internal class IdenticalModifierChainTest {
         val modifiers = chain(List(8) { CountingModifier(probe) })
         val generation = mutableStateOf(0)
         val source = mutableStateOf(0)
-        val stable = StateSource<Unit> { StateSubscription(StateSnapshot(StateRevision(0), Unit)) { } }
+        val stable = StateSource { StateSubscription(StateSnapshot(StateRevision(0), Unit)) { } }
         val seen = ArrayList<Pair<Int, Int>>()
         createRuntimeUiSession {
             val parentValue = generation.value

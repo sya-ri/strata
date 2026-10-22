@@ -19,10 +19,10 @@ import kotlin.test.assertTrue
 /**
  * Portable event schemas and subscription rules have identical JVM and JavaScript behavior.
  */
-class ProjectionInputCodecTest {
+internal class ProjectionInputCodecTest {
     @Test
     fun preservesEveryExistingInputVariantAndCapturedCoordinates() {
-        val modifiers = KeyboardModifiers(true, true, true, true, true, true)
+        val modifiers = KeyboardModifiers(shift = true, control = true, alt = true, superKey = true, capsLock = true, numLock = true)
         listOf(KeyboardEvent.Press(KeyCode('S'.code), 31, modifiers), KeyboardEvent.Release(KeyCode.Unknown, -1)).forEach {
             assertEquals(it, ProjectionInputCodec.keyboard(ProjectionInputCodec.keyboard(it)))
         }

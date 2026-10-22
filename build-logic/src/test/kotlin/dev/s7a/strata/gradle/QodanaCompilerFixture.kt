@@ -23,7 +23,7 @@ internal class QodanaCompilerFixture(
             Files.copy(repository.resolve("gradle/$name"), directory.resolve("gradle/$name"))
         }
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
-        write("settings.gradle.kts", "rootProject.name = \"fixture\"\ninclude(\"variant-one\", \"variant-two\", \"support\", \"support-kotlin\", \"shared-inputs\", \"shared-kmp\", \"common-support\", \"auxiliary-owner\", ${owners.joinToString { "\"$it\"" }})\n")
+        write("settings.gradle.kts", "rootProject.name = \"fixture\"\ninclude(\"variant-one\", \"variant-two\", \"support\", \"support-kotlin\", \"shared-inputs\", \"shared-kmp\", \"common-support\", \"auxiliary-owner\", \"example-consumer\", ${owners.joinToString { "\"$it\"" }})\n")
         writeRootBuild()
         writeSupport()
         writeSharedInputs()
@@ -31,6 +31,7 @@ internal class QodanaCompilerFixture(
         writeCommonSupport()
         writeSharedSources()
         writeAuxiliaryOwner()
+        writeExampleConsumer()
         writeNativeVariants()
         owners.forEach(::writeBenchmark)
         git("init", "-q")
@@ -89,9 +90,11 @@ internal class QodanaCompilerFixture(
                 compilerOptions.moduleName.set("fixture-support")
                 compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
             }
+            tasks.named<KotlinJvmCompile>("compileTestKotlin") { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
             """.trimIndent(),
         )
         write("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt", "package fixture\npublic fun kotlinValue(): Int = 5\n")
+        write("support-kotlin/src/test/kotlin/fixture/Support.kt", "package fixture\ninternal class Support { companion object { fun value(): Int = 99 } }\n")
     }
 
     /**
@@ -252,6 +255,7 @@ internal class QodanaCompilerFixture(
                 kotlin.sourceSets.named("main") {
                     kotlin.setSrcDirs(listOf(rootProject.file("shared-native/kotlin"), rootProject.file("variant-two/src/main/kotlin")))
                 }
+                dependencies { implementation(project(":support-kotlin")) }
                 """.trimIndent(),
             )
         }
@@ -286,6 +290,27 @@ internal class QodanaCompilerFixture(
         write("auxiliary-owner/authored-kotlin/fixture/AuxiliaryValue.kt", "package fixture\npublic fun auxiliaryValue(): Int = Support.value() + productionValue() + kotlinValue()\n")
         write("auxiliary-owner/authored-java/fixture/JavaAuxiliary.java", "package fixture; public class JavaAuxiliary { public int value() { return Support.value(); } }")
         write("auxiliary-owner/authored-resources/payload.txt", "auxiliary compiler resource\n")
+    }
+
+    /**
+     * Compiles an API-only example once and consumes its internal declarations from production.
+     */
+    private fun writeExampleConsumer() {
+        write(
+            "example-consumer/build.gradle.kts",
+            """
+            val examples = sourceSets.create("examples")
+            dependencies {
+                add(examples.compileOnlyConfigurationName, project(":support-kotlin"))
+                implementation(examples.output)
+            }
+            kotlin.target.compilations.named("main") {
+                associateWith(kotlin.target.compilations.getByName(examples.name))
+            }
+            """.trimIndent(),
+        )
+        write("example-consumer/src/examples/kotlin/fixture/ExampleValue.kt", "package fixture\ninternal fun exampleValue(): Int = kotlinValue()\n")
+        write("example-consumer/src/main/kotlin/fixture/ExampleConsumer.kt", "package fixture\ninternal fun consumedExample(): Int = exampleValue()\n")
     }
 
     /**

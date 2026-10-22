@@ -18,7 +18,7 @@ import kotlin.test.assertTrue
 /**
  * Verifies shared phase aggregation and immutable evidence constraints without measuring invented fixtures.
  */
-class JvmPerformanceReportsTest {
+internal class JvmPerformanceReportsTest {
     @field:TempDir lateinit var directory: Path
 
     @Test

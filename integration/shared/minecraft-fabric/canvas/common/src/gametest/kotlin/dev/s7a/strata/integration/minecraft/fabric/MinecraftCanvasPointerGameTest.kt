@@ -73,7 +73,7 @@ internal object MinecraftCanvasPointerGameTest {
         Files.writeString(
             context.outputDirectory.resolve("strata-canvas-pointer.txt"),
             "case=strata-canvas-pointer\nphysical=640x480\nguiScale=2\ninputBridge=native-screen-callbacks\n" +
-                "focusBridge=Window.onFocus\nfocusHarnessCancellation=${MinecraftCanvasWindowTestScope.hasHarnessCancellation()}\n" +
+                "focusBridge=Window.onFocus\n" +
                 "focusHarnessScope=when-active-one-explicit-callback-with-unscoped-negative-control\n" +
                 "osFocusTransition=not-exercised\n" +
                 "checked=passive,ignored-press,consumed-press,ancestor-clip,outside-bounds,current-layout,exclusive-delivery," +
@@ -270,7 +270,7 @@ internal object MinecraftCanvasPointerGameTest {
     ) {
         val before = scene.traceCounts()
         val events =
-            listOf<() -> Any>(
+            listOf(
                 { screen.movePointer(inside) },
                 { context.pressPointer(screen, inside) },
                 { context.dragPointer(screen, dragPosition, dragDelta) },

@@ -1,0 +1,9 @@
+import java.lang.management.ManagementFactory
+fun clocks() {
+    System.nanoTime()
+    System.currentTimeMillis()
+    val clock = System::nanoTime
+    clock()
+    ManagementFactory.getThreadMXBean().currentThreadCpuTime
+    ManagementFactory.getGarbageCollectorMXBeans()
+}

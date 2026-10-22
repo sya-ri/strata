@@ -36,7 +36,7 @@ internal object MinecraftTextReadabilityEvidence {
             MinecraftFontOptions(
                 uniform = minecraft.options.forceUnicodeFont().get(),
                 japaneseVariants = minecraft.options.japaneseGlyphVariants().get(),
-                rightToLeft = Language.getInstance().isDefaultRightToLeft(),
+                rightToLeft = Language.getInstance().isDefaultRightToLeft,
             )
         check(snapshot.options == options) { "Native and portable readability font selections differ." }
         return buildMap {

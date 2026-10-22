@@ -8,7 +8,6 @@ import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
@@ -353,7 +352,7 @@ internal class MinecraftUiProfileTest {
         val release = CountDownLatch(1)
         var escaped: MinecraftUiProfileBuilder? = null
         val creation =
-            FutureTask<Throwable?> {
+            FutureTask {
                 runCatching {
                     createMinecraftUiProfile {
                         escaped = this
@@ -369,7 +368,7 @@ internal class MinecraftUiProfileTest {
         try {
             assertTrue(entered.await(5, TimeUnit.SECONDS))
             val wrongThread =
-                FutureTask<Throwable?> {
+                FutureTask {
                     runCatching {
                         checkNotNull(escaped).menuBackground(image(IntSize(16, 16)))
                     }.exceptionOrNull()
@@ -393,22 +392,17 @@ internal class MinecraftUiProfileTest {
         val start = CountDownLatch(1)
         val tasks =
             List(2) {
-                FutureTask<Boolean> {
-                    var host: MinecraftUiHost? = null
-                    try {
-                        ready.countDown()
-                        check(start.await(5, TimeUnit.SECONDS)) { "Timed out waiting to start host." }
-                        host =
-                            createMinecraftUiHost(
-                                ScreenDefinition(UiText.Literal("reuse")) {
-                                    Stack(modifier = Modifier.menuBackground()) {}
-                                },
-                                profile,
-                            )
+                FutureTask {
+                    ready.countDown()
+                    check(start.await(5, TimeUnit.SECONDS)) { "Timed out waiting to start host." }
+                    createMinecraftUiHost(
+                        ScreenDefinition(UiText.Literal("reuse")) {
+                            Stack(modifier = Modifier.menuBackground()) {}
+                        },
+                        profile,
+                    ).use { host ->
                         host.attach()
                         host.frame(IntSize(16, 16)).size == IntSize(16, 16)
-                    } finally {
-                        host?.close()
                     }
                 }
             }

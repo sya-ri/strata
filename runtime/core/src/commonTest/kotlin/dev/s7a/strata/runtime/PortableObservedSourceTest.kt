@@ -24,7 +24,7 @@ import kotlin.test.assertSame
 internal class PortableObservedSourceTest {
     @Test
     fun deferredReadsRefreshIndependentlyAndReleaseInactiveDependencies() {
-        val source = StateSource<Unit> { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
+        val source = StateSource { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
         val visible = mutableStateOf(true)
         val alternate = mutableStateOf(false)
         val value = mutableStateOf(0)
@@ -68,7 +68,7 @@ internal class PortableObservedSourceTest {
 
     @Test
     fun rootAndDeferredReadsShareOneMutationGuard() {
-        val source = StateSource<Unit> { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
+        val source = StateSource { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
         val value = mutableStateOf(0)
         val seen = ArrayList<Int>()
         createRuntimeUiSession {
@@ -98,7 +98,7 @@ internal class PortableObservedSourceTest {
         var subscriptions = 0
         var releases = 0
         val source =
-            StateSource<Int> { observer ->
+            StateSource { observer ->
                 subscriptions += 1
                 deliver = observer
                 StateSubscription(StateSnapshot(StateRevision(0), 0)) {
@@ -109,21 +109,19 @@ internal class PortableObservedSourceTest {
         val parity = source.map { it % 2 }
         val visible = mutableStateOf(true)
         val seen = ArrayList<Int>()
-        val session =
-            createRuntimeUiSession {
-                evaluateComponentTree {
-                    Stack {
-                        if (visible.value) {
-                            Observe(parity, parity) { left, right ->
-                                assertEquals(left, right)
-                                seen.add(left)
-                                Spacer()
-                            }
+        createRuntimeUiSession {
+            evaluateComponentTree {
+                Stack {
+                    if (visible.value) {
+                        Observe(parity, parity) { left, right ->
+                            assertEquals(left, right)
+                            seen.add(left)
+                            Spacer()
                         }
                     }
                 }
             }
-        try {
+        }.use { session ->
             session.attach()
             session.frame(Constraints())
             checkNotNull(deliver)(StateSnapshot(StateRevision(1), 2))
@@ -136,8 +134,6 @@ internal class PortableObservedSourceTest {
             visible.value = false
             session.frame(Constraints())
             assertEquals(1, releases)
-        } finally {
-            session.close()
         }
         assertEquals(1, releases)
     }

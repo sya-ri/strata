@@ -36,7 +36,7 @@ internal class RemoteClientLifetimeTest {
             context.states.prepare(context.identity, key, { Owned(context.identity) }, {}, { released.add(it.identity) })
         }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
         val client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1)))), registry, send = outgoing::add)
-        try {
+        client.use { _ ->
             createRuntimeUiSession {
                 assertThrows(IllegalStateException::class.java) { client.close() }
                 assertEquals(RemoteSessionStatus.Open, client.status)
@@ -47,8 +47,6 @@ internal class RemoteClientLifetimeTest {
                 host.attach()
                 host.frame(Constraints.fixed(8, 8))
             }
-        } finally {
-            client.close()
         }
         assertEquals(RemoteSessionStatus.Closed(RemoteFailure.PeerClosed), client.status)
         assertEquals(0, client.nodeCount)
@@ -67,12 +65,10 @@ internal class RemoteClientLifetimeTest {
             registry.element(TYPE, { it }, { _, context ->
                 context.states.prepare(context.identity, key, { Owned(context.identity) }, {}, { released.add(it.identity) })
             }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
-            val client =
-                RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1)))), registry, send = {
-                    if (it is RemoteMessage.ControlRequest) throw failure
-                    outgoing.add(it)
-                })
-            try {
+            RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1)))), registry, send = {
+                if (it is RemoteMessage.ControlRequest) throw failure
+                outgoing.add(it)
+            }).use { client ->
                 assertSame(failure, assertThrows(RemoteProtocolException::class.java) { operation.request(client.uiSession) })
                 assertEquals(RemoteSessionStatus.Closed(RemoteFailure.ResourceLimit), client.status)
                 assertEquals(UiSessionStatus.Closed(RemoteFailure.ResourceLimit.uiReason), client.uiSession.status)
@@ -80,8 +76,6 @@ internal class RemoteClientLifetimeTest {
                 assertEquals(listOf(1L), released)
                 assertEquals(listOf(RemoteMessage.Applied(1, 1), RemoteMessage.Close(1, RemoteFailure.ResourceLimit)), outgoing)
                 assertEquals(UiOperationResult.Rejected(UiRejection.Closed), operation.request(client.uiSession))
-            } finally {
-                client.close()
             }
             assertEquals(listOf(1L), released)
             assertEquals(2, outgoing.size)
@@ -103,24 +97,20 @@ internal class RemoteClientLifetimeTest {
                 throw cleanup
             })
         }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
-        val client =
-            RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1)))), registry, send = {
-                val sendFailure =
-                    when (it) {
-                        is RemoteMessage.ControlRequest -> failure
-                        is RemoteMessage.Close -> notification.also { notifications++ }
-                        else -> null
-                    }
-                sendFailure?.let { throw it }
-            })
-        try {
+        RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1)))), registry, send = {
+            val sendFailure =
+                when (it) {
+                    is RemoteMessage.ControlRequest -> failure
+                    is RemoteMessage.Close -> notification.also { notifications++ }
+                    else -> null
+                }
+            sendFailure?.let { cause -> throw cause }
+        }).use { client ->
             assertSame(failure, assertThrows(IllegalStateException::class.java) { client.uiSession.switch(UiPresentation.Hud) })
             assertEquals(RemoteSessionStatus.Closed(RemoteFailure.InvalidMessage), client.status)
             assertEquals(listOf(cleanup), failure.suppressed.toList())
             assertEquals(listOf(notification), cleanup.suppressed.toList())
             assertEquals(0, client.nodeCount)
-        } finally {
-            client.close()
         }
         assertEquals(1, releases)
         assertEquals(1, notifications)

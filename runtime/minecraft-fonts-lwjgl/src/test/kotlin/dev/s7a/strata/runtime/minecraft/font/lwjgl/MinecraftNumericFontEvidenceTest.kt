@@ -65,7 +65,7 @@ internal class MinecraftNumericFontEvidenceTest {
         val attempted = mutableListOf<Int>()
         val failure =
             assertThrows(IllegalStateException::class.java) {
-                MinecraftNumericFontCleanup.preserving<Unit>({ throw primary }) {
+                MinecraftNumericFontCleanup.preserving({ throw primary }) {
                     MinecraftNumericFontCleanup.closeAll(
                         listOf(
                             failingRelease(attempted, 1, firstClose),

@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 /**
  * Host-independent callback orchestration regressions; loaded-host compatibility requires separate GameTests.
  */
-class MinecraftPerformanceMeterTest {
+internal class MinecraftPerformanceMeterTest {
     @Test
     fun payloadDeltasRemainSeparateAndOlderRuntimeMetricsRemainUnavailable() {
         val screen = NativeMeterFixture()

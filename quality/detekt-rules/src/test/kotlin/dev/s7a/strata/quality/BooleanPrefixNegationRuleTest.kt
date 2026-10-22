@@ -14,15 +14,8 @@ internal class BooleanPrefixNegationRuleTest {
      */
     @Test
     internal fun reportsBooleanPrefixNegation() {
-        val negation = "!"
         val source =
-            """
-            fun ready(): Boolean = true
-            fun check(value: Boolean): Boolean {
-                val other: Boolean = false
-                return ${negation}value || ${negation}other || ${negation}ready() || $negation(value == other)
-            }
-            """.trimIndent()
+            DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-prefix-negation")
 
         assertEquals(4, BooleanPrefixNegationRule(Config.empty).lint(source).size)
     }
@@ -32,14 +25,8 @@ internal class BooleanPrefixNegationRuleTest {
      */
     @Test
     internal fun ignoresRelatedOperators() {
-        val negation = "!"
-        val inequality = negation + "="
         val source =
-            """
-            fun check(text: String, values: List<String>, value: Any): Boolean {
-                return text $inequality "" || text !in values || value !is String
-            }
-            """.trimIndent()
+            DetektTestSources.read("boolean-prefix-negation-rule/ignores-related-operators")
 
         assertEquals(0, BooleanPrefixNegationRule(Config.empty).lint(source).size)
     }
@@ -49,11 +36,10 @@ internal class BooleanPrefixNegationRuleTest {
      */
     @Test
     internal fun reportsBooleanExpressions() {
-        val negation = "!"
-        val literalSource = "fun check(): Boolean = ${negation}true || ${negation}false"
-        val typeCheckSource = "fun check(value: Any): Boolean = $negation(value is String)"
-        val equalitySource = "fun check(value: Any, other: Any): Boolean = $negation(value == other)"
-        val membershipSource = "fun check(item: String, items: List<String>): Boolean = $negation(item in items)"
+        val literalSource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-literals")
+        val typeCheckSource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-type-check")
+        val equalitySource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-equality")
+        val membershipSource = DetektTestSources.read("boolean-prefix-negation-rule/reports-boolean-membership")
 
         assertEquals(2, BooleanPrefixNegationRule(Config.empty).lint(literalSource).size)
         assertEquals(1, BooleanPrefixNegationRule(Config.empty).lint(typeCheckSource).size)
@@ -66,12 +52,8 @@ internal class BooleanPrefixNegationRuleTest {
      */
     @Test
     internal fun reportsGradleScriptBooleanNegation() {
-        val negation = "!"
         val source =
-            """
-            val enabled: Boolean = true
-            val disabled = ${negation}enabled
-            """.trimIndent()
+            DetektTestSources.read("boolean-prefix-negation-rule/reports-gradle-script-boolean-negation")
 
         assertEquals(1, BooleanPrefixNegationRule(Config.empty).lint(source).size)
     }

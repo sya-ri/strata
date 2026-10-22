@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 /**
  * Checks callback-driven collection without owning a scheduler or introducing another clock.
  */
-class JvmPerformanceScheduleTest {
+internal class JvmPerformanceScheduleTest {
     @Test
     fun advancesOneOperationAndPublishesOnlyCompleteDetachedEvidence() {
         val order = mutableListOf<String>()

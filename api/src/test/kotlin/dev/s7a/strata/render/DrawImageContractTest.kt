@@ -211,9 +211,10 @@ internal class DrawImageContractTest {
         assertEquals(first.hashCode(), second.hashCode())
         assertNotEquals(first, createDrawImage(IntSize(1, 2), shapeDifferentPixels))
         assertNotEquals(first, createDrawImage(IntSize(2, 1), intArrayOf(0, 0)))
-        val nullImage: Any? = null
-        assertFalse(first.equals(nullImage))
-        assertFalse(first.equals("not an image"))
+        // Invoke equals for null as well; a null-check optimization would skip the implementation.
+        val isEqualTo = first::equals
+        assertFalse(isEqualTo(null))
+        assertFalse(isEqualTo("not an image"))
         val copy = first.copyArgb()
         assertNotSame(copy, first.copyArgb())
         copy[0] = 0

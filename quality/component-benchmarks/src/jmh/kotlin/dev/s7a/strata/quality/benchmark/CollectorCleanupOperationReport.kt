@@ -16,8 +16,8 @@ public object CollectorCleanupOperationReport : JvmOperationReportAdapter {
         get() = cleanupOperationInputs()
 
     override val rows: List<JvmOperationReportRow> =
-        CleanupFailuresBenchmark.Collector.values().flatMap { collector ->
-            CleanupFailuresBenchmark.Workload.values().map { workload ->
+        CleanupFailuresBenchmark.Collector.entries.flatMap { collector ->
+            CleanupFailuresBenchmark.Workload.entries.map { workload ->
                 JvmOperationReportRow(
                     "collector-${collector.name}-${workload.name}",
                     "${CleanupFailuresBenchmark::class.java.name}.cleanup",

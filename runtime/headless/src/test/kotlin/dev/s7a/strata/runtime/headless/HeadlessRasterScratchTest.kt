@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.nextDown
+import kotlin.math.nextUp
 
 /**
  * Verifies exact unquantized products, LRU retention, terminal release and shared region parity.
@@ -80,7 +82,7 @@ internal class HeadlessRasterScratchTest {
                     )
                 for (tint in listOf(-1, 0xFFBFD7EF.toInt(), 0x80A4C6E8.toInt(), 0x01020406, 0x7F8081FE)) {
                     for (orientation in SampledImageOrientation.entries) {
-                        for (cutoff in listOf(0f, Math.nextDown(0.5f), 0.5f, Math.nextUp(0.5f), 1f)) {
+                        for (cutoff in listOf(0f, 0.5f.nextDown(), 0.5f, 0.5f.nextUp(), 1f)) {
                             val command = DrawCommand.SampledImage(image, FloatRect(0.125f, 0.25f, 15.875f, 15.75f), FloatRect(-0.5f, -0.25f, 128.25f, 64.5f), ArgbColor(tint), cutoff, orientation)
                             val initial = IntArray(128 * 64) { index -> ((index * 17 and 255) shl 24) or (index * 3719 and 0xFFFFFF) }
                             val expected = initial.copyOf()

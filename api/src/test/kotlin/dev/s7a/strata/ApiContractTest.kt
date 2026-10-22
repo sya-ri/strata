@@ -35,15 +35,17 @@ import dev.s7a.strata.text.TranslationFallback
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.UiTextArgument
 import dev.s7a.strata.text.withFont
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
+import kotlin.test.assertEquals
 import java.lang.reflect.Modifier as JavaModifier
 
 /**
@@ -95,7 +97,7 @@ internal class ApiContractTest {
 
     @Test
     fun textSnapshotsCollectionsPreserveValueSemanticsAndFallbacks() {
-        val arguments = mutableListOf<UiTextArgument>(UiTextArgument.IntValue(4), UiTextArgument.LongValue(5))
+        val arguments = mutableListOf(UiTextArgument.IntValue(4), UiTextArgument.LongValue(5))
         val parts = mutableListOf<UiText>(UiText.Literal("a"), UiText.Literal("b"))
         val translated = UiText.Translated("greeting", arguments, TranslationFallback.UseKey)
         val concatenated = UiText.Concatenated(parts)
@@ -151,7 +153,7 @@ internal class ApiContractTest {
      * Verifies multipart unresolved text equality, hashing, composition, and validation.
      */
     private fun assertConcatenationValueSemantics() {
-        assertEquals(UiText.Literal(""), UiText.concat())
+        assertEquals(expected = UiText.Literal(""), actual = UiText.concat())
         assertEquals(UiText.Literal("one"), UiText.concat(UiText.Literal("one")))
         val multipart = UiText.Concatenated(listOf(UiText.Literal("a"), UiText.Literal("b")))
         val equalMultipart = UiText.Concatenated(listOf(UiText.Literal("a"), UiText.Literal("b")))
@@ -251,17 +253,17 @@ internal class ApiContractTest {
     @Test
     fun multilineLayoutAndViewportCopiesRetainTheirStructuralValidation() {
         val layout = TextLayout.Multiline(maxLines = 2, overflow = TextOverflow.Ellipsis, lineSpacing = 1)
-        assertThrows(IllegalArgumentException::class.java) { layout.copy(maxLines = 0) }
-        assertThrows(IllegalArgumentException::class.java) { layout.copy(maxLines = -1) }
-        assertThrows(IllegalArgumentException::class.java) { layout.copy(lineSpacing = -1) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${layout.copy(maxLines = 0)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${layout.copy(maxLines = -1)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${layout.copy(lineSpacing = -1)}") }
         val lines = TextAreaViewport.Lines(120, 3)
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(width = 0) }
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(width = -1) }
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(lines = 0) }
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(lines = -1) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(width = 0)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(width = -1)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(lines = 0)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(lines = -1)}") }
         val sized = TextAreaViewport.Size(IntSize(120, 40))
-        assertThrows(IllegalArgumentException::class.java) { sized.copy(size = IntSize(0, 40)) }
-        assertThrows(IllegalArgumentException::class.java) { sized.copy(size = IntSize(120, 0)) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${sized.copy(size = IntSize(0, 40))}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${sized.copy(size = IntSize(120, 0))}") }
     }
 
     @Test
@@ -358,13 +360,10 @@ internal class ApiContractTest {
     }
 
     @Test
-    fun rolesAreExternallyImplementableAndBuiltInsRemainStable() {
-        val custom = ApplicationRole
-        val role: SemanticsRole = custom
-        assertEquals(custom, role)
-        assertEquals(SemanticsRole.Button, SemanticsRole.Button)
-        assertEquals(SemanticsRole.Text, SemanticsRole.Text)
-        assertNotEquals(SemanticsRole.TextField, SemanticsRole.TextArea)
+    fun rolesRemainExtensibleAndEditorProjectionTypesAreDistinct() {
+        val role: SemanticsRole = ApplicationRole
+        assertNull(role.projectionType)
+        assertNotEquals(SemanticsRole.TextField.projectionType, SemanticsRole.TextArea.projectionType)
     }
 
     @Test
@@ -449,7 +448,7 @@ internal class ApiContractTest {
         /**
          * Stable token and negative-test variants for the element bridge.
          */
-        public companion object {
+        companion object {
             val TYPE: ElementType<ContractElement, ContractNode> =
                 ElementType(
                     elementClass = ContractElement::class,

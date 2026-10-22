@@ -263,8 +263,7 @@ internal class MinecraftResourceTextTest {
                 )
             }
         assertEquals(1, backend.closeCalls)
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(createMinecraftTextElement(run, Modifier, null))
             assertEquals(IntSize(9, 9), tree.measure(Constraints(maxWidth = 20, maxHeight = 9)))
             tree.layout()
@@ -277,8 +276,6 @@ internal class MinecraftResourceTextTest {
             assertEquals(-1, rendered.argbAt(3, 0))
             assertEquals(0, rendered.argbAt(4, 0))
             assertEquals(-1, rendered.argbAt(5, 0))
-        } finally {
-            tree.close()
         }
     }
 
@@ -363,8 +360,7 @@ internal class MinecraftResourceTextTest {
             MinecraftFontEngine(snapshot, { FontTestBackend(decode = { sheet }) }).use { engine ->
                 MinecraftTextRun.createFonts(UiText.Literal("ABC"), engine, ResourceId("test", "zero"), ArgbColor(-1), ArgbColor(0xFF3F3F3F.toInt()))
             }
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(createMinecraftTextElement(run, Modifier, null))
             assertEquals(IntSize(14, 9), tree.measure(Constraints(maxWidth = 20, maxHeight = 9)))
             tree.layout()
@@ -377,8 +373,6 @@ internal class MinecraftResourceTextTest {
             val rendered = rasterizeHeadless(commands, IntSize(14, 9))
             assertEquals(0, rendered.argbAt(0, 7))
             assertEquals(-1, rendered.argbAt(5, 0))
-        } finally {
-            tree.close()
         }
     }
 
@@ -406,8 +400,7 @@ internal class MinecraftResourceTextTest {
                 assertEquals(-5, negativeOnly.nativeWidth)
                 MinecraftTextRun.createFonts(UiText.Literal("PAC"), engine, font, ArgbColor(-1), null)
             }
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(createMinecraftTextElement(run, Modifier, null))
             assertEquals(IntSize(5, 9), tree.measure(Constraints(maxWidth = 20, maxHeight = 9)))
             tree.layout()
@@ -420,8 +413,6 @@ internal class MinecraftResourceTextTest {
                 assertEquals(0xFF000005.toInt(), rendered.argbAt(4 * scale, 10 * scale))
                 assertEquals(0xFF000001.toInt(), rendered.argbAt(4 * scale, 13 * scale))
             }
-        } finally {
-            tree.close()
         }
     }
 

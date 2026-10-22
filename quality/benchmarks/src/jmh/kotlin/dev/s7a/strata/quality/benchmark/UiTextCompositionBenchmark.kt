@@ -155,12 +155,9 @@ public open class UiTextCompositionBenchmark {
             }
 
         private fun frame(root: Element): RuntimeUiFrame {
-            val session = createRuntimeUiSession { root }
-            try {
+            createRuntimeUiSession { root }.use { session ->
                 session.attach()
                 return session.frame(Constraints.fixed(128, 128))
-            } finally {
-                session.close()
             }
         }
     }

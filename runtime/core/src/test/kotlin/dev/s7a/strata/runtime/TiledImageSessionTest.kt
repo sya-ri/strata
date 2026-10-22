@@ -212,15 +212,14 @@ internal class TiledImageSessionTest {
         val firstNew = image(level.tilePixelSize, 0xFF112233.toInt())
         source.history(firstId).publish(TiledImageTile.Ready(firstNew))
         source.history(secondId).publish(TiledImageTile.Ready(image(IntSize(1, 1), 0xFF445566.toInt())))
-        val previousFrame = afterRaceFrame
-        assertSame(raced, samples(previousFrame)[0].image)
+        assertSame(raced, samples(afterRaceFrame)[0].image)
         val failure =
             assertThrows(IllegalArgumentException::class.java) {
                 session.frame(Constraints.fixed(16, 8), FrameTime(1L))
             }
         assertEquals("Ready tiled image dimensions must match their level.", failure.message)
-        assertSame(raced, samples(previousFrame)[0].image)
-        assertTrue(samples(previousFrame)[0].image !== firstNew)
+        assertSame(raced, samples(afterRaceFrame)[0].image)
+        assertTrue(samples(afterRaceFrame)[0].image !== firstNew)
         assertEquals(1, source.history(firstId).closes)
         assertEquals(1, source.history(secondId).closes)
         session.close()

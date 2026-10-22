@@ -9,7 +9,6 @@ import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.quality.benchmark.SmallSemanticsBenchmark.Mode
 import dev.s7a.strata.quality.benchmark.SmallSemanticsBenchmark.Scene
 import dev.s7a.strata.quality.benchmark.SmallSemanticsBenchmark.Workload
-import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.file.Path
 
@@ -40,7 +39,7 @@ public object SmallSemanticsOperationReport : JvmOperationReportAdapter {
                 try {
                     scene.setUp()
                     val sample =
-                        JvmPerformanceRunner.measure<RuntimeUiFrame>(row.id, plan) {
+                        JvmPerformanceRunner.measure(row.id, plan) {
                             benchmark.collect(scene)
                         }
                     check(reports.put(row.id, sample.evidence) == null)

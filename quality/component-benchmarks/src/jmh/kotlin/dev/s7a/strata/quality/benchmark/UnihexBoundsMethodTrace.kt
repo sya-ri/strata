@@ -273,7 +273,7 @@ public object UnihexBoundsMethodTrace {
     ) {
         check(Files.size(classLog) <= 64L * 1024 * 1024) { "Trace class-load output overflow" }
         required.keySet().forEach { name ->
-            val loaded = Pattern.compile("^\\[" + pid + "\\]\\[info *\\]\\[class,load *\\] " + Pattern.quote(name) + " source: [^\\r\\n]+")
+            val loaded = Pattern.compile("""^\[$pid]\[info *]\[class,load *] ${Pattern.quote(name)} source: [^\r\n]+""")
             val matches = Files.lines(classLog, StandardCharsets.UTF_8).use { lines -> lines.filter { loaded.matcher(it).matches() }.toList() }
             check(matches.size == 1) { "Missing or ambiguous actual worker class origin: $name" }
             println(matches.single())
@@ -460,7 +460,7 @@ public object UnihexBoundsMethodTrace {
                         .method()
                 if (caller.declaringType().name().contentEquals("java.io.PrintStream") && caller.name().contentEquals("println")) return null
             }
-            val value = event.thread().frame(0).getArgumentValues()[0] as? StringReference ?: return null
+            val value = event.thread().frame(0).argumentValues[0] as? StringReference ?: return null
             return value.value()
         }
 

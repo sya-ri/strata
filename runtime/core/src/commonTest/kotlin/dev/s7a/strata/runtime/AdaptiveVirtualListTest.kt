@@ -126,7 +126,7 @@ internal class AdaptiveVirtualListTest {
     @Test
     fun nestedObservedRowsAreAttachedBeforeTheirFirstMeasurement() {
         val state = VirtualListState<Int>()
-        val height = StateSource<Int> { StateSubscription(StateSnapshot(StateRevision(0), 8)) {} }
+        val height = StateSource { StateSubscription(StateSnapshot(StateRevision(0), 8)) {} }
         val tree = UiTree()
         tree.update(
             evaluateComponentTree {
@@ -146,7 +146,7 @@ internal class AdaptiveVirtualListTest {
             val tree = UiTree()
             tree.update(
                 evaluateComponentTree {
-                    VirtualList(items = listOf(1), keyOf = { it }, state = VirtualListState<Int>(), rowHeight = 10) { Spacer() }
+                    VirtualList(items = listOf(1), keyOf = { it }, state = VirtualListState(), rowHeight = 10) { Spacer() }
                 },
             )
             val failure = assertFailsWith<IllegalArgumentException> { tree.measure(constraints) }
@@ -156,10 +156,10 @@ internal class AdaptiveVirtualListTest {
         val tree = UiTree()
         tree.update(
             evaluateComponentTree {
-                VirtualList(items = listOf(1), keyOf = { it }, state = VirtualListState<Int>(), rowHeight = 10) { Spacer() }
+                VirtualList(items = listOf(1), keyOf = { it }, state = VirtualListState(), rowHeight = 10) { Spacer() }
             },
         )
-        val failure = assertFailsWith<IllegalArgumentException> { tree.projectDeclarations { Unit } }
+        val failure = assertFailsWith<IllegalArgumentException> { tree.projectDeclarations {} }
         assertTrue(failure.message.orEmpty().contains("remote declarations must specify viewportSize"))
         tree.close()
     }

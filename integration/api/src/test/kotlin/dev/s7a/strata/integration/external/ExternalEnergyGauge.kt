@@ -1,5 +1,3 @@
-@file:Suppress("FunctionNaming", "ktlint:standard:function-naming")
-
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.component.Spacer
@@ -26,14 +24,14 @@ import dev.s7a.strata.render.ArgbColor
  * @throws ArithmeticException when checked fill-width arithmetic overflows.
  * @throws IllegalStateException when the receiver is used from another thread or outside its callback lifetime.
  */
-public fun UiScope.EnergyGauge(
+public fun UiScope.energyGauge(
     energy: Int,
     capacity: Int,
     modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     require(0 < capacity) { "Energy capacity must be positive." }
-    require(0 <= energy && energy <= capacity) { "Energy must be inside zero through capacity." }
+    require(energy in 0..capacity) { "Energy must be inside zero through capacity." }
     val fillWidth = Math.multiplyExact(energy, 20) / capacity
     Stack(
         modifier = modifier.size(20, 4).background(ArgbColor(0xFF202020.toInt())),

@@ -103,7 +103,7 @@ internal class UiSessionBindingTest {
         session.attach()
         session.frame(Constraints.fixed(2, 1))
         val task =
-            FutureTask<Unit> {
+            FutureTask {
                 (1..500).forEach { revision ->
                     source.publish(StateSnapshot(StateRevision(revision.toLong()), revision.toString()))
                 }
@@ -237,7 +237,7 @@ internal class UiSessionBindingTest {
         var closeCount = 0
         lateinit var session: UiSession
         val source =
-            StateSource<Int> { _ ->
+            StateSource { _ ->
                 StateSubscription(StateSnapshot(StateRevision(1), 1)) {
                     closeCount += 1
                     session.close()
@@ -360,12 +360,10 @@ internal class UiSessionBindingTest {
         lateinit var session: UiSession
         var unavailableHandleCreated = false
         val reentrantSource =
-            object : StateSource<Int> {
-                override fun subscribe(observer: (StateSnapshot<Int>) -> Unit): StateSubscription<Int> {
-                    session.state(1)
-                    unavailableHandleCreated = true
-                    return StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
-                }
+            StateSource { _ ->
+                session.state(1)
+                unavailableHandleCreated = true
+                StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
             }
         session = UiSession(dispatcher) { TestProbe().root(emptyList()) }
 
@@ -375,7 +373,7 @@ internal class UiSessionBindingTest {
         assertEquals(UiSessionState.Created, session.lifecycleState)
         var closeCount = 0
         val validSource =
-            StateSource<Int> { _ ->
+            StateSource { _ ->
                 StateSubscription(StateSnapshot(StateRevision(1), 1)) { closeCount += 1 }
             }
         session.bind(validSource)

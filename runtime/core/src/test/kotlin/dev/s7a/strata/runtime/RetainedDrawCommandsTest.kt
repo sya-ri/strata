@@ -34,8 +34,9 @@ internal class RetainedDrawCommandsTest {
         assertFalse(iterator.hasNext())
         assertFalse(iterator.hasNext())
         assertThrows(NoSuchElementException::class.java) { iterator.next() }
-        assertThrows(IndexOutOfBoundsException::class.java) { detached[-1] }
-        assertThrows(IndexOutOfBoundsException::class.java) { detached[64] }
+        for (index in listOf(-1, expected.size)) {
+            assertThrows(IndexOutOfBoundsException::class.java) { detached[index] }
+        }
         assertTrue(RetainedDrawCommands(listOf(emptyList(), RetainedDrawCommands(emptyList()))).isEmpty())
     }
 }

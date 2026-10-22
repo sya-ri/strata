@@ -11,13 +11,14 @@ import kotlin.system.exitProcess
  */
 public class StrataMinecraftFontClientTest : ClientModInitializer {
     override fun onInitializeClient() {
+        if (System.getProperty("strata.clientVerification").toBoolean().not()) return
         val context = StandaloneMinecraftLoadedTestContext()
         Thread(
             {
                 runCatching {
                     context.waitFor(1_200) { minecraft -> minecraft.overlay == null && minecraft.screen != null }
                     MinecraftFontParitySuite.run(context)
-                    context.runLegacySuite()
+                    context.runLoadedSuite()
                 }.onSuccess {
                     logger.info("Strata native font and loaded-client verification passed")
                     context.computeOnClient { minecraft -> minecraft.stop() }

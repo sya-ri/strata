@@ -18,7 +18,7 @@ import kotlin.test.assertNull
 /**
  * Real local archive/resource provenance, including shadowed resources and non-initializing discovery.
  */
-class LoadedArtifactMetadataTest {
+internal class LoadedArtifactMetadataTest {
     @TempDir
     lateinit var temporary: Path
 

@@ -356,6 +356,7 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
+      timeout-minutes: 30
       shell: bash
       run: bash ./gradlew :integration:web:check -Pstrata.webOnly=true -Pstrata.web.installSystemDependencies="$INSTALL_SYSTEM_DEPENDENCIES"
       env:
@@ -518,12 +519,15 @@ jobs:
         path: .gradle/loom-cache
         key: loom-${{ runner.os }}-${{ matrix.version }}-${{ steps.loom_inputs.outputs.hash }}
     - name: Install EGL libraries
+      timeout-minutes: 10
       run: |
-        sudo apt-get update
-        sudo apt-get install --yes --no-install-recommends libegl1 libegl-mesa0
+        apt_options=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+        sudo apt-get "${apt_options[@]}" update
+        sudo apt-get "${apt_options[@]}" install --yes --no-install-recommends libegl1 libegl-mesa0
     - name: Install software Vulkan support
       if: needs.plan.outputs.client_backend == 'vulkan'
-      run: sudo apt-get install --yes --no-install-recommends mesa-vulkan-drivers libvulkan1 vulkan-tools
+      timeout-minutes: 10
+      run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install --yes --no-install-recommends mesa-vulkan-drivers libvulkan1 vulkan-tools
     - name: Record actual Vulkan device and limits
       if: needs.plan.outputs.client_backend == 'vulkan'
       run: xvfb-run -a vulkaninfo > build/github-actions/vulkaninfo.txt
@@ -539,7 +543,7 @@ jobs:
           if grep -Fxq "$project" gradle/kover-jvm-projects.txt; then args+=(-x "$project:test"); fi
         fi
         mkdir -p build/github-actions
-        bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true 2>&1 | tee build/github-actions/minecraft-gradle.log
+        bash ./gradlew ${{ matrix.gradle_arguments }} "${args[@]}" -Pstrata.webDemoInstallSystemDependencies=true --stacktrace 2>&1 | tee build/github-actions/minecraft-gradle.log
       env:
         SUBJECT: ${{ needs.plan.outputs.subject_ref }}
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}

@@ -27,7 +27,7 @@ internal class MappedStateSourceTest {
         var releases = 0
         var transforms = 0
         val source =
-            StateSource<Int?> { observer ->
+            StateSource { observer ->
                 subscriptions += 1
                 observer(StateSnapshot(StateRevision(1), 1))
                 observer(StateSnapshot(StateRevision(2), 3))
@@ -57,7 +57,7 @@ internal class MappedStateSourceTest {
         val cleanup = IllegalStateException("close")
         val releases = AtomicInteger()
         val source =
-            StateSource<Int> {
+            StateSource {
                 StateSubscription(StateSnapshot(StateRevision(0), 0)) {
                     releases.incrementAndGet()
                     throw cleanup
@@ -76,7 +76,7 @@ internal class MappedStateSourceTest {
         val closes = AtomicInteger()
         var callback: ((StateSnapshot<Int>) -> Unit)? = null
         val source =
-            StateSource<Int> { observer ->
+            StateSource { observer ->
                 callback = observer
                 StateSubscription(StateSnapshot(StateRevision(0), 0)) {
                     callback = null
@@ -128,7 +128,7 @@ internal class MappedStateSourceTest {
         val finishTransform = CountDownLatch(1)
         var callback: ((StateSnapshot<Int>) -> Unit)? = null
         val source =
-            StateSource<Int> { observer ->
+            StateSource { observer ->
                 callback = observer
                 StateSubscription(StateSnapshot(StateRevision(0), 0)) { callback = null }
             }

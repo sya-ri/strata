@@ -352,7 +352,7 @@ internal class ShowcaseScenarioContractTest {
     fun overviewHasExactRootAndContainerDetails() {
         val overview = ShowcaseScenarioCatalog.overview
         assertEquals(
-            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
+            "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/screen-examples/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftOverviewExample.kt",
             overview.source.relativePath,
         )
         assertEquals("overview", overview.source.slug)
@@ -378,16 +378,15 @@ internal class ShowcaseScenarioContractTest {
 
     @Test
     fun everyScenarioUsesCompiledSourcesAndCompleteScreensKeepScaleOne() {
-        (listOf(ShowcaseScenarioCatalog.overview) + ShowcaseScenarioCatalog.components).forEach { scenario ->
+        ShowcaseScenarioCatalog.components.forEach { scenario ->
             assertTrue(scenario.source.relativePath.startsWith("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/"))
         }
         ShowcaseScenarioCatalog.screens.forEach { scenario ->
             assertEquals(1, scenario.scale)
             val sourceRoot =
                 when (scenario.screen) {
-                    DocumentedScreen.SocialInteractions -> "scenarios/gui-extractor/src/screen-examples/kotlin"
+                    DocumentedScreen.SocialInteractions, DocumentedScreen.IndustrialController, DocumentedScreen.PowerMilestones -> "scenarios/gui-extractor/src/screen-examples/kotlin"
                     DocumentedScreen.SynchronizedInventory -> "screen/gui-extractor/src/gametest/kotlin"
-                    DocumentedScreen.IndustrialController, DocumentedScreen.PowerMilestones -> "scenarios/gui-extractor/src/gametest/kotlin"
                 }
             assertTrue(scenario.source.relativePath.startsWith("integration/shared/minecraft-fabric/$sourceRoot/"))
         }

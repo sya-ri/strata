@@ -67,7 +67,7 @@ internal class FabricMinecraftPortableTilesTest {
                 }
             val actual = tileFabricMinecraftPortable(observed, bounds, scale)
             assertEquals(commands.size, reads)
-            assertTrue(1 < actual.size && actual.size <= 64)
+            assertTrue(actual.size in 2..64)
             if (scale == 1) assertEquals(64, actual.size)
             assertEquals(bounds.width.toLong() * bounds.height, actual.sumOf { it.bounds.width.toLong() * it.bounds.height })
             for (tile in actual) assertEquals(referenceTileCommands(commands, tile.bounds), tile.commands, "GUI$scale ${tile.bounds}")
@@ -129,7 +129,7 @@ internal class FabricMinecraftPortableTilesTest {
                         DrawCommand.FillRectangle(IntRect(256, 256, 257, 257), ArgbColor(-1)),
                     )
                 val inputs = inputs(commands, viewport, scale)
-                assertTrue(1 < inputs.portable.size && inputs.portable.size <= 64)
+                assertTrue(inputs.portable.size in 2..64)
                 assertArrayEquals(rasterizeHeadless(commands, viewport, scale).copyArgb(), assemble(inputs, viewport, scale), "GUI$scale $orientation")
             }
         }

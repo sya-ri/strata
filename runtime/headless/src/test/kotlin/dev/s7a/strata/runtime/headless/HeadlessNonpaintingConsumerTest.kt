@@ -35,7 +35,6 @@ import dev.s7a.strata.semantics.SemanticsScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
-import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertArrayEquals
@@ -58,12 +57,10 @@ internal class HeadlessNonpaintingConsumerTest {
         var paints = 0
         val events = ArrayList<PointerEvent>()
         val source =
-            canvasSource(
-                StateSource<DrawImage> {
-                    observer = it
-                    StateSubscription(StateSnapshot(StateRevision(0), red)) { closes += 1 }
-                },
-            )
+            canvasSource {
+                observer = it
+                StateSubscription(StateSnapshot(StateRevision(0), red)) { closes += 1 }
+            }
         val description =
             evaluateComponentTree {
                 Stack {

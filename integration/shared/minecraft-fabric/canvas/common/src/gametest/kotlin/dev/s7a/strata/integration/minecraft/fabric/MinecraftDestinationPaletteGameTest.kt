@@ -136,8 +136,8 @@ internal object MinecraftDestinationPaletteGameTest {
         val index = y * 128 + localX
         val destination = if (x < 128) 0xFF234567.toInt() else background(index)
         val first = blend(source(index, revision), destination, 0x80A4C6E8.toInt(), 0f)
-        val insideX = 8 <= x && x < 248
-        val insideY = 8 <= y && y < 56
+        val insideX = x in 8..<248
+        val insideY = y in 8..<56
         return if (insideX && insideY) blend(source(y * 128 + 127 - localX, revision), first, 0xFE37659B.toInt(), 0.1f) else first
     }
 

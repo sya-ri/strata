@@ -114,7 +114,7 @@ internal class KeyedLayoutIntegrationTest {
                 .onKeyPress {
                     focusedKeys += 1
                     InputResult.Consumed
-                }.onFocusChanged({ value -> transitions.add(value) })
+                }.onFocusChanged { value -> transitions.add(value) }
         val tree = UiTree()
         tree.update(flowRowDescription(probe, secondModifier))
         assertEquals(IntSize(9, 4), tree.measure(Constraints(maxWidth = 9, maxHeight = 20)))
