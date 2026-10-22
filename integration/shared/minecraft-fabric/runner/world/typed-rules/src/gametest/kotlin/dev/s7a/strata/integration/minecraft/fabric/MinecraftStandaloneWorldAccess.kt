@@ -21,10 +21,13 @@ internal object MinecraftStandaloneWorldAccess {
     }
 
     /**
-     * Disables ambient mob spawning in the disposable flat world.
+     * Keeps time, weather, spawning and respawn positions deterministic in the disposable flat world.
      */
     fun configure(screen: CreateWorldScreen) {
+        screen.uiState.gameRules.set(GameRules.ADVANCE_TIME, false, null)
+        screen.uiState.gameRules.set(GameRules.ADVANCE_WEATHER, false, null)
         screen.uiState.gameRules.set(GameRules.SPAWN_MOBS, false, null)
+        screen.uiState.gameRules.set(GameRules.RESPAWN_RADIUS, 0, null)
     }
 
     /**
@@ -41,4 +44,9 @@ internal object MinecraftStandaloneWorldAccess {
         minecraft.level?.disconnect(Component.translatable("menu.savingLevel"))
         minecraft.disconnect(GenericMessageScreen(Component.translatable("menu.savingLevel")), false)
     }
+
+    /**
+     * Reports whether all native world sections have completed rendering.
+     */
+    fun rendered(minecraft: Minecraft): Boolean = minecraft.levelRenderer.hasRenderedAllSections()
 }

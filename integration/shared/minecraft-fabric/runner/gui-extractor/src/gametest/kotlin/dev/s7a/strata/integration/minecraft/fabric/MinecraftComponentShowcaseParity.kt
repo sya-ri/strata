@@ -5,6 +5,7 @@ import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PanZoomState
 import dev.s7a.strata.component.PlayerSkinSource
 import dev.s7a.strata.geometry.DoubleOffset
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.closeFabricScreen
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.readRenderWork
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftParityPresentation.renderWork
@@ -24,15 +25,10 @@ import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.client.Minecraft
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Predicate
 import kotlin.io.path.inputStream
 
 /**
@@ -41,7 +37,7 @@ import kotlin.io.path.inputStream
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftComponentShowcaseParity(
-    private val context: ClientGameTestContext,
+    private val context: MinecraftLoadedTestContext,
     private val profile: MinecraftUiProfile,
     private val output: Path,
 ) {
@@ -50,25 +46,23 @@ internal class MinecraftComponentShowcaseParity(
      */
     internal fun run(): Map<ComponentShowcase, ComponentShowcaseFrame> {
         val assets =
-            context.computeOnClient(
-                FailableFunction<Minecraft, ComponentShowcaseAssets, RuntimeException> {
-                    ComponentShowcaseAssets(
-                        image =
-                            ImageSource.Pixels(
-                                loadMinecraftUiImage(
-                                    ResourceId(
-                                        "strata_test",
-                                        "textures/gui/coal_generator.png",
-                                    ),
+            context.computeOnClient {
+                ComponentShowcaseAssets(
+                    image =
+                        ImageSource.Pixels(
+                            loadMinecraftUiImage(
+                                ResourceId(
+                                    "strata_test",
+                                    "textures/gui/coal_generator.png",
                                 ),
                             ),
-                        playerSkin =
-                            PlayerSkinSource.Pixels(
-                                loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png")),
-                            ),
-                    )
-                },
-            )
+                        ),
+                    playerSkin =
+                        PlayerSkinSource.Pixels(
+                            loadMinecraftUiImage(ResourceId("minecraft", "textures/entity/player/slim/efe.png")),
+                        ),
+                )
+            }
         val imageDirectory = output.resolve("components")
         Files.createDirectories(imageDirectory)
         val result =
@@ -109,21 +103,17 @@ internal class MinecraftComponentShowcaseParity(
             )
         }
         context.waitForScreen(FabricMinecraftScreen::class.java)
-        context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
+        context.movePointerRaw(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
         context.waitTicks(2)
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                check(minecraft.window.guiScale == showcase.scale) { "The component capture lost its actual GUI density." }
-                check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
-            },
-        )
+        context.runOnClient { minecraft ->
+            check(minecraft.window.guiScale == showcase.scale) { "The component capture lost its actual GUI density." }
+            check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
+        }
         val fabricPath =
             context.takeScreenshot(
-                TestScreenshotOptions
-                    .of("strata-component-${showcase.slug}-fabric")
-                    .disableCounterPrefix()
-                    .withSize(physicalSize.width, physicalSize.height)
-                    .withDestinationDir(output),
+                "strata-component-${showcase.slug}-fabric",
+                output,
+                IntSize(physicalSize.width, physicalSize.height),
             )
         compareFrame(showcase, assets, frame.image, fabricPath)
         if (showcase === ComponentShowcase.TiledImage) {
@@ -138,18 +128,16 @@ internal class MinecraftComponentShowcaseParity(
         imageDirectory: Path,
     ): ComponentShowcaseFrame {
         val headless =
-            context.computeOnClient(
-                FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                    renderHeadless(
-                        profile,
-                        showcase.definition(assets),
-                        showcase.viewport,
-                        showcase.pointer,
-                        frameTime = FrameTime(0L),
-                        scale = showcase.scale,
-                    )
-                },
-            )
+            context.computeOnClient {
+                renderHeadless(
+                    profile,
+                    showcase.definition(assets),
+                    showcase.viewport,
+                    showcase.pointer,
+                    frameTime = FrameTime(0L),
+                    scale = showcase.scale,
+                )
+            }
         if (showcase === ComponentShowcase.Canvas) requireCanvasKnownPixels(headless)
         val png = headless.encodePng()
         Files.write(imageDirectory.resolve("${showcase.slug}.png"), png)
@@ -163,23 +151,21 @@ internal class MinecraftComponentShowcaseParity(
     ) {
         val beforeZoom = renderWork(context)
         require(beforeZoom.sources.isNotEmpty() && beforeZoom.rasterTextures.isNotEmpty()) { "Tiled-image reuse must observe real source entries and CPU texture owners." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { navigation.zoomTo(2.0) })
-        context.waitFor(Predicate<Minecraft> { minecraft -> beforeZoom.inputs !== readRenderWork(minecraft).inputs })
+        context.runOnClient { navigation.zoomTo(2.0) }
+        context.waitFor { minecraft -> beforeZoom.inputs !== readRenderWork(minecraft).inputs }
         val afterZoom = renderWork(context)
         require(beforeZoom.sameSources(afterZoom)) { "Zoom must reuse actual tile source entries." }
         require(beforeZoom.sameRaster(afterZoom)) { "Zoom must reuse actual localized CPU texture owners." }
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> {
-                val previous = navigation.metrics.center
-                check(previous != navigation.panBy(DoubleOffset(4.0, 0.0)))
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> afterZoom.inputs !== readRenderWork(minecraft).inputs })
+        context.runOnClient {
+            val previous = navigation.metrics.center
+            check(previous != navigation.panBy(DoubleOffset(4.0, 0.0)))
+        }
+        context.waitFor { minecraft -> afterZoom.inputs !== readRenderWork(minecraft).inputs }
         val afterPan = renderWork(context)
         require(afterZoom.sameSources(afterPan)) { "Pan must reuse actual tile source entries." }
         require(afterZoom.sameRaster(afterPan)) { "Pan must reuse actual localized CPU texture owners." }
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { marker.publish(DoubleOffset(40.0, 24.0)) })
-        context.waitFor(Predicate<Minecraft> { minecraft -> afterPan.inputs !== readRenderWork(minecraft).inputs })
+        context.runOnClient { marker.publish(DoubleOffset(40.0, 24.0)) }
+        context.waitFor { minecraft -> afterPan.inputs !== readRenderWork(minecraft).inputs }
         val afterMarker = renderWork(context)
         require(afterPan.sameSources(afterMarker)) { "Marker updates must reuse actual tile source entries." }
         require(afterPan.sameRaster(afterMarker)) { "Marker updates must reuse actual localized CPU texture owners." }
@@ -209,16 +195,14 @@ internal class MinecraftComponentShowcaseParity(
 
     private fun configureWindow(showcase: ComponentShowcase) {
         resizeMinecraftTestWindow(context, showcase.physicalSize)
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                minecraft.options.guiScale().set(showcase.scale)
-                minecraft.resizeGui()
-                // Minimal component viewports are smaller than the options menu's 320 by 240 scale-selection floor.
-                minecraft.window.setGuiScale(showcase.scale)
-                check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
-            },
-        )
-        context.input.setCursorPos(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
+        context.runOnClient { minecraft ->
+            minecraft.options.guiScale().set(showcase.scale)
+            minecraft.resizeGui()
+            // Minimal component viewports are smaller than the options menu's 320 by 240 scale-selection floor.
+            minecraft.window.setGuiScale(showcase.scale)
+            check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
+        }
+        context.movePointerRaw(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)
     }
 
     private fun compareFrame(
@@ -235,18 +219,16 @@ internal class MinecraftComponentShowcaseParity(
                 val matched =
                     showcase.animationFrameTimes.any { frameTime ->
                         val candidate =
-                            context.computeOnClient(
-                                FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                                    renderHeadless(
-                                        profile,
-                                        showcase.definition(assets),
-                                        showcase.viewport,
-                                        showcase.pointer,
-                                        frameTime,
-                                        showcase.scale,
-                                    )
-                                },
-                            )
+                            context.computeOnClient {
+                                renderHeadless(
+                                    profile,
+                                    showcase.definition(assets),
+                                    showcase.viewport,
+                                    showcase.pointer,
+                                    frameTime,
+                                    showcase.scale,
+                                )
+                            }
                         hasExactPixels(fabric, candidate)
                     }
                 if (matched.not()) {

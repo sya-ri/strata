@@ -7,24 +7,20 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.input.MouseButtonInfo
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.file.Path
-import java.util.function.Predicate
 
 /**
- * Runs the native Canvas fixture through Fabric Client GameTest and restores the previous viewport and GUI scale.
+ * Runs the native Canvas fixture through the standalone client runner and restores the previous viewport and GUI scale.
  *
  * The runner owns screenshot files; every native resource operation is scheduled on the client render thread.
  * Assertion and infrastructure failures remain primary when viewport restoration also fails.
  */
 internal fun runMinecraftCanvasTest(
-    context: ClientGameTestContext,
+    context: MinecraftLoadedTestContext,
     profile: MinecraftUiProfile,
     output: Path,
 ) {
@@ -37,14 +33,14 @@ internal fun runMinecraftCanvasTest(
  * The runner owns screenshots and restores its previous viewport and GUI scale after independent scene cleanup.
  * The populated inventory slot and integrated world stay owned by the existing synchronization test.
  *
- * @param context Fabric Client GameTest coordinator, borrowed for scheduling and native screenshots.
+ * @param context Loaded-client coordinator, borrowed for scheduling and native screenshots.
  * @param profile immutable profile extracted from the active native resource manager.
  * @param output contained build directory receiving newly rendered acceptance screenshots.
  * @param inventoryIndex the caller's populated player inventory slot, never mutated by the rendering scene.
  * @throws Throwable preserving the original scene failure while viewport restoration is still attempted.
  */
 internal fun runMinecraftCanvasSlotTest(
-    context: ClientGameTestContext,
+    context: MinecraftLoadedTestContext,
     profile: MinecraftUiProfile,
     output: Path,
     inventoryIndex: Int,
@@ -53,16 +49,14 @@ internal fun runMinecraftCanvasSlotTest(
 }
 
 private fun withMinecraftCanvasContext(
-    context: ClientGameTestContext,
+    context: MinecraftLoadedTestContext,
     output: Path,
     action: (MinecraftCanvasTestContext) -> Unit,
 ) {
     val previous =
-        context.computeOnClient(
-            FailableFunction<Minecraft, Triple<Int, Int, Int>, RuntimeException> { minecraft ->
-                Triple(minecraft.window.screenWidth, minecraft.window.screenHeight, minecraft.options.guiScale().get())
-            },
-        )
+        context.computeOnClient { minecraft ->
+            Triple(minecraft.window.screenWidth, minecraft.window.screenHeight, minecraft.options.guiScale().get())
+        }
     val adapter = createMinecraftCanvasTestContext(context, output)
     AutoCloseable { adapter.configureViewport(IntSize(previous.first, previous.second), previous.third) }.use {
         action(adapter)
@@ -74,13 +68,13 @@ private fun withMinecraftCanvasContext(
  * The caller owns [output] and any screens installed through the borrowed [context].
  */
 internal fun createMinecraftCanvasTestContext(
-    context: ClientGameTestContext,
+    context: MinecraftLoadedTestContext,
     output: Path,
 ): MinecraftCanvasTestContext =
     object : MinecraftCanvasTestContext {
         override val outputDirectory: Path = output
 
-        override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient(FailableFunction<Minecraft, T, RuntimeException> { action() })
+        override fun <T : Any> onClient(action: () -> T): T = context.computeOnClient { action() }
 
         override fun setScreen(screen: Screen?) {
             MinecraftClientScreenAccess.setScreen(Minecraft.getInstance(), screen)
@@ -101,7 +95,7 @@ internal fun createMinecraftCanvasTestContext(
                         position.y.toDouble() * window.screenHeight / window.guiScaledHeight,
                     )
                 }
-            context.input.setCursorPos(physical.first, physical.second)
+            context.movePointerRaw(physical.first, physical.second)
         }
 
         override fun pressPointer(
@@ -138,14 +132,14 @@ internal fun createMinecraftCanvasTestContext(
         }
 
         override fun waitFor(condition: () -> Boolean) {
-            context.waitFor(Predicate<Minecraft> { condition() })
+            context.waitFor { condition() }
         }
 
         override fun waitFor(
             timeoutTicks: Int,
             condition: () -> Boolean,
         ) {
-            context.waitFor(Predicate<Minecraft> { condition() }, timeoutTicks)
+            context.waitFor(timeoutTicks = timeoutTicks) { condition() }
         }
 
         override fun waitTicks(ticks: Int) {
@@ -157,11 +151,9 @@ internal fun createMinecraftCanvasTestContext(
             size: IntSize,
         ): Path =
             context.takeScreenshot(
-                TestScreenshotOptions
-                    .of(name)
-                    .disableCounterPrefix()
-                    .withSize(size.width, size.height)
-                    .withDestinationDir(output),
+                name,
+                output,
+                IntSize(size.width, size.height),
             )
     }
 
@@ -174,7 +166,7 @@ private const val NO_MODIFIERS = 0
  * Runs common UI ownership and HUD/input assertions while the suite owns a loaded world.
  */
 internal fun runMinecraftUiSessionTest(
-    context: ClientGameTestContext,
+    context: MinecraftLoadedTestContext,
     output: Path,
 ) {
     withMinecraftCanvasContext(context, output, MinecraftUiSessionGameTest::run)
@@ -186,7 +178,7 @@ internal fun runMinecraftUiSessionTest(
  * The caller owns server inventory replacement and restoration; this boundary owns viewport and native screenshots.
  */
 internal fun runMinecraftSlotTooltipTest(
-    context: ClientGameTestContext,
+    context: MinecraftLoadedTestContext,
     profile: MinecraftUiProfile,
     output: Path,
     inventoryIndex: Int,

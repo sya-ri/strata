@@ -2088,6 +2088,7 @@ subprojects {
         extensions.configure<KotlinJvmProjectExtension> {
             sourceSets.matching { it.name == "gametest" }.configureEach {
                 kotlin.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+                kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/common/src/gametest/kotlin"))
             }
         }
     }
@@ -2124,10 +2125,9 @@ subprojects {
                 minecraftTargetByProjectPath[task.project.path]?.integrationProjectPath == task.project.path
         }
         .configureEach {
-            // Native custom payloads and external hosts use real asynchronous delivery instead of Fabric's paired test scheduler.
             when (this) {
-                is ClientProductionRunTask -> jvmArgs.add("-Dfabric.client.gametest.disableNetworkSynchronizer=true")
-                is JavaExec -> systemProperty("fabric.client.gametest.disableNetworkSynchronizer", true)
+                is ClientProductionRunTask -> jvmArgs.add("-Dstrata.clientVerification=true")
+                is JavaExec -> systemProperty("strata.clientVerification", true)
             }
             usesService(minecraftClientExecutionService)
             minecraftClientResourceService?.let { service ->

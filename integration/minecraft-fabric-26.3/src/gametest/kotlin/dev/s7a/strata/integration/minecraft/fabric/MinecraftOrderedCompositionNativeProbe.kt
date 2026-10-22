@@ -10,11 +10,8 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.texture.AbstractTexture
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -30,28 +27,24 @@ internal object MinecraftOrderedCompositionNativeProbe {
 
     /**
      * Checks three GUI densities and two independent source revisions, including images overlapping portable glyphs.
-     * The Fabric test thread owns sequencing; every native read and preparation replacement runs on the render thread.
+     * The standalone verification thread owns sequencing; every native read and preparation replacement runs on the render thread.
      */
     @Suppress("TooGenericExceptionCaught") // Native assertions remain primary while the original viewport and GUI scale are restored.
-    internal fun run(context: ClientGameTestContext, profile: MinecraftUiProfile, output: Path) {
+    internal fun run(context: MinecraftLoadedTestContext, profile: MinecraftUiProfile, output: Path) {
         val starting =
-            context.computeOnClient(
-                FailableFunction<Minecraft, Triple<IntSize, IntSize, Int>, RuntimeException> { minecraft ->
-                    val window = minecraft.window
-                    Triple(IntSize(window.screenWidth, window.screenHeight), IntSize(window.width, window.height), minecraft.options.guiScale().get())
-                },
-            )
+            context.computeOnClient { minecraft ->
+                val window = minecraft.window
+                Triple(IntSize(window.screenWidth, window.screenHeight), IntSize(window.width, window.height), minecraft.options.guiScale().get())
+            }
         var failure: Throwable? = null
         try {
             Files.createDirectories(output)
             for (scale in 1..3) {
                 resizeMinecraftTestWindow(context, IntSize(viewport.width * scale, viewport.height * scale))
-                context.runOnClient(
-                    FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                        minecraft.options.guiScale().set(scale)
-                        minecraft.resizeGui()
-                    },
-                )
+                context.runOnClient { minecraft ->
+                    minecraft.options.guiScale().set(scale)
+                    minecraft.resizeGui()
+                }
                 for (revision in listOf(0, 137)) verify(context, profile, output, scale, revision)
             }
         } catch (caught: Throwable) {
@@ -62,26 +55,24 @@ internal object MinecraftOrderedCompositionNativeProbe {
                 failure,
                 { resizeMinecraftTestWindow(context, starting.first, starting.second) },
                 {
-                    context.runOnClient(
-                        FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                            minecraft.options.guiScale().set(starting.third)
-                            minecraft.resizeGui()
-                        },
-                    )
+                    context.runOnClient { minecraft ->
+                        minecraft.options.guiScale().set(starting.third)
+                        minecraft.resizeGui()
+                    }
                 },
             )
         }
     }
 
     @Suppress("TooGenericExceptionCaught") // All production owners remain fenced when a diagnostic comparison fails.
-    private fun verify(context: ClientGameTestContext, profile: MinecraftUiProfile, output: Path, scale: Int, revision: Int) {
-        val screen = context.computeOnClient(FailableFunction<Minecraft, FabricMinecraftScreen, RuntimeException> { createMinecraftScreen(createMinecraftCompositionParityScene(viewport, revision), profile, parent = null) })
+    private fun verify(context: MinecraftLoadedTestContext, profile: MinecraftUiProfile, output: Path, scale: Int, revision: Int) {
+        val screen = context.computeOnClient { createMinecraftScreen(createMinecraftCompositionParityScene(viewport, revision), profile, parent = null) }
         var failure: Throwable? = null
         try {
             context.setScreen { screen }
             context.waitForScreen(FabricMinecraftScreen::class.java)
             context.waitTicks(8)
-            val tiles = context.computeOnClient(FailableFunction<Minecraft, Int, RuntimeException> { verifyTiles(screen, scale) })
+            val tiles = context.computeOnClient { verifyTiles(screen, scale) }
             Files.writeString(output.resolve("tile-parity-$scale-$revision.properties"), "gpu_tiles=$tiles\ntolerance=0\nresult=passed\n")
         } catch (caught: Throwable) {
             failure = caught
@@ -89,8 +80,8 @@ internal object MinecraftOrderedCompositionNativeProbe {
         } finally {
             runCanvasTestCleanup(
                 failure,
-                { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> MinecraftClientScreenAccess.setScreen(minecraft, null) }) },
-                { context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { screen.close() }) },
+                { context.runOnClient { minecraft -> MinecraftClientScreenAccess.setScreen(minecraft, null) } },
+                { context.runOnClient { screen.close() } },
             )
         }
     }

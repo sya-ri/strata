@@ -29,7 +29,7 @@ public class PaperManualImeVerification : ClientModInitializer {
 
     override fun onInitializeClient() {
         if (getBoolean("strata.paper.ime.manual").not()) return
-        check(System.getProperty("fabric.client.gametest") == null) { "Manual OS input cannot run under GameTest." }
+        check(getBoolean("strata.clientVerification").not()) { "Manual OS input cannot share an automated acceptance process." }
         ClientTickEvents.END_CLIENT_TICK.register(::tick)
     }
 

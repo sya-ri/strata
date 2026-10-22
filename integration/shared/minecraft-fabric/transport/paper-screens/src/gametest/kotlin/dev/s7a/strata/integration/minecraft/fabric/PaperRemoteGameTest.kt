@@ -3,8 +3,6 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.ConnectScreen
 import net.minecraft.client.gui.screens.TitleScreen
@@ -14,10 +12,8 @@ import net.minecraft.client.input.MouseButtonInfo
 import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.client.multiplayer.resolver.ServerAddress
 import net.minecraft.world.item.Items
-import org.apache.commons.lang3.function.FailableConsumer
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.function.Predicate
 
 /**
  * Optional real Paper connection using native custom payloads, native input callbacks, and vanilla container packets.
@@ -28,7 +24,7 @@ internal object PaperRemoteGameTest {
     /**
      * Connects only when the runner explicitly supplies a server address and writes a fresh completion receipt.
      */
-    fun run(context: ClientGameTestContext) {
+    fun run(context: MinecraftLoadedTestContext) {
         val address = System.getProperty("strata.paper.address") ?: return
         val run = requireNotNull(System.getProperty("strata.paper.run"))
         resizeMinecraftTestWindow(context, IntSize(352, 240))
@@ -37,8 +33,8 @@ internal object PaperRemoteGameTest {
             minecraft.resizeGui()
             ConnectScreen.startConnecting(TitleScreen(), minecraft, ServerAddress.parseString(address), ServerData("Strata acceptance", address, ServerData.Type.OTHER), false, null)
         }
-        context.waitFor(Predicate { minecraft -> 176 <= minecraft.window.guiScaledWidth && 120 <= minecraft.window.guiScaledHeight })
-        context.waitFor(Predicate { minecraft -> minecraft.player != null && MinecraftClientScreenAccess.currentScreen(minecraft) == null }, 1200)
+        context.waitFor { minecraft -> 176 <= minecraft.window.guiScaledWidth && 120 <= minecraft.window.guiScaledHeight }
+        context.waitFor(timeoutTicks = 1200) { minecraft -> minecraft.player != null && MinecraftClientScreenAccess.currentScreen(minecraft) == null }
         context.waitTicks(40)
         verifyPaper(context, run)
         System.getProperty("strata.velocity.run")?.let { verifyProxy(context, it) }
@@ -51,7 +47,7 @@ internal object PaperRemoteGameTest {
     }
 
     private fun verifyPaper(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         run: String,
     ) {
         onClient(context) { checkNotNull(it.connection).sendCommand("strata-verify") }
@@ -66,21 +62,17 @@ internal object PaperRemoteGameTest {
         click(context, 12.0, 62.0)
         await(context, Stage.Inventory)
         capture(context, "inventory")
-        context.waitFor(
-            Predicate { minecraft ->
-                minecraft.player
-                    ?.inventory
-                    ?.getItem(9)
-                    ?.count == 7
-            },
-        )
+        context.waitFor { minecraft ->
+            minecraft.player
+                ?.inventory
+                ?.getItem(9)
+                ?.count == 7
+        }
         click(context, 16.0, 16.0)
-        context.waitFor(
-            Predicate { minecraft ->
-                val menu = minecraft.player?.containerMenu ?: return@Predicate false
-                menu.carried.item === Items.DIRT && menu.carried.count == 7
-            },
-        )
+        context.waitFor { minecraft ->
+            val menu = minecraft.player?.containerMenu ?: return@waitFor false
+            menu.carried.item === Items.DIRT && menu.carried.count == 7
+        }
         context.waitTicks(5)
         click(context, 16.0, 16.0)
         await(context, Stage.Complete)
@@ -90,13 +82,13 @@ internal object PaperRemoteGameTest {
     }
 
     private fun verifyProxy(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         run: String,
     ) {
         onClient(context) { checkNotNull(it.connection).sendCommand("strata-proxy-verify") }
         await(context, Stage.ProxyControls)
         typeProxy(context, "proxy-日本語")
-        context.waitFor(Predicate { it.player != null && MinecraftClientScreenAccess.currentScreen(it) == null }, 1200)
+        context.waitFor(timeoutTicks = 1200) { it.player != null && MinecraftClientScreenAccess.currentScreen(it) == null }
         context.waitTicks(40)
         onClient(context) { checkNotNull(it.connection).sendCommand("strata-proxy-resume") }
         await(context, Stage.ProxyResumed)
@@ -108,7 +100,7 @@ internal object PaperRemoteGameTest {
     }
 
     private fun typeProxy(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         value: String,
     ) {
         click(context, 12.0, 12.0, consumesPress = false)
@@ -120,16 +112,13 @@ internal object PaperRemoteGameTest {
     }
 
     private fun await(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         stage: Stage,
     ) {
-        context.waitFor(
-            Predicate { minecraft ->
-                val screen = MinecraftClientScreenAccess.currentScreen(minecraft)
-                screen is FabricMinecraftScreen && Stage.decode(screen.title.string) == stage
-            },
-            if (stage == Stage.ProxyComplete && System.getProperty("strata.velocity.performance", "false").toBoolean()) 12_000 else 600,
-        )
+        context.waitFor(timeoutTicks = if (stage == Stage.ProxyComplete && System.getProperty("strata.velocity.performance", "false").toBoolean()) 12_000 else 600) { minecraft ->
+            val screen = MinecraftClientScreenAccess.currentScreen(minecraft)
+            screen is FabricMinecraftScreen && Stage.decode(screen.title.string) == stage
+        }
         context.waitTicks(3)
         onClient(context) { minecraft ->
             val screen = MinecraftClientScreenAccess.currentScreen(minecraft)
@@ -138,7 +127,7 @@ internal object PaperRemoteGameTest {
     }
 
     private fun click(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         x: Double,
         y: Double,
         consumesPress: Boolean = true,
@@ -153,18 +142,18 @@ internal object PaperRemoteGameTest {
     }
 
     private fun capture(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         stage: String,
     ) {
         val output = Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput")))
-        context.takeScreenshot(TestScreenshotOptions.of("paper-$stage").disableCounterPrefix().withDestinationDir(output))
+        context.takeScreenshot("paper-$stage", output)
     }
 
     private fun onClient(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         action: (Minecraft) -> Unit,
     ) {
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException>(action))
+        context.runOnClient(action)
     }
 
     /**

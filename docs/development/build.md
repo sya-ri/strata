@@ -149,9 +149,8 @@ These JVM tests do not constitute a loaded Paper/Velocity run or operating-syste
 Paper/native acceptance uses matching game versions only; the [generated compatibility table](../reference/compatibility.md) records missing exact distributions separately from Fabric client targets.
 
 Each versioned integration project verifies its exact adapter through development outputs and packaged production jars.
-Standalone legacy clients create a fixed-seed flat world without structures or mob spawning so native movement assertions do not depend on random terrain or entity collisions.
+The standalone runner creates a fixed-seed flat world without structures or mob spawning so native movement assertions do not depend on random terrain or entity collisions.
 The legacy viewport fixture requests both Minecraft's test dimensions and the real GLFW window size, then requires two matching native/window/render-target samples.
-Fabric's test Window mixin can substitute Minecraft's dimensions, so those values alone do not prove that a physical resize completed.
 Run `:integration:minecraft-fabric-<version>:runClientGameTest` and `:integration:minecraft-fabric-<version>:runProductionClientGameTest` for the target being changed.
 Every supported integration project's `check` requires both gates.
 On Linux under Xvfb, export `SDL_VIDEO_FORCE_EGL=1` before running SDL clients so their sRGB framebuffer can be created through EGL.
@@ -164,9 +163,6 @@ The [adapter process](../development/minecraft-versions.md) describes native bou
 The nonpublished `integration:minecraft-fabric-26.3`, `integration:minecraft-fabric-26.2`, and `integration:minecraft-fabric-26.1` modules compile the same neutral loaded-client suite against their exact game and Fabric API dependencies.
 `./gradlew :integration:minecraft-fabric-26.3:runClientGameTest` fixes the viewport, GUI scale, locale, resource profile, and pointer state, then requires exact native-Screen, Fabric-adapter, and headless ARGB equality for the existing screen scenes before writing build-only evidence.
 Its independent resource-font scenes additionally require exact native metrics, glyph texels, and layout, with final native image differences accepted only by the [font GPU evidence gate](../development/font-verification.md#acceptance-evidence); Fabric and headless output remain exact.
-
-The 26.3 SDL test bridge restores the native `framebufferSizeChanged()` notification after Fabric's synthetic window resize, so RenderPearl invalidates its surface configuration before rendering the new extent.
-The test plugin verifies the upstream mixin owner and unique notification call before changing that test-only path.
 
 All 26.3 development, production, published-coordinate, and manual IME launches explicitly set `-XX:StackShadowPages=32`, matching [Fabric's native stack requirement](https://github.com/FabricMC/fabric-loom/pull/1624) and the official client launch manifest while retaining the catalog-pinned Loom version.
 
@@ -187,10 +183,10 @@ The 26.3 task defaults to `strata.canvas.scope=full`, which runs the unchanged c
 An explicit `'-Pstrata.canvas.scope=canvas-only'` selects bounded backend acceptance and writes separate `minecraft-canvas-parity-<backend>` evidence.
 For example, `./gradlew :integration:minecraft-fabric-26.3:runClientGameTest '-Pstrata.canvas.backend=vulkan' '-Pstrata.canvas.scope=canvas-only'` runs every existing Canvas texture, custom-renderer, lifecycle, capacity, queued-consumption, same-generation capture, native input-reset, and partial-producer-failure case, plus actual Canvas/Slot ordering with a server-seeded inventory slot.
 The same properties apply to `runProductionClientGameTest`, which writes `minecraft-production-canvas-parity-<backend>` evidence while loading the packaged integration and runtime JARs.
-On Vulkan, this Canvas-specific scope keeps the native SDL surface and swapchain extent stable while changing Minecraft's logical viewport, framebuffer dimensions, GUI scale, and main render target; OpenGL retains Fabric's native resize path.
+On Vulkan, this Canvas-specific scope keeps the native SDL surface and swapchain extent stable while changing Minecraft's logical viewport, framebuffer dimensions, GUI scale, and main render target; OpenGL uses the native window-resize path and waits for matching framebuffer and render-target dimensions across client ticks.
 This verifies Canvas target resize and scale behavior without claiming physical operating-system window resize coverage.
 This scope excludes unrelated native reference-screen parity, the non-Canvas component showcase, and inventory click-synchronization scenarios; it cannot establish a full-suite Vulkan pass or generate the component showcase.
-The full scope continues to exercise Fabric's physical window-resize path in those unrelated scenes, so its backend result remains separate from Canvas-specific acceptance.
+The full scope additionally runs the native reference-screen, component-showcase, and inventory scenarios, so its backend result remains separate from Canvas-specific acceptance.
 Use it to record Canvas evidence separately from complete-suite failures, retaining the failing run's logs and any comparison logs with their exact runtime and graphics configuration.
 A comparison that does not display Canvas but still loads its runtime and mixins is not a baseline with that runtime removed and does not establish a driver root cause.
 No scope changes a pixel oracle or substitutes a CPU-only renderer for native GPU acceptance.
@@ -224,7 +220,6 @@ The Folia fixture moves the connected player 4096 blocks with `teleportAsync` wh
 It requires teleportation to retire the old native container, reopens the screen with the same state on the destination region, and verifies subsequent input, updates, and inventory round trips on the player's entity scheduler.
 Its invocation-bound result and server manifest are stored under `build/folia-acceptance`.
 The normal loaded suite still runs before the optional server fixture.
-Loaded-client suites disable Fabric's test-only network synchronizer through its documented `fabric.client.gametest.disableNetworkSynchronizer` property.
 Native custom-payload probes and external connections use asynchronous delivery across world and connection lifetimes; the fixture instead awaits actual connection state, remote screen revisions, and authoritative container changes.
 Framebuffer fences, protocol assertions, and container round-trip checks remain enabled in both development and production runs.
 Versions without an exact official Paper distribution must retain separate client-transport evidence; a nearby Paper release cannot establish an exact-version pair.

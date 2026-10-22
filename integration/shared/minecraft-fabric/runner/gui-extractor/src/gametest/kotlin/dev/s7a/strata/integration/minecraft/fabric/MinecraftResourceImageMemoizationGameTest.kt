@@ -22,10 +22,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.minecraft.client.Minecraft
-import org.apache.commons.lang3.function.FailableFunction
-import java.util.function.Predicate
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
@@ -37,7 +34,7 @@ internal object MinecraftResourceImageMemoizationGameTest {
      */
     @OptIn(InternalStrataRuntimeApi::class)
     internal fun run(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
     ) {
         closeFabricScreen(context)
@@ -50,7 +47,7 @@ internal object MinecraftResourceImageMemoizationGameTest {
 
     @OptIn(InternalStrataRuntimeApi::class)
     private fun captureResourceImageIdentity(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
     ): DrawImage {
         val presentation =
@@ -63,19 +60,15 @@ internal object MinecraftResourceImageMemoizationGameTest {
                     )
                 }
                 context.waitForScreen(FabricMinecraftScreen::class.java)
-                context.waitFor(
-                    Predicate<Minecraft> { minecraft ->
-                        val work = readRenderWork(minecraft)
-                        0L < work.renderExtractions && work.sources.isNotEmpty() && work.portableTextures.isNotEmpty()
-                    },
-                )
-                context.computeOnClient(
-                    FailableFunction<Minecraft, DrawImage, RuntimeException> { minecraft ->
-                        val screen = activeFabricScreen(minecraft)
-                        requireResourceImageMemoizationWork(readRenderWork(minecraft))
-                        resourceImageIdentity(screen)
-                    },
-                )
+                context.waitFor { minecraft ->
+                    val work = readRenderWork(minecraft)
+                    0L < work.renderExtractions && work.sources.isNotEmpty() && work.portableTextures.isNotEmpty()
+                }
+                context.computeOnClient { minecraft ->
+                    val screen = activeFabricScreen(minecraft)
+                    requireResourceImageMemoizationWork(readRenderWork(minecraft))
+                    resourceImageIdentity(screen)
+                }
             }
         runCanvasTestCleanup(presentation.exceptionOrNull(), { closeFabricScreen(context) })
         return presentation.getOrThrow()

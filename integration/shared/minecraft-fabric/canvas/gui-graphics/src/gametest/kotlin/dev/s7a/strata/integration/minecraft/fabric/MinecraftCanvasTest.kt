@@ -100,12 +100,7 @@ internal fun createMinecraftCanvasTestContext(
 
         override fun hasOverlay(): Boolean = Minecraft.getInstance().overlay != null
 
-        override fun exchangeHudHidden(hidden: Boolean): Boolean {
-            val options = Minecraft.getInstance().options
-            val previous = options.hideGui
-            options.hideGui = hidden
-            return previous
-        }
+        override fun exchangeHudHidden(hidden: Boolean): Boolean = MinecraftClientScreenAccess.exchangeHudHidden(Minecraft.getInstance(), hidden)
 
         override fun movePointer(position: IntOffset) {
             context.movePointer(position)

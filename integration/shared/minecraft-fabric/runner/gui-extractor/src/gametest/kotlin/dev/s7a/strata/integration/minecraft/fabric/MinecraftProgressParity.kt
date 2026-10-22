@@ -14,15 +14,9 @@ import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.loadMinecraftUiImage
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonAlgorithm
-import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonOptions
 import net.minecraft.client.Minecraft
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.function.Predicate
 import kotlin.io.path.inputStream
 
 /**
@@ -34,7 +28,7 @@ internal object MinecraftProgressParity {
     /**
      * Requires exact full-frame equality while using assets loaded from Minecraft's active resource manager.
      *
-     * @param context loaded Fabric client GameTest context.
+     * @param context loaded loaded-client context.
      * @param profile immutable active-resource UI profile.
      * @param output contained build directory receiving evidence images.
      * @return detached verified headless pixels.
@@ -43,52 +37,47 @@ internal object MinecraftProgressParity {
      */
     @OptIn(InternalStrataRuntimeApi::class)
     internal fun run(
-        context: ClientGameTestContext,
+        context: MinecraftLoadedTestContext,
         profile: MinecraftUiProfile,
         output: Path,
     ): HeadlessImage {
         val assets = loadAssets(context)
         resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
-        context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
+        context.runOnClient { minecraft -> minecraft.resizeGui() }
         val headless = renderHeadless(profile, assets)
         val headlessPath = output.resolve("strata-progress-headless.png")
         Files.write(headlessPath, headless.encodePng())
-        context.input.setCursorPos(0.0, 0.0)
+        context.movePointerRaw(0.0, 0.0)
         context.setScreen { createMinecraftScreen(definition(assets), profile, parent = null) }
         context.waitForScreen(FabricMinecraftScreen::class.java)
         context.waitTicks(2)
         NativeImage.read(headlessPath.inputStream()).use { expected ->
             context.assertScreenshotEquals(
-                TestScreenshotComparisonOptions
-                    .of(expected)
-                    .withAlgorithm(TestScreenshotComparisonAlgorithm.exact())
-                    .saveWithFileName("strata-progress-fabric")
-                    .disableCounterPrefix()
-                    .withSize(viewport.width, viewport.height)
-                    .withDestinationDir(output),
+                expected,
+                "strata-progress-fabric",
+                output,
+                IntSize(viewport.width, viewport.height),
             )
         }
         closeFabricScreen(context)
         return headless
     }
 
-    private fun loadAssets(context: ClientGameTestContext): ProgressAssets =
-        context.computeOnClient(
-            FailableFunction<Minecraft, ProgressAssets, RuntimeException> {
-                ProgressAssets(
-                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/advancements/window.png")),
-                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/advancements/backgrounds/stone.png")),
-                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_obtained.png")),
-                    loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_unobtained.png")),
-                ).also { assets ->
-                    require(assets.window.size == IntSize(256, 256)) { "The active advancement window has the wrong size." }
-                    require(assets.background.size == IntSize(16, 16)) { "The active advancement background has the wrong size." }
-                    require(assets.obtained.size == IntSize(26, 26) && assets.unobtained.size == IntSize(26, 26)) {
-                        "The active advancement task frame has the wrong size."
-                    }
+    private fun loadAssets(context: MinecraftLoadedTestContext): ProgressAssets =
+        context.computeOnClient {
+            ProgressAssets(
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/advancements/window.png")),
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/advancements/backgrounds/stone.png")),
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_obtained.png")),
+                loadMinecraftUiImage(ResourceId("minecraft", "textures/gui/sprites/advancements/task_frame_unobtained.png")),
+            ).also { assets ->
+                require(assets.window.size == IntSize(256, 256)) { "The active advancement window has the wrong size." }
+                require(assets.background.size == IntSize(16, 16)) { "The active advancement background has the wrong size." }
+                require(assets.obtained.size == IntSize(26, 26) && assets.unobtained.size == IntSize(26, 26)) {
+                    "The active advancement task frame has the wrong size."
                 }
-            },
-        )
+            }
+        }
 
     @OptIn(InternalStrataRuntimeApi::class)
     private fun renderHeadless(
@@ -109,14 +98,12 @@ internal object MinecraftProgressParity {
             ImageSource.Pixels(assets.unobtained),
         )
 
-    private fun closeFabricScreen(context: ClientGameTestContext) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                if (current is FabricMinecraftScreen) current.onClose()
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() })
+    private fun closeFabricScreen(context: MinecraftLoadedTestContext) {
+        context.runOnClient { minecraft ->
+            val current = MinecraftClientScreenAccess.currentScreen(minecraft)
+            if (current is FabricMinecraftScreen) current.onClose()
+        }
+        context.waitFor { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() }
     }
 
     private data class ProgressAssets(

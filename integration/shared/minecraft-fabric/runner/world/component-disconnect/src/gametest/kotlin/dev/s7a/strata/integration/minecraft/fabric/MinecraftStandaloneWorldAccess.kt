@@ -19,7 +19,7 @@ internal object MinecraftStandaloneWorldAccess {
     }
 
     /**
-     * Disables ambient mob spawning in the disposable flat world.
+     * Disables mob spawning so disposable-world input checks do not depend on nearby entities.
      */
     fun configure(screen: CreateWorldScreen) {
         screen.uiState.gameRules
@@ -41,4 +41,9 @@ internal object MinecraftStandaloneWorldAccess {
         minecraft.level?.disconnect(Component.translatable("menu.savingLevel"))
         minecraft.disconnect(GenericMessageScreen(Component.translatable("menu.savingLevel")), false)
     }
+
+    /**
+     * Reports whether all native world sections have completed rendering.
+     */
+    fun rendered(minecraft: Minecraft): Boolean = minecraft.levelRenderer.hasRenderedAllSections()
 }

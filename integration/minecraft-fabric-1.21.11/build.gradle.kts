@@ -45,6 +45,9 @@ loom {
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/callback/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/typed-rules/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/mapped/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/lookup-enchantments/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/stratum-gui-graphics/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/stream-codec/src/gametest/kotlin"))
@@ -55,8 +58,6 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-graphics/src/gametest/kotlin"),
         )
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/callback/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/typed-rules/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/version-accessor/src/gametest/kotlin"))
         kotlin.srcDirs(
             rootProject.file("integration/shared/minecraft-fabric/input/event-callbacks/src/gametest/kotlin"),

@@ -27,13 +27,25 @@ fabricApi {
         createSourceSet = true
         modId = "strata-integration-minecraft-fabric-1-20-6"
         enableGameTests = false
-        enableClientGameTests = true
+        enableClientGameTests = false
         eula = true
+    }
+}
+
+loom {
+    runs.register("clientGameTest") {
+        client()
+        sourceSet.set("gametest")
+        runDirectory.set(layout.buildDirectory.dir("run/clientGameTest"))
+        generateRunConfig.set(false)
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/synchronous/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/classic/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/mapped/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/component-enchantments/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location-constructor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics/src/gametest/kotlin"))
@@ -45,8 +57,6 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-graphics/src/gametest/kotlin"),
         )
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/synchronous/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/classic/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/version-field/src/gametest/kotlin"))
         kotlin.srcDirs(
             rootProject.file("integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin"),

@@ -1,11 +1,7 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
-import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.minecraft.client.Minecraft
-import org.apache.commons.lang3.function.FailableConsumer
-import org.apache.commons.lang3.function.FailableFunction
-import java.util.function.Predicate
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 
 /**
@@ -15,21 +11,19 @@ internal object MinecraftParityPresentation {
     /**
      * Detaches and closes an active Fabric screen on the client thread, checking release of presentation ownership.
      */
-    internal fun closeFabricScreen(context: ClientGameTestContext) {
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val current = MinecraftClientScreenAccess.currentScreen(minecraft)
-                if (current is FabricMinecraftScreen) {
-                    runCanvasTestCleanup(
-                        null,
-                        { MinecraftClientScreenAccess.setScreen(minecraft, null) },
-                        { assertFabricPresentationReleased(current) },
-                        current::onClose,
-                    )
-                }
-            },
-        )
-        context.waitFor(Predicate<Minecraft> { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() })
+    internal fun closeFabricScreen(context: MinecraftLoadedTestContext) {
+        context.runOnClient { minecraft ->
+            val current = MinecraftClientScreenAccess.currentScreen(minecraft)
+            if (current is FabricMinecraftScreen) {
+                runCanvasTestCleanup(
+                    null,
+                    { MinecraftClientScreenAccess.setScreen(minecraft, null) },
+                    { assertFabricPresentationReleased(current) },
+                    current::onClose,
+                )
+            }
+        }
+        context.waitFor { minecraft -> (MinecraftClientScreenAccess.currentScreen(minecraft) is FabricMinecraftScreen).not() }
     }
 
     private fun assertFabricPresentationReleased(screen: FabricMinecraftScreen) {
@@ -55,30 +49,26 @@ internal object MinecraftParityPresentation {
     /**
      * Checks retained presentation identity across clean frames and an equivalent replacement display list.
      */
-    internal fun assertCleanFabricFrameReuse(context: ClientGameTestContext) {
-        context.waitFor(
-            Predicate<Minecraft> { minecraft ->
-                val state = readRenderWork(minecraft)
-                0L < state.renderExtractions && state.inputs != null
-            },
-        )
+    internal fun assertCleanFabricFrameReuse(context: MinecraftLoadedTestContext) {
+        context.waitFor { minecraft ->
+            val state = readRenderWork(minecraft)
+            0L < state.renderExtractions && state.inputs != null
+        }
         val before = renderWork(context)
-        context.waitFor(Predicate<Minecraft> { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions })
+        context.waitFor { minecraft -> before.renderExtractions < readRenderWork(minecraft).renderExtractions }
         val after = renderWork(context)
         require(before.commands === after.commands && before.inputs === after.inputs) { "Clean presentation must retain its exact prepared inputs." }
         require(before.pointerCommands === after.pointerCommands) { "A stationary pointer must retain its extracted display-list identity." }
         require(before.samePortable(after) && before.sameSources(after)) { "Clean presentation must retain all actual native texture owners." }
-        context.runOnClient(
-            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
-                val screen = activeFabricScreen(minecraft)
-                val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
-                check(commandsField.trySetAccessible())
-                val commands = commandsField.get(screen) as List<*>
-                commandsField.set(screen, ArrayList(commands))
-            },
-        )
+        context.runOnClient { minecraft ->
+            val screen = activeFabricScreen(minecraft)
+            val commandsField = FabricMinecraftScreen::class.java.getDeclaredField("preparedCommands")
+            check(commandsField.trySetAccessible())
+            val commands = commandsField.get(screen) as List<*>
+            commandsField.set(screen, ArrayList(commands))
+        }
         val changed = renderWork(context)
-        context.waitFor(Predicate<Minecraft> { minecraft -> changed.renderExtractions < readRenderWork(minecraft).renderExtractions })
+        context.waitFor { minecraft -> changed.renderExtractions < readRenderWork(minecraft).renderExtractions }
         val equivalent = renderWork(context)
         require(equivalent.inputs !== before.inputs) { "A different display-list snapshot must refresh preparation." }
         require(equivalent.samePortable(before) && equivalent.sameSources(before)) { "Equivalent commands must retain the actual texture owners." }
@@ -87,10 +77,7 @@ internal object MinecraftParityPresentation {
     /**
      * Reads the active Fabric screen's test-owned presentation observation through the client scheduler.
      */
-    internal fun renderWork(context: ClientGameTestContext): RenderWork =
-        context.computeOnClient(
-            FailableFunction<Minecraft, RenderWork, RuntimeException> { minecraft -> readRenderWork(minecraft) },
-        )
+    internal fun renderWork(context: MinecraftLoadedTestContext): RenderWork = context.computeOnClient { minecraft -> readRenderWork(minecraft) }
 
     /**
      * Reads the active Fabric screen's presentation observation from the client thread.
