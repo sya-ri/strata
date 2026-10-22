@@ -1,0 +1,6 @@
+import dev.s7a.strata.performance.BrowserPerformanceMeter
+import kotlinx.browser.window
+fun run() = BrowserPerformanceMeter().measure { state.update() }
+fun host() = window.asDynamic().strataMeasurePerformance
+fun input() = InputClock().now()
+val label = "performance.now()"

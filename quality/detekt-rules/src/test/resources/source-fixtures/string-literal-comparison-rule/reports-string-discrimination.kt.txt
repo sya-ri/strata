@@ -1,0 +1,6 @@
+fun check(state: String): Boolean {
+    return state == "ready" || "failed" != state || when (state) {
+        "ready" -> true
+        else -> false
+    }
+}

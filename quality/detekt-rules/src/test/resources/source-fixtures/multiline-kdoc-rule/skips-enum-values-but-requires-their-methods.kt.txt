@@ -1,0 +1,9 @@
+/**
+ * Named demo stages with their display captions.
+ */
+enum class Stage(val caption: String) {
+    Start("Start with a row") {
+        fun render() = Unit
+    },
+    End("Add scrolling"),
+}

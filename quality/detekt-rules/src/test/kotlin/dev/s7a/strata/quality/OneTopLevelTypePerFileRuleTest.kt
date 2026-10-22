@@ -15,10 +15,7 @@ internal class OneTopLevelTypePerFileRuleTest {
     @Test
     internal fun reportsMultipleTopLevelTypes() {
         val source =
-            """
-            class First
-            interface Second
-            """.trimIndent()
+            DetektTestSources.read("one-top-level-type-per-file-rule/reports-multiple-top-level-types")
 
         assertEquals(1, OneTopLevelTypePerFileRule(Config.empty).lint(source).size)
     }
@@ -29,11 +26,7 @@ internal class OneTopLevelTypePerFileRuleTest {
     @Test
     internal fun allowsNestedTypes() {
         val source =
-            """
-            class First {
-                class Nested
-            }
-            """.trimIndent()
+            DetektTestSources.read("one-top-level-type-per-file-rule/allows-nested-types")
 
         assertEquals(0, OneTopLevelTypePerFileRule(Config.empty).lint(source).size)
     }
@@ -44,10 +37,7 @@ internal class OneTopLevelTypePerFileRuleTest {
     @Test
     internal fun countsTopLevelTypeAliases() {
         val source =
-            """
-            typealias First = String
-            class Second
-            """.trimIndent()
+            DetektTestSources.read("one-top-level-type-per-file-rule/counts-top-level-type-aliases")
 
         assertEquals(1, OneTopLevelTypePerFileRule(Config.empty).lint(source).size)
     }

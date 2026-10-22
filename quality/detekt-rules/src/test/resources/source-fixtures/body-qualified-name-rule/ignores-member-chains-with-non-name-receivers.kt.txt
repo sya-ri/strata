@@ -1,0 +1,2 @@
+fun location() = String::class.java.protectionDomain.codeSource.location.toURI()
+fun value() = factory().java.value.name

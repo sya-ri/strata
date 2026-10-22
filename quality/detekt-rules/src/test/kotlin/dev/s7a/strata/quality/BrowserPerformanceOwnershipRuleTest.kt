@@ -41,14 +41,7 @@ internal class BrowserPerformanceOwnershipRuleTest {
     @Test
     fun sharedMeterDomAccessFixedInputsAndApplicationActionsRemainAllowed() {
         val source =
-            """
-            import dev.s7a.strata.performance.BrowserPerformanceMeter
-            import kotlinx.browser.window
-            fun run() = BrowserPerformanceMeter().measure { state.update() }
-            fun host() = window.asDynamic().strataMeasurePerformance
-            fun input() = InputClock().now()
-            val label = "performance.now()"
-            """.trimIndent()
+            DetektTestSources.read("browser-performance-ownership-rule/shared-meter-dom-access-fixed-inputs-and-application-actions-remain-allowed")
         assertEquals(0, BrowserPerformanceOwnershipRule(Config.empty).lint(source).size)
     }
 

@@ -14,17 +14,8 @@ internal class StringLiteralComparisonRuleTest {
      */
     @Test
     internal fun reportsStringDiscrimination() {
-        val equality = "=" + "="
-        val inequality = "!" + "="
         val source =
-            """
-            fun check(state: String): Boolean {
-                return state $equality "ready" || "failed" $inequality state || when (state) {
-                    "ready" -> true
-                    else -> false
-                }
-            }
-            """.trimIndent()
+            DetektTestSources.read("string-literal-comparison-rule/reports-string-discrimination")
 
         assertEquals(3, StringLiteralComparisonRule(Config.empty).lint(source).size)
     }
@@ -35,14 +26,7 @@ internal class StringLiteralComparisonRuleTest {
     @Test
     internal fun ignoresNonComparisonLiterals() {
         val source =
-            """
-            @Suppress("unused")
-            fun build(value: String): Map<String, String> {
-                val map = mapOf("ready" to value)
-                val text = "state: ${'$'}value"
-                return map + ("text" to text)
-            }
-            """.trimIndent()
+            DetektTestSources.read("string-literal-comparison-rule/ignores-non-comparison-literals")
 
         assertEquals(0, StringLiteralComparisonRule(Config.empty).lint(source).size)
     }

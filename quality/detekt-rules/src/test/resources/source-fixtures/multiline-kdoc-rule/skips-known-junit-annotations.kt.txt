@@ -1,0 +1,17 @@
+@ParameterizedTest
+fun parameterizedFunction() = Unit
+
+@RepeatedTest
+fun repeatedFunction() = Unit
+
+@TestFactory
+fun factoryFunction() = Unit
+
+@TestTemplate
+fun templateFunction() = Unit
+
+@org.junit.jupiter.api.Test
+fun qualifiedTestFunction() = Unit
+
+@org.junit.jupiter.params.ParameterizedTest
+fun qualifiedParameterizedFunction() = Unit

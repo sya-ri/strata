@@ -14,11 +14,8 @@ internal class NoNonNullAssertionRuleTest {
      */
     @Test
     internal fun reportsNonNullAssertions() {
-        val assertion = "!" + "!"
         val source =
-            """
-            fun length(value: String?): Int = value$assertion.length
-            """.trimIndent()
+            DetektTestSources.read("no-non-null-assertion-rule/reports-non-null-assertions")
 
         assertEquals(1, NoNonNullAssertionRule(Config.empty).lint(source).size)
     }
@@ -29,9 +26,7 @@ internal class NoNonNullAssertionRuleTest {
     @Test
     internal fun ignoresSafeCode() {
         val source =
-            """
-            fun length(value: String?): Int = value?.length ?: 0
-            """.trimIndent()
+            DetektTestSources.read("no-non-null-assertion-rule/ignores-safe-code")
 
         assertEquals(0, NoNonNullAssertionRule(Config.empty).lint(source).size)
     }

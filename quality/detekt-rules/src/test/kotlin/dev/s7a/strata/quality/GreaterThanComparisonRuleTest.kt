@@ -15,12 +15,8 @@ internal class GreaterThanComparisonRuleTest {
      */
     @Test
     internal fun reportsGreaterThanComparisons() {
-        val greaterThan = ">"
-        val greaterThanOrEqual = greaterThan + "="
         val source =
-            """
-            fun compare(left: Int, right: Int): Boolean = left $greaterThan right || left $greaterThanOrEqual right
-            """.trimIndent()
+            DetektTestSources.read("greater-than-comparison-rule/reports-greater-than-comparisons")
 
         assertEquals(2, GreaterThanComparisonRule(Config.empty).lint(source).size)
     }
@@ -30,16 +26,8 @@ internal class GreaterThanComparisonRuleTest {
      */
     @Test
     internal fun ignoresOtherSyntax() {
-        val greaterThan = ">"
-        val documentation = "/" + "** The text `left $greaterThan right` is documentation, not code. " + "*/"
         val source =
-            """
-            $documentation
-            fun compare(left: Int, right: Int): Boolean = left < right && left <= right && left == right
-            val text = "left $greaterThan right"
-            val values = listOf(1, 2)
-            val generic = values.filter { it < 3 }
-            """.trimIndent()
+            DetektTestSources.read("greater-than-comparison-rule/ignores-other-syntax")
 
         assertEquals(0, GreaterThanComparisonRule(Config.empty).lint(source).size)
     }
@@ -49,11 +37,8 @@ internal class GreaterThanComparisonRuleTest {
      */
     @Test
     internal fun preservesSideEffectGuidance() {
-        val greaterThan = ">"
         val source =
-            """
-            fun compare(next: () -> Int, current: () -> Int): Boolean = next() $greaterThan current()
-            """.trimIndent()
+            DetektTestSources.read("greater-than-comparison-rule/preserves-side-effect-guidance")
 
         val findings = GreaterThanComparisonRule(Config.empty).lint(source)
         assertEquals(1, findings.size)

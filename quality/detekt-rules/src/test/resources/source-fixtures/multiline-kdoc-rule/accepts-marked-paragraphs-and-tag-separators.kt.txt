@@ -1,0 +1,8 @@
+/**
+ * Returns the current value.
+ *
+ * The value remains owned by the caller.
+ *
+ * @return the caller's value.
+ */
+fun value() = 0

@@ -1,0 +1,8 @@
+package dev.example.feature
+
+import java.util.UUID
+import java.util.Collections.emptyList
+import kotlin.collections.List as KotlinList
+
+fun create(): UUID = UUID.randomUUID()
+fun values(): KotlinList<String> = emptyList()

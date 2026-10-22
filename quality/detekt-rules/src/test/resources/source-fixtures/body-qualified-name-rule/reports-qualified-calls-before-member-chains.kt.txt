@@ -1,0 +1,2 @@
+fun create() = java.util.UUID.randomUUID().toString()
+fun platformClass() = java.lang.String::class.java.name

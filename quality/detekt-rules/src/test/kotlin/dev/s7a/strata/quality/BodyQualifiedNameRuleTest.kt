@@ -15,9 +15,7 @@ internal class BodyQualifiedNameRuleTest {
     @Test
     internal fun reportsBodyQualifiedReferences() {
         val source =
-            """
-            fun create(): java.util.UUID = java.util.UUID.randomUUID()
-            """.trimIndent()
+            DetektTestSources.read("body-qualified-name-rule/reports-body-qualified-references")
 
         assertEquals(2, BodyQualifiedNameRule(Config.empty).lint(source).size)
     }
@@ -28,16 +26,7 @@ internal class BodyQualifiedNameRuleTest {
     @Test
     internal fun ignoresPackageAndImportDirectives() {
         val source =
-            """
-            package dev.example.feature
-
-            import java.util.UUID
-            import java.util.Collections.emptyList
-            import kotlin.collections.List as KotlinList
-
-            fun create(): UUID = UUID.randomUUID()
-            fun values(): KotlinList<String> = emptyList()
-            """.trimIndent()
+            DetektTestSources.read("body-qualified-name-rule/ignores-package-and-import-directives")
 
         assertEquals(0, BodyQualifiedNameRule(Config.empty).lint(source).size)
     }
@@ -48,11 +37,7 @@ internal class BodyQualifiedNameRuleTest {
     @Test
     internal fun ignoresNonQualifiedReferences() {
         val source =
-            """
-            fun read(user: User): String = user.profile.name
-            fun literal(): String = "java.util.UUID"
-            val dependency = libs.versions.kotlin
-            """.trimIndent()
+            DetektTestSources.read("body-qualified-name-rule/ignores-non-qualified-references")
 
         assertEquals(0, BodyQualifiedNameRule(Config.empty).lint(source).size)
     }
@@ -63,10 +48,7 @@ internal class BodyQualifiedNameRuleTest {
     @Test
     internal fun ignoresMemberChainsWithNonNameReceivers() {
         val source =
-            """
-            fun location() = String::class.java.protectionDomain.codeSource.location.toURI()
-            fun value() = factory().java.value.name
-            """.trimIndent()
+            DetektTestSources.read("body-qualified-name-rule/ignores-member-chains-with-non-name-receivers")
 
         assertEquals(0, BodyQualifiedNameRule(Config.empty).lint(source).size)
     }
@@ -77,10 +59,7 @@ internal class BodyQualifiedNameRuleTest {
     @Test
     internal fun reportsQualifiedConstructorsAndFunctions() {
         val source =
-            """
-            fun create() = java.io.File("fixture")
-            fun values() = kotlin.collections.listOf("value")
-            """.trimIndent()
+            DetektTestSources.read("body-qualified-name-rule/reports-qualified-constructors-and-functions")
 
         assertEquals(2, BodyQualifiedNameRule(Config.empty).lint(source).size)
     }
@@ -91,10 +70,7 @@ internal class BodyQualifiedNameRuleTest {
     @Test
     internal fun reportsQualifiedCallsBeforeMemberChains() {
         val source =
-            """
-            fun create() = java.util.UUID.randomUUID().toString()
-            fun platformClass() = java.lang.String::class.java.name
-            """.trimIndent()
+            DetektTestSources.read("body-qualified-name-rule/reports-qualified-calls-before-member-chains")
 
         assertEquals(2, BodyQualifiedNameRule(Config.empty).lint(source).size)
     }

@@ -1,0 +1,5 @@
+/** The text `left > right` is documentation, not code. */
+fun compare(left: Int, right: Int): Boolean = left < right && left <= right && left == right
+val text = "left > right"
+val values = listOf(1, 2)
+val generic = values.filter { it < 3 }
