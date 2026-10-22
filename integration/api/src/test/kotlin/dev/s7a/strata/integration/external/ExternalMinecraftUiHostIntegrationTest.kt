@@ -94,15 +94,12 @@ internal class ExternalMinecraftUiHostIntegrationTest {
                 textStyleScreen(field, notes) to listOf("Search", "Notes"),
             )
         examples.forEach { (definition, values) ->
-            val host = createMinecraftUiHost(definition, profile(fonts), fontBackend = backend)
-            try {
+            createMinecraftUiHost(definition, profile(fonts), fontBackend = backend).use { host ->
                 host.attach()
                 val frame = host.frame(IntSize(640, 480))
                 val editors = frame.semantics.filter { it.semantics.role in setOf(SemanticsRole.TextField, SemanticsRole.TextArea) }
                 val editorValues = editors.map { if (it.semantics.role == SemanticsRole.TextField) it.semantics.label else it.semantics.value }
                 assertEquals(values.map(UiText::Literal), editorValues)
-            } finally {
-                host.close()
             }
         }
         assertEquals(3, closedBackends)
@@ -118,8 +115,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
                 onCancel = {},
                 onPointerEvent = { _, _ -> InputResult.Ignored },
             )
-        val host = createMinecraftUiHost(definition, profile())
-        try {
+        createMinecraftUiHost(definition, profile()).use { host ->
             host.attach()
             val frame = host.frame(IntSize(4, 2))
             val output = frame.drawCommands.single() as DrawCommand.BlitImage
@@ -127,8 +123,6 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             assertEquals(IntRect(0, 0, 2, 1), output.source)
             assertEquals(IntRect(0, 0, 4, 2), output.destination)
             assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
-        } finally {
-            host.close()
         }
     }
 
@@ -141,8 +135,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
                 frames = StateSource { StateSubscription(StateSnapshot(StateRevision(1), TiledImageTile.Ready(image))) {} },
                 size = size,
             )
-        val host = createMinecraftUiHost(definition, profile())
-        try {
+        createMinecraftUiHost(definition, profile()).use { host ->
             host.attach()
             val frame = host.frame(size)
             val output = frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>().single()
@@ -151,8 +144,6 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             assertEquals(FloatRect(0.0f, 0.0f, 2.0f, 1.0f), output.destination)
             assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
             assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Release(IntOffset.Zero, PointerButton.Primary)))
-        } finally {
-            host.close()
         }
     }
 
@@ -355,22 +346,20 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         var firstActivations = 0
         var disabledActivations = 0
         var secondActivations = 0
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("external button activation") {
-                    Column {
-                        Button("First", modifier = Modifier.onActivate { firstActivations += 1 })
-                        Button(
-                            "Disabled",
-                            enabled = false,
-                            modifier = Modifier.onActivate(enabled = false) { disabledActivations += 1 },
-                        )
-                        Button("Second", modifier = Modifier.onActivate { secondActivations += 1 })
-                    }
-                },
-                profile(),
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("external button activation") {
+                Column {
+                    Button("First", modifier = Modifier.onActivate { firstActivations += 1 })
+                    Button(
+                        "Disabled",
+                        enabled = false,
+                        modifier = Modifier.onActivate(enabled = false) { disabledActivations += 1 },
+                    )
+                    Button("Second", modifier = Modifier.onActivate { secondActivations += 1 })
+                }
+            },
+            profile(),
+        ).use { host ->
             host.attach()
             host.frame(IntSize(200, 60))
 
@@ -395,8 +384,6 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             assertEquals(3, firstActivations)
             assertEquals(0, disabledActivations)
             assertEquals(1, secondActivations)
-        } finally {
-            host.close()
         }
     }
 

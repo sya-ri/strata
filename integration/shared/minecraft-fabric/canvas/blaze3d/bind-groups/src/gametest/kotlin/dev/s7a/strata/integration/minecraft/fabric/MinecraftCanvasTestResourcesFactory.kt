@@ -70,10 +70,8 @@ internal fun createMinecraftCanvasTestResources(): MinecraftCanvasTestResources 
 
         override fun close() {
             if (closed) return
-            try {
+            image.use { _ ->
                 texture.close()
-            } finally {
-                image.close()
             }
             closed = true
         }

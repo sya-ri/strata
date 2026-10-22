@@ -59,7 +59,7 @@ internal class RemoteClientStateLifecycleTest {
         val first = RemoteEditableValue { polls.add(1) }
         val shared = RemoteEditableValue { polls.add(2) }
         val newest = RemoteEditableValue { polls.add(4) }
-        try {
+        states.use { _ ->
             states.update {
                 states.prepare(1, EDITABLE, { first }, {}, {
                     releases.add(1)
@@ -80,8 +80,6 @@ internal class RemoteClientStateLifecycleTest {
             assertEquals(listOf(1), releases)
             states.flushEdits(NO_ACTIONS)
             assertEquals(listOf(2, 2, 4), polls)
-        } finally {
-            states.close()
         }
         assertEquals(listOf(1, 2, 3, 5, 4), releases)
         assertThrows(IllegalStateException::class.java) { states.flushEdits(NO_ACTIONS) }

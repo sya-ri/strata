@@ -229,8 +229,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         profile: MinecraftUiProfile,
         output: Path,
     ) {
-        val world = context.createSingleplayerWorld()
-        try {
+        context.createSingleplayerWorld().use { world ->
             world.awaitReady()
             val server = world.server
             val playerId = context.computeOnClient { minecraft -> checkNotNull(minecraft.player).uuid }
@@ -277,8 +276,6 @@ internal class StrataMinecraftLegacyLoadedSuite {
             openPlayerInventoryScreen(context, profile, output)
             verifyPlayerInventoryRoundTrip(context, server, playerId)
             closeAndAssertReleased(context)
-        } finally {
-            world.close()
         }
     }
 

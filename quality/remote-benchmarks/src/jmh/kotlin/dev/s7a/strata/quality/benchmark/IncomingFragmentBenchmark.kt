@@ -73,12 +73,10 @@ public open class IncomingFragmentBenchmark {
          */
         public fun cycle(phase: IncomingFragmentPhase): Int {
             fixture.prepare(phase)
-            return try {
+            return fixture.use { _ ->
                 val result = fixture.receive()
                 fixture.verifyAndClose()
                 result
-            } finally {
-                fixture.close()
             }
         }
 
@@ -124,12 +122,10 @@ public open class IncomingFragmentBenchmark {
          */
         public fun cycle(): Int {
             fixture.prepare(IncomingFragmentPhase.ServerIngress)
-            return try {
+            return fixture.use { _ ->
                 val result = fixture.receive()
                 fixture.verifyAndClose()
                 result
-            } finally {
-                fixture.close()
             }
         }
 

@@ -429,11 +429,9 @@ public open class RemoteClientStatesBenchmark {
                     val scene = Scene()
                     scene.entries = entries
                     scene.membership = membership
-                    try {
+                    scene.use { _ ->
                         scene.setUp()
                         scene.verifyWork()
-                    } finally {
-                        scene.close()
                     }
                 }
             }

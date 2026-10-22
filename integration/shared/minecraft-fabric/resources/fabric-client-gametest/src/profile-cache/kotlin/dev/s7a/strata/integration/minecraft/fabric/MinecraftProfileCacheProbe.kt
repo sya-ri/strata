@@ -201,10 +201,8 @@ internal class MinecraftProfileCacheProbe(
         try {
             return checkNotNull(MinecraftProfileCacheInspection.profile()) { "Normal opening did not publish its profile." }
         } finally {
-            try {
+            screen.use { _ ->
                 clearScreen(minecraft)
-            } finally {
-                screen.close()
             }
         }
     }

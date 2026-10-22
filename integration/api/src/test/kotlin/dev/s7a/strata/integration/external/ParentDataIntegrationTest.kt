@@ -65,8 +65,7 @@ internal class ParentDataIntegrationTest {
         val externalProbe = ExternalProbe()
         val value = ParentDataValue(7)
         val modifier = Modifier.then(ParentDataModifierElement(probe, value = value))
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(treeWithChild(probe, externalProbe, modifier))
             tree.measure(Constraints.fixed(10, 10))
             tree.layout()
@@ -82,8 +81,6 @@ internal class ParentDataIntegrationTest {
             assertEquals(listOf(value, value), probe.consumerMeasureValues)
             assertEquals(listOf(value, value), probe.consumerLayoutValues)
             assertEquals(1, externalProbe.componentUpdateCalls)
-        } finally {
-            tree.close()
         }
     }
 
