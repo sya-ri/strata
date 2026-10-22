@@ -178,7 +178,7 @@ internal class UiControlTest {
         assertEquals(UiSessionStatus.Closed(UiCloseReason.Closed), checkNotNull(receiver).status)
         assertThrows(IllegalStateException::class.java) { host.frame(Constraints.fixed(10, 10)) }
         host.close()
-        checkNotNull(receiver).close()
+        receiver.close()
     }
 
     @Test

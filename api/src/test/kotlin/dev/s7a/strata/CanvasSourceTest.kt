@@ -93,7 +93,7 @@ internal class CanvasSourceTest {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
         val binding =
             canvasSource(
-                StateSource { callback ->
+                { callback ->
                     observer = callback
                     StateSubscription(snapshot(1)) {}
                 },
@@ -126,7 +126,7 @@ internal class CanvasSourceTest {
     fun cutoffRetainsOnlyOneTemporaryObservationAndDoesNotConsumeALaterCallback() {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
         canvasSource(
-            StateSource { callback ->
+            { callback ->
                 observer = callback
                 StateSubscription(snapshot(1)) {}
             },

@@ -59,7 +59,7 @@ internal class HeadlessNonpaintingConsumerTest {
         val events = ArrayList<PointerEvent>()
         val source =
             canvasSource(
-                StateSource {
+                {
                     observer = it
                     StateSubscription(StateSnapshot(StateRevision(0), red)) { closes += 1 }
                 },

@@ -188,7 +188,7 @@ internal class RootOverlayScopeLifetimeTest {
                         GuardFailureCause.Owner -> other.run { assertFailsWith<IllegalStateException> { scope.anchorBounds } }
                         GuardFailureCause.Lifetime -> assertFailsWith<IllegalStateException> { expired.anchorBounds }
                     }
-                throw requireNotNull(guardFailure)
+                throw guardFailure
             }
             probe.invalidatePaint()
             val thrown = assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(4, 4)) }

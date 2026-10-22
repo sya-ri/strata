@@ -460,7 +460,7 @@ public object UnihexBoundsMethodTrace {
                         .method()
                 if (caller.declaringType().name().contentEquals("java.io.PrintStream") && caller.name().contentEquals("println")) return null
             }
-            val value = event.thread().frame(0).getArgumentValues()[0] as? StringReference ?: return null
+            val value = event.thread().frame(0).argumentValues[0] as? StringReference ?: return null
             return value.value()
         }
 

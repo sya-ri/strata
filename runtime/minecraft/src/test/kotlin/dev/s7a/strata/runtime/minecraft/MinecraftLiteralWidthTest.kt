@@ -29,7 +29,7 @@ internal class MinecraftLiteralWidthTest {
                         capabilities = FontTestResources.compatibility.copy(saturatingCeil = saturating),
                     )
                 val backend = FontTestBackend(open = { _, _ -> FontTestFace(lookup = { codePoint -> MinecraftFontGlyph(if (codePoint == 'A'.code) advance else 1.25f, 0f, 0f, 0f, 0f, null) }) })
-                MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend })).use { renderer ->
+                MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend })).use { renderer ->
                     verifyRanges(renderer)
                     renderer.close()
                     assertThrows(IllegalStateException::class.java) { renderer.literalWidth(text, FontTestResources.defaultFont, 0, text.length) }
@@ -55,7 +55,7 @@ internal class MinecraftLiteralWidthTest {
                     MinecraftFontGlyph(0f, 0f, 0f, 0f, 0f, null)
                 })
             })
-        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0)).use { renderer ->
+        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0)).use { renderer ->
             assertEquals(text.length, renderer.literalEndWithin(text, FontTestResources.defaultFont, 0, 8))
             assertEquals(text.length, lookups)
             lookups = 0
@@ -101,7 +101,7 @@ internal class MinecraftLiteralWidthTest {
                         MinecraftFontGlyph(advance, 0f, 0f, 0f, 0f, null)
                     })
                 })
-            MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend })).use { renderer ->
+            MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend })).use { renderer ->
                 verifyIntegralSuffixes(renderer, text, boundaries)
             }
         }
@@ -123,7 +123,7 @@ internal class MinecraftLiteralWidthTest {
                     MinecraftFontGlyph(if (codePoint == 'A'.code) 4f else -3f, 0f, 0f, 0f, 0f, null)
                 })
             })
-        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0)).use { renderer ->
+        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0)).use { renderer ->
             assertEquals(text.length - 23, renderer.literalExactStartWithin(text, FontTestResources.defaultFont, text.length, 8))
             assertTrue(lookups <= 2 * text.length)
             lookups = 0
@@ -146,7 +146,7 @@ internal class MinecraftLiteralWidthTest {
                     MinecraftFontGlyph(if (codePoint == 'A'.code) 0.75f else -0.5f, 0f, 0f, 0f, 0f, null)
                 })
             })
-        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0)).use { renderer ->
+        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0)).use { renderer ->
             assertEquals(text.length - 69, renderer.literalExactStartWithin(text, FontTestResources.defaultFont, text.length, 8))
             assertTrue(lookups <= 2 * text.length)
         }
@@ -165,7 +165,7 @@ internal class MinecraftLiteralWidthTest {
                         MinecraftFontGlyph(if (codePoint == 'A'.code) -magnitude else magnitude, 0f, 0f, 0f, 0f, null)
                     })
                 })
-            MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0)).use { renderer ->
+            MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0)).use { renderer ->
                 assertEquals(0, renderer.literalExactStartWithin(text, FontTestResources.defaultFont, text.length, 0))
                 assertEquals(text.length, lookups)
             }
@@ -193,7 +193,7 @@ internal class MinecraftLiteralWidthTest {
                     MinecraftFontGlyph(advance, 0f, 0f, 0f, 0f, null)
                 })
             })
-        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend })).use { renderer ->
+        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend })).use { renderer ->
             assertEquals(1, renderer.literalExactStartWithin("A", FontTestResources.defaultFont, 1, 0))
             assertEquals(null, renderer.literalExactStartWithin("AB", FontTestResources.defaultFont, 2, 0))
             assertEquals(null, renderer.literalExactStartWithin("ABC", FontTestResources.defaultFont, 3, 0))

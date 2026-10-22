@@ -65,8 +65,8 @@ internal class ComponentStatePublicationTest {
         events.clear()
         state.checked = false
         assertEquals(listOf(3, 4), events)
-        checkNotNull(first).close()
-        checkNotNull(later).close()
+        first.close()
+        later.close()
         last.close()
         added?.close()
     }
@@ -96,7 +96,7 @@ internal class ComponentStatePublicationTest {
         state.checked = true
         assertEquals(listOf(1 to true, 3 to true), events)
         first.close()
-        checkNotNull(later).close()
+        later.close()
         added?.close()
     }
 

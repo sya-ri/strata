@@ -360,7 +360,7 @@ internal class UiSessionBindingTest {
         lateinit var session: UiSession
         var unavailableHandleCreated = false
         val reentrantSource =
-            StateSource<Int> { _ ->
+            StateSource { _ ->
                 session.state(1)
                 unavailableHandleCreated = true
                 StateSubscription(StateSnapshot(StateRevision(1), 1)) {}

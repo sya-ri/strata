@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime.minecraft
 import dev.s7a.strata.runtime.minecraft.font.FontTestBackend
 import dev.s7a.strata.runtime.minecraft.font.FontTestFace
 import dev.s7a.strata.runtime.minecraft.font.FontTestResources
-import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import org.junit.jupiter.api.Assertions.assertEquals

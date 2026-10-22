@@ -24,7 +24,7 @@ import kotlin.test.assertSame
 internal class PortableObservedSourceTest {
     @Test
     fun deferredReadsRefreshIndependentlyAndReleaseInactiveDependencies() {
-        val source = StateSource<Unit> { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
+        val source = StateSource { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
         val visible = mutableStateOf(true)
         val alternate = mutableStateOf(false)
         val value = mutableStateOf(0)
@@ -68,7 +68,7 @@ internal class PortableObservedSourceTest {
 
     @Test
     fun rootAndDeferredReadsShareOneMutationGuard() {
-        val source = StateSource<Unit> { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
+        val source = StateSource { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
         val value = mutableStateOf(0)
         val seen = ArrayList<Int>()
         createRuntimeUiSession {

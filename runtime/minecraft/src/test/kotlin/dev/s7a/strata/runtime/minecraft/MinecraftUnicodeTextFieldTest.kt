@@ -26,7 +26,6 @@ import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftTextFieldFixture.fieldSize
 import dev.s7a.strata.runtime.minecraft.MinecraftTextFieldFixture.host
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
-import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot

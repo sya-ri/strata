@@ -415,7 +415,7 @@ internal class RemoteLifecycleEventTest {
             }
             assertSame(failure, assertThrows(IllegalStateException::class.java) { fixture.service.open(owner, Unit, UiDefinition { Spacer() }) })
             assertTrue(checkNotNull(queued).status is RemoteSessionStatus.Closed)
-            assertTrue(checkNotNull(queued).uiSession.status is UiSessionStatus.Closed)
+            assertTrue(queued.uiSession.status is UiSessionStatus.Closed)
             assertNull(fixture.service.capabilities(Unit))
             assertThrows(IllegalStateException::class.java) { fixture.service.join(Unit) }
         }

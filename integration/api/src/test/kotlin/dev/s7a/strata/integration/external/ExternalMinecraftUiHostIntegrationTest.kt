@@ -52,7 +52,6 @@ import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
-import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals

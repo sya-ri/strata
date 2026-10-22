@@ -290,7 +290,7 @@ internal class MinecraftUiHostTest {
         assertEquals(0, platformCloses)
 
         val backend = resourceFontBackend()
-        createMinecraftUiHost(definition, profile, platform, MinecraftFontBackendFactory { backend }).use { host ->
+        createMinecraftUiHost(definition, profile, platform, { backend }).use { host ->
             host.attach()
             assertEquals(
                 2,
@@ -326,7 +326,7 @@ internal class MinecraftUiHostTest {
             },
             resourceFontProfile(),
             platform,
-            MinecraftFontBackendFactory { backend },
+            { backend },
         ).use { host ->
             val failure = assertThrows(IllegalArgumentException::class.java, host::attach)
             assertSame(expected, failure)

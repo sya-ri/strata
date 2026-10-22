@@ -100,7 +100,6 @@ internal object ProvenanceHashingEvidence {
                     collectAll(target, controlsManifest, corpusManifest, report)
                     report.addProperty("status", "passed")
                     validateReport(report)
-                    Unit
                 }
             report.add("complete_preparation_collection_verification", complete.evidence)
             PerformanceJson.writeNew(output, report)

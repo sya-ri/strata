@@ -90,7 +90,7 @@ internal class MinecraftFontEngineTest {
                 requests++
                 rasterGlyph(codePoint)
             }
-        val engine = MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend }, cacheEntries = 2, cacheBytes = 8)
+        val engine = MinecraftFontEngine(trueTypeSnapshot("default"), { backend }, cacheEntries = 2, cacheBytes = 8)
         val original = engine.glyph(FontTestResources.defaultFont, '日'.code)
         val korean = engine.glyph(FontTestResources.defaultFont, '한'.code)
         assertSame(original, engine.glyph(FontTestResources.defaultFont, '日'.code))
@@ -118,7 +118,7 @@ internal class MinecraftFontEngineTest {
                 requests++
                 rasterGlyph(codePoint, width = 5)
             }
-        MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend }, cacheBytes = 16).use { engine ->
+        MinecraftFontEngine(trueTypeSnapshot("default"), { backend }, cacheBytes = 16).use { engine ->
             val first = engine.glyph(FontTestResources.defaultFont, '日'.code)
             assertEquals(first, engine.glyph(FontTestResources.defaultFont, '日'.code))
             assertEquals(2, requests)
@@ -197,7 +197,7 @@ internal class MinecraftFontEngineTest {
                 requests++
                 null
             }
-        MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(trueTypeSnapshot("default"), { backend }).use { engine ->
             repeat(2) { engine.glyph(FontTestResources.defaultFont, '日'.code) }
             assertEquals(1, requests)
             assertEquals(1, engine.retainedRasterEntries)
@@ -272,7 +272,7 @@ internal class MinecraftFontEngineTest {
                 },
                 release = { throw second },
             )
-        val engine = MinecraftFontEngine(trueTypeSnapshot("default", "second"), MinecraftFontBackendFactory { backend })
+        val engine = MinecraftFontEngine(trueTypeSnapshot("default", "second"), { backend })
         engine.glyph(FontTestResources.defaultFont, '日'.code)
         engine.glyph(ResourceId("minecraft", "second"), '한'.code)
         val failure = assertThrows(IllegalStateException::class.java, engine::close)
@@ -289,7 +289,7 @@ internal class MinecraftFontEngineTest {
     @Test
     fun foreignThreadsCannotReadOrCloseTheOwnerEngine() {
         val backend = backend { codePoint -> rasterGlyph(codePoint) }
-        MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(trueTypeSnapshot("default"), { backend }).use { engine ->
             val work =
                 FutureTask {
                     assertThrows(IllegalStateException::class.java) { engine.glyph(FontTestResources.defaultFont, '日'.code) }
@@ -325,7 +325,7 @@ internal class MinecraftFontEngineTest {
                     rightToLeft: Boolean,
                 ): List<MinecraftVisualGlyph> = buffer
             }
-        MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend }).use { engine ->
+        MinecraftFontEngine(trueTypeSnapshot("default"), { backend }).use { engine ->
             val first = engine.visualGlyphs("AB")
             buffer.clear()
             buffer.add(MinecraftVisualGlyph('C'.code, 0))

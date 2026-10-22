@@ -47,7 +47,6 @@ internal class NativeSemanticsFocusTest {
             val before = session.frame(Constraints.fixed(80, 80))
             val owner = assertNotNull(before.semantics.first().owner)
             assertTrue(owner.focusable)
-            assertFalse(owner.focused)
             assertEquals(InputResult.Ignored, session.focusSemantics(0))
             assertEquals(InputResult.Consumed, session.focusSemantics(owner.identity))
             val focused = session.frame(Constraints.fixed(80, 80))

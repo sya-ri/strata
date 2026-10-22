@@ -14,7 +14,6 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.semantics.Semantics
@@ -65,7 +64,7 @@ internal class HeadlessRenderTest {
         var closes = 0
         val source =
             canvasSource(
-                StateSource { observer ->
+                { observer ->
                     observer(StateSnapshot(StateRevision(2), latest))
                     StateSubscription(StateSnapshot(StateRevision(1), initial)) { closes += 1 }
                 },

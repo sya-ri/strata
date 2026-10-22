@@ -85,7 +85,7 @@ internal class TextLineLayoutReference(
         check(0 <= first && first <= last)
         val coordinates = row.positions.slice(first..last)
         check(TextAreaInputAccess.field(checkNotNull(underline), "firstLine") == 0)
-        check(TextAreaInputAccess.field(checkNotNull(underline), "ranges") == listOf(coordinates.min()..coordinates.max()))
+        check(TextAreaInputAccess.field(underline, "ranges") == listOf(coordinates.min()..coordinates.max()))
     }
 
     private fun verifyLine(

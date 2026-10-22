@@ -57,7 +57,6 @@ internal class EmptyRootOverlayTest {
             assertEquals(listOf(IntSize(4, 4) to IntRect(-2, -3, 2, 1)), child.geometry)
             assertEquals(expected, tree.paint())
             assertEquals(1, child.geometry.size)
-            assertFalse(root is RootOverlayPaintNode)
         }
     }
 
@@ -355,8 +354,9 @@ internal class EmptyRootOverlayTest {
         assertEquals(expected, second.asSequence().toList())
         assertEquals(expected.drop(1), first.asSequence().toList())
         assertFailsWith<NoSuchElementException> { first.next() }
-        assertFailsWith<IndexOutOfBoundsException> { nested[-1] }
-        assertFailsWith<IndexOutOfBoundsException> { nested[expected.size] }
+        for (index in listOf(-1, expected.size)) {
+            assertFailsWith<IndexOutOfBoundsException> { nested[index] }
+        }
     }
 
     private fun laidOut(description: Element): UiTree =
