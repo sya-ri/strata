@@ -120,6 +120,7 @@ Plugin disable, disconnect, screen replacement, native container replacement, de
 Closing the shared service permanently rejects new players, schemas, and definitions before terminal listeners run; definitions rejected before admission remain available to another host.
 Connection replacement also respects this cutoff if a disconnection listener closes the service.
 A screen replacement listener may retire the connection; an already admitted opening then closes without evaluating its content.
+A title-encoding failure closes the admitted handle before error reporting, preserving the original failure if a close listener also throws.
 Promoting a HUD to Screen preserves one foreground even when a close listener opens another screen.
 A failing error reporter cannot interrupt cleanup of other selected sessions during service shutdown, owner retirement, or container changes.
 Common lifecycle/source-cutoff rules remain in [UI sessions](../development/ui-sessions.md); runtime cache admission remains in [performance](../development/performance.md).

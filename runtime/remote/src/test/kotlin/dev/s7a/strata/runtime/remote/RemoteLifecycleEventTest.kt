@@ -6,6 +6,8 @@ import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.PlatformText
+import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiCategory
 import dev.s7a.strata.ui.UiCloseReason
 import dev.s7a.strata.ui.UiDefinition
@@ -323,6 +325,78 @@ internal class RemoteLifecycleEventTest {
             } else {
                 assertEquals(RemoteSessionStatus.Closed(RemoteFailure.ResourceLimit), extra.status)
             }
+        }
+    }
+
+    @Test
+    fun anUnsupportedQueuedTitleClosesItsPendingHandleBeforeReporting() {
+        Host().use { fixture ->
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            var queued: RemoteScreenSession? = null
+            var evaluations = 0
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    queued =
+                        fixture.service.open(
+                            owner,
+                            Unit,
+                            UiDefinition(title = UiText.Platform(object : PlatformText {})) {
+                                evaluations += 1
+                                Spacer()
+                            },
+                        )
+                }
+            }
+            val failure = assertThrows(RemoteProtocolException::class.java) { fixture.service.open(owner, Unit, UiDefinition { Spacer() }) }
+            assertEquals(RemoteFailure.UnsupportedType, failure.reason)
+            val pending = checkNotNull(queued)
+            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.UnsupportedType), pending.status)
+            assertEquals(UiSessionStatus.Closed(UiCloseReason.Unsupported), pending.uiSession.status)
+            assertEquals(0, evaluations)
+            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>().count { it.identity == pending.identity })
+        }
+    }
+
+    @Test
+    fun anUnsupportedQueuedTitleDoesNotStrandAnAlreadyQueuedServiceClose() {
+        Host().use { fixture ->
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    fixture.service.open(owner, Unit, UiDefinition(title = UiText.Platform(object : PlatformText {})) { Spacer() })
+                    fixture.service.close()
+                }
+            }
+            assertThrows(RemoteProtocolException::class.java) { fixture.service.open(owner, Unit, UiDefinition { Spacer() }) }
+            assertNull(fixture.service.capabilities(Unit))
+            assertThrows(IllegalStateException::class.java) { fixture.service.join(Unit) }
+        }
+    }
+
+    @Test
+    fun aFailedOpeningKeepsItsPrimaryFailureWhenTheCloseListenerAlsoFails() {
+        Host().use { fixture ->
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            val cleanupFailure = IllegalStateException("Close listener failed.")
+            var queued: RemoteScreenSession? = null
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed) {
+                    if (event.identity == first.identity) {
+                        queued = fixture.service.open(owner, Unit, UiDefinition(title = UiText.Platform(object : PlatformText {})) { Spacer() })
+                        fixture.service.close()
+                    } else {
+                        throw cleanupFailure
+                    }
+                }
+            }
+            val failure = assertThrows(RemoteProtocolException::class.java) { fixture.service.open(owner, Unit, UiDefinition { Spacer() }) }
+            assertEquals(RemoteFailure.UnsupportedType, failure.reason)
+            assertEquals(listOf(cleanupFailure), failure.suppressed.toList())
+            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.UnsupportedType), checkNotNull(queued).status)
+            assertNull(fixture.service.capabilities(Unit))
         }
     }
 
