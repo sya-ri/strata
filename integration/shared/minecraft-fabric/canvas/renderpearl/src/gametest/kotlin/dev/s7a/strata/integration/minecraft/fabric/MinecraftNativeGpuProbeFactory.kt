@@ -1,7 +1,9 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 /**
- * Compiled timestamp-query constructor; obtaining it creates no render-thread resources.
- * Invoke the constructor only on the client render thread; the caller owns the resulting probe.
+ * Supplies the RenderPearl constructor through the shared probe-ownership contract.
  */
-internal val minecraftNativeGpuProbeFactory: ((Int) -> MinecraftNativeGpuProbe)? = ::MinecraftGpuPerformanceProbe
+internal val minecraftNativeGpuProbeFactory: MinecraftNativeGpuProbeFactory =
+    object : MinecraftNativeGpuProbeFactory {
+        override val create = ::MinecraftGpuPerformanceProbe
+    }

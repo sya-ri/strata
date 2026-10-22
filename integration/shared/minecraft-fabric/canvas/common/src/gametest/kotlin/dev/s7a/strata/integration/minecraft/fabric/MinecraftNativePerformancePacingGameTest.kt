@@ -119,7 +119,7 @@ internal object MinecraftNativePerformancePacingGameTest {
     }
 
     private fun verifyQueryFailure(context: MinecraftCanvasTestContext): String {
-        val createProbe = minecraftNativeGpuProbeFactory ?: return "unavailable"
+        val createProbe = minecraftNativeGpuProbeFactory.create ?: return "unavailable"
         val failure =
             runCatching {
                 withBorrowedOptions(context) {

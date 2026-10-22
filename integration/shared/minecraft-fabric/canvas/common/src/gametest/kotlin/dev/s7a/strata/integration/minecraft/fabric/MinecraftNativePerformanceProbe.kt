@@ -254,7 +254,7 @@ internal class MinecraftNativePerformanceProbe(
 
     private fun createGpuProbe(samples: Int): MinecraftNativeGpuProbe? {
         if (gpuQueries.not()) return null
-        return minecraftNativeGpuProbeFactory?.invoke(samples)
+        return minecraftNativeGpuProbeFactory.create?.invoke(samples)
     }
 
     private val viewport = IntSize(1920, 1080)
