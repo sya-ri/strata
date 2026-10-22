@@ -8,7 +8,6 @@ import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.modifier.containerBackground
 import dev.s7a.strata.modifier.menuBackground
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
