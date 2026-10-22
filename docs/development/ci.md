@@ -207,8 +207,9 @@ Native consumers retain their exact canonical component `TestSource` links.
 Other shared roots, including authored showcase inputs, are accepted only when the foreign owner independently declares the same exact root and kind in the configured project inventory.
 
 Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
-IDE indexes are restored for matching build-model inputs and saved only after successful analysis and complete-model verification.
-Their identity follows Gradle configuration, wrapper and catalog inputs, model-generation scripts, and the analysis profile and workflow; other CI scripts and Python regression tests do not invalidate compatible indexes.
+IDE indexes are restored for matching build-model inputs.
+Both indexes and complete Loom inputs are saved after current-revision analysis completes and independent complete-model verification passes, including runs that fail solely on ordinary findings.
+Index identity follows Gradle configuration, wrapper and catalog inputs, model-generation scripts, and the analysis profile and workflow; other CI scripts and Python regression tests do not invalidate compatible indexes.
 Private build-logic test sources and fixtures retain their standalone verification without invalidating product indexes.
 Keeping matrix Gradle caches read-only limits storage pressure so these indexes and the complete Loom project cache can coexist.
 Every run recreates the project model and analysis reports and verifies every expected module.

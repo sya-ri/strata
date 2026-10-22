@@ -159,7 +159,7 @@ jobs:
         if-no-files-found: error
         include-hidden-files: true
     - name: Save verified Qodana indexes
-      if: success() && steps.analysis_cache.outputs.cache-hit != 'true'
+      if: ${{ !cancelled() && steps.model.outcome == 'success' && steps.analysis_cache.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v6
       with:
         path: ${{ runner.temp }}/qodana/caches
