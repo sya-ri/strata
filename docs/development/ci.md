@@ -233,6 +233,7 @@ Checks do not enforce workflow prose or source statement order.
 
 [Release publication](release.md) owns first-time full validation, immutable preparation, per-destination retries, and moderation monitoring.
 Documentation inputs trigger Pages separately after merge; the checked site is generated once and old rendered versions come from `gh-pages`.
+Staged-site validation and its public URL inventory run on every invocation without snapshotting the entire repository.
 Runtime inputs to Pages include production source sets and Gradle definitions; private tests and ABI baselines do not trigger site generation.
 See [Pages publication](release.md#pages-artifacts-and-deployment) and [documentation ownership](documentation.md#documentation-ownership).
 Wait for CI using `gh run watch <run-id> --exit-status`; inspect logs after completion or failure.
