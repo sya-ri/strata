@@ -279,6 +279,23 @@ internal class HeadlessBlitTest {
     }
 
     @Test
+    fun outputPixelSamplingPreservesSourceMappingWhenTheScaledProductExceedsLong() {
+        // Only the final source texel is visible in a destination spanning over a trillion physical pixels.
+        val sourceWidth = 4_194_305
+        val lastColor = 0xFF00FF00.toInt()
+        val source = image(IntSize(sourceWidth, 1), IntArray(sourceWidth) { index -> if (index == sourceWidth - 1) lastColor else 0xFFFF0000.toInt() })
+        val result =
+            rasterizeHeadless(
+                listOf(DrawCommand.BlitImagePixels(source, IntRect(0, 0, sourceWidth, 1), IntRect(Int.MIN_VALUE + 2, 0, 1, 1))),
+                IntSize(1, 1),
+                scale = 512,
+            )
+
+        assertEquals(IntSize(512, 512), result.size)
+        assertArrayEquals(IntArray(512 * 512) { lastColor }, result.copyArgb())
+    }
+
+    @Test
     fun upscalingDownscalingAndNonIntegerRatiosUsePixelCenters() {
         val source2x2 =
             image(
