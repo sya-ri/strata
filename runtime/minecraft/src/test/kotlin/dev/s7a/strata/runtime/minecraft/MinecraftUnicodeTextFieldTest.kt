@@ -562,8 +562,7 @@ internal class MinecraftUnicodeTextFieldTest {
                 TextField(state, size, ResourceId("example", "compact"), modifier = Modifier.initialFocus())
             },
             MinecraftProfileFixture.create(fontSnapshot = snapshot),
-            { backend },
-        )
+        ) { backend }
     }
 
     /**

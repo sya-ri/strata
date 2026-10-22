@@ -140,7 +140,7 @@ internal class MinecraftFontResourceCacheTest {
             FontTestResources.snapshot(
                 FontTestResources.font("default", """{"type":"ttf","file":"test:shared.ttf","skip":"A"},{"type":"space","advances":{"A":3}}"""),
                 FontTestResources.font("test:other", """{"type":"ttf","file":"test:shared.ttf","skip":"B"},{"type":"space","advances":{"B":4}}"""),
-                FontTestResources.font("test:duplicates", "$duplicateProviders," + """{"type":"space","advances":{"A":5}}"""),
+                FontTestResources.font("test:duplicates", """$duplicateProviders,{"type":"space","advances":{"A":5}}"""),
                 "assets/test/font/shared.ttf" to byteArrayOf(1),
             )
         val requested = ArrayList<Int>()

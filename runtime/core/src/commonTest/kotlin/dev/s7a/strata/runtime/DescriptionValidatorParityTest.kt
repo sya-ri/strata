@@ -144,7 +144,7 @@ internal class DescriptionValidatorParityTest {
             val probe = DescriptionValidationProbe()
             val children = build(probe)
             val root = probe.element(-1, children)
-            val expected =
+            val referenceFailure =
                 runCatching {
                     if (dynamic) OriginalDescriptionValidator().validateChildren(children) else OriginalDescriptionValidator().validate(root)
                 }.exceptionOrNull()
@@ -156,10 +156,10 @@ internal class DescriptionValidatorParityTest {
                 }.exceptionOrNull()
             assertEquals(expectedTrace, probe.trace)
             assertEquals(rejects, actual != null)
-            assertEquals(expected?.let { it::class }, actual?.let { it::class })
-            assertEquals(expected?.message, actual?.message)
+            assertEquals(referenceFailure?.let { it::class }, actual?.let { it::class })
+            assertEquals(referenceFailure?.message, actual?.message)
             if (exactFailure != null) {
-                assertSame(exactFailure, expected)
+                assertSame(exactFailure, referenceFailure)
                 assertSame(exactFailure, actual)
             }
             if (actual == null && children.isNotEmpty()) assertTrue(expectedTrace.any { it is DescriptionValidationProbe.Event.Local })

@@ -62,12 +62,10 @@ internal class HeadlessRenderTest {
         val latest = createDrawImage(IntSize(1, 1), intArrayOf(0xFF00FF00.toInt()))
         var closes = 0
         val source =
-            canvasSource(
-                { observer ->
-                    observer(StateSnapshot(StateRevision(2), latest))
-                    StateSubscription(StateSnapshot(StateRevision(1), initial)) { closes += 1 }
-                },
-            )
+            canvasSource { observer ->
+                observer(StateSnapshot(StateRevision(2), latest))
+                StateSubscription(StateSnapshot(StateRevision(1), initial)) { closes += 1 }
+            }
         val description = evaluateComponentTree { Canvas(source, IntSize(1, 1)) }
 
         assertEquals(0xFF00FF00.toInt(), renderHeadless(description, IntSize(1, 1)).image.argbAt(0, 0))

@@ -110,7 +110,7 @@ internal class MinecraftUiHostTest {
                             Modifier
                                 .size(4, 3)
                                 .initialFocus()
-                                .onFocusChanged({ value -> focus.add(value) })
+                                .onFocusChanged { value -> focus.add(value) }
                                 .onKeyPress { _ -> InputResult.Consumed }
                                 .onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
                     )
@@ -283,14 +283,14 @@ internal class MinecraftUiHostTest {
         assertEquals(0, platformCloses)
         val failure =
             assertThrows(IllegalStateException::class.java) {
-                createMinecraftUiHost(definition, profile, platform, { throw expected })
+                createMinecraftUiHost(definition, profile, platform) { throw expected }
             }
         assertSame(expected, failure)
         assertEquals(0, evaluations)
         assertEquals(0, platformCloses)
 
         val backend = resourceFontBackend()
-        createMinecraftUiHost(definition, profile, platform, { backend }).use { host ->
+        createMinecraftUiHost(definition, profile, platform) { backend }.use { host ->
             host.attach()
             assertEquals(
                 2,
@@ -326,8 +326,7 @@ internal class MinecraftUiHostTest {
             },
             resourceFontProfile(),
             platform,
-            { backend },
-        ).use { host ->
+        ) { backend }.use { host ->
             val failure = assertThrows(IllegalArgumentException::class.java, host::attach)
             assertSame(expected, failure)
             assertEquals(listOf(fontCleanup, platformCleanup), failure.suppressed.toList())

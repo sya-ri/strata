@@ -215,12 +215,10 @@ internal class FontHexGlyphBoundsTest {
             LongArray(16) { 1L },
             LongArray(16) { if (it % 3 == 0) 1L shl (width / 2) else 0L },
             LongArray(16) {
-                if (it == 0) {
-                    1L shl (width - 2)
-                } else if (it == 15) {
-                    2L
-                } else {
-                    0L
+                when (it) {
+                    0 -> 1L shl (width - 2)
+                    15 -> 2L
+                    else -> 0L
                 }
             },
             LongArray(16) { if (it % 2 == 0) mask else 0L },

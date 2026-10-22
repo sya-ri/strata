@@ -120,7 +120,7 @@ internal class RemotePacketAdmissionTest {
     fun byteAndEntryExhaustionReleaseRejectedHandlesAndPreserveExistingQueue() {
         val limits = RemoteLimits(frameBytes = 64, messageBytes = 128, pendingBytes = 128, collectionEntries = 8, treeNodes = 1)
         listOf(limits, limits.copy(collectionEntries = 1)).forEach { bound ->
-            RemotePacketStream(address, bound, {}).use { stream ->
+            RemotePacketStream(address, bound) {}.use { stream ->
                 val admitted = minOf(2, bound.collectionEntries)
                 repeat(admitted) { index ->
                     RemotePacketAdmission.decode(envelope(ByteArray(64), index + 1L)).use { stream.offer(it, 0) }
@@ -160,7 +160,7 @@ internal class RemotePacketAdmissionTest {
     @Test
     fun gapsRejectBackwardAndExpiredTimeWithoutPublishingRejectedStorage() {
         listOf(0L, 11L).forEach { now ->
-            RemotePacketStream(address, RemotePacket.limits.copy(assemblyMillis = 10), {}).use { stream ->
+            RemotePacketStream(address, RemotePacket.limits.copy(assemblyMillis = 10)) {}.use { stream ->
                 RemotePacketAdmission.decode(envelope(ByteArray(17), 2)).use { stream.offer(it, 1) }
                 val late = RemotePacketAdmission.decode(envelope(ByteArray(17)))
                 assertEquals(RemoteFailure.TimedOut, assertThrows(RemoteProtocolException::class.java) { stream.offer(late, now) }.reason)

@@ -107,7 +107,7 @@ internal class RuntimeUiSessionBridgeTest {
                         modifier =
                             Modifier
                                 .size(2, 1)
-                                .onHover({ value -> transitions.add(value) }),
+                                .onHover { value -> transitions.add(value) },
                     )
                 }
             }

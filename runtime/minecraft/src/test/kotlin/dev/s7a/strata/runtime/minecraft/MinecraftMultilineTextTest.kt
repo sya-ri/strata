@@ -417,11 +417,10 @@ internal class MinecraftMultilineTextTest {
                 val semantic = tree.semantics().single { it.semantics.role == SemanticsRole.Text }
                 assertEquals(text, semantic.semantics.label)
                 assertNarrowClipPixels(commands)
-                val previous = commands
                 tree.update(createMinecraftMultilineTextElement(text, renderer, policy, TextStyle.ContainerLabel, Modifier, null))
                 tree.measure(Constraints.fixed(1, 2))
                 tree.layout()
-                assertEquals(previous, tree.paint())
+                assertEquals(commands, tree.paint())
                 tree.update(createMinecraftMultilineTextElement(UiText.Literal("B"), renderer, policy, TextStyle.ContainerLabel, Modifier, null))
                 tree.measure(Constraints(maxWidth = 10, maxHeight = 20))
                 tree.layout()

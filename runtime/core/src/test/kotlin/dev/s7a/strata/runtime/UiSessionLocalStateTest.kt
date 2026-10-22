@@ -166,11 +166,9 @@ internal class UiSessionLocalStateTest {
                     declarationRejected = runCatching { session.state(1) }.isFailure
                     bindRejected =
                         runCatching {
-                            session.bind(
-                                { _ ->
-                                    StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
-                                },
-                            )
+                            session.bind { _ ->
+                                StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
+                            }
                         }.isFailure
                 },
             )

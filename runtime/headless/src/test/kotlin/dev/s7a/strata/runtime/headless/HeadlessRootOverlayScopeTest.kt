@@ -56,8 +56,8 @@ internal class HeadlessRootOverlayScopeTest {
                     val x = index % width / scale
                     val y = index / width / scale
                     when {
-                        y < 1 || 5 <= y || 5 <= x -> RED.value
-                        1 <= x && x < 3 -> WHITE.value
+                        (y in 1..<5).not() || 5 <= x -> RED.value
+                        x in 1..<3 -> WHITE.value
                         x == 4 -> BLUE.value
                         else -> GREEN.value
                     }

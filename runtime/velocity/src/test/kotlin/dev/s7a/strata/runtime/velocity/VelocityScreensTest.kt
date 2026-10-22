@@ -203,7 +203,8 @@ internal class VelocityScreensTest {
                         ScreenDefinition("Proxy") {
                             Spacer(
                                 Modifier.onActivate {
-                                    assertEquals(createdOn.get(), Thread.currentThread())
+                                    val expectedThread = createdOn.get()
+                                    assertEquals(expectedThread, Thread.currentThread())
                                     field.value = "after"
                                     calls.incrementAndGet()
                                 },

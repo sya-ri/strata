@@ -133,12 +133,10 @@ internal class MinecraftCycleButtonSelectionTest {
         val host =
             host(
                 state,
-                Modifier.onCycle<Choice>(
-                    { value ->
-                        actions.add(value)
-                        state.value = values[6]
-                    },
-                ),
+                Modifier.onCycle<Choice> { value ->
+                    actions.add(value)
+                    state.value = values[6]
+                },
             )
         host.use {
             host.attach()

@@ -191,12 +191,10 @@ internal class HeadlessSampledRasterParityTest {
             val input =
                 IntArray(area) { index ->
                     val alpha =
-                        if (alphas == 1) {
-                            128
-                        } else if (alphas == 16) {
-                            alphaBytes[index % alphaBytes.size]
-                        } else {
-                            index and 255
+                        when (alphas) {
+                            1 -> 128
+                            16 -> alphaBytes[index % alphaBytes.size]
+                            else -> index and 255
                         }
                     (alpha shl 24) or (index * 73471 and 0xFFFFFF)
                 }

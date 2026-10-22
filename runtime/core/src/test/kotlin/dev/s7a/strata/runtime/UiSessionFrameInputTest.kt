@@ -376,7 +376,7 @@ internal class UiSessionFrameInputTest {
                             Modifier
                                 .size(2, 1)
                                 .initialFocus()
-                                .onFocusChanged({ value -> focusEvents.add(value) }),
+                                .onFocusChanged { value -> focusEvents.add(value) },
                     )
                 }
             }

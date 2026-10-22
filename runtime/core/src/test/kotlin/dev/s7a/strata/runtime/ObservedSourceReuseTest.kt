@@ -119,12 +119,14 @@ internal class ObservedSourceReuseTest {
     fun mapperFailureClosesAllSubscriptionsAndPreservesTheFailure() {
         val source = ObserveTestSource(0)
         val failure = IllegalStateException("Mapping failed")
-        val mapped = source.map { if (it == 0) it else throw failure }
+        var failMapping = false
+        val mapped = source.map { if (failMapping) throw failure else it }
         UiSession(TestOwnerDispatcher()) {
             evaluateComponentTree { Observe(mapped) { Spacer() } }
         }.use { session ->
             session.attach()
             session.frame(Constraints())
+            failMapping = true
             source.publish(1)
             assertSame(failure, assertThrows(IllegalStateException::class.java) { session.frame(Constraints()) })
             assertEquals(1, source.releases)

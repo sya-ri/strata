@@ -321,7 +321,7 @@ internal class RemoteLifecycleEventTest {
             if (extra.status == RemoteSessionStatus.Open) {
                 val promotion = messages.indexOfFirst { it is RemoteMessage.Control && it.session == hud.identity && it.state.presentation == UiPresentation.Screen }
                 val admission = messages.indexOfFirst { it is RemoteMessage.Snapshot && it.session == extra.identity }
-                assertTrue(0 <= promotion && promotion < admission, "Promotion $promotion must precede HUD admission $admission.")
+                assertTrue(promotion in 0..<admission, "Promotion $promotion must precede HUD admission $admission.")
             } else {
                 assertEquals(RemoteSessionStatus.Closed(RemoteFailure.ResourceLimit), extra.status)
             }

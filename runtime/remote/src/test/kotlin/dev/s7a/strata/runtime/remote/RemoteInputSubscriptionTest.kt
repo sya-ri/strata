@@ -52,7 +52,7 @@ internal class RemoteInputSubscriptionTest {
     fun filtersBeforeSendingAndRunsTheServerHandlerOnlyAfterDelivery() {
         val accepted = mutableListOf<KeyboardEvent.Press>()
         val filter = KeyboardInputFilter(setOf(KeyCode('S'.code)), KeyboardModifiers(control = true))
-        Harness { Modifier.initialFocus().onKeyPress(InputResult.Consumed, filter, { accepted.add(it) }) }.use { fixture ->
+        Harness { Modifier.initialFocus().onKeyPress(InputResult.Consumed, filter) { accepted.add(it) } }.use { fixture ->
             assertEquals(InputResult.Ignored, fixture.host.dispatchKeyboard(KeyboardEvent.Press(KeyCode('S'.code), 31)))
             assertEquals(InputResult.Ignored, fixture.host.dispatchKeyboard(KeyboardEvent.Release(KeyCode('S'.code), 31, KeyboardModifiers(control = true))))
             assertTrue(fixture.actions().isEmpty())
@@ -110,7 +110,7 @@ internal class RemoteInputSubscriptionTest {
     @Test
     fun onlySubscribedTextVariantsCrossTheConnection() {
         val accepted = mutableListOf<TextInputEvent.Preedit>()
-        Harness { Modifier.initialFocus().onPreedit(InputResult.Ignored, { accepted.add(it) }) }.use { fixture ->
+        Harness { Modifier.initialFocus().onPreedit(InputResult.Ignored) { accepted.add(it) } }.use { fixture ->
             fixture.host.dispatchTextInput(TextInputEvent.Character(65))
             assertTrue(fixture.actions().isEmpty())
             val event = TextInputEvent.Preedit("日本語", 2, listOf("日本", "語"), 1)
@@ -163,7 +163,7 @@ internal class RemoteInputSubscriptionTest {
             )
         keyboardFactories.zip(listOf(listOf(key, release), listOf(release))).forEach { (factory, expected) ->
             val accepted = mutableListOf<KeyboardEvent>()
-            Harness { factory({ accepted.add(it) }) }.use { fixture ->
+            Harness { factory { accepted.add(it) } }.use { fixture ->
                 fixture.host.dispatchKeyboard(key)
                 fixture.host.dispatchKeyboard(release)
                 fixture.actions().forEach(fixture.server::receive)
@@ -179,7 +179,7 @@ internal class RemoteInputSubscriptionTest {
             )
         textFactories.zip(listOf(listOf(character, preedit), listOf(character))).forEach { (factory, expected) ->
             val accepted = mutableListOf<TextInputEvent>()
-            Harness { factory({ accepted.add(it) }) }.use { fixture ->
+            Harness { factory { accepted.add(it) } }.use { fixture ->
                 fixture.host.dispatchTextInput(character)
                 fixture.host.dispatchTextInput(preedit)
                 fixture.actions().forEach(fixture.server::receive)

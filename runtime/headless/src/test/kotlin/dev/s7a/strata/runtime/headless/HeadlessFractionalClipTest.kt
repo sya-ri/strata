@@ -44,8 +44,8 @@ internal class HeadlessFractionalClipTest {
                 for (index in expected.indices) {
                     val x = (index % width + 0.5) / scale
                     val y = (index / width + 0.5) / scale
-                    val horizontal = 0.75 <= x && x < 4.0
-                    val vertical = 1.25 <= y && y < 3.75
+                    val horizontal = x in 0.75..<4.0
+                    val vertical = y in 1.25..<3.75
                     if ((horizontal && vertical).not()) expected[index] = background.color.value
                 }
                 val commands =

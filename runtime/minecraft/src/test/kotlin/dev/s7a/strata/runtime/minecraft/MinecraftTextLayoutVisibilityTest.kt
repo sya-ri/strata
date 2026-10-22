@@ -42,12 +42,14 @@ internal class MinecraftTextLayoutVisibilityTest {
         for (interleaved in listOf(false, true)) {
             val result = sampledRenderer(mapOf('A'.code to glyph), interleaved).use { layout(it, value, 2) }
             for (case in cases) {
-                val origin = IntOffset(5 - case.scroll.x, 7 - case.scroll.y)
-                val capture = assertClippedParity(result, origin, viewport)
-                val passes = if (interleaved) 1 else 2
-                assertEquals(case.rows * (1 + case.candidatesPerLine * passes), capture.visits)
-                assertEquals(case.commands, capture.commands.size)
-                assertTrue(capture.visits <= 42)
+                with(case) {
+                    val origin = IntOffset(5 - scroll.x, 7 - scroll.y)
+                    val capture = assertClippedParity(result, origin, viewport)
+                    val passes = if (interleaved) 1 else 2
+                    assertEquals(rows * (1 + candidatesPerLine * passes), capture.visits)
+                    assertEquals(commands, capture.commands.size)
+                    assertTrue(capture.visits <= 42)
+                }
             }
         }
         val legacy = legacyRenderer().use { layout(it, value, 2) }

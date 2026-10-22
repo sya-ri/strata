@@ -38,7 +38,7 @@ internal class RemoteValueCodecTest {
         val codec = RemoteValueCodec()
         assertEquals(expected.toList(), codec.encode(value).toList())
         assertEquals(value, codec.decode(expected))
-        for (length in 0 until expected.size) assertThrows(IllegalArgumentException::class.java) { codec.decode(expected.copyOf(length)) }
+        for (length in expected.indices) assertThrows(IllegalArgumentException::class.java) { codec.decode(expected.copyOf(length)) }
         assertThrows(IllegalArgumentException::class.java) { codec.decode(expected + byteArrayOf(0)) }
         expected.fill(0)
         assertEquals(value, codec.decode(codec.encode(value)))

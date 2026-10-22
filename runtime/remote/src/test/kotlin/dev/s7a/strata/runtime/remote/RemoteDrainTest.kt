@@ -78,7 +78,7 @@ internal class RemoteDrainTest {
     @Test
     fun laterGapStillExpiresAfterTheBudgetEndsAndAnEmptyDrainReturns() {
         val address = RemoteAddress(RemoteEndpoint.Server)
-        RemotePacketStream(address, RemotePacket.limits.copy(assemblyMillis = 10), {}).use { stream ->
+        RemotePacketStream(address, RemotePacket.limits.copy(assemblyMillis = 10)) {}.use { stream ->
             stream.offer(RemotePacket.Frame(address, 1, ByteArray(17)), 0)
             stream.offer(RemotePacket.Frame(address, 3, ByteArray(17)), 0)
             stream.drain(1, 1) { }

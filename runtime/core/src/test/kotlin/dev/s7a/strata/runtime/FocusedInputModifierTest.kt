@@ -163,7 +163,7 @@ internal class FocusedInputModifierTest {
             Modifier
                 .size(10, 10)
                 .initialFocus()
-                .onFocusChanged({ value -> ownerTransitions.add(value) })
+                .onFocusChanged { value -> ownerTransitions.add(value) }
         val tree = UiTree()
 
         fun update(accepts: Boolean) {
@@ -355,7 +355,7 @@ internal class FocusedInputModifierTest {
                 Modifier
                     .size(10, 10)
                     .initialFocus()
-                    .onFocusChanged({ value -> transitions.add(value) }),
+                    .onFocusChanged { value -> transitions.add(value) },
             )
         assertNotNull(retainedFocusOwner(tree))
 
@@ -384,7 +384,7 @@ internal class FocusedInputModifierTest {
                     Modifier
                         .size(10, 10)
                         .initialFocus()
-                        .onFocusChanged({ value -> transitions.add(value) })
+                        .onFocusChanged { value -> transitions.add(value) }
                         .onKeyPress { throw primary }
                         .then(FocusAcceptanceElement(true, ArrayList(), editable = true)),
             ),

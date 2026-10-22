@@ -48,7 +48,7 @@ internal class MinecraftTextReadProbe(
     }
 
     override fun close() {
-        for (entry in storage.asReversed()) entry.field.set(entry.run, entry.original)
+        for ((run, field, original) in storage.asReversed()) field.set(run, original)
         storage.clear()
     }
 

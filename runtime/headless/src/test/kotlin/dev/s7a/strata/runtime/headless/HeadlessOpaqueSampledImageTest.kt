@@ -41,7 +41,7 @@ internal class HeadlessOpaqueSampledImageTest {
                             val x = (index % (viewport.width * scale) + 0.5) / scale
                             val y = (index / (viewport.width * scale) + 0.5) / scale
                             val covered =
-                                1 <= x && x < 7 && destination.left <= x && x < destination.right && destination.top <= y && y < destination.bottom &&
+                                x in 1.0..<7.0 && destination.left <= x && x < destination.right && destination.top <= y && y < destination.bottom &&
                                     clip.left <= x && x < clip.right && clip.top <= y && y < clip.bottom
                             if (covered) {
                                 val sourceX = floor((x - 0.25) / 7.5 * 4).toInt().coerceIn(0, 3)
