@@ -101,7 +101,7 @@ public class IncomingFragmentFixture(
      * Also verifies callback arrays remain stable through owner cleanup.
      */
     public fun verifyAndClose() {
-        try {
+        use { _ ->
             active.forEach { holder ->
                 holder.owner.run {
                     if (phase != IncomingFragmentPhase.Assembly) assemble(holder)
@@ -113,8 +113,6 @@ public class IncomingFragmentFixture(
                     check(field(holder.framing, "pending") == null)
                 }
             }
-        } finally {
-            close()
         }
     }
 

@@ -393,21 +393,16 @@ internal class MinecraftUiProfileTest {
         val tasks =
             List(2) {
                 FutureTask {
-                    var host: MinecraftUiHost? = null
-                    try {
-                        ready.countDown()
-                        check(start.await(5, TimeUnit.SECONDS)) { "Timed out waiting to start host." }
-                        host =
-                            createMinecraftUiHost(
-                                ScreenDefinition(UiText.Literal("reuse")) {
-                                    Stack(modifier = Modifier.menuBackground()) {}
-                                },
-                                profile,
-                            )
+                    ready.countDown()
+                    check(start.await(5, TimeUnit.SECONDS)) { "Timed out waiting to start host." }
+                    createMinecraftUiHost(
+                        ScreenDefinition(UiText.Literal("reuse")) {
+                            Stack(modifier = Modifier.menuBackground()) {}
+                        },
+                        profile,
+                    ).use { host ->
                         host.attach()
                         host.frame(IntSize(16, 16)).size == IntSize(16, 16)
-                    } finally {
-                        host?.close()
                     }
                 }
             }

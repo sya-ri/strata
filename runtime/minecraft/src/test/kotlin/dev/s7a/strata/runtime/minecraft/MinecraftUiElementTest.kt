@@ -141,20 +141,16 @@ internal class MinecraftUiElementTest {
     @Test
     fun menuBackgroundDoesNotInventSizeUnderLooseConstraints() {
         var element: Element? = null
-        val host =
-            host {
-                evaluateComponentTree {
-                    Spacer(modifier = Modifier.size(7, 5).menuBackground())
-                }.also { element = it }
-            }
-        host.attach()
-        try {
+        host {
+            evaluateComponentTree {
+                Spacer(modifier = Modifier.size(7, 5).menuBackground())
+            }.also { element = it }
+        }.use { host ->
+            host.attach()
             UiTree().use { tree ->
                 tree.update(checkNotNull(element))
                 assertEquals(IntSize(7, 5), tree.measure(Constraints()))
             }
-        } finally {
-            host.close()
         }
     }
 
