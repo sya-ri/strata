@@ -1,7 +1,5 @@
 package dev.s7a.strata.runtime.remote
 
-import java.util.Collections
-
 /**
  * Validated immutable rooted declaration tree; each component and modifier has a unique identity.
  * Construction rejects cycles, shared children, unreachable records, and excess depth or node count.
@@ -43,7 +41,7 @@ public class RemoteTree(
             }
         }
         require(visited == index.size) { "Remote tree contains unreachable records." }
-        this.nodes = Collections.unmodifiableMap(index)
+        this.nodes = index
     }
 
     override fun equals(other: Any?): Boolean = other is RemoteTree && root == other.root && nodes == other.nodes

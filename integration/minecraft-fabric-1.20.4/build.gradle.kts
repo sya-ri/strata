@@ -39,8 +39,7 @@ extensions.configure<KotlinJvmProjectExtension> {
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/resource-location-constructor/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/custom-payload/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("examples/paper/src/main/kotlin"))
-        kotlin.exclude("**/PaperDemoPlugin.kt", "**/PaperDemoScreens.kt")
+        kotlin.srcDir(rootProject.file("examples/paper/src/shared/kotlin"))
         kotlin.srcDirs(
             rootProject.file("integration/shared/minecraft-fabric/canvas/gui-graphics/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin"),

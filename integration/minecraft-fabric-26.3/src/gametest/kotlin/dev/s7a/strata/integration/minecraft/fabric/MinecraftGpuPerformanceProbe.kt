@@ -3,14 +3,12 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.google.gson.JsonObject
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.performance.GpuPerformanceMeter
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Records loaded RenderPearl timestamps immediately around the existing real GUI-consumer test hook.
  * Device timestampPeriod supplies nanoseconds per backend tick on OpenGL and Vulkan.
  * The host owns ordinary submission; this diagnostic owner submits only during terminal query cleanup.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftGpuPerformanceProbe(
     samples: Int,
 ) : MinecraftNativeGpuProbe {

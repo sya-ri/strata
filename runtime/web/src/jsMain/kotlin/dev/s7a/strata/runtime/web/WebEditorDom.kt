@@ -2,14 +2,40 @@ package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.TextInputAppearance
+import dev.s7a.strata.render.DrawImage
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 
 /**
  * Updates retained native editing elements without replacing selection or composition.
+ * The owning renderer and browser agent cache one PNG per distinct immutable image identity in the current frame.
+ * Completed frames release unused images; terminal renderer cleanup clears every key and encoded value.
+ * During a render, retained entries are bounded by the previous and incoming frames together.
  */
-internal object WebEditorDom {
+internal class WebEditorDom : AutoCloseable {
+    private val frames: dynamic = js("new Map()")
+
+    /**
+     * Starts current-image tracking after the renderer has validated the incoming frame.
+     */
+    fun beginFrame() {
+        frames.forEach { frame: CachedFrame -> frame.used = false }
+    }
+
+    /**
+     * Releases images absent from the completed frame, including removed or default-styled editors.
+     */
+    fun endFrame() {
+        frames.forEach { frame: CachedFrame, image: DrawImage ->
+            if (frame.used.not()) frames.delete(image)
+        }
+    }
+
+    override fun close() {
+        frames.clear()
+    }
+
     /**
      * Applies only changed canonical values; active composition remains owned by the native editor.
      */
@@ -99,7 +125,7 @@ internal object WebEditorDom {
             style.padding = "${maxOf(0, 4 - border.top)}px ${maxOf(0, 4 - border.right)}px ${maxOf(0, 4 - border.bottom)}px ${maxOf(0, 4 - border.left)}px"
             style.backgroundColor = "transparent"
             style.borderWidth = "${border.top}px ${border.right}px ${border.bottom}px ${border.left}px"
-            style.setProperty("border-image-source", "url(${WebImageRasterizer.dataUrl(image)})")
+            style.setProperty("border-image-source", "url(${dataUrl(image)})")
             style.setProperty("border-image-slice", "${border.top} ${border.right} ${border.bottom} ${border.left} fill")
             style.setProperty("border-image-repeat", "repeat")
         } else {
@@ -110,5 +136,25 @@ internal object WebEditorDom {
         }
     }
 
+    private fun dataUrl(image: DrawImage): String {
+        val frame =
+            if (frames.has(image) as Boolean) {
+                frames.get(image) as CachedFrame
+            } else {
+                CachedFrame(WebImageRasterizer.dataUrl(image)).also { frames.set(image, it) }
+            }
+        frame.used = true
+        return frame.url
+    }
+
     private fun cssColor(value: Int): String = "rgba(${value ushr 16 and 255},${value ushr 8 and 255},${value and 255},${(value ushr 24) / 255.0})"
+
+    /**
+     * Derived immutable PNG with current-frame membership owned by this renderer.
+     */
+    private class CachedFrame(
+        val url: String,
+    ) {
+        var used: Boolean = true
+    }
 }

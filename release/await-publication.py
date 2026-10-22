@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import subprocess
 from urllib.error import HTTPError
+from urllib.parse import quote
 from urllib.request import Request, build_opener
 from zipfile import ZipFile
 
@@ -103,9 +104,10 @@ def distributions_ready(request, evidence):
         expected = {version for record in records for version in record.get("listed", [])}
         if not expected:
             raise ValueError("Modrinth receipt has no listed versions.")
-        remote = service_json("https://api.modrinth.com/v2/project/" + project_id + "/version")
-        if not remote or not expected.issubset({version["version_number"] for version in remote if version.get("status") == "listed"}):
-            return False
+        for version in sorted(expected):
+            remote = service_json("https://api.modrinth.com/v2/project/" + project_id + "/version/" + quote(version, safe=""))
+            if not remote or remote.get("project_id") != project_id or remote.get("version_number") != version or remote.get("status") != "listed":
+                return False
     if selected["curseforge"]:
         receipt = evidence["curseforge/receipt.json"]
         if receipt.get("sourceCommit") != request["sourceCommit"] or receipt.get("tag") != request["tag"]:

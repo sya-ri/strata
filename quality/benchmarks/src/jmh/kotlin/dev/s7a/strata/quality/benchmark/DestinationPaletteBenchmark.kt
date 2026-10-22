@@ -9,7 +9,6 @@ import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -22,7 +21,6 @@ import kotlin.math.roundToInt
  * Separates destination palette reuse from source weights using a fixed one-to-one sampled output.
  * Immutable inputs are prepared outside measurement; every operation owns fresh output and source-weight scratch.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public open class DestinationPaletteBenchmark {
     /**
      * Includes ordered background blitting and translucent sampling without retaining the measured image.

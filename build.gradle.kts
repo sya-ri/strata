@@ -78,7 +78,7 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = "0.3.0"
+version = "0.3.1"
 
 plugins.withType<YarnPlugin> {
     extensions.configure<YarnRootExtension> {
@@ -1914,7 +1914,9 @@ subprojects {
         extensions.configure<DetektExtension> {
             buildUponDefaultConfig = true
             config.setFrom(rootProject.file("config/detekt/detekt.yml"))
-            source.from("src/main/kotlin", "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/jsMain/kotlin", "src/commonTest/kotlin", "src/jsTest/kotlin", "src/jvmTest/kotlin", "src/test/kotlin")
+            source.setFrom(providers.provider {
+                this@subprojects.extensions.getByType<KotlinMultiplatformExtension>().sourceSets.map { it.kotlin }
+            })
         }
         dependencies.add("detektPlugins", dependencies.project(":quality:detekt-rules"))
 
@@ -2042,9 +2044,6 @@ subprojects {
                 kotlin.srcDirs(testRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
             }
         }
-        extensions.configure<DetektExtension> {
-            source.from((runtimeRoots + testRoots).map { sourceRoot -> sourceRoot.resolve("kotlin") })
-        }
     }
     minecraftFabricTargets.firstOrNull { target -> path == target.integrationProjectPath }?.let { target ->
         val nativeTests = target.canvasTestSourcePaths.map { sourcePath -> rootProject.file("$sourcePath/src/gametest") }
@@ -2069,14 +2068,6 @@ subprojects {
             sourceSets.matching { it.name == "gametest" }.configureEach {
                 kotlin.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("kotlin") })
             }
-        }
-        extensions.configure<DetektExtension> {
-            // Resolve selected files after all version-specific source sets and filters are configured.
-            source.from(
-                providers.provider {
-                    this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.findByName("gametest")?.kotlin?.files.orEmpty()
-                },
-            )
         }
     }
     if (completeIdeaModelActive) {
@@ -2219,6 +2210,9 @@ subprojects {
             "config/detekt/detekt.yml"
         }
         config.setFrom(rootProject.file(configFile))
+        source.setFrom(providers.provider {
+            this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.map { it.kotlin }
+        })
     }
 
     val publishableModule = path in publishableProjectPaths
@@ -2237,7 +2231,13 @@ subprojects {
                 description = "Starts an isolated production Fabric server for paired public UI acceptance."
                 mods.from(project(target.runtimeProjectPath).tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar"))
                 runDir.set(layout.dir(providers.gradleProperty("strata.fabric.serverDirectory").map(::File)))
-                jvmArgs.add(providers.gradleProperty("strata.fabric.run").map { "-Dstrata.fabric.run=$it" })
+                val runId = providers.gradleProperty("strata.fabric.run")
+                // Keep each invocation's bundled inputs separate from fresh worlds and acceptance evidence.
+                jvmArgs.add(runId.map {
+                    val directory = temporaryDir.resolve("bundler").resolve(UUID.fromString(it).toString())
+                    "-DbundlerRepoDir=${directory.absolutePath}"
+                })
+                jvmArgs.add(runId.map { "-Dstrata.fabric.run=$it" })
                 jvmArgs.add(providers.gradleProperty("strata.fabric.serverReceipt").map { "-Dstrata.fabric.receipt=$it" })
                 jvmArgs.add(providers.gradleProperty("strata.fabric.serverStop").map { "-Dstrata.fabric.stop=$it" })
                 val settingsDirectory = providers.gradleProperty("strata.fabric.serverSettings").map(::File)
@@ -2774,6 +2774,7 @@ val koverJvmTests = tasks.register("koverJvmTests") {
 
 tasks.matching { task -> task.name in setOf("koverHtmlReport", "koverXmlReport") }.configureEach {
     dependsOn(koverJvmTests)
+    doNotTrackState("Aggregate coverage reports are fresh verification evidence.")
 }
 
 ciMinecraftTargets.forEach { target ->

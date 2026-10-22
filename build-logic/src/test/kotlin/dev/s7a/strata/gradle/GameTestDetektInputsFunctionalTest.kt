@@ -23,14 +23,15 @@ internal class GameTestDetektInputsFunctionalTest {
         Files.createDirectories(directory.resolve("gradle"))
         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
         val production = Files.readString(repository.resolve("build.gradle.kts")).replace("\r\n", "\n")
-        val marker = "        extensions.configure<DetektExtension> {\n            // Resolve selected files after all version-specific source sets and filters are configured."
+        val marker = "        source.setFrom(providers.provider {\n            this@subprojects.extensions.getByType<KotlinJvmProjectExtension>()"
         val start = production.indexOf(marker)
-        check(0 <= start) { "The production GameTest analysis declaration is absent." }
-        val declaration = production.substring(start, production.indexOf("\n    }\n    if (completeIdeaModelActive)", start))
+        check(0 <= start) { "The production Kotlin source-set analysis declaration is absent." }
+        val declaration = production.substring(start, production.indexOf("\n        })", start) + "\n        })".length)
         write("settings.gradle.kts", "rootProject.name = \"game-test-analysis\"\ninclude(\"owner\")\n")
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         writeBuild(declaration)
         write("owner/src/main/kotlin/Ordinary.kt", "internal class Ordinary\n")
+        write("owner/docs/ReadmeExample.kt", "internal class ReadmeExample\n")
         write("owner/authored/SelectedGame.kt", "internal class SelectedGame\n")
         write("owner/authored/ExcludedGame.kt", "This file must remain outside compilation and analysis.\n")
         write("shared/SelectedExample.kt", "internal class SelectedExample\n")
@@ -71,8 +72,11 @@ internal class GameTestDetektInputsFunctionalTest {
                 apply(plugin = "org.jetbrains.kotlin.jvm")
                 apply(plugin = "dev.detekt")
                 repositories { mavenCentral() }
+                extensions.configure<DetektExtension> {
             $$declaration
+                }
                 extensions.getByType<SourceSetContainer>().create("gametest")
+                extensions.getByType<SourceSetContainer>().create("readmeExamples")
                 val shared = objects.sourceDirectorySet("sharedExamples", "Filtered shared examples").apply {
                     srcDir(rootProject.file("shared"))
                     include("**/*Example.kt")
@@ -80,6 +84,7 @@ internal class GameTestDetektInputsFunctionalTest {
                 }
                 extensions.configure<KotlinJvmProjectExtension> {
                     jvmToolchain(17)
+                    sourceSets.named("readmeExamples") { kotlin.setSrcDirs(listOf("docs")) }
                     sourceSets.named("gametest") {
                         kotlin.setSrcDirs(listOf("authored"))
                         kotlin.exclude("**/ExcludedGame.kt")
@@ -87,13 +92,13 @@ internal class GameTestDetektInputsFunctionalTest {
                     }
                 }
                 tasks.register("verifyDetektSelection") {
-                    dependsOn("compileGametestKotlin")
+                    dependsOn("compileGametestKotlin", "compileReadmeExamplesKotlin")
                     doLast {
                         val selected = project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.getByName("gametest").kotlin.files
                         val analyzed = tasks.named<Detekt>("detekt").get().source.files
                         val expected = setOf(file("authored/SelectedGame.kt"), rootProject.file("shared/SelectedExample.kt"))
                         check(selected == expected) { "The working compiler selection changed: $selected" }
-                        check(analyzed.containsAll(expected + file("src/main/kotlin/Ordinary.kt"))) { "Analysis lost selected or ordinary sources: $analyzed" }
+                        check(analyzed == expected + file("src/main/kotlin/Ordinary.kt") + file("docs/ReadmeExample.kt")) { "Analysis lost declared Kotlin sources: $analyzed" }
                         check(analyzed.none { it.name.startsWith("Excluded") || it.name == "Ignored.kt" }) { "Analysis broadened a compiler filter: $analyzed" }
                     }
                 }

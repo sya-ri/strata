@@ -415,7 +415,7 @@ internal class HeadlessPngTest {
 
     private fun ByteArray.toHex(): String = joinToString(separator = "") { value -> "%02x".format(value.toInt() and 0xFF) }
 
-    private data class PngChunk(
+    private class PngChunk(
         val type: PngChunkType,
         val payload: ByteArray,
         val payloadCrc: Int,

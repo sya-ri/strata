@@ -104,7 +104,7 @@ public class StrataVelocityPlugin
         public fun disconnected(event: DisconnectEvent): EventTask? = screens?.disconnect(event.player)?.let(EventTask::resumeWhenComplete)
 
         /**
-         * Waits for owner-thread cleanup before Velocity exits, then releases the channel registration.
+         * Withdraws API and channel registration before returning terminal owner cleanup for Velocity to await.
          */
         @Subscribe
         @Suppress("UnusedParameter") // Velocity awaits this event while terminal cleanup completes.

@@ -4,12 +4,10 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.screen.ScreenDefinition
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Minimal scheduling and presentation bridge; state assertions remain shared across every Minecraft version.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal interface ReactiveRenderTestDriver {
     /**
      * Runs one operation synchronously on the actual client owner thread.

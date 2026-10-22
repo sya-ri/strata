@@ -3,6 +3,7 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
+import dev.s7a.strata.runtime.spi.RuntimeUiControl
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
@@ -84,6 +85,8 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
 
     /**
      * Consumes the definition and opens a screen only after successful peer negotiation.
+     * Pending openings close without evaluating content if replacement listeners retire the connection.
+     * Preparation failures terminate admitted handles before propagating.
      */
     public fun open(
         owner: Owner,
@@ -115,6 +118,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         }
         transition(admitted = true) {
             if (handle.status is RemoteSessionStatus.Closed) return@transition
+            if (settings.presentation == UiPresentation.Screen && peers[player] === peer) peer.closeForeground(RemoteFailure.Replaced)
             if (peers[player] !== peer) {
                 closeUnopened(player, owner, handle, settings.category, RemoteFailure.Disconnected)
                 return@transition
@@ -123,25 +127,17 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                 closeUnopened(player, owner, handle, settings.category, RemoteFailure.ResourceLimit)
                 return@transition
             }
-            if (settings.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced)
             val runtime = RemoteComponentRuntime()
             val session =
-                RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame, eventSession = handle.uiSession, controller = handle.controls, settings = settings) {
-                    runtime.evaluate(content.content)
+                runCatching {
+                    RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame, eventSession = handle.uiSession, controller = handle.controls, settings = settings) {
+                        runtime.evaluate(content.content)
+                    }
+                }.getOrElse { failure ->
+                    failUnopened(player, owner, handle, settings.category, failure)
                 }
             peer.sessions[handle.identity] = Active(owner, handle, session, settings.presentation, settings.category)
-            handle.bindControls { request ->
-                val active = peer.sessions[handle.identity]
-                if (active != null) {
-                    if (request.presentation == UiPresentation.Hud && capabilities.limits.hudSessions <= peer.hudCount(handle.identity)) {
-                        handle.controls.rejected(request.sequence, UiRejection.Capacity)
-                    } else {
-                        if (request.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced, handle.identity)
-                        active.presentation = request.presentation
-                        session.applyControl(request)
-                    }
-                }
-            }
+            handle.bindControls { request -> applyControl(player, peer, handle, request) }
             runCatching(session::tick).onFailure { failure -> report(failure) }
             peer.refresh()
         }
@@ -222,6 +218,32 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         }
     }
 
+    /**
+     * Commits a request only while its connection and session still own it after replacement listeners return.
+     */
+    private fun applyControl(
+        player: Player,
+        peer: Peer<Owner>,
+        handle: RemoteScreenSession,
+        request: RuntimeUiControl,
+    ) {
+        if (peers[player] !== peer) return
+        val active = peer.sessions[handle.identity] ?: return
+        val limits = checkNotNull(peer.connection.capabilities).limits
+        if (request.presentation == UiPresentation.Hud && limits.hudSessions <= peer.hudCount(handle.identity)) {
+            handle.controls.rejected(request.sequence, UiRejection.Capacity)
+            return
+        }
+        if (request.presentation == UiPresentation.Screen) peer.closeForeground(RemoteFailure.Replaced, handle.identity)
+        if (peers[player] !== peer || peer.sessions[handle.identity] !== active) return
+        if (request.presentation == UiPresentation.Screen && peer.sessions.values.any { it.presentation == UiPresentation.Screen && it.handle.identity != handle.identity }) {
+            peer.closeSession(handle.identity, RemoteFailure.Replaced)
+            return
+        }
+        active.presentation = request.presentation
+        active.session.applyControl(request)
+    }
+
     private fun tick(
         peer: Peer<Owner>,
         now: Long,
@@ -281,24 +303,16 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     ) {
         val active = peer.sessions[message.session] ?: return
         when (message) {
-            is RemoteMessage.Applied, is RemoteMessage.ControlApplied, is RemoteMessage.ControlRequest -> {
+            is RemoteMessage.Applied, is RemoteMessage.ControlApplied, is RemoteMessage.ControlRequest, is RemoteMessage.Action -> {
                 dispatch { runCatching { active.session.receive(message) }.onFailure(report) }
             }
 
-            is RemoteMessage.Action -> {
-                if (message.session == active.handle.identity) {
-                    dispatch {
-                        runCatching { active.session.receive(message) }.onFailure(report)
-                    }
-                }
-            }
-
             is RemoteMessage.Resynchronize -> {
-                if (message.session == active.handle.identity) active.session.resynchronize()
+                active.session.resynchronize()
             }
 
             is RemoteMessage.Close -> {
-                if (message.session == active.handle.identity) peer.closeSession(active.handle.identity, message.reason, false)
+                peer.closeSession(active.handle.identity, message.reason, false)
             }
 
             else -> {
@@ -306,6 +320,23 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             }
         }
         peer.refresh()
+    }
+
+    /**
+     * Releases an admitted opening that failed before session installation, preserving its primary failure.
+     */
+    private fun failUnopened(
+        player: Player,
+        owner: Owner,
+        handle: RemoteScreenSession,
+        category: UiCategory?,
+        failure: Throwable,
+    ): Nothing {
+        val reason = (failure as? RemoteProtocolException)?.reason ?: RemoteFailure.HandlerFailed
+        runCatching { closeUnopened(player, owner, handle, category, reason) }.onFailure { cleanup ->
+            if (cleanup !== failure) failure.addSuppressed(cleanup)
+        }
+        throw failure
     }
 
     private fun closeUnopened(

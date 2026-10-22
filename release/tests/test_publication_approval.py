@@ -53,14 +53,31 @@ class PublicationApprovalTest(unittest.TestCase):
         request["destinations"]["curseforge"] = False
         evidence = {"modrinth-receipts/submit.json": {"projectId": "abc123", "listed": ["0.2.0+mc1.20"]},
                     "hangar/receipt.json": {"sourceCommit": "a" * 40, "version": "0.2.0", "namespace": "owner/Strata"}}
-        with patch.object(approval, "service_json", return_value=[]) as read:
+        with patch.object(approval, "service_json", return_value=None) as read:
             self.assertFalse(approval.distributions_ready(request, evidence))
             self.assertEqual(1, read.call_count)
-        with patch.object(approval, "service_json", side_effect=[[{"version_number": "0.2.0+mc1.20", "status": "listed"}], {"visibility": "public"}]) as read:
+        with patch.object(approval, "service_json", side_effect=[{"project_id": "abc123", "version_number": "0.2.0+mc1.20", "status": "listed"}, {"visibility": "public"}]) as read:
             with patch.object(approval.hangar, "authenticate") as authenticate:
                 self.assertTrue(approval.distributions_ready(request, evidence))
                 authenticate.assert_not_called()
                 self.assertTrue(all(len(call.args) == 1 for call in read.call_args_list))
+
+    def test_modrinth_reads_only_receipt_versions_and_checks_every_version(self):
+        request = copy.deepcopy(self.request)
+        request["destinations"] = {name: name == "modrinth" for name in approval.DESTINATIONS}
+        versions = ["0.2.0+mc1.20", "0.2.0+mc1.20.1"]
+        evidence = {"modrinth-receipts/stage.json": {"projectId": "abc123", "listed": versions}}
+        remote = [{"project_id": "abc123", "version_number": version, "status": "listed"} for version in versions]
+        with patch.object(approval, "service_json", side_effect=remote) as read:
+            self.assertTrue(approval.distributions_ready(request, evidence))
+            self.assertEqual(["https://api.modrinth.com/v2/project/abc123/version/0.2.0%2Bmc1.20",
+                              "https://api.modrinth.com/v2/project/abc123/version/0.2.0%2Bmc1.20.1"],
+                             [call.args[0] for call in read.call_args_list])
+        for changed in (None, {**remote[1], "status": "unlisted"}, {**remote[1], "project_id": "other"},
+                        {**remote[1], "version_number": "0.1.0+mc1.20.1"}):
+            with self.subTest(remote=changed):
+                with patch.object(approval, "service_json", side_effect=[remote[0], changed]):
+                    self.assertFalse(approval.distributions_ready(request, evidence))
 
     def test_curseforge_waits_for_approved_available_files(self):
         request = copy.deepcopy(self.request)
@@ -80,12 +97,12 @@ class PublicationApprovalTest(unittest.TestCase):
                                                "files": {"a.jar": {"fileId": 34}}}}
         with patch.dict(os.environ, {"CURSEFORGE_API_KEY": ""}):
             for visibility, expected in (("new", False), ("public", True)):
-                with patch.object(approval, "service_json", side_effect=[[{"version_number": "0.2.0+mc1.20", "status": "listed"}], {"visibility": visibility}]) as read:
+                with patch.object(approval, "service_json", side_effect=[{"project_id": "abc123", "version_number": "0.2.0+mc1.20", "status": "listed"}, {"visibility": visibility}]) as read:
                     self.assertEqual(expected, approval.distributions_ready(self.request, evidence))
                     self.assertEqual(2, read.call_count)
                     self.assertTrue(all("curseforge.com" not in call.args[0] for call in read.call_args_list))
             evidence["curseforge/receipt.json"]["files"]["a.jar"]["fileId"] = None
-            with patch.object(approval, "service_json", return_value=[{"version_number": "0.2.0+mc1.20", "status": "listed"}]):
+            with patch.object(approval, "service_json", return_value={"project_id": "abc123", "version_number": "0.2.0+mc1.20", "status": "listed"}):
                 self.assertFalse(approval.distributions_ready(self.request, evidence))
 
     def test_dispatch_can_only_request_verify_and_does_not_repeat_failed_verification(self):

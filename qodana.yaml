@@ -22,7 +22,21 @@ exclude:
     paths:
       - api/src/main/kotlin/dev/s7a/strata/component/CanvasComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ObserveComponents.kt
-      - api/src/main/kotlin/dev/s7a/strata/component/ObservedComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedButtonComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedCanvasComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedCheckboxComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedCycleButtonComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedImageComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedPlayerHeadComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedProgressBarComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedSelectionListComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedSliderComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedSlotComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTabComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextAreaComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextFieldComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedTiledImageComponents.kt
+      - api/src/main/kotlin/dev/s7a/strata/component/ObservedVirtualListComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ObservedTextComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt
       - api/src/main/kotlin/dev/s7a/strata/component/SelectionListComponents.kt
@@ -43,11 +57,6 @@ exclude:
   - name: RedundantRequireNotNullCall
     paths:
       - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/HeadlessRendering.kt
-  # Named concrete facades keep internal coroutine/control state distinct from their exposed CoroutineScope and UiSession contracts.
-  - name: ConvertToExplicitBackingFields
-    paths:
-      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/UiSession.kt
-      - runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientSession.kt
   # Migration changes definition construction and session ownership outside the opening call, so no call-only replacement is valid.
   - name: DeprecatedCallableAddReplaceWith
     paths:

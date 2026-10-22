@@ -79,6 +79,8 @@ The unqualified `check` includes each selected project's checks; `:check` alone 
 The full command includes development and production loaded-client gates, isolated CPU font contracts, and configured native-to-offline comparisons.
 
 For isolated JVM tests, fixture verification, benchmark preparation and collection, use `-Pstrata.jvmOnly=true` as described in the [performance testkit](performance-testkit.md#collection-ownership).
+The Web model, `-Pstrata.webOnly=true`, supports its included module checks and the project-local Kover verification dependencies of `:integration:web:check`.
+Root coverage reports retain the complete model.
 Scoped models reject complete acceptance requests instead of silently narrowing them; component benchmark `check` and published inventory acceptance also require the complete model when using `strata.webOnly`.
 IDE/Qodana imports always require the complete project model, including every versioned runtime and integration project.
 
@@ -94,11 +96,24 @@ Those dependencies are compile-only, remain in the version catalog, and add neit
 The exact Loader dependency versions are checked against [its primary build configuration](https://github.com/FabricMC/fabric-loader) and the [MixinExtras setup contract](https://github.com/LlamaLad7/MixinExtras#setup).
 Detekt and Kotlinter are applied to all project modules.
 Root Detekt also analyzes the production and test sources of `build-logic`; the included build owns their compilation, formatting, ABI and TestKit checks.
-Detekt reads loaded-test files from the configured Kotlin `gametest` source set after version-specific roots and filters are applied, so every compiled test file is analyzed without an additional root allowlist.
-The shared runtime roots remain explicit because [the generic task](https://detekt.dev/docs/gettingstarted/gradle/#available-plugin-tasks) otherwise scans only conventional project directories.
+Detekt reads each project's configured Kotlin source sets after version-specific roots and filters are applied, including shared runtime code, loaded tests, and compiled documentation examples.
 Kover exposes HTML and XML reports without enforcing a coverage threshold.
 Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`; each fully qualified root report task first runs the ordinary JVM test suite selected by `koverJvmTests` without discovering same-named tasks in unrelated projects.
 `gradle/kover-jvm-projects.txt` is the single source of truth for that aggregation boundary: it includes modules with ordinary JVM tests and excludes testless remapped adapters, loaded-client-only integrations, and benchmarks so coverage does not configure or compile unrelated Loom projects.
+
+## Generated source-backed component overloads
+
+`api/state-components.gradle.kts` derives source-backed overloads from the maintained literal declarations and selected reactive parameters.
+Run `./gradlew :api:generateStateComponentOverloads` after changing those inputs.
+Each component owns an `Observed<Component>Components.kt` file and matching `Observed<Component>CompileCases.kt` compilation cases.
+The JVM source set separately contains generated `LegacyObserved<Component>Components.kt` binary bridges.
+The generator removes obsolete files carrying its generated marker; handwritten helpers, including `ObservedTextComponents.kt`, remain separately maintained.
+`:api:checkStateComponentOverloads` rejects missing, unexpected, or stale generated files without rewriting them.
+
+Current overloads use their per-component JVM file facades.
+The legacy bridges share the former `ObservedComponentsKt` multifile facade and retain its method descriptors, including default-argument helpers.
+They use `DeprecationLevel.HIDDEN` to keep compiled Kotlin callers linked while recompilation selects the current declarations; remove them in 1.0.0 according to the [deprecation list](../../DEPRECATION.md).
+Keep the explicit generated-file lists in `.sonarcloud.properties` and `qodana.yaml` aligned when adding or removing a generated component; [CI](ci.md) describes the analysis boundary.
 
 ## Packaging and publication checks
 

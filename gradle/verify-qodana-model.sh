@@ -475,7 +475,7 @@ classify_target_source_path() {
     target_source_allowed_owners='font-backend'
     target_source_root='runtime/minecraft-fonts-lwjgl'
     target_source_is_module_root=true
-  elif [[ "$repository_relative_path" == 'examples/paper/src/main/kotlin' ]]; then
+  elif [[ "$repository_relative_path" == 'examples/paper/src/shared/kotlin' ]]; then
     target_source_allowed_owners='integration,paper-example'
     target_source_root='examples/paper'
   elif [[ "$repository_relative_path" == 'quality/component-benchmarks/src/workload/kotlin' ]]; then

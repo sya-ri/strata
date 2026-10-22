@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime.remote
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.modifier.Modifier
-import java.util.Collections
 
 /**
  * Complete decoded surroundings supplied to a trusted component factory.
@@ -17,5 +16,5 @@ public class RemoteElementContext internal constructor(
     public val states: RemoteClientStates,
 ) {
     public val key: ElementKey<Long> = ElementKey(identity)
-    public val children: List<Element> = Collections.unmodifiableList(children.toList())
+    public val children: List<Element> = children.toList()
 }

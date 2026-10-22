@@ -1,10 +1,7 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame

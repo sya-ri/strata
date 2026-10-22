@@ -2,7 +2,8 @@
 
 This document lists deprecated or replaced public Strata APIs, their replacements, and their removal schedules.
 Deprecated APIs are scheduled for removal in 1.0.0; already replaced contracts identify their incompatible release.
-Deprecation warnings are enabled before removal; builds that treat warnings as errors must migrate or explicitly suppress compatibility uses.
+Source deprecations warn before removal; builds that treat warnings as errors must migrate or explicitly suppress compatibility uses.
+JVM-only binary bridges may be hidden from source as documented below.
 
 ## Modifiers
 
@@ -34,6 +35,32 @@ Recompile consumers against the new API and keep all Strata artifacts on the sam
 See the [modifier guide](docs/guides/modifiers.md) and [Modifier SPI](docs/reference/modifier-spi.md).
 
 ## Components
+
+### ObservedComponentsKt JVM facade
+
+- **Deprecated in**: 0.3.1
+- **Scheduled for removal**: 1.0.0
+- **Replacement**: the per-component JVM file facades, such as `ObservedButtonComponentsKt` and `ObservedVirtualListComponentsKt`
+
+Source-backed component declarations now live with their own component.
+Kotlin source continues to call `Button`, `VirtualList`, and the other component extensions through the same package and parameter lists; recompiling selects the new facade automatically.
+
+The old `ObservedComponentsKt` owner retains generated JVM-only forwarding methods and their default-argument helpers for already compiled callers.
+These bridges are deprecated with `DeprecationLevel.HIDDEN`: they preserve binary linkage and are unavailable to new Kotlin or Java source calls.
+Java source that explicitly names the old facade must use the matching per-component facade when recompiling; its signature-derived method name and arguments remain the same.
+
+#### Example Migration
+
+```java
+// Before
+ObservedComponentsKt.ButtonStatecffa97b99dc2_1(scope, label, 150, true, modifier, key);
+
+// After
+ObservedButtonComponentsKt.ButtonStatecffa97b99dc2_1(scope, label, 150, true, modifier, key);
+```
+
+At 1.0.0, remove the `JVM_BRIDGES` generator output, its `LegacyObserved*Components.kt` files, and the frozen legacy-descriptor verification.
+Recompile all consumers before using that release.
 
 ### TextStyle enum
 

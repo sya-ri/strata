@@ -197,12 +197,12 @@ class PlanCiTest(unittest.TestCase):
                 path = f"{module}/src/{source_set}/kotlin/Contract.kt"
                 paths.append(path)
                 expected = planner.plan([])
-                expected.update(common=True, web=True, qodana=True, qodana_build_logic=True)
+                expected.update(common=True, web=True, qodana=True)
                 with self.subTest(path=path):
                     self.assertEqual(expected, planner.plan([path]))
                     self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
         expected = planner.plan([])
-        expected.update(common=True, web=True, qodana=True, qodana_build_logic=True)
+        expected.update(common=True, web=True, qodana=True)
         self.assertEqual(expected, planner.plan(paths))
 
     def test_multiplatform_inputs_do_not_narrow_other_changed_inputs(self):
@@ -226,37 +226,50 @@ class PlanCiTest(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
 
-    def test_private_jvm_test_sources_keep_jvm_checks_coverage_and_analysis(self):
+    def test_private_jvm_sources_keep_jvm_checks_coverage_and_analysis(self):
         expected = planner.plan([])
-        expected.update(common=True, qodana=True, qodana_build_logic=True)
+        expected.update(common=True, qodana=True)
         paths = [f"{module}/src/{source_set}/kotlin/PrivateJvmTest.kt"
                  for module, source_sets in (("api", ("test", "jvmTest")), ("runtime/core", ("test", "jvmTest")),
                                              ("runtime/remote", ("test",)), ("runtime/headless", ("test",)),
-                                             ("runtime/minecraft", ("test",)), ("runtime/minecraft-fonts-lwjgl", ("test",)))
+                                             ("runtime/minecraft", ("test",)), ("runtime/minecraft-fonts-lwjgl", ("test",)),
+                                             ("runtime/paper", ("test",)), ("runtime/velocity", ("test",)))
                  for source_set in source_sets]
+        paths += [f"quality/{module}/src/jmh/kotlin/Workload.kt"
+                  for module in ("benchmarks", "component-benchmarks", "remote-benchmarks")]
         for path in paths:
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
                 self.assertEqual(planner.plan([], full=True), planner.plan([path], full=True))
         self.assertEqual(expected, planner.plan(paths))
 
-    def test_private_jvm_tests_do_not_narrow_other_changed_inputs(self):
-        test = "runtime/minecraft/src/test/kotlin/PrivateJvmTest.kt"
-        for other in ("api/src/commonMain/kotlin/Component.kt", "runtime/minecraft/src/main/kotlin/Rendering.kt",
-                      "runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/Canvas.kt",
-                      "runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf", "build.gradle.kts", "unknown-input"):
-            expected = planner.plan([other])
-            expected.update(common=True, qodana=True, qodana_build_logic=True)
-            for paths in ([test, other], [other, test]):
-                with self.subTest(paths=paths):
-                    self.assertEqual(expected, planner.plan(paths))
+    def test_private_jvm_sources_do_not_narrow_other_changed_inputs(self):
+        for source in ("runtime/minecraft/src/test/kotlin/PrivateJvmTest.kt", "runtime/paper/src/test/kotlin/PrivateJvmTest.kt",
+                       "runtime/velocity/src/test/kotlin/PrivateJvmTest.kt", "quality/benchmarks/src/jmh/kotlin/Workload.kt",
+                       "quality/component-benchmarks/src/jmh/kotlin/Workload.kt", "quality/remote-benchmarks/src/jmh/kotlin/Workload.kt"):
+            for other in ("api/src/commonMain/kotlin/Component.kt", "runtime/minecraft/src/main/kotlin/Rendering.kt",
+                          "runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/Canvas.kt",
+                          "runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf",
+                          "runtime/paper/src/main/kotlin/Service.kt", "runtime/velocity/src/main/kotlin/Service.kt",
+                          "build.gradle.kts", "unknown-input"):
+                expected = planner.plan([other])
+                expected.update(common=True, qodana=True)
+                for paths in ([source, other], [other, source]):
+                    with self.subTest(paths=paths):
+                        self.assertEqual(expected, planner.plan(paths))
 
     def test_test_resources_and_unknown_roots_keep_platform_checks(self):
         expected = planner.plan(["api/src/main/kotlin/Component.kt"])
         for path in ("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/fixture.ttf",
                      "runtime/core/src/test/resources/fixture.json", "runtime/future/src/test/kotlin/Test.kt",
+                     "runtime/paper/src/test/resources/fixture.json", "runtime/velocity/src/test/resources/fixture.json",
+                     "runtime/paper/src/testFixtures/kotlin/Shared.kt", "runtime/velocity/src/testFixtures/kotlin/Shared.kt",
                      "runtime/remote/src/jvmTest/kotlin/Test.kt", "runtime/core/src/test/kotlin-fixtures/Test.kt",
-                     "runtime/core/src/test/kotlin/Test.kt.disabled"):
+                     "runtime/core/src/test/kotlin/Test.kt.disabled", "quality/benchmarks/src/fixture/kotlin/Shared.kt",
+                     "quality/component-benchmarks/src/workload/kotlin/Shared.kt", "quality/remote-benchmarks/src/main/kotlin/Future.kt",
+                     "quality/benchmarks/src/jmh/resources/fixture.ttf", "quality/future/src/jmh/kotlin/Workload.kt",
+                     "quality/benchmarks/src/jmh/kotlin-fixtures/Workload.kt", "quality/benchmarks/src/jmh/kotlin/Workload.kt.disabled",
+                     "quality/benchmarks/build.gradle.kts"):
             with self.subTest(path=path):
                 self.assertEqual(expected, planner.plan([path]))
 
@@ -277,7 +290,7 @@ class PlanCiTest(unittest.TestCase):
     def test_idea_analysis_model_keeps_real_compiler_and_inspection_checks(self):
         path = "gradle/qodana-idea-model.gradle.kts"
         expected = planner.plan([])
-        expected.update(common=True, workflow=True, qodana=True, qodana_build_logic=True)
+        expected.update(common=True, workflow=True, qodana=True)
         self.assertEqual(expected, planner.plan([path]))
         for other in ("build.gradle.kts", "settings.gradle.kts", "gradle/unknown-model.gradle.kts", "gradle/qodana-idea-model-other.gradle.kts",
                       "gradle/libs.versions.toml", "build-logic/src/main/kotlin/Plugin.kt"):
@@ -303,10 +316,32 @@ class PlanCiTest(unittest.TestCase):
             for changed in ([paths[0], other], [other, paths[0]]):
                 with self.subTest(changed=changed):
                     mixed = planner.plan([other])
-                    mixed["workflow"] = True
+                    mixed.update(workflow=True, qodana_build_logic=True)
                     self.assertEqual(mixed, planner.plan(changed))
         mixed = expected | {"docs": True}
         self.assertEqual(mixed, planner.plan(paths + ["docs/development/ci.md"]))
+
+    def test_product_analysis_does_not_select_unrelated_build_logic(self):
+        paths = ["api/src/commonMain/kotlin/Element.kt", "runtime/core/src/main/kotlin/Node.kt",
+                 "runtime/web/src/jsMain/kotlin/Host.kt", "integration/docs/src/main/kotlin/Example.kt",
+                 "qodana.yaml", "gradle/prepare-qodana-project.py", "gradle/verify-qodana-declarations.py"]
+        for path in paths:
+            with self.subTest(path=path):
+                result = planner.plan([path])
+                self.assertTrue(result["qodana"])
+                self.assertFalse(result["qodana_build_logic"])
+        self.assertFalse(planner.plan(paths)["qodana_build_logic"])
+
+    def test_native_inputs_and_analysis_workflows_keep_both_scans(self):
+        paths = ["integration/shared/minecraft-fabric/canvas/pacing/common/src/gametest/kotlin/Pacing.kt",
+                 "runtime/shared/minecraft-fabric/input/Changed.kt", "runtime/minecraft-fabric-26.3/build.gradle.kts",
+                 "integration/minecraft-fabric-26.3/build.gradle.kts", ".github/workflows/qodana.yml"]
+        for path in paths:
+            for changed in ([path], [path, "runtime/web/src/jsMain/kotlin/Host.kt"],
+                            ["runtime/web/src/jsMain/kotlin/Host.kt", path]):
+                with self.subTest(paths=changed):
+                    result = planner.plan(changed)
+                    self.assertTrue(result["qodana"] and result["qodana_build_logic"])
 
     def test_analysis_aggregate_requires_exact_selected_successes_and_skips(self):
         owners = {"qodana": "qodana", "build-logic": "qodana_build_logic"}
@@ -380,11 +415,11 @@ class PlanCiTest(unittest.TestCase):
             for changed in ([tests[0], product], [product, tests[0]]):
                 with self.subTest(changed=changed):
                     mixed = planner.plan([product])
-                    mixed["workflow"] = True
+                    mixed.update(workflow=True, qodana_build_logic=True)
                     self.assertEqual(mixed, planner.plan(changed))
 
         mixed = planner.plan(["api/src/main/kotlin/Element.kt"])
-        mixed["workflow"] = True
+        mixed.update(workflow=True, qodana_build_logic=True)
         self.assertEqual(mixed, planner.plan(tests + ["api/src/main/kotlin/Element.kt"]))
 
     def test_source_model_setup_is_limited_to_unresolved_native_changes(self):

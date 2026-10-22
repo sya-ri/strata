@@ -4,7 +4,6 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -16,7 +15,6 @@ import java.lang.reflect.Method
 /**
  * Independently controls dense clip-stack work and the unchanged small-run branch using the actual Fabric archive.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public open class PortableTileControlBenchmark {
     /**
      * Returns complete partition descriptions, including the same reflective invocation on both revisions.

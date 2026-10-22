@@ -65,7 +65,7 @@ import dev.s7a.strata.text.UiText
 internal class ContainerDeclarationFixture(
     private val container: Container,
     private val shape: Shape,
-) {
+) : AutoCloseable {
     private val counts = Counts()
     private val version = mutableStateOf(0)
     private val constraints = Constraints(maxWidth = 4_096, maxHeight = 4_096)
@@ -233,7 +233,7 @@ internal class ContainerDeclarationFixture(
     /**
      * Releases all retained children and tile observations while this fixture handle remains reachable.
      */
-    fun close() {
+    override fun close() {
         if (closed) return
         closed = true
         session.close()
@@ -501,29 +501,23 @@ internal class ContainerDeclarationFixture(
                         element(LeafElement(1, 0, counts, Modifier.weight(1f).align(VerticalAlignment.Top)))
                     }
                 }
-            val session = createRuntimeUiSession { declaration }
-            try {
+            createRuntimeUiSession { declaration }.use { session ->
                 session.attach()
                 val frame = session.frame(Constraints(maxWidth = 12, maxHeight = 4))
                 check(frame.size == IntSize(12, 4))
                 check(frame.semantics.map { it.bounds } == listOf(IntRect(0, 3, 5, 4), IntRect(7, 0, 12, 1)))
-            } finally {
-                session.close()
             }
             check(counts.live == 0 && counts.created == 2 && counts.disposed == 2)
-            val first = ContainerDeclarationFixture(Container.Row, Shape.Eight)
-            val second = ContainerDeclarationFixture(Container.Row, Shape.Eight)
-            try {
-                first.attach()
-                second.attach()
-                val unchanged = second.session.frame(second.constraints)
-                first.rebuildFrame()
-                check(second.session.frame(second.constraints) === unchanged)
-                first.close()
-                check(second.counts.live == 8)
-            } finally {
-                first.close()
-                second.close()
+            ContainerDeclarationFixture(Container.Row, Shape.Eight).use { first ->
+                ContainerDeclarationFixture(Container.Row, Shape.Eight).use { second ->
+                    first.attach()
+                    second.attach()
+                    val unchanged = second.session.frame(second.constraints)
+                    first.rebuildFrame()
+                    check(second.session.frame(second.constraints) === unchanged)
+                    first.close()
+                    check(second.counts.live == 8)
+                }
             }
         }
     }

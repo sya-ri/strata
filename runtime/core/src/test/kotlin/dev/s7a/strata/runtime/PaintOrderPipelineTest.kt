@@ -31,7 +31,6 @@ import dev.s7a.strata.render.RootOverlayPaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -43,7 +42,6 @@ import java.util.concurrent.atomic.AtomicReference
  * Verifies retained child clipping and post-child overlay ordering.
  */
 internal class PaintOrderPipelineTest {
-    @OptIn(InternalStrataRuntimeApi::class)
     @Test
     fun changingOnlyTheCoveredChildReplaysCachedClipsAndBothOverlayKinds() {
         val element = PaintOrderElement()

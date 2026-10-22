@@ -216,7 +216,7 @@ internal class TextLineLayoutReference(
             else -> error("The fixture admits only prepared literal/font inputs")
         }
 
-    private data class Row(
+    private class Row(
         val offsets: IntArray,
         val positions: IntArray,
         val prefixes: FloatArray,

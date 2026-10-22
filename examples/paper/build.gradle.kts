@@ -1,5 +1,7 @@
 group = "dev.s7a.strata.examples"
 
+kotlin.sourceSets.named("main") { kotlin.srcDir("src/shared/kotlin") }
+
 dependencies {
     compileOnly(project(":paper-api"))
     compileOnly(libs.paper.api)

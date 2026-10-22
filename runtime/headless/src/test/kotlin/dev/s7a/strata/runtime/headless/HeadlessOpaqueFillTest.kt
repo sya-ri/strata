@@ -5,14 +5,12 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 
 /**
  * Verifies opaque row overwrites against independent physical pixel-center coverage.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessOpaqueFillTest {
     @Test
     // The finite matrix keeps density, alpha destination, empty extents, and both clip representations together.

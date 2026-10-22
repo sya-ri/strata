@@ -2,8 +2,6 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.modifier.Modifier
-import dev.s7a.strata.node.DirtyMask
-import dev.s7a.strata.render.ArgbColor
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows

@@ -9,7 +9,6 @@ import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.node.DirtyPhase

@@ -1471,7 +1471,7 @@ internal fun createVirtualListShowcaseScreenDefinition(): UiDefinition {
 
 ### Modifiers
 
-Sizing is expressed by `viewportSize`; modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
+Omit `viewportSize` to fill a bounded parent allocation, including height assigned by a Column's `weight`; provide it for an exact viewport or a declaration-only remote host. Modifier actions receive leading and trailing load requests while caller-owned state supports index, key, and boundary navigation.
 
 ### Parent scope
 

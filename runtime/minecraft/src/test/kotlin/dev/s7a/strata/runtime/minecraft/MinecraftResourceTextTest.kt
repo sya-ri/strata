@@ -1,5 +1,3 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime.minecraft
 
 import dev.s7a.strata.geometry.Constraints
@@ -23,7 +21,6 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
 import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
 import org.junit.jupiter.api.Assertions.assertArrayEquals

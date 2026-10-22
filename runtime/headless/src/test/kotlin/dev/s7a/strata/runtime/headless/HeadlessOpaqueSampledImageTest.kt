@@ -6,7 +6,6 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.floor
@@ -14,7 +13,6 @@ import kotlin.math.floor
 /**
  * Verifies opaque sampled colors against independent pixel-center coverage and integer tint arithmetic.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessOpaqueSampledImageTest {
     @Test
     // Keep the finite density, identity/non-identity tint, and cutoff matrix together.

@@ -55,7 +55,7 @@ Choose a namespaced type ID and schema version, register it through `Strata.regi
 Changed wire schemas require a new version; existing connections must reconnect to negotiate newly registered types.
 Missing projections or client capabilities reject the whole screen explicitly.
 Follow the [extension and ownership contract]($REMOTE_PROTOCOL_URL#extensions-and-ownership) for `RemoteRegistry.element`, `modifier`, `statefulModifier`, and release of retained client resources.
-The [compiled external extension](https://github.com/sya-ri/strata/blob/master/examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/DemoRemoteExtensions.kt) demonstrates a custom primitive and active modifier; its [round-trip and rejection tests](https://github.com/sya-ri/strata/blob/master/examples/paper/src/test/kotlin/dev/s7a/strata/examples/paper/ExternalProjectionTest.kt) exercise the public contracts.
+The [compiled external extension](https://github.com/sya-ri/strata/blob/master/examples/paper/src/shared/kotlin/dev/s7a/strata/examples/paper/DemoRemoteExtensions.kt) demonstrates a custom primitive and active modifier; its [round-trip and rejection tests](https://github.com/sya-ri/strata/blob/master/examples/paper/src/test/kotlin/dev/s7a/strata/examples/paper/ExternalProjectionTest.kt) exercise the public contracts.
 
 Typed input subscriptions can run handlers on Paper or Velocity with declared local filters, propagation, and fixed-button capture.
 Event-dependent synchronous `InputResult` or capture decisions and native Canvas drawing need an installed client implementation; a server response cannot supply an immediate local result."""

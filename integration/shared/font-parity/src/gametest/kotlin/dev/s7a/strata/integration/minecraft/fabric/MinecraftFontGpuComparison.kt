@@ -4,7 +4,6 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Classifies final native image differences only after independent float shader/geometry evidence agrees.
@@ -12,7 +11,6 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Reference histories originate exclusively in immutable portable resource commands, never in captured native pixels.
  * One comparison owns this detached scene; methods retain no observations and may be called independently.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftFontGpuComparison(
     commands: List<DrawCommand>,
     viewport: IntSize,

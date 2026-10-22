@@ -3,8 +3,7 @@ package dev.s7a.strata.runtime.web
 import dev.s7a.strata.component.TextShadow
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.SampledImageOrientation
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -34,6 +33,7 @@ internal class WebDomRenderer(
 ) : AutoCloseable {
     private var nodes = emptyMap<String, HTMLElement>()
     private val owned = LinkedHashSet<HTMLElement>()
+    private val editors = WebEditorDom()
     private var initialized = false
     private var stylesheet: HTMLElement? = null
     private val originalTheme = root.getAttribute("data-strata-theme-root")
@@ -48,6 +48,7 @@ internal class WebDomRenderer(
             stylesheet = installWebTheme(root, theme)
             initialized = true
         }
+        editors.beginFrame()
         val next = LinkedHashMap<String, HTMLElement>()
         root.style.position = "relative"
         root.style.width = "${frame.size.width}px"
@@ -65,7 +66,7 @@ internal class WebDomRenderer(
             element.setAttribute("data-strata-node", entry.identity)
             owned.add(element)
             element.setAttribute("data-strata-theme", theme.token)
-            update(element, entry)
+            update(element, entry, frame.size)
             WebSemanticsDom.update(element, entry.semantic, entry.proxy)
             element.style.zIndex = entry.order.toString()
             val activeEditor = entry.editor != null && (root.ownerDocument?.activeElement === element || element.hasAttribute("data-strata-composing"))
@@ -80,6 +81,7 @@ internal class WebDomRenderer(
             if (next[identity] !== element) release(element)
         }
         nodes = next
+        editors.endFrame()
         entries.firstOrNull(::focusedEntry)?.let { entry ->
             val target = checkNotNull(nodes[entry.identity])
             if (root.ownerDocument?.activeElement !== target && target.isConnected) target.focus()
@@ -89,6 +91,7 @@ internal class WebDomRenderer(
     private fun focusedEntry(entry: Entry): Boolean = entry.semantic?.let { it.owner?.let { owner -> owner.focused && owner.focusable } == true && it.semantics.disabled.not() } ?: (entry.editor?.focused == true || entry.presentation?.focused == true)
 
     override fun close() {
+        editors.close()
         owned.toList().forEach(::release)
         nodes = emptyMap()
         stylesheet?.let { it.parentNode?.removeChild(it) }
@@ -162,6 +165,7 @@ internal class WebDomRenderer(
     private fun update(
         element: HTMLElement,
         entry: Entry,
+        viewport: IntSize,
     ) {
         val bounds = entry.bounds
         val style = element.style
@@ -193,11 +197,11 @@ internal class WebDomRenderer(
         style.lineHeight = presentation?.lineHeight?.let { "${it}px" }.orEmpty()
         val image = entry.image
         if (image != null) {
-            paintImage(element as HTMLCanvasElement, image, bounds, entry.clip)
+            paintImage(element as HTMLCanvasElement, image, viewport, entry.clip)
             return
         }
         if (entry.editor != null) {
-            WebEditorDom.update(element, entry.editor, checkNotNull(resources))
+            editors.update(element, entry.editor, checkNotNull(resources))
             return
         }
         textStyle(element, presentation)
@@ -345,17 +349,12 @@ internal class WebDomRenderer(
     private fun paintImage(
         canvas: HTMLCanvasElement,
         image: DrawCommand,
-        bounds: IntRect,
+        viewport: IntSize,
         clip: FloatRect?,
     ) {
         canvas.style.setProperty("pointer-events", "none")
         canvas.style.setProperty("clip-path", "none")
-        when (image) {
-            is DrawCommand.SampledImage -> WebImageRasterizer.draw(canvas, image.image, image.source, image.destination, bounds, clip, image.tint, image.alphaCutoff, image.orientation)
-            is DrawCommand.BlitImage -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal, physicalSampling = false)
-            is DrawCommand.BlitImagePixels -> WebImageRasterizer.draw(canvas, image.image, floating(image.source), floating(image.destination), bounds, clip, ArgbColor(-1), 0f, SampledImageOrientation.Normal)
-            else -> error("Unexpected web image command.")
-        }
+        WebImageRasterizer.draw(canvas, image, viewport, clip)
     }
 
     private fun textStyle(

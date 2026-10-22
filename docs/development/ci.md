@@ -5,6 +5,11 @@ Use this document when changing workflow topology or caches; [release publicatio
 CI scripts require Python 3.11 or newer for standard-library TOML parsing.
 The Java setup action and Qodana bootstrap read their ordinary and frozen paired toolchains from the same catalog reader.
 
+SonarQube Cloud uses [automatic analysis](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/automatic-analysis/) with repository settings in `.sonarcloud.properties`.
+Copy-paste detection excludes the explicit list of generated per-component overload and JVM binary bridge files in `.sonarcloud.properties`.
+`:api:checkStateComponentOverloads` verifies those overloads against the maintained component declarations.
+Rule analysis still includes the generated files; handwritten declarations and runtime code remain subject to duplication checks.
+
 ## Build configuration and concurrency
 
 The typed Minecraft target matrix owns versions, toolchains, distributions, paired projects, and linked Dokka sources.
@@ -72,10 +77,10 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Publication tools or workflows | Syntax, controller behavior fixtures, and isolated publication-tool compilation |
 | Build-logic tests/resources | JVM tests and coverage, workflow fixtures, and native build-logic Qodana |
 | Native build-logic analysis workflow or profile | Workflow fixtures and native build-logic Qodana |
-| Private JVM Kotlin test sources or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and both Qodana scans |
+| Private JVM Kotlin test or JMH sources, or the Qodana IDEA model | JVM tests and coverage, workflow fixtures, and product Qodana |
 | Scoped JVM fixture collection verifier | JVM checks and coverage, workflow fixtures |
 | Paired performance controller Python | Workflow behavior fixtures and compiled JVM/native boundary qualification |
-| API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and Qodana |
+| API/core/testkit JavaScript Kotlin sources or common Kotlin test sources | JVM checks and coverage, workflow fixtures, Web verification, and product Qodana |
 | Prose and links | Documentation and Skill consistency |
 | Documentation generation, examples, images, or Dokka | Compiled documentation and generated-output checks |
 | One Minecraft runtime or shared source | Every version using that source |
@@ -84,13 +89,18 @@ Planning prepares Java and Gradle only when native-only changes need the configu
 | Unrecognized input | Full verification |
 
 Native helpers, native compiler inputs, mixed runtime changes and manual full CI keep their existing verification plans.
-Private JVM test sources are consumed only by their owning JVM tests; shared verification helpers belong in their declared shared roots.
+Private JVM test and JMH sources, including the Paper/Folia and Velocity runtime tests, are consumed only by their owning JVM checks.
+Shared verification helpers belong in their declared shared roots.
+The shared benchmark fixture and workload roots retain their broader verification plans because the core, Web, and loaded-client tests also consume them.
 JavaScript sources and common tests in the API, core, and performance testkit retain both JVM and Web verification, including the existing ABI and static checks.
 They do not select loaded clients or full documentation; their owning tests still run through the existing job commands.
 Resources and unrecognized source roots keep their broader plans, since fixtures such as fonts are also browser inputs.
 Build-logic test-only changes and the IDEA analysis model do not select loaded clients, Web, documentation generation or compiled performance boundary qualification; production build logic and shared build settings still select full verification.
 Private build-logic tests and their analysis configuration retain the standalone native scan without importing the unrelated product model.
-Mixed product changes, manual full runs, and explicit analysis source references retain both scans.
+Product-only changes select product analysis without repeating the independent build-logic import.
+Native and shared helpers retain both scans because the standalone build also imports shared pacing tests.
+Product analysis workflow changes, build-wide inputs, unrecognized inputs, manual full runs, and explicit analysis source references retain both scans.
+Mixed changes retain every selected owner regardless of path order.
 The always-running Qodana result job requires each selected scan to succeed and each unselected scan to skip.
 
 `writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model and the documentation project's actual source roots.
@@ -105,12 +115,17 @@ Common checks and Kover share one Gradle invocation so JVM tests run once.
 The complete compiled fixture route and its negative attempts run in two independent Windows jobs, both required by `CI result`.
 The complete route keeps every paired sample on one host, and the Windows ownership-boundary checks run once with that route.
 API/core JavaScript tests and Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
+The browser matrix uses the Web project model from [build verification](build.md), avoiding unrelated versioned runtime configuration.
 
 Gradle dependency caches may be saved and restored inside PRs, subject to GitHub's branch/ref isolation.
 Independent Minecraft jobs may restore Gradle dependency caches from other jobs, including the full-model writers on the default branch, but do not each save another large copy; the documentation and Qodana jobs retain full-model cache writers.
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
 Full and reader-documentation jobs and development Pages builds use the same Loom ownership, input hash, and cache namespace.
+Documentation builds include every versioned runtime, so full Qodana preparation may use their Loom cache as a fallback.
+Gradle prepares missing integration inputs before analysis, and the complete cache is saved only after model and report verification succeeds.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
+Dedicated Fabric servers unpack bundled runtime inputs into task-owned temporary directories; their invocation artifacts retain fresh receipts, logs, settings, and worlds.
+Aggregate Kover HTML and XML reports are regenerated after their JVM tests and are never stored in or loaded from the build cache.
 Acceptance evidence is generated for the selected revision.
 Each ordinary PR or full-CI Minecraft matrix job also runs `integration/fabric/run_acceptance.py` against a fresh loopback Fabric server using the production runtime and test Mod archives.
 The paired client confirms server-owned input, visible revisions, and two independent connections; the server confirms both closures and clean shutdown.
@@ -151,6 +166,7 @@ API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common a
 Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM implementation and test roots remain in the owning JVM module.
 Each common source-set fragment uses the owning JVM main compilation's platform, binary libraries and project dependencies, with the original compile/runtime scopes and no test dependencies.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
+Detekt reads each project's declared Kotlin source sets, including shared roots and compiled documentation examples.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
 Each module retains its actual compiler's selected inputs, dependencies and Kotlin identity.
@@ -191,6 +207,7 @@ Other shared roots, including authored showcase inputs, are accepted only when t
 Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
 IDE indexes are restored for matching build-model inputs and saved only after successful analysis and complete-model verification.
 Their identity follows Gradle configuration, wrapper and catalog inputs, model-generation scripts, and the analysis profile and workflow; other CI scripts and Python regression tests do not invalidate compatible indexes.
+Private build-logic test sources and fixtures retain their standalone verification without invalidating product indexes.
 Keeping matrix Gradle caches read-only limits storage pressure so these indexes and the complete Loom project cache can coexist.
 Every run recreates the project model and analysis reports and verifies every expected module.
 The `qodana-model-evidence` artifact retains the fresh declaration inventory, generated IML/project metadata, and bootstrap task log in their repository-relative paths.
@@ -217,6 +234,8 @@ Checks do not enforce workflow prose or source statement order.
 
 [Release publication](release.md) owns first-time full validation, immutable preparation, per-destination retries, and moderation monitoring.
 Documentation inputs trigger Pages separately after merge; the checked site is generated once and old rendered versions come from `gh-pages`.
+Staged-site validation and its public URL inventory run on every invocation without snapshotting the entire repository.
+Runtime inputs to Pages include production source sets and Gradle definitions; private tests and ABI baselines do not trigger site generation.
 See [Pages publication](release.md#pages-artifacts-and-deployment) and [documentation ownership](documentation.md#documentation-ownership).
 Wait for CI using `gh run watch <run-id> --exit-status`; inspect logs after completion or failure.
 

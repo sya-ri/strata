@@ -57,15 +57,29 @@ tasks.test {
         "../gradle/prepare-qodana-project.py",
         "../gradle/tests/fixtures/assert_qodana_compiler_model.py",
     ).withPropertyName("externalFixtureSources").withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.files(
-        fileTree("..") {
+    // Model fixtures use project membership; collector fixtures also read the benchmark script bodies.
+    val fixtureRoot = layout.projectDirectory.dir("..").asFile
+    inputs.property(
+        "fixtureProjectPaths",
+        fileTree(fixtureRoot) {
             include(
-                "runtime/minecraft-fabric-*/build.gradle.kts",
-                "integration/minecraft-fabric-*/build.gradle.kts",
-                "quality/*benchmarks/build.gradle.kts",
+                "api/build.gradle.kts",
+                "detekt-rules/build.gradle.kts",
+                "performance-testkit/build.gradle.kts",
+                "paper-api/build.gradle.kts",
+                "velocity-api/build.gradle.kts",
+                "runtime/*/build.gradle.kts",
+                "integration/*/build.gradle.kts",
+                "examples/*/build.gradle.kts",
+                "quality/*/build.gradle.kts",
             )
+        }.elements.map { files ->
+            files.map { it.asFile.relativeTo(fixtureRoot).invariantSeparatorsPath }.sorted()
         },
-    ).withPropertyName("fixtureProjects").withPathSensitivity(PathSensitivity.RELATIVE)
+    )
+    inputs.files(
+        fileTree(fixtureRoot) { include("quality/*benchmarks/build.gradle.kts") },
+    ).withPropertyName("collectorFixtureSources").withPathSensitivity(PathSensitivity.RELATIVE)
     // TestKit releases its dedicated daemons when the class worker finishes.
     forkEvery = 1
 }

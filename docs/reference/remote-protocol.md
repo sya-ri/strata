@@ -13,7 +13,7 @@ A proxy reissues backend discovery and renews its own transport incarnation afte
 Stale-incarnation frames cannot enter a successor's protocol connection.
 Proxy routing admits only authenticated client proxy actions and current-backend server frames.
 It handles the native event and submits safe writes itself, preventing later asynchronous listeners from forwarding retired backend traffic.
-The unreleased wire format remains protocol version 1; use matching Strata revisions until release.
+The wire format uses protocol version 1; use matching Strata release versions on both endpoints.
 Both sides require the same protocol version, intersect exact namespace/schema-version capabilities, and negotiate the minimum of each resource limit.
 Registration freezes before a connection captures its capability snapshot.
 No message supplies a class name, executable body, function, or server model.
@@ -117,8 +117,11 @@ This derived presentation cache preserves Canvas source identity across unrelate
 Registrations are optional for local-only components and modifiers.
 A remote screen requiring an absent projection or unsupported schema fails explicitly before it can become a supported screen.
 Plugin disable, disconnect, screen replacement, native container replacement, decoding failure, handler failure, and resource limits release the corresponding owner references and transfer queues.
-Closing the shared service permanently rejects new players, schemas, and definitions before terminal listeners run; rejected definitions remain available to another host.
+Closing the shared service permanently rejects new players, schemas, and definitions before terminal listeners run; definitions rejected before admission remain available to another host.
 Connection replacement also respects this cutoff if a disconnection listener closes the service.
+A screen replacement listener may retire the connection; an already admitted opening then closes without evaluating its content.
+A title-encoding failure closes the admitted handle before error reporting, preserving the original failure if a close listener also throws.
+Promoting a HUD to Screen preserves one foreground even when a close listener opens another screen.
 A failing error reporter cannot interrupt cleanup of other selected sessions during service shutdown, owner retirement, or container changes.
 Common lifecycle/source-cutoff rules remain in [UI sessions](../development/ui-sessions.md); runtime cache admission remains in [performance](../development/performance.md).
 The shared host queues at most 64 lifecycle transitions requested during one input handler and drains them inside its execution owner after that handler returns.

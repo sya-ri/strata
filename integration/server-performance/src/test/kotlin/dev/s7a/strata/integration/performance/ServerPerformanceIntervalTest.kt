@@ -73,22 +73,7 @@ public class ServerPerformanceIntervalTest {
     @Test
     public fun sharedProcessorAcceptsThreeIndependentScheduledInvocations() {
         withFixture { loader, directory ->
-            val reports =
-                (0..2).map { repetition ->
-                    val runDirectory = Files.createDirectory(directory.resolve("run-$repetition"))
-                    val report = runDirectory.resolve("test-interval.json")
-                    val runId = UUID.randomUUID().toString()
-                    listOf("test-interval", "test-secondary").forEach { name ->
-                        val interval = create(loader, IntFunction { 1 }, IntConsumer {}, name)
-                        try {
-                            repeat(90) { call(interval, "advance") }
-                            call(interval, "write", runDirectory.resolve("$name.json"), runId, "test-owner")
-                        } finally {
-                            call(interval, "close")
-                        }
-                    }
-                    report
-                }
+            val reports = scheduledReports(loader, directory)
             val result =
                 JvmPerformanceReports.summarize(
                     reports,
@@ -105,63 +90,8 @@ public class ServerPerformanceIntervalTest {
             assertEquals("passed", result.get("status").asString)
             assertEquals(3, result.getAsJsonArray("sources").size())
             assertEquals(1, result.getAsJsonArray("phases").size())
-            val request =
-                JsonObject().apply {
-                    addProperty("collector", requireNotNull(System.getProperty("strata.test.performanceKit")))
-                    addProperty("output", directory.resolve("host-summary.json").toString())
-                    add("runs", JsonArray().apply { reports.forEach { report -> add(checkNotNull(report.parent).toString()) } })
-                }
-            val requestPath = directory.resolve("host-request.json")
-            PerformanceJson.writeNew(requestPath, request)
-            val processorType = loader.loadClass(ServerPerformanceEvidence::class.java.name)
-            val processor = processorType.getField("INSTANCE").get(null)
-            val intervals = listOf("test-interval", "test-secondary")
-            val contractType = loader.loadClass(ServerPerformanceContract::class.java.name)
-            val contractConstructor = contractType.getConstructor(String::class.java, List::class.java, Map::class.java, Set::class.java)
-            val contract = contractConstructor.newInstance("test-owner", intervals, mapOf("control" to "kotlin.Unit"), setOf("fixture"))
-            val process = processorType.getMethod("process", Path::class.java, contractType, ClassLoader::class.java)
-            process.invoke(processor, requestPath, contract, loader)
-            val hostSummary = JvmPerformanceEvidence.readReport(directory.resolve("host-summary.json"))
-            assertEquals("passed", hostSummary.get("status").asString)
-            assertEquals(2, hostSummary.getAsJsonArray("workloads").size())
-            assertTrue(hostSummary.getAsJsonArray("workloads").all { it.asJsonObject.getAsJsonArray("sources").size() == 3 })
-            val unregistered = contractConstructor.newInstance("test-owner", intervals, mapOf("unregistered" to "kotlin.Unit"), setOf("fixture"))
-            assertFailsWith<InvocationTargetException> {
-                process.invoke(processor, requestPath, unregistered, loader)
-            }
-            val secondaryPath = checkNotNull(reports.first().parent).resolve("test-secondary.json")
-            val originalSecondary = Files.readString(secondaryPath)
-            val mixed = JvmPerformanceEvidence.readReport(secondaryPath)
-            mixed.remove("source_receipt")
-            mixed.addProperty("run_id", UUID.randomUUID().toString())
-            PerformanceJson.write(secondaryPath, mixed)
-            val mixedRequest = request.deepCopy().apply { addProperty("output", directory.resolve("mixed-summary.json").toString()) }
-            val mixedRequestPath = directory.resolve("mixed-request.json")
-            PerformanceJson.writeNew(mixedRequestPath, mixedRequest)
-            assertFailsWith<InvocationTargetException> {
-                process.invoke(processor, mixedRequestPath, contract, loader)
-            }
-            assertFalse(Files.exists(directory.resolve("mixed-summary.json")))
-            Files.writeString(secondaryPath, originalSecondary)
-            Files.writeString(directory.resolve("fixture-input.txt"), "Changed after server collection")
-            val changedRequest = request.deepCopy().apply { addProperty("output", directory.resolve("changed-input-summary.json").toString()) }
-            val changedRequestPath = directory.resolve("changed-input-request.json")
-            PerformanceJson.writeNew(changedRequestPath, changedRequest)
-            val changedFailure =
-                assertFailsWith<InvocationTargetException> {
-                    process.invoke(processor, changedRequestPath, contract, loader)
-                }
-            assertTrue(checkNotNull(changedFailure.targetException.message).contains("configuration file changed"))
-            assertFalse(Files.exists(directory.resolve("changed-input-summary.json")))
-            Files.copy(reports.first(), directory.resolve("copied.json"))
-            assertFailsWith<IllegalArgumentException> {
-                JvmPerformanceReports.summarize(
-                    listOf(reports.first(), directory.resolve("copied.json"), reports.last()),
-                    Path.of(requireNotNull(System.getProperty("strata.test.performanceKit"))),
-                    PerformanceReportContract("strata-test-owner-test-interval-v1", listOf("name"), 1, setOf("host"), setOf("samples")),
-                    emptyList(),
-                )
-            }
+            assertHostEvidence(loader, directory, reports)
+            assertCopiedReportsRejected(directory, reports)
         }
     }
 
@@ -195,6 +125,96 @@ public class ServerPerformanceIntervalTest {
             assertTrue(bytes.invoke(adapter, mapOf("configuration" to first)) != bytes.invoke(adapter, mapOf("configuration" to second)))
             Files.writeString(second, "#second invocation\nport=25588\nseed=2\n")
             assertTrue(identity.invoke(adapter, mapOf("configuration" to first)) != identity.invoke(adapter, mapOf("configuration" to second)))
+        }
+    }
+
+    private fun scheduledReports(
+        loader: ClassLoader,
+        directory: Path,
+    ): List<Path> =
+        (0..2).map { repetition ->
+            val runDirectory = Files.createDirectory(directory.resolve("run-$repetition"))
+            val report = runDirectory.resolve("test-interval.json")
+            val runId = UUID.randomUUID().toString()
+            listOf("test-interval", "test-secondary").forEach { name ->
+                val interval = create(loader, IntFunction { 1 }, IntConsumer {}, name)
+                try {
+                    repeat(90) { call(interval, "advance") }
+                    call(interval, "write", runDirectory.resolve("$name.json"), runId, "test-owner")
+                } finally {
+                    call(interval, "close")
+                }
+            }
+            report
+        }
+
+    private fun assertHostEvidence(
+        loader: ClassLoader,
+        directory: Path,
+        reports: List<Path>,
+    ) {
+        val request =
+            JsonObject().apply {
+                addProperty("collector", requireNotNull(System.getProperty("strata.test.performanceKit")))
+                addProperty("output", directory.resolve("host-summary.json").toString())
+                add("runs", JsonArray().apply { reports.forEach { report -> add(checkNotNull(report.parent).toString()) } })
+            }
+        val requestPath = directory.resolve("host-request.json")
+        PerformanceJson.writeNew(requestPath, request)
+        val processorType = loader.loadClass(ServerPerformanceEvidence::class.java.name)
+        val processor = processorType.getField("INSTANCE").get(null)
+        val intervals = listOf("test-interval", "test-secondary")
+        val contractType = loader.loadClass(ServerPerformanceContract::class.java.name)
+        val contractConstructor = contractType.getConstructor(String::class.java, List::class.java, Map::class.java, Set::class.java)
+        val contract = contractConstructor.newInstance("test-owner", intervals, mapOf("control" to "kotlin.Unit"), setOf("fixture"))
+        val process = processorType.getMethod("process", Path::class.java, contractType, ClassLoader::class.java)
+        process.invoke(processor, requestPath, contract, loader)
+        val hostSummary = JvmPerformanceEvidence.readReport(directory.resolve("host-summary.json"))
+        assertEquals("passed", hostSummary.get("status").asString)
+        assertEquals(2, hostSummary.getAsJsonArray("workloads").size())
+        assertTrue(hostSummary.getAsJsonArray("workloads").all { it.asJsonObject.getAsJsonArray("sources").size() == 3 })
+        val unregistered = contractConstructor.newInstance("test-owner", intervals, mapOf("unregistered" to "kotlin.Unit"), setOf("fixture"))
+        assertFailsWith<InvocationTargetException> {
+            process.invoke(processor, requestPath, unregistered, loader)
+        }
+        val secondaryPath = checkNotNull(reports.first().parent).resolve("test-secondary.json")
+        val originalSecondary = Files.readString(secondaryPath)
+        val mixed = JvmPerformanceEvidence.readReport(secondaryPath)
+        mixed.remove("source_receipt")
+        mixed.addProperty("run_id", UUID.randomUUID().toString())
+        PerformanceJson.write(secondaryPath, mixed)
+        val mixedRequest = request.deepCopy().apply { addProperty("output", directory.resolve("mixed-summary.json").toString()) }
+        val mixedRequestPath = directory.resolve("mixed-request.json")
+        PerformanceJson.writeNew(mixedRequestPath, mixedRequest)
+        assertFailsWith<InvocationTargetException> {
+            process.invoke(processor, mixedRequestPath, contract, loader)
+        }
+        assertFalse(Files.exists(directory.resolve("mixed-summary.json")))
+        Files.writeString(secondaryPath, originalSecondary)
+        Files.writeString(directory.resolve("fixture-input.txt"), "Changed after server collection")
+        val changedRequest = request.deepCopy().apply { addProperty("output", directory.resolve("changed-input-summary.json").toString()) }
+        val changedRequestPath = directory.resolve("changed-input-request.json")
+        PerformanceJson.writeNew(changedRequestPath, changedRequest)
+        val changedFailure =
+            assertFailsWith<InvocationTargetException> {
+                process.invoke(processor, changedRequestPath, contract, loader)
+            }
+        assertTrue(checkNotNull(changedFailure.targetException.message).contains("configuration file changed"))
+        assertFalse(Files.exists(directory.resolve("changed-input-summary.json")))
+    }
+
+    private fun assertCopiedReportsRejected(
+        directory: Path,
+        reports: List<Path>,
+    ) {
+        Files.copy(reports.first(), directory.resolve("copied.json"))
+        assertFailsWith<IllegalArgumentException> {
+            JvmPerformanceReports.summarize(
+                listOf(reports.first(), directory.resolve("copied.json"), reports.last()),
+                Path.of(requireNotNull(System.getProperty("strata.test.performanceKit"))),
+                PerformanceReportContract("strata-test-owner-test-interval-v1", listOf("name"), 1, setOf("host"), setOf("samples")),
+                emptyList(),
+            )
         }
     }
 

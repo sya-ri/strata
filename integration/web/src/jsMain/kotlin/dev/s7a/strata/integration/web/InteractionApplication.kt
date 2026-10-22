@@ -26,6 +26,7 @@ internal fun mountInteractionApplication() {
         window.asDynamic().strataInteractions =
             json(
                 "update" to { scenario.advance() },
+                "zoom" to { value: Double -> scenario.navigation.zoomTo(value) },
                 "resize" to { width: Int, height: Int -> host.render(IntSize(width, height)) },
                 "close" to {
                     host.close()

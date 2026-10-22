@@ -10,14 +10,12 @@ import dev.s7a.strata.performance.PerformanceInventory
 import dev.s7a.strata.performance.PerformancePhase
 import dev.s7a.strata.performance.PerformanceScenario
 import dev.s7a.strata.runtime.remote.RemoteMessage
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.file.Files
 import java.nio.file.Path
 
 /**
  * Actual protocol workload and byte-parity admission without time thresholds or a second benchmark runner.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public object RemoteWorkEvidence {
     /**
      * Checks all compiled combinations, exact sparse/full changes, immutable patch parity and real fragmentation.
