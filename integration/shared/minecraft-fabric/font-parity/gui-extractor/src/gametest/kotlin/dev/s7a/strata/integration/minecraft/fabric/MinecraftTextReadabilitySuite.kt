@@ -7,7 +7,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import java.nio.file.Files
 import java.nio.file.Path

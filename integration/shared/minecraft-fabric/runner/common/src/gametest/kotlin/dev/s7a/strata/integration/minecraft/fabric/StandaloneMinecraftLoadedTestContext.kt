@@ -153,6 +153,6 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
         private const val CLIENT_TASK_TIMEOUT_SECONDS = 120L
         private const val TICK_TIMEOUT_SECONDS = 30L
         private const val WORLD_TIMEOUT_TICKS = 1_200
-        private const val WORLD_NAME = "Strata integration verification"
+        private const val WORLD_NAME = "New World"
     }
 }

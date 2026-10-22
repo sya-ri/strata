@@ -164,6 +164,8 @@ The nonpublished `integration:minecraft-fabric-26.3`, `integration:minecraft-fab
 `./gradlew :integration:minecraft-fabric-26.3:runClientGameTest` fixes the viewport, GUI scale, locale, resource profile, and pointer state, then requires exact native-Screen, Fabric-adapter, and headless ARGB equality for the existing screen scenes before writing build-only evidence.
 Its independent resource-font scenes additionally require exact native metrics, glyph texels, and layout, with final native image differences accepted only by the [font GPU evidence gate](../development/font-verification.md#acceptance-evidence); Fabric and headless output remain exact.
 
+SDL acceptance temporarily lowers its native window minimum so the existing small viewports can be resized physically, and restores the original minimum before arming terminal verification.
+
 All 26.3 development, production, published-coordinate, and manual IME launches explicitly set `-XX:StackShadowPages=32`, matching [Fabric's native stack requirement](https://github.com/FabricMC/fabric-loom/pull/1624) and the official client launch manifest while retaining the catalog-pinned Loom version.
 
 Legacy automated screenshot suites also wait for the requested physical viewport to match GLFW, the native Window framebuffer, and the render target across client ticks.

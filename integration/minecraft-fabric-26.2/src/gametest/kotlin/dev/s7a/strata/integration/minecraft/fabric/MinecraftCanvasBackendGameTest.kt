@@ -1,11 +1,9 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
 import dev.s7a.strata.runtime.minecraft.fabric.extractMinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.minecraft.client.Minecraft
 import java.nio.file.Files
 import java.nio.file.Path
 

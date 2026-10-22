@@ -3,14 +3,12 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
-import net.minecraft.client.Minecraft
 import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.client.input.MouseButtonInfo
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 

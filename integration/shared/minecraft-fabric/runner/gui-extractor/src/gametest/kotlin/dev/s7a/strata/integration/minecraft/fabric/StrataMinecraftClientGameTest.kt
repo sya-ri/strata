@@ -40,7 +40,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
-import java.util.concurrent.CompletableFuture
 import kotlin.io.path.inputStream
 import dev.s7a.strata.integration.minecraft.fabric.MinecraftPresentationObservation.Snapshot as RenderWork
 

@@ -3,6 +3,8 @@ package dev.s7a.strata.integration.minecraft.fabric
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.mixin.canvas.MinecraftCanvasWindowTestAccess
+import org.lwjgl.sdl.SDLError.SDL_GetError
+import org.lwjgl.sdl.SDLVideo.SDL_SetWindowSize
 
 /**
  * Resizes the native OpenGL window and waits for its framebuffer and main render target to settle.
@@ -29,7 +31,10 @@ internal fun resizeMinecraftTestWindow(
         }
         return
     }
-    context.runOnClient { minecraft -> minecraft.window.setWindowed(logicalSize.width, logicalSize.height) }
+    context.runOnClient { minecraft ->
+        minecraft.window.setWindowed(logicalSize.width, logicalSize.height)
+        check(SDL_SetWindowSize(minecraft.window.handle(), logicalSize.width, logicalSize.height)) { "Cannot resize the native acceptance window: ${SDL_GetError()}" }
+    }
     var matches = 0
     context.waitFor { minecraft ->
         val window = minecraft.window

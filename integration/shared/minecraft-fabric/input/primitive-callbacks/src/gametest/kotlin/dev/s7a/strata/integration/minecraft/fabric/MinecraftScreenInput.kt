@@ -1,10 +1,7 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.KeyCode
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import org.lwjgl.glfw.GLFW

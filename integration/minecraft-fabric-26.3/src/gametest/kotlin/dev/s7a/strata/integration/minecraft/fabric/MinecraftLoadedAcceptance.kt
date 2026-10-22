@@ -17,6 +17,11 @@ internal object MinecraftLoadedAcceptance {
      * Runs the selected scope and arms shutdown evidence only after all assertions pass.
      */
     fun run(context: MinecraftLoadedTestContext) {
+        val scope = withSmallMinecraftTestWindow(context) { runSuite(context) }
+        context.runOnClient { MinecraftCanvasTerminalTestHooks.arm(scope) }
+    }
+
+    private fun runSuite(context: MinecraftLoadedTestContext): MinecraftCanvasSuiteScope {
         val startingViewport =
             context.computeOnClient(
                 { minecraft ->
@@ -58,10 +63,6 @@ internal object MinecraftLoadedAcceptance {
             },
         )
         context.waitTicks(5)
-        context.runOnClient(
-            {
-                MinecraftCanvasTerminalTestHooks.arm(scope)
-            },
-        )
+        return scope
     }
 }

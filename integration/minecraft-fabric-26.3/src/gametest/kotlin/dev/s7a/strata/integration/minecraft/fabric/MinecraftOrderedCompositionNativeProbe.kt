@@ -10,7 +10,6 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.texture.AbstractTexture
 import java.nio.ByteBuffer
 import java.nio.file.Files
