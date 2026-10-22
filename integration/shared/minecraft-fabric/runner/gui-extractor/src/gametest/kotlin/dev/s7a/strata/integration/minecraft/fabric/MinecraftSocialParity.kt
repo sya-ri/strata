@@ -18,7 +18,6 @@ import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFact
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.gui.screens.social.SocialInteractionsScreen
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.resources.Identifier

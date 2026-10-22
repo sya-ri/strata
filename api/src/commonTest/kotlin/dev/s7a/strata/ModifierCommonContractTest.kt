@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -42,8 +43,8 @@ internal class ModifierCommonContractTest {
         assertEquals(Modifier.hashCode(), anotherEmpty.hashCode())
         assertEquals("Modifier([])", Modifier.toString())
         assertEquals(Modifier.toString(), anotherEmpty.toString())
-        assertFalse(Modifier == chain)
-        assertFalse(chain == Modifier)
+        assertNotEquals(Modifier, chain)
+        assertNotEquals(chain, Modifier)
         assertFalse(Modifier.equals(Unit))
     }
 

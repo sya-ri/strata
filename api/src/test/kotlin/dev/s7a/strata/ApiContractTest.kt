@@ -35,7 +35,6 @@ import dev.s7a.strata.text.TranslationFallback
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.UiTextArgument
 import dev.s7a.strata.text.withFont
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -46,6 +45,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
+import kotlin.test.assertEquals
 import java.lang.reflect.Modifier as JavaModifier
 
 /**
@@ -153,8 +153,7 @@ internal class ApiContractTest {
      * Verifies multipart unresolved text equality, hashing, composition, and validation.
      */
     private fun assertConcatenationValueSemantics() {
-        val expectedEmptyText = UiText.Literal("")
-        assertEquals(expectedEmptyText, UiText.concat())
+        assertEquals(expected = UiText.Literal(""), actual = UiText.concat())
         assertEquals(UiText.Literal("one"), UiText.concat(UiText.Literal("one")))
         val multipart = UiText.Concatenated(listOf(UiText.Literal("a"), UiText.Literal("b")))
         val equalMultipart = UiText.Concatenated(listOf(UiText.Literal("a"), UiText.Literal("b")))

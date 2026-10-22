@@ -29,12 +29,12 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
+import kotlin.test.assertEquals
 
 /**
  * Verifies the public built-in modifier factories and their typed update bridges.
@@ -59,10 +59,8 @@ internal class BuiltinModifierContractTest {
         assertThrows(ArithmeticException::class.java) { Insets.all(Int.MAX_VALUE) }
         assertThrows(ArithmeticException::class.java) { Insets.symmetric(Int.MAX_VALUE, 0) }
         assertEquals(Insets.Zero, Insets())
-        val expectedUniformInsets = Insets(2, 2, 2, 2)
-        val expectedSymmetricInsets = Insets(3, 4, 3, 4)
-        assertEquals(expectedUniformInsets, Insets.all(2))
-        assertEquals(expectedSymmetricInsets, Insets.symmetric(3, 4))
+        assertEquals(expected = Insets(2, 2, 2, 2), actual = Insets.all(2))
+        assertEquals(expected = Insets(3, 4, 3, 4), actual = Insets.symmetric(3, 4))
         assertEquals(source, Insets(left = 1, top = 2, right = 3, bottom = 4))
     }
 
