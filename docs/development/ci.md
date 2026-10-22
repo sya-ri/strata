@@ -165,6 +165,7 @@ API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common a
 Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM implementation and test roots remain in the owning JVM module.
 Each common source-set fragment uses the owning JVM main compilation's platform, binary libraries and project dependencies, with the original compile/runtime scopes and no test dependencies.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
+Detekt reads each project's declared Kotlin source sets, including shared roots and compiled documentation examples.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
 Each module retains its actual compiler's selected inputs, dependencies and Kotlin identity.

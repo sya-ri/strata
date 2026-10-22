@@ -18,6 +18,7 @@
 import dev.s7a.strata.action.ListLoadRequest
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.ColumnScope
 import dev.s7a.strata.component.Grid
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.ScrollArea
@@ -64,22 +65,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 Tab("All", selected = true, width = 72)
                 Tab("Nearby", selected = false, width = 72)
             }
-            Row(spacing = 4) {
-                ScrollArea(
-                    state = scroll,
-                    modifier = Modifier.size(260, 54),
-                ) {
-                    Column(spacing = 3) {
-                        Text("Oak chest")
-                        Text("Ender chest")
-                        Text("Machine buffer")
-                    }
-                }
-                Scrollbar(
-                    state = scroll,
-                    modifier = Modifier.height(54),
-                )
-            }
+            storageLocations(scroll)
             VirtualList(
                 itemCount = { items.size },
                 itemAt = items::get,
@@ -103,18 +89,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
             ) { item ->
                 Text(item)
             }
-            Row(spacing = 4) {
-                Button(
-                    "Jump first",
-                    width = 72,
-                    modifier = Modifier.onActivate { listState.jumpToIndex(0) },
-                )
-                Button(
-                    "Jump oak",
-                    width = 72,
-                    modifier = Modifier.onActivate { listState.jumpToKey("Oak chest") },
-                )
-            }
+            storageNavigation(listState)
             Grid(columns = 9, horizontalSpacing = 0, verticalSpacing = 0) {
                 repeat(9) { index -> Slot(bind = Slots.playerInventory(index)) }
             }
@@ -123,6 +98,40 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 modifier = Modifier.onActivate { onDone() },
             )
         }
+    }
+}
+
+private fun ColumnScope.storageLocations(scroll: ScrollState) {
+    Row(spacing = 4) {
+        ScrollArea(
+            state = scroll,
+            modifier = Modifier.size(260, 54),
+        ) {
+            Column(spacing = 3) {
+                Text("Oak chest")
+                Text("Ender chest")
+                Text("Machine buffer")
+            }
+        }
+        Scrollbar(
+            state = scroll,
+            modifier = Modifier.height(54),
+        )
+    }
+}
+
+private fun ColumnScope.storageNavigation(listState: VirtualListState<String>) {
+    Row(spacing = 4) {
+        Button(
+            "Jump first",
+            width = 72,
+            modifier = Modifier.onActivate { listState.jumpToIndex(0) },
+        )
+        Button(
+            "Jump oak",
+            width = 72,
+            modifier = Modifier.onActivate { listState.jumpToKey("Oak chest") },
+        )
     }
 }
 ```
