@@ -12,6 +12,7 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
+- Invalid remote screen titles close their pending handles, and queued shutdown still completes when error reporting fails.
 - Remote screen replacement stops before evaluating a pending definition when a close listener disconnects, reconnects, or shuts down the service.
   Promoting a HUD to a screen also preserves a single foreground when a close listener opens another screen.
 - Source-backed component overloads use per-component JVM facades.

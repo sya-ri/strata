@@ -86,6 +86,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
     /**
      * Consumes the definition and opens a screen only after successful peer negotiation.
      * Pending openings close without evaluating content if replacement listeners retire the connection.
+     * Preparation failures terminate admitted handles before propagating.
      */
     public fun open(
         owner: Owner,
@@ -128,8 +129,12 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             }
             val runtime = RemoteComponentRuntime()
             val session =
-                RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame, eventSession = handle.uiSession, controller = handle.controls, settings = settings) {
-                    runtime.evaluate(content.content)
+                runCatching {
+                    RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame, eventSession = handle.uiSession, controller = handle.controls, settings = settings) {
+                        runtime.evaluate(content.content)
+                    }
+                }.getOrElse { failure ->
+                    failUnopened(player, owner, handle, settings.category, failure)
                 }
             peer.sessions[handle.identity] = Active(owner, handle, session, settings.presentation, settings.category)
             handle.bindControls { request -> applyControl(player, peer, handle, request) }
@@ -315,6 +320,23 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             }
         }
         peer.refresh()
+    }
+
+    /**
+     * Releases an admitted opening that failed before session installation, preserving its primary failure.
+     */
+    private fun failUnopened(
+        player: Player,
+        owner: Owner,
+        handle: RemoteScreenSession,
+        category: UiCategory?,
+        failure: Throwable,
+    ): Nothing {
+        val reason = (failure as? RemoteProtocolException)?.reason ?: RemoteFailure.HandlerFailed
+        runCatching { closeUnopened(player, owner, handle, category, reason) }.onFailure { cleanup ->
+            if (cleanup !== failure) failure.addSuppressed(cleanup)
+        }
+        throw failure
     }
 
     private fun closeUnopened(
