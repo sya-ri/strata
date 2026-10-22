@@ -57,7 +57,7 @@ internal class FoliaScreenServiceTest {
                 }
             val snapshot = player.receive().filterIsInstance<RemoteMessage.Snapshot>().single()
             player.send(RemoteMessage.ControlApplied(handle.identity, checkNotNull(snapshot.control).sequence))
-            val opened = fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<*>>().single()
+            val opened = fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<Plugin>>().single()
             assertEquals(UiPresentation.Hud, opened.presentation)
             assertThrows(IllegalStateException::class.java) { handle.uiSession.switch(UiPresentation.Screen) }
             val executor = Executors.newSingleThreadExecutor()
@@ -73,7 +73,7 @@ internal class FoliaScreenServiceTest {
                     }.get(5, TimeUnit.SECONDS)
                 val control = player.receive().filterIsInstance<RemoteMessage.Control>().single()
                 player.send(RemoteMessage.ControlApplied(handle.identity, control.state.sequence))
-                val changed = fixture.events.filterIsInstance<RemoteLifecycleEvent.PresentationChanged<*>>().single()
+                val changed = fixture.events.filterIsInstance<RemoteLifecycleEvent.PresentationChanged<Plugin>>().single()
                 assertEquals(opened.identity, changed.identity)
                 assertEquals(UiPresentation.Screen, changed.presentation)
                 player.region {
@@ -83,7 +83,7 @@ internal class FoliaScreenServiceTest {
                         handle.uiSession.close()
                     }
                 }
-                assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>().size)
+                assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<Plugin>>().size)
             } finally {
                 executor.shutdownNow()
                 assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))

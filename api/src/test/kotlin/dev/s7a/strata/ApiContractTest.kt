@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 import java.lang.reflect.Modifier as JavaModifier
@@ -251,17 +252,17 @@ internal class ApiContractTest {
     @Test
     fun multilineLayoutAndViewportCopiesRetainTheirStructuralValidation() {
         val layout = TextLayout.Multiline(maxLines = 2, overflow = TextOverflow.Ellipsis, lineSpacing = 1)
-        assertThrows(IllegalArgumentException::class.java) { layout.copy(maxLines = 0) }
-        assertThrows(IllegalArgumentException::class.java) { layout.copy(maxLines = -1) }
-        assertThrows(IllegalArgumentException::class.java) { layout.copy(lineSpacing = -1) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${layout.copy(maxLines = 0)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${layout.copy(maxLines = -1)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${layout.copy(lineSpacing = -1)}") }
         val lines = TextAreaViewport.Lines(120, 3)
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(width = 0) }
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(width = -1) }
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(lines = 0) }
-        assertThrows(IllegalArgumentException::class.java) { lines.copy(lines = -1) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(width = 0)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(width = -1)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(lines = 0)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${lines.copy(lines = -1)}") }
         val sized = TextAreaViewport.Size(IntSize(120, 40))
-        assertThrows(IllegalArgumentException::class.java) { sized.copy(size = IntSize(0, 40)) }
-        assertThrows(IllegalArgumentException::class.java) { sized.copy(size = IntSize(120, 0)) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${sized.copy(size = IntSize(0, 40))}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${sized.copy(size = IntSize(120, 0))}") }
     }
 
     @Test

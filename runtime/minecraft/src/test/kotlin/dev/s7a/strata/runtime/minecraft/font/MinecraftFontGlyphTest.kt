@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 
 /**
  * Verifies provider-specific scalar mapping, native metrics, and detached pipeline-ready pixels.
@@ -31,12 +32,12 @@ internal class MinecraftFontGlyphTest {
         assertTrue(glyph.advance.isNaN())
         assertTrue(glyph.left.isNaN())
         assertEquals(Float.NEGATIVE_INFINITY, glyph.top)
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(left = 2f, right = 1f) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(boldOffset = Float.NaN) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(shadowOffset = -1f) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(oversizedRasterSize = IntSize(256, 256)) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(oversizedRasterSize = IntSize(257, 0)) }
-        assertThrows(IllegalArgumentException::class.java) { glyph.copy(image = createDrawImage(IntSize(1, 1), intArrayOf(-1))) }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(left = 2f, right = 1f)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(boldOffset = Float.NaN)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(shadowOffset = -1f)}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(oversizedRasterSize = IntSize(256, 256))}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(oversizedRasterSize = IntSize(257, 0))}") }
+        assertThrows(IllegalArgumentException::class.java) { fail("Invalid copy was accepted: ${glyph.copy(image = createDrawImage(IntSize(1, 1), intArrayOf(-1)))}") }
     }
 
     @Test

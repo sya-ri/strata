@@ -39,8 +39,8 @@ internal class RemoteLifecycleEventTest {
             val snapshots = fixture.drain().filterIsInstance<RemoteMessage.Snapshot>()
             snapshots.forEach { fixture.send(RemoteMessage.ControlApplied(it.session, checkNotNull(it.control).sequence)) }
             snapshots.forEach { fixture.send(RemoteMessage.ControlApplied(it.session, checkNotNull(it.control).sequence)) }
-            assertEquals(2, fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<*>>().size)
-            val opened = fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<*>>().first()
+            assertEquals(2, fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<Any>>().size)
+            val opened = fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<Any>>().first()
             assertSame(owner, opened.owner)
             assertSame(first.uiSession, opened.session)
             assertEquals(category, opened.category)
@@ -54,18 +54,18 @@ internal class RemoteLifecycleEventTest {
             val applied = fixture.drain().filterIsInstance<RemoteMessage.Control>().single()
             fixture.send(RemoteMessage.ControlApplied(first.identity, applied.state.sequence))
             fixture.send(RemoteMessage.ControlApplied(first.identity, applied.state.sequence))
-            val change = fixture.events.filterIsInstance<RemoteLifecycleEvent.PresentationChanged<*>>().single()
+            val change = fixture.events.filterIsInstance<RemoteLifecycleEvent.PresentationChanged<Any>>().single()
             assertEquals(UiPresentation.Hud, change.previous)
             assertEquals(UiPresentation.Screen, change.presentation)
             assertSame(opened.session, change.session)
             fixture.send(RemoteMessage.Resynchronize(first.identity))
             fixture.drain().filterIsInstance<RemoteMessage.Snapshot>().forEach { fixture.send(RemoteMessage.ControlApplied(it.session, checkNotNull(it.control).sequence)) }
-            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.PresentationChanged<*>>().size)
+            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.PresentationChanged<Any>>().size)
 
             fixture.service.disconnect(Unit)
             fixture.service.disconnect(Unit)
             fixture.send(RemoteMessage.ControlApplied(first.identity, applied.state.sequence))
-            val closed = fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>()
+            val closed = fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<Any>>()
             assertEquals(setOf(first.identity, second.identity), closed.map { it.identity }.toSet())
             assertTrue(closed.all { it.reason == UiCloseReason.Disconnected && it.session.status is UiSessionStatus.Closed })
             assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Disconnected>().size)
@@ -89,8 +89,8 @@ internal class RemoteLifecycleEventTest {
             val initial = fixture.drain().filterIsInstance<RemoteMessage.Snapshot>().single()
             fixture.send(RemoteMessage.ControlApplied(first.identity, checkNotNull(initial.control).sequence))
             assertTrue(first.uiSession.status is UiSessionStatus.Closed)
-            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<*>>().size)
-            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>().size)
+            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Opened<Any>>().size)
+            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<Any>>().size)
             assertEquals(RemoteSessionStatus.Open, checkNotNull(replacement).status)
             fixture.listener = {}
         }
@@ -254,7 +254,7 @@ internal class RemoteLifecycleEventTest {
             assertEquals(RemoteSessionStatus.Closed(RemoteFailure.Disconnected), replacement.status)
             assertTrue(replacement.uiSession.status is UiSessionStatus.Closed)
             assertNull(fixture.service.capabilities(Unit))
-            assertEquals(listOf(first.identity, replacement.identity), fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>().map { it.identity })
+            assertEquals(listOf(first.identity, replacement.identity), fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<Any>>().map { it.identity })
         }
     }
 
@@ -354,7 +354,7 @@ internal class RemoteLifecycleEventTest {
             assertEquals(RemoteSessionStatus.Closed(RemoteFailure.UnsupportedType), pending.status)
             assertEquals(UiSessionStatus.Closed(UiCloseReason.Unsupported), pending.uiSession.status)
             assertEquals(0, evaluations)
-            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>().count { it.identity == pending.identity })
+            assertEquals(1, fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<Any>>().count { it.identity == pending.identity })
         }
     }
 

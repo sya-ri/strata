@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.fail
 
 /**
  * Verifies image command validation and local paint retention in core.
@@ -123,9 +124,9 @@ internal class DrawImagePipelineTest {
         val image = image()
         val command = DrawCommand.BlitImagePixels(image, IntRect(0, 0, 2, 2), IntRect(0, 0, 1, 1))
         assertSame(image, command.image)
-        assertThrows<IllegalArgumentException> { command.copy(source = IntRect(-1, 0, 1, 1)) }
-        assertThrows<IllegalArgumentException> { command.copy(source = IntRect(1, 0, 3, 1)) }
-        assertThrows<IllegalArgumentException> { command.copy(destination = IntRect(0, 0, 0, 1)) }
+        assertThrows<IllegalArgumentException> { fail("Invalid copy was accepted: ${command.copy(source = IntRect(-1, 0, 1, 1))}") }
+        assertThrows<IllegalArgumentException> { fail("Invalid copy was accepted: ${command.copy(source = IntRect(1, 0, 3, 1))}") }
+        assertThrows<IllegalArgumentException> { fail("Invalid copy was accepted: ${command.copy(destination = IntRect(0, 0, 0, 1))}") }
     }
 
     @Test
