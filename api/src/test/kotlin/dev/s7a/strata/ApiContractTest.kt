@@ -38,6 +38,7 @@ import dev.s7a.strata.text.withFont
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -359,13 +360,10 @@ internal class ApiContractTest {
     }
 
     @Test
-    fun rolesAreExternallyImplementableAndBuiltInsRemainStable() {
-        val custom = ApplicationRole
-        val role: SemanticsRole = custom
-        assertEquals(custom, role)
-        assertEquals(SemanticsRole.Button, SemanticsRole.Button)
-        assertEquals(SemanticsRole.Text, SemanticsRole.Text)
-        assertNotEquals(SemanticsRole.TextField, SemanticsRole.TextArea)
+    fun rolesRemainExtensibleAndEditorProjectionTypesAreDistinct() {
+        val role: SemanticsRole = ApplicationRole
+        assertNull(role.projectionType)
+        assertNotEquals(SemanticsRole.TextField.projectionType, SemanticsRole.TextArea.projectionType)
     }
 
     @Test

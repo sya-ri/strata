@@ -5,6 +5,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertThrowsExactly
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
@@ -96,9 +97,9 @@ internal class TextAreaStateTest {
         val editor = state.observe { }
         val executor = Executors.newSingleThreadExecutor()
         try {
-            val failures =
-                executor
-                    .submit<List<Throwable?>> {
+            executor
+                .submit {
+                    val actions =
                         listOf<() -> Unit>(
                             { state.value },
                             { state.value = "B" },
@@ -106,9 +107,10 @@ internal class TextAreaStateTest {
                             { scroll.scrollTo(4.0) },
                             { state.observe { } },
                             { editor.close() },
-                        ).map { action -> runCatching(action).exceptionOrNull() }
-                    }.get(5, TimeUnit.SECONDS)
-            assertEquals(List(6) { IllegalStateException::class.java }, failures.map { failure -> failure?.javaClass })
+                        )
+                    assertEquals(6, actions.size)
+                    actions.forEach { action -> assertThrowsExactly(IllegalStateException::class.java) { action() } }
+                }.get(5, TimeUnit.SECONDS)
             assertEquals("A", state.value)
             assertEquals(0.0, scroll.metrics.offset)
             assertThrows(IllegalStateException::class.java) { state.observe { } }

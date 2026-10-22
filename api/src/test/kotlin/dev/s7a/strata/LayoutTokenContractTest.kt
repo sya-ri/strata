@@ -269,7 +269,7 @@ internal class LayoutTokenContractTest {
         assertSame(FlowRowAlignmentParentData.TYPE, first.type)
         val node = first.type.createErased(first) as FlowRowAlignmentParentData.Node
         assertSame(FlowRowAlignmentParentData.KEY, node.parentDataKey)
-        assertNotSame(RowAlignmentParentData.KEY, node.parentDataKey)
+        assertEquals(2, setOf(RowAlignmentParentData.KEY, node.parentDataKey).size)
         assertEquals(first.data, node.parentData())
         assertEquals(DirtyMask.None, first.type.updateErased(first, equal, node))
         assertEquals(DirtyMask.of(DirtyPhase.Measure), first.type.updateErased(equal, changed, node))
