@@ -97,7 +97,6 @@ dependencies {
     add(skillRecheckFirst.compileOnlyConfigurationName, project(":api"))
     testImplementation(skillRecheckFirst.output)
     testImplementation(skillForwardFirst.output)
-    testImplementation(skillExamples.output)
     add(readmeExamples.compileOnlyConfigurationName, project(":api"))
     implementation(readmeExamples.output)
 }
@@ -126,6 +125,10 @@ extensions.configure<KotlinJvmProjectExtension> {
     val readmeCompilation = target.compilations.getByName(readmeExamples.name)
     target.compilations.named("main") {
         associateWith(readmeCompilation)
+    }
+    val skillCompilation = target.compilations.getByName(skillExamples.name)
+    target.compilations.named("test") {
+        associateWith(skillCompilation)
     }
     sourceSets.named("main") {
         kotlin.source(showcaseExampleSources)

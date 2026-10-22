@@ -123,7 +123,7 @@ internal class ReadmeDemoArtifactsTest {
         assertTrue(after.startsWith("unchanged before\n"))
         assertTrue(after.endsWith("\nunchanged after"))
         assertFalse(after.contains("stale"))
-        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace(before + "\n<!-- strata-readme-demo:start -->") }
+        assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace("$before\n<!-- strata-readme-demo:start -->") }
         assertThrows(IllegalArgumentException::class.java) { ReadmeDemoReadme.replace("no anchors") }
     }
 

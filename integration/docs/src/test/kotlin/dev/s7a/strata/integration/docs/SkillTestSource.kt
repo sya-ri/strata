@@ -6,18 +6,23 @@ import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
 
 /**
- * Counted publisher owned by independent skill acceptance tests.
+ * Owner-thread publisher owned by independent skill acceptance tests; callbacks do not publish reentrantly.
  */
 internal class SkillTestSource<T>(
     initial: T,
 ) : StateSource<T> {
     private var current = StateSnapshot(StateRevision(0), initial)
-    private var observer: ((StateSnapshot<T>) -> Unit)? = null
+    private val observers = LinkedHashMap<Any, (StateSnapshot<T>) -> Unit>()
+
+    /**
+     * Number of live observations, including independent mappings of the same source.
+     */
+    val activeSubscriptions: Int get() = observers.size
 
     override fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T> {
-        check(this.observer == null)
-        this.observer = observer
-        return StateSubscription(current) { this.observer = null }
+        val key = Any()
+        observers[key] = observer
+        return StateSubscription(current) { observers.remove(key) }
     }
 
     /**
@@ -25,6 +30,8 @@ internal class SkillTestSource<T>(
      */
     fun publish(value: T) {
         current = StateSnapshot(StateRevision(current.revision.value + 1), value)
-        observer?.invoke(current)
+        for ((key, observer) in observers.toList()) {
+            if (observers[key] === observer) observer(current)
+        }
     }
 }
