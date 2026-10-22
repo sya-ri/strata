@@ -2774,6 +2774,7 @@ val koverJvmTests = tasks.register("koverJvmTests") {
 
 tasks.matching { task -> task.name in setOf("koverHtmlReport", "koverXmlReport") }.configureEach {
     dependsOn(koverJvmTests)
+    doNotTrackState("Aggregate coverage reports are fresh verification evidence.")
 }
 
 ciMinecraftTargets.forEach { target ->
