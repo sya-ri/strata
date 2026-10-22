@@ -165,14 +165,14 @@ private data class MinecraftFabricTarget(
             CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor"
         }
     val canvasTestSourcePaths: List<String> =
-        (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
+        (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) +
+            canvasTestExtraction.sourceRoots.map { "integration/shared/minecraft-fabric/canvas/extraction/$it" } + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
             "integration/shared/minecraft-fabric/canvas/pacing/common",
             tooltipReferenceSourcePath,
             "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
-            "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
             when (canvasFamily) {
                 CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.OpenGlNonReloadableTextures, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/consumption/flush"
                 CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers, CanvasFamily.Blaze3dGuiExtractor -> "integration/shared/minecraft-fabric/canvas/consumption/buffer-source"
@@ -208,12 +208,12 @@ private data class MinecraftFabricTarget(
     }
 
     /** Verified test-only native GUI constructor and traversal contracts, independent of the GPU driver family. */
-    enum class CanvasTestExtraction(val sourceRoot: String) {
+    enum class CanvasTestExtraction(vararg val sourceRoots: String) {
         Flush("flush"),
-        BufferedLayered("layered-buffer-source"),
-        Buffered("buffer-source"),
-        BufferedPointer("pointer-buffer-source"),
-        GuiExtractor("gui-extractor"),
+        BufferedLayered("common", "layered-buffer-source"),
+        Buffered("common", "buffer-source"),
+        BufferedPointer("common", "pointer-buffer-source"),
+        GuiExtractor("common", "gui-extractor"),
     }
 
     /** Publication support exposed by the Paper distribution table. */
