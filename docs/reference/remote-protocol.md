@@ -13,7 +13,7 @@ A proxy reissues backend discovery and renews its own transport incarnation afte
 Stale-incarnation frames cannot enter a successor's protocol connection.
 Proxy routing admits only authenticated client proxy actions and current-backend server frames.
 It handles the native event and submits safe writes itself, preventing later asynchronous listeners from forwarding retired backend traffic.
-The unreleased wire format remains protocol version 1; use matching Strata revisions until release.
+The wire format uses protocol version 1; use matching Strata release versions on both endpoints.
 Both sides require the same protocol version, intersect exact namespace/schema-version capabilities, and negotiate the minimum of each resource limit.
 Registration freezes before a connection captures its capability snapshot.
 No message supplies a class name, executable body, function, or server model.

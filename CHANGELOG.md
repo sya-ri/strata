@@ -10,16 +10,20 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
-## Unreleased
+## 0.3.1 - 2026-10-22
 
+- `VirtualList` can omit `viewportSize` to fill its parent's finite allocation, including remaining space assigned by `weight`.
+  Resizing preserves scrolling and virtualized rows; declaration-only remote hosts require an explicit viewport.
+- Web image rendering allocates pixels only within the destination, clip and viewport intersection, so highly zoomed images keep the screen open without exceeding the image pixel budget because of offscreen content.
+  Source sampling, image orientation and the visible physical pixel limit are preserved.
+- Web text editors reuse PNG frames for images currently displayed by the same host across content updates and resizing.
+  Temporary frame canvases are released even when browser image conversion fails.
 - Invalid remote screen titles close their pending handles, and queued shutdown still completes when error reporting fails.
 - Remote screen replacement stops before evaluating a pending definition when a close listener disconnects, reconnects, or shuts down the service.
   Promoting a HUD to a screen also preserves a single foreground when a close listener opens another screen.
 - Source-backed component overloads use per-component JVM facades.
   The former `ObservedComponentsKt` facade remains as deprecated binary forwarding methods until 1.0.0; Java source naming that facade must migrate when recompiling.
   See the [deprecation list](DEPRECATION.md#observedcomponentskt-jvm-facade).
-- `VirtualList` can omit `viewportSize` to fill its parent's finite allocation, including remaining space assigned by `weight`.
-  Resizing preserves scrolling and virtualized rows; declaration-only remote hosts require an explicit viewport.
 - Mapped `StateSource` subscriptions no longer deadlock when an observer closes its subscription while another thread is closing it.
   An already admitted callback may still finish after close.
 - Minecraft `PlayerHead` and `Slot` release acquired bindings even when initialization or subscription cleanup fails, preserving the original failure when cleanup also throws.
@@ -28,10 +32,11 @@ Keep all Strata artifacts on the same release version.
 - Velocity shutdown stops admitting queued UI work and pending input processing.
   Already admitted operations may finish; queued API requests fail with `OwnerClosed`.
 - Closing a Web host from an input callback completes the current input operation before releasing its subscriptions, DOM children and listeners.
-- Web image rendering allocates pixels only within the destination, clip and viewport intersection, so highly zoomed images keep the screen open without exceeding the image pixel budget because of offscreen content.
-  Source sampling, image orientation and the visible physical pixel limit are preserved.
-- Web text editors reuse PNG frames for images currently displayed by the same host across content updates and resizing.
-  Temporary frame canvases are released even when browser image conversion fails.
+
+Update Fabric Language Kotlin to meet the installed runtime's declared minimum, which advances with this release's Kotlin dependency patch.
+Java source that names `ObservedComponentsKt` must use its replacement facade when recompiling.
+
+[Detailed changes and upgrade notes](docs/releases/v0.3.1.md)
 
 ## 0.3.0 - 2026-10-21
 
