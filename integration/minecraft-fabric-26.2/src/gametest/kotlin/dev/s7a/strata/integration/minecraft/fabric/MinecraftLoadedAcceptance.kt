@@ -17,16 +17,14 @@ internal object MinecraftLoadedAcceptance {
      */
     fun run(context: MinecraftLoadedTestContext) {
         val startingViewport =
-            context.computeOnClient(
-                { minecraft ->
-                    val window = minecraft.window
-                    Triple(
-                        IntSize(window.screenWidth, window.screenHeight),
-                        IntSize(window.width, window.height),
-                        minecraft.options.guiScale().get(),
-                    )
-                },
-            )
+            context.computeOnClient { minecraft ->
+                val window = minecraft.window
+                Triple(
+                    IntSize(window.screenWidth, window.screenHeight),
+                    IntSize(window.width, window.height),
+                    minecraft.options.guiScale().get(),
+                )
+            }
         val scope = MinecraftCanvasSuiteScope.current()
         when (scope) {
             MinecraftCanvasSuiteScope.Full -> StrataMinecraftFontGameTest().runTest(context)
@@ -35,17 +33,13 @@ internal object MinecraftLoadedAcceptance {
         }
         PaperRemoteGameTest.run(context)
         resizeMinecraftTestWindow(context, startingViewport.first, startingViewport.second)
-        context.runOnClient(
-            { minecraft ->
-                minecraft.options.guiScale().set(startingViewport.third)
-                minecraft.resizeGui()
-            },
-        )
+        context.runOnClient { minecraft ->
+            minecraft.options.guiScale().set(startingViewport.third)
+            minecraft.resizeGui()
+        }
         context.waitTicks(5)
-        context.runOnClient(
-            {
-                MinecraftCanvasTerminalTestHooks.arm(scope)
-            },
-        )
+        context.runOnClient {
+            MinecraftCanvasTerminalTestHooks.arm(scope)
+        }
     }
 }

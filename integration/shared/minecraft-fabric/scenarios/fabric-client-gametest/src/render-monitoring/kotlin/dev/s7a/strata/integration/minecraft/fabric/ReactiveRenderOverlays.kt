@@ -24,10 +24,7 @@ internal object ReactiveRenderOverlays : ModifierElement {
     var rootCalls: Long = 0L
         private set
 
-    override val type: ModifierNodeType<*, *>
-        get() = TYPE
-
-    private val TYPE =
+    override val type: ModifierNodeType<*, *> =
         ModifierNodeType(
             elementClass = ReactiveRenderOverlays::class,
             nodeClass = OverlayNode::class,

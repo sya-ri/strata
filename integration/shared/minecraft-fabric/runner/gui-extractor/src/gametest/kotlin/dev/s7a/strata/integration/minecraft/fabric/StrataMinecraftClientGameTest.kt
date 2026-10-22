@@ -661,10 +661,10 @@ internal class StrataMinecraftClientGameTest {
             mouseY: Int,
             partialTick: Float,
         ) {
-            graphics.fill(0, 0, width, height, opaqueBlack)
-            Screen.extractMenuBackgroundTexture(
+            graphics.fill(0, 0, width, height, OPAQUE_BLACK)
+            extractMenuBackgroundTexture(
                 graphics,
-                Screen.MENU_BACKGROUND,
+                MENU_BACKGROUND,
                 0,
                 0,
                 0.0f,
@@ -775,7 +775,7 @@ internal class StrataMinecraftClientGameTest {
                 "Entry 11",
                 "Entry 12",
             )
-        private val opaqueBlack = 0xFF000000.toInt()
+        private const val OPAQUE_BLACK = 0xFF000000.toInt()
         private val hexFormat: HexFormat = HexFormat.of()
         private val containerBackgroundIdentifier = Identifier.withDefaultNamespace("textures/gui/container/generic_54.png")
     }

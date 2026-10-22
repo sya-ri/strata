@@ -113,10 +113,10 @@ internal object MinecraftCanvasFailureGameTest {
         check(fixture.snapshotMode == MinecraftCanvasSnapshotMode.Missing) { "Native failure acceptance must not supply a CPU snapshot." }
         check(fixture.leasesOpened == 1 && fixture.renderCalls == 1) { "A later producer ran after the native renderer failed." }
         val remaining = NativeCanvasDevices.retainedTargetCount()
-        check(remaining <= peakTargetSets && peakTargetSets <= 3 && peakTargetSets <= 64) {
+        check(peakTargetSets in remaining..3 && peakTargetSets <= 64) {
             "The failed first presentation exceeded either physical target bound."
         }
-        check(extractMinecraftCanvasScreen(screen, {}) is IllegalStateException) { "A terminal screen must reject later native extraction before invoking a producer." }
+        check(extractMinecraftCanvasScreen(screen) {} is IllegalStateException) { "A terminal screen must reject later native extraction before invoking a producer." }
         requireNativeAttachmentRejected(screen)
         check(runCatching { screen.captureCanvasFrame() }.exceptionOrNull() is IllegalStateException) { "A failed presentation exposed a completed capture receipt." }
         check(fixture.leasesOpened == 1 && fixture.renderCalls == 1) { "A terminal screen reentered a native producer." }

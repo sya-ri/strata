@@ -91,7 +91,7 @@ internal class MinecraftNativeNumericFonts : AutoCloseable {
      * Draws the numeric scene through unchanged native GUI Font rendering.
      */
     fun draw(graphics: GuiGraphics) {
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.background)
+        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.BACKGROUND)
         MinecraftNumericFontFixture.rows.forEach { row -> graphics.drawString(font, component(row), row.left, row.top, row.color, row.shadow) }
     }
 

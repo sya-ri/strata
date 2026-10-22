@@ -235,42 +235,42 @@ internal class StrataMinecraftLegacyLoadedSuite {
             val playerId = context.computeOnClient { minecraft -> checkNotNull(minecraft.player).uuid }
             world.computeOnServer { server ->
                 val player = server.playerList.players.single()
-                player.inventory.setItem(playerInventoryIndex, ItemStack(Items.DIRT, itemCount))
+                player.inventory.setItem(PLAYER_INVENTORY_INDEX, ItemStack(Items.DIRT, ITEM_COUNT))
                 player.inventoryMenu.broadcastChanges()
             }
             context.waitFor { minecraft ->
-                val stack = minecraft.player?.inventory?.getItem(playerInventoryIndex)
-                stack != null && stack.`is`(Items.DIRT) && stack.count == itemCount
+                val stack = minecraft.player?.inventory?.getItem(PLAYER_INVENTORY_INDEX)
+                stack != null && stack.`is`(Items.DIRT) && stack.count == ITEM_COUNT
             }
 
             runMinecraftUiSessionTest(context, output)
-            runMinecraftCanvasSlotTest(context, profile, output, playerInventoryIndex)
-            runMinecraftSlotTooltipTest(context, profile, output, playerInventoryIndex) { fixture ->
+            runMinecraftCanvasSlotTest(context, profile, output, PLAYER_INVENTORY_INDEX)
+            runMinecraftSlotTooltipTest(context, profile, output, PLAYER_INVENTORY_INDEX) { fixture ->
                 val expected =
                     world.computeOnServer { activeServer ->
                         val player = activeServer.playerList.players.single()
                         val stack = MinecraftSlotTooltipTestStack.create(activeServer.registryAccess(), fixture)
                         val carried =
-                            if (fixture == MinecraftSlotTooltipFixture.CarriedSword || fixture == MinecraftSlotTooltipFixture.CarriedBundle) ItemStack(Items.DIRT, itemCount) else ItemStack.EMPTY
-                        player.inventory.setItem(playerInventoryIndex, stack)
+                            if (fixture == MinecraftSlotTooltipFixture.CarriedSword || fixture == MinecraftSlotTooltipFixture.CarriedBundle) ItemStack(Items.DIRT, ITEM_COUNT) else ItemStack.EMPTY
+                        player.inventory.setItem(PLAYER_INVENTORY_INDEX, stack)
                         player.inventoryMenu.carried = carried
                         player.inventoryMenu.broadcastChanges()
                         Pair(stack.copy(), carried.copy())
                     }
                 context.waitFor { minecraft ->
                     val player = minecraft.player
-                    player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(playerInventoryIndex), expected.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, expected.second)
+                    player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(PLAYER_INVENTORY_INDEX), expected.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, expected.second)
                 }
             }
             world.computeOnServer { activeServer ->
                 val player = activeServer.playerList.players.single()
-                player.inventory.setItem(playerInventoryIndex, ItemStack(Items.DIRT, itemCount))
+                player.inventory.setItem(PLAYER_INVENTORY_INDEX, ItemStack(Items.DIRT, ITEM_COUNT))
                 player.inventoryMenu.broadcastChanges()
             }
             context.waitFor { minecraft ->
                 minecraft.player
                     ?.inventory
-                    ?.getItem(playerInventoryIndex)
+                    ?.getItem(PLAYER_INVENTORY_INDEX)
                     ?.`is`(Items.DIRT) == true
             }
             openPlayerInventoryScreen(context, profile, output)
@@ -316,26 +316,26 @@ internal class StrataMinecraftLegacyLoadedSuite {
         clickCurrentScreen(context, slotCenter)
         context.waitFor { minecraft ->
             val player = minecraft.player ?: return@waitFor false
-            player.inventory.getItem(playerInventoryIndex).isEmpty &&
+            player.inventory.getItem(PLAYER_INVENTORY_INDEX).isEmpty &&
                 player.containerMenu.carried.`is`(Items.DIRT) &&
-                player.containerMenu.carried.count == itemCount
+                player.containerMenu.carried.count == ITEM_COUNT
         }
         waitForServer(context, server, playerId) { player ->
-            player.inventory.getItem(playerInventoryIndex).isEmpty &&
+            player.inventory.getItem(PLAYER_INVENTORY_INDEX).isEmpty &&
                 player.containerMenu.carried.`is`(Items.DIRT) &&
-                player.containerMenu.carried.count == itemCount
+                player.containerMenu.carried.count == ITEM_COUNT
         }
         context.waitTicks(6)
         clickCurrentScreen(context, slotCenter)
         context.waitFor { minecraft ->
             val player = minecraft.player ?: return@waitFor false
-            player.inventory.getItem(playerInventoryIndex).`is`(Items.DIRT) &&
-                player.inventory.getItem(playerInventoryIndex).count == itemCount &&
+            player.inventory.getItem(PLAYER_INVENTORY_INDEX).`is`(Items.DIRT) &&
+                player.inventory.getItem(PLAYER_INVENTORY_INDEX).count == ITEM_COUNT &&
                 player.containerMenu.carried.isEmpty
         }
         waitForServer(context, server, playerId) { player ->
-            player.inventory.getItem(playerInventoryIndex).`is`(Items.DIRT) &&
-                player.inventory.getItem(playerInventoryIndex).count == itemCount &&
+            player.inventory.getItem(PLAYER_INVENTORY_INDEX).`is`(Items.DIRT) &&
+                player.inventory.getItem(PLAYER_INVENTORY_INDEX).count == ITEM_COUNT &&
                 player.containerMenu.carried.isEmpty
         }
     }
@@ -557,13 +557,13 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 colors += image.getRGB(x, y)
             }
         }
-        require(minimumRenderedColorCount <= colors.size) {
+        require(MINIMUM_RENDERED_COLOR_COUNT <= colors.size) {
             "The loaded public API scene did not render enough distinct Minecraft UI colors."
         }
-        require(minimumTextLightPixelCount <= lightPixelCount(image, textRegion)) {
+        require(MINIMUM_TEXT_LIGHT_PIXEL_COUNT <= lightPixelCount(image, textRegion)) {
             "The loaded public API scene did not render its Text glyphs."
         }
-        require(minimumButtonLabelLightPixelCount <= lightPixelCount(image, buttonLabelRegion)) {
+        require(MINIMUM_BUTTON_LABEL_LIGHT_PIXEL_COUNT <= lightPixelCount(image, buttonLabelRegion)) {
             "The loaded public API scene did not render its Button label."
         }
     }
@@ -579,10 +579,10 @@ internal class StrataMinecraftLegacyLoadedSuite {
         for (y in region.top until region.bottom) {
             for (x in region.left until region.right) {
                 val pixel = image.getRGB(x, y)
-                val red = pixel ushr redShift and channelMask
-                val green = pixel ushr greenShift and channelMask
-                val blue = pixel and channelMask
-                if (minimumLightChannel <= red && minimumLightChannel <= green && minimumLightChannel <= blue) count += 1
+                val red = pixel ushr RED_SHIFT and CHANNEL_MASK
+                val green = pixel ushr GREEN_SHIFT and CHANNEL_MASK
+                val blue = pixel and CHANNEL_MASK
+                if (MINIMUM_LIGHT_CHANNEL <= red && MINIMUM_LIGHT_CHANNEL <= green && MINIMUM_LIGHT_CHANNEL <= blue) count += 1
             }
         }
         return count
@@ -629,7 +629,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 modifier =
                     Modifier
                         .size(viewport.width, viewport.height)
-                        .background(ArgbColor(opaqueBlack))
+                        .background(ArgbColor(OPAQUE_BLACK))
                         .menuBackground(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -649,11 +649,11 @@ internal class StrataMinecraftLegacyLoadedSuite {
                 modifier =
                     Modifier
                         .size(viewport.width, viewport.height)
-                        .background(ArgbColor(opaqueBlack))
+                        .background(ArgbColor(OPAQUE_BLACK))
                         .menuBackground(),
                 contentAlignment = Alignment.Center,
             ) {
-                Slot(bind = Slots.playerInventory(playerInventoryIndex))
+                Slot(bind = Slots.playerInventory(PLAYER_INVENTORY_INDEX))
             }
         }
 
@@ -675,33 +675,24 @@ internal class StrataMinecraftLegacyLoadedSuite {
         private val slotCenter = IntOffset(160, 90)
         private val textRegion = IntRect(110, 68, 210, 82)
         private val buttonLabelRegion = IntRect(100, 91, 220, 104)
-        private val opaqueBlack = 0xFF000000.toInt()
+        private const val OPAQUE_BLACK = 0xFF000000.toInt()
 
-        @Suppress("MayBeConstant")
-        private val playerInventoryIndex = 0
+        private const val PLAYER_INVENTORY_INDEX = 0
 
-        @Suppress("MayBeConstant")
-        private val itemCount = 7
+        private const val ITEM_COUNT = 7
 
-        @Suppress("MayBeConstant")
-        private val minimumRenderedColorCount = 4
+        private const val MINIMUM_RENDERED_COLOR_COUNT = 4
 
-        @Suppress("MayBeConstant")
-        private val minimumTextLightPixelCount = 20
+        private const val MINIMUM_TEXT_LIGHT_PIXEL_COUNT = 20
 
-        @Suppress("MayBeConstant")
-        private val minimumButtonLabelLightPixelCount = 20
+        private const val MINIMUM_BUTTON_LABEL_LIGHT_PIXEL_COUNT = 20
 
-        @Suppress("MayBeConstant")
-        private val minimumLightChannel = 240
+        private const val MINIMUM_LIGHT_CHANNEL = 240
 
-        @Suppress("MayBeConstant")
-        private val redShift = 16
+        private const val RED_SHIFT = 16
 
-        @Suppress("MayBeConstant")
-        private val greenShift = 8
+        private const val GREEN_SHIFT = 8
 
-        @Suppress("MayBeConstant")
-        private val channelMask = 0xFF
+        private const val CHANNEL_MASK = 0xFF
     }
 }

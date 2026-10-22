@@ -23,23 +23,19 @@ internal object MinecraftLoadedAcceptance {
 
     private fun runSuite(context: MinecraftLoadedTestContext): MinecraftCanvasSuiteScope {
         val startingViewport =
-            context.computeOnClient(
-                { minecraft ->
-                    val window = minecraft.window
-                    Triple(
-                        IntSize(window.screenWidth, window.screenHeight),
-                        IntSize(window.width, window.height),
-                        minecraft.options.guiScale().get(),
-                    )
-                },
-            )
+            context.computeOnClient { minecraft ->
+                val window = minecraft.window
+                Triple(
+                    IntSize(window.screenWidth, window.screenHeight),
+                    IntSize(window.width, window.height),
+                    minecraft.options.guiScale().get(),
+                )
+            }
         val scope = MinecraftCanvasSuiteScope.current()
         if (scope != MinecraftCanvasSuiteScope.TerminalOnly && System.getProperty("strata.performance.nativeOutput") == null) {
-            context.runOnClient(
-                {
-                    MinecraftFloat32ArithmeticProbe.run(Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput"))))
-                },
-            )
+            context.runOnClient {
+                MinecraftFloat32ArithmeticProbe.run(Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput"))))
+            }
         }
         when (scope) {
             MinecraftCanvasSuiteScope.Full -> {
@@ -56,12 +52,10 @@ internal object MinecraftLoadedAcceptance {
         }
         PaperRemoteGameTest.run(context)
         resizeMinecraftTestWindow(context, startingViewport.first, startingViewport.second)
-        context.runOnClient(
-            { minecraft ->
-                minecraft.options.guiScale().set(startingViewport.third)
-                minecraft.resizeGui()
-            },
-        )
+        context.runOnClient { minecraft ->
+            minecraft.options.guiScale().set(startingViewport.third)
+            minecraft.resizeGui()
+        }
         context.waitTicks(5)
         return scope
     }

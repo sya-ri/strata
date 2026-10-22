@@ -138,7 +138,7 @@ internal object MinecraftPlayerHeadParity {
             mouseY: Int,
             partialTick: Float,
         ) {
-            graphics.fill(0, 0, width, height, opaqueBlack)
+            graphics.fill(0, 0, width, height, OPAQUE_BLACK)
         }
 
         override fun extractRenderState(
@@ -152,5 +152,5 @@ internal object MinecraftPlayerHeadParity {
     }
 
     private val playerHeadViewport = IntSize(64, 64)
-    private val opaqueBlack = 0xFF000000.toInt()
+    private const val OPAQUE_BLACK = 0xFF000000.toInt()
 }

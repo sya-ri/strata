@@ -34,12 +34,11 @@ internal fun Minecraft.nativePerformancePacing(): MinecraftNativePerformancePaci
             InactivityFpsLimit.AFK -> MinecraftNativePerformancePacing.Inactivity.AFK
         }
     val reason = MinecraftNativePerformancePacing.Reason.UNAVAILABLE
-    val applied = selected
     return MinecraftNativePerformancePacing(
         mode,
         reason,
         selected,
-        applied,
+        selected,
         MinecraftNativePerformancePacing.AppliedLimitSource.DIRECT_SELECTOR,
         window.isIconified,
     )

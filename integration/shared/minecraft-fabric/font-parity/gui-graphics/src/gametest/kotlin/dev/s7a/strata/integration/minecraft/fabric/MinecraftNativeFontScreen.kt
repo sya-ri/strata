@@ -36,7 +36,7 @@ internal class MinecraftNativeFontScreen(
     }
 
     private fun drawScene(graphics: GuiGraphics) {
-        graphics.fill(0, 0, width, height, MinecraftFontParityFixture.background)
+        graphics.fill(0, 0, width, height, MinecraftFontParityFixture.BACKGROUND)
         MinecraftFontParityFixture.rows.forEach { row ->
             val text = MinecraftNativeFontOracle.component(row)
             graphics.drawString(font, text, MinecraftFontParityFixture.LEFT, row.top, row.color, row.shadow)

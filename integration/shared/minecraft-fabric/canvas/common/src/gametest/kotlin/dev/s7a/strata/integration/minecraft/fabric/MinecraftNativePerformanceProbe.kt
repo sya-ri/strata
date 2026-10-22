@@ -209,10 +209,9 @@ internal class MinecraftNativePerformanceProbe(
         screen: FabricMinecraftScreen,
     ): JsonObject {
         val result = context.onClient { meter.result().apply { add("pacing", options.pacingEvidence()) } }
-        val queries = gpu
-        if (queries != null) {
-            context.waitFor(2400) { queries.completed }
-            context.onClient { queries.append(result) }
+        if (gpu != null) {
+            context.waitFor(2400) { gpu.completed }
+            context.onClient { gpu.append(result) }
         }
         check(context.onClient { meter.receipt().get("samples").asInt } == plan.samples)
         result.addProperty("case", name)

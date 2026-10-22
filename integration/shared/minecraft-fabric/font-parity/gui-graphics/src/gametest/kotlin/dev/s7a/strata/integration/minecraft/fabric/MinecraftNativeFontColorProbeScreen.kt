@@ -38,7 +38,7 @@ internal class MinecraftNativeFontColorProbeScreen(
     }
 
     private fun drawScene(graphics: GuiGraphics) {
-        graphics.fill(0, 0, width, height, MinecraftFontParityFixture.background)
+        graphics.fill(0, 0, width, height, MinecraftFontParityFixture.BACKGROUND)
         tints.forEachIndexed { index, tint ->
             graphics.drawString(font, text, 8, 8 + index * 12, 0xFF000000.toInt() or (tint * 0x010101), false)
         }

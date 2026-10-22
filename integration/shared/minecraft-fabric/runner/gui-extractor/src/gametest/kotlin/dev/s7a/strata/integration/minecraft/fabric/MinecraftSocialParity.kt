@@ -161,8 +161,8 @@ internal object MinecraftSocialParity {
             mouseY: Int,
             partialTick: Float,
         ) {
-            graphics.fill(0, 0, width, height, opaqueBlack)
-            Screen.extractMenuBackgroundTexture(graphics, Screen.MENU_BACKGROUND, 0, 0, 0.0f, 0.0f, width, height)
+            graphics.fill(0, 0, width, height, OPAQUE_BLACK)
+            extractMenuBackgroundTexture(graphics, MENU_BACKGROUND, 0, 0, 0.0f, 0.0f, width, height)
             val marginX = (width - 238) / 2
             val windowHeight = maxOf(52, height - 144)
             graphics.blitSprite(RenderPipelines.GUI_TEXTURED, socialBackground, marginX + 3, 64, 236, windowHeight + 16)
@@ -178,7 +178,7 @@ internal object MinecraftSocialParity {
     )
 
     private val viewport = IntSize(320, 240)
-    private val opaqueBlack = 0xFF000000.toInt()
+    private const val OPAQUE_BLACK = 0xFF000000.toInt()
     private val socialBackground = Identifier.withDefaultNamespace("social_interactions/background")
     private val searchIcon = Identifier.withDefaultNamespace("icon/search")
 }

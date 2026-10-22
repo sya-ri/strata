@@ -87,7 +87,7 @@ internal object MinecraftSlotTooltipGameTest {
     ) {
         replaceFixture(MinecraftSlotTooltipFixture.OriginalSword)
         val origin = position.origin(logical)
-        val pointer = IntOffset(origin.x + slotHalfSize, origin.y + slotHalfSize)
+        val pointer = IntOffset(origin.x + SLOT_HALF_SIZE, origin.y + SLOT_HALF_SIZE)
         val screen = context.onClient { createMinecraftScreen(definition(logical, origin, inventoryIndex), profile, parent = null) }.also(screens::add)
         context.onClient {
             context.setScreen(screen)
@@ -143,7 +143,7 @@ internal object MinecraftSlotTooltipGameTest {
         scale: Int,
     ) {
         val origin = Position.Center.origin(logical)
-        val pointer = IntOffset(origin.x + slotHalfSize, origin.y + slotHalfSize)
+        val pointer = IntOffset(origin.x + SLOT_HALF_SIZE, origin.y + SLOT_HALF_SIZE)
         val screen = context.onClient { createMinecraftScreen(definition(logical, origin, inventoryIndex), profile, parent = null) }.also(screens::add)
         for (fixture in listOf(MinecraftSlotTooltipFixture.Empty, MinecraftSlotTooltipFixture.Bundle, MinecraftSlotTooltipFixture.CarriedSword, MinecraftSlotTooltipFixture.CarriedBundle)) {
             replaceFixture(fixture)
@@ -151,7 +151,7 @@ internal object MinecraftSlotTooltipGameTest {
             context.movePointer(pointer)
             val observation = capture(context, screen, inventoryIndex, "scale-$scale-${fixture.name}")
             if (fixture == MinecraftSlotTooltipFixture.Empty) {
-                check(pixels(observation.path).all { it == black }) { "An empty bound Slot must not retain the previous tooltip." }
+                check(pixels(observation.path).all { it == BLACK }) { "An empty bound Slot must not retain the previous tooltip." }
             }
             if (fixture == MinecraftSlotTooltipFixture.Bundle || fixture == MinecraftSlotTooltipFixture.CarriedBundle) {
                 check(context.onClient { observation.stack?.tooltipImage?.isPresent == true }) { "The filled bundle must exercise actual native item-provided tooltip content." }
@@ -163,7 +163,7 @@ internal object MinecraftSlotTooltipGameTest {
         context.onClient { context.setScreen(unbound) }
         context.movePointer(pointer)
         val observation = capture(context, unbound, null, "scale-$scale-unbound")
-        check(pixels(observation.path).all { it == black }) { "An unbound Slot must not inherit another screen's tooltip binding." }
+        check(pixels(observation.path).all { it == BLACK }) { "An unbound Slot must not inherit another screen's tooltip binding." }
         compareVanilla(context, observation, pointer)
     }
 
@@ -173,10 +173,10 @@ internal object MinecraftSlotTooltipGameTest {
         inventoryIndex: Int?,
     ): ScreenDefinition =
         ScreenDefinition("Native Slot tooltip acceptance") {
-            Stack(Modifier.size(logical.width, logical.height).background(ArgbColor(black))) {
+            Stack(Modifier.size(logical.width, logical.height).background(ArgbColor(BLACK))) {
                 Slot(bind = inventoryIndex?.let(Slots::playerInventory), highlightable = false, modifier = Modifier.padding(left = origin.x, top = origin.y))
                 // This noninteractive paint plane isolates the native tooltip without replacing the actual Slot hit test.
-                Spacer(Modifier.size(logical.width, logical.height).background(ArgbColor(black)))
+                Spacer(Modifier.size(logical.width, logical.height).background(ArgbColor(BLACK)))
             }
         }
 
@@ -247,7 +247,7 @@ internal object MinecraftSlotTooltipGameTest {
         )
         if (mismatch != 0) {
             val diff = BufferedImage(viewport.width, viewport.height, BufferedImage.TYPE_INT_ARGB)
-            val colors = IntArray(actualPixels.size) { index -> if (actualPixels[index] == expectedPixels[index]) black else red }
+            val colors = IntArray(actualPixels.size) { index -> if (actualPixels[index] == expectedPixels[index]) BLACK else RED }
             diff.setRGB(0, 0, viewport.width, viewport.height, colors, 0, viewport.width)
             ImageIO.write(
                 diff,
@@ -262,7 +262,7 @@ internal object MinecraftSlotTooltipGameTest {
         }
         check(mismatch == 0) { "The complete Slot tooltip frame differs from vanilla at $mismatch pixels: ${observation.path.fileName}." }
         if (context.onClient { observation.stack?.isEmpty == false && observation.carried.isEmpty }) {
-            check(actualPixels.any { it != black }) { "A populated hovered Slot must display an actual native tooltip." }
+            check(actualPixels.any { it != BLACK }) { "A populated hovered Slot must display an actual native tooltip." }
         }
     }
 
@@ -291,19 +291,17 @@ internal object MinecraftSlotTooltipGameTest {
 
         fun origin(logical: IntSize): IntOffset =
             when (this) {
-                Center -> IntOffset(logical.width / 2 - slotHalfSize, logical.height / 2 - slotHalfSize)
+                Center -> IntOffset(logical.width / 2 - SLOT_HALF_SIZE, logical.height / 2 - SLOT_HALF_SIZE)
                 UpperLeft -> IntOffset(1, 1)
-                LowerRight -> IntOffset(logical.width - slotSize - 1, logical.height - slotSize - 1)
+                LowerRight -> IntOffset(logical.width - SLOT_SIZE - 1, logical.height - SLOT_SIZE - 1)
             }
     }
 
     private val viewport = IntSize(640, 480)
-    private val black = 0xFF000000.toInt()
-    private val red = 0xFFFF0000.toInt()
+    private const val BLACK = 0xFF000000.toInt()
+    private const val RED = 0xFFFF0000.toInt()
 
-    @Suppress("MayBeConstant")
-    private val slotHalfSize = 9
+    private const val SLOT_HALF_SIZE = 9
 
-    @Suppress("MayBeConstant")
-    private val slotSize = 18
+    private const val SLOT_SIZE = 18
 }

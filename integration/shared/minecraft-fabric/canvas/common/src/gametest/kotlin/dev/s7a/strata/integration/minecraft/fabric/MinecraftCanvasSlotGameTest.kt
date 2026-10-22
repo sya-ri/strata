@@ -96,16 +96,16 @@ internal object MinecraftCanvasSlotGameTest {
         binding: SlotBinding,
     ): ScreenDefinition =
         ScreenDefinition("Native Canvas and inventory Slot order") {
-            Stack(Modifier.background(ArgbColor(black))) {
-                Row(spacing = panelSpacing) {
-                    referenceSlot(binding, ArgbColor(black))
-                    referenceSlot(binding, ArgbColor(white))
+            Stack(Modifier.background(ArgbColor(BLACK))) {
+                Row(spacing = PANEL_SPACING) {
+                    referenceSlot(binding, ArgbColor(BLACK))
+                    referenceSlot(binding, ArgbColor(WHITE))
                     nativeOverlap(fixture, binding, CanvasOrder.BeforeSlot)
                     nativeOverlap(fixture, binding, CanvasOrder.AfterSlot)
-                    canvasTestClip(IntSize(panelSize, clipHeight)) {
+                    canvasTestClip(IntSize(PANEL_SIZE, CLIP_HEIGHT)) {
                         nativeOverlap(fixture, binding, CanvasOrder.BeforeSlot)
                     }
-                    referenceSlot(null, ArgbColor(black))
+                    referenceSlot(null, ArgbColor(BLACK))
                 }
             }
         }
@@ -114,7 +114,7 @@ internal object MinecraftCanvasSlotGameTest {
         binding: SlotBinding?,
         color: ArgbColor,
     ) {
-        Stack(Modifier.size(panelSize, panelSize).background(color), contentAlignment = Alignment.Center) {
+        Stack(Modifier.size(PANEL_SIZE, PANEL_SIZE).background(color), contentAlignment = Alignment.Center) {
             Slot(bind = binding, highlightable = false)
         }
     }
@@ -124,11 +124,11 @@ internal object MinecraftCanvasSlotGameTest {
         binding: SlotBinding,
         order: CanvasOrder,
     ) {
-        Stack(Modifier.size(panelSize, panelSize), contentAlignment = Alignment.Center) {
+        Stack(Modifier.size(PANEL_SIZE, PANEL_SIZE), contentAlignment = Alignment.Center) {
             if (order == CanvasOrder.AfterSlot) Slot(bind = binding, highlightable = false)
-            Canvas(fixture.textureSource, IntSize(panelSize, panelSize))
+            Canvas(fixture.textureSource, IntSize(PANEL_SIZE, PANEL_SIZE))
             if (order == CanvasOrder.BeforeSlot) Slot(bind = binding, highlightable = false)
-            Spacer(Modifier.size(overlaySize, overlaySize).background(ArgbColor(white)))
+            Spacer(Modifier.size(OVERLAY_SIZE, OVERLAY_SIZE).background(ArgbColor(WHITE)))
         }
     }
 
@@ -184,13 +184,13 @@ internal object MinecraftCanvasSlotGameTest {
         scale: Int,
     ): Int {
         var opaqueItemTexels = 0
-        for (y in 0 until panelSize * scale) {
-            for (x in 0 until panelSize * scale) {
-                val overlay = overlayStart * scale <= x && x < overlayEnd * scale && overlayStart * scale <= y && y < overlayEnd * scale
-                val expectedAbove = if (overlay) white else nativeTexels[(y / (panelSize * scale / 2)) * 2 + x / (panelSize * scale / 2)]
+        for (y in 0 until PANEL_SIZE * scale) {
+            for (x in 0 until PANEL_SIZE * scale) {
+                val overlay = OVERLAY_START * scale <= x && x < OVERLAY_END * scale && OVERLAY_START * scale <= y && y < OVERLAY_END * scale
+                val expectedAbove = if (overlay) WHITE else nativeTexels[(y / (PANEL_SIZE * scale / 2)) * 2 + x / (PANEL_SIZE * scale / 2)]
                 check(pixel(image, Panel.CanvasAbove, x, y, scale) == expectedAbove) { "Canvas must cover the native Slot, then receive its portable overlay at ($x, $y), scale $scale." }
                 val below = pixel(image, Panel.CanvasBelow, x, y, scale)
-                if (overlay) check(below == white) { "The portable overlay must cover both the Canvas and native Slot." }
+                if (overlay) check(below == WHITE) { "The portable overlay must cover both the Canvas and native Slot." }
                 val blackReference = pixel(image, Panel.ReferenceBlack, x, y, scale)
                 val whiteReference = pixel(image, Panel.ReferenceWhite, x, y, scale)
                 val emptyReference = pixel(image, Panel.EmptySlot, x, y, scale)
@@ -198,11 +198,11 @@ internal object MinecraftCanvasSlotGameTest {
                     opaqueItemTexels++
                     check(below == blackReference) { "A later native Slot must cover its Canvas at opaque item texel ($x, $y), scale $scale." }
                 }
-                val expectedClipped = if (y < clipHeight * scale) below else black
+                val expectedClipped = if (y < CLIP_HEIGHT * scale) below else BLACK
                 check(pixel(image, Panel.ClippedBelow, x, y, scale) == expectedClipped) { "The ancestor clip must apply equally to Canvas, Slot, and portable overlay at ($x, $y), scale $scale." }
             }
         }
-        check(minimumOpaqueItemTexels * scale * scale <= opaqueItemTexels) { "The populated native Slot must contribute an independently visible opaque item region." }
+        check(MINIMUM_OPAQUE_ITEM_TEXELS * scale * scale <= opaqueItemTexels) { "The populated native Slot must contribute an independently visible opaque item region." }
         check(pixel(image, Panel.CanvasBelow, scale, scale, scale) == nativeTexels[0]) { "The Canvas beneath the Slot must remain visible outside the item." }
         return opaqueItemTexels
     }
@@ -253,27 +253,20 @@ internal object MinecraftCanvasSlotGameTest {
 
     private val viewport = IntSize(640, 480)
 
-    @Suppress("MayBeConstant")
-    private val panelSize = 32
+    private const val PANEL_SIZE = 32
 
-    @Suppress("MayBeConstant")
-    private val panelSpacing = 16
+    private const val PANEL_SPACING = 16
 
-    @Suppress("MayBeConstant")
-    private val clipHeight = 16
+    private const val CLIP_HEIGHT = 16
 
-    @Suppress("MayBeConstant")
-    private val overlaySize = 4
+    private const val OVERLAY_SIZE = 4
 
-    @Suppress("MayBeConstant")
-    private val overlayStart = 14
+    private const val OVERLAY_START = 14
 
-    @Suppress("MayBeConstant")
-    private val overlayEnd = 18
+    private const val OVERLAY_END = 18
 
-    @Suppress("MayBeConstant")
-    private val minimumOpaqueItemTexels = 32
-    private val black = 0xFF000000.toInt()
-    private val white = 0xFFFFFFFF.toInt()
+    private const val MINIMUM_OPAQUE_ITEM_TEXELS = 32
+    private const val BLACK = 0xFF000000.toInt()
+    private const val WHITE = 0xFFFFFFFF.toInt()
     private val nativeTexels = intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt(), 0xFF0000FF.toInt(), 0xFFFFFF00.toInt())
 }

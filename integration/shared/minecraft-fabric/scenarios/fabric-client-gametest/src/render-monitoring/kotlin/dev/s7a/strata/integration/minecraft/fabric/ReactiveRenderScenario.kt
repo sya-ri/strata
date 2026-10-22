@@ -35,7 +35,7 @@ internal object ReactiveRenderScenario {
                 driver.assertPixels(literalReference())
                 val inputEvidence = TextInputAppearanceScenario.verify(driver)
                 val clipEvidence = FractionalClipScenario.verify(driver)
-                "stablePresentedFrames=100\nequalMapCommands=reused\nequalMapTextures=reused\nprogressPixels=literal-headless-exact\n" + inputEvidence + clipEvidence
+                "stablePresentedFrames=100\nequalMapCommands=reused\nequalMapTextures=reused\nprogressPixels=literal-headless-exact\n$inputEvidence$clipEvidence"
             }
         val cleanup = runCatching { driver.onClient { driver.closeScreen() } }
         outcome.exceptionOrNull()?.let { failure ->

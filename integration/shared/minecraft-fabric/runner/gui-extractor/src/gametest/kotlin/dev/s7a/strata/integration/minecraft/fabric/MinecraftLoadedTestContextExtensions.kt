@@ -34,7 +34,7 @@ internal fun MinecraftLoadedTestContext.setScreen(factory: () -> Screen?) {
 internal fun MinecraftLoadedTestContext.waitForScreen(type: Class<out Screen>?) {
     waitFor { minecraft ->
         val screen = MinecraftClientScreenAccess.currentScreen(minecraft)
-        if (type == null) screen == null else type.isInstance(screen)
+        type?.isInstance(screen) ?: (screen == null)
     }
 }
 

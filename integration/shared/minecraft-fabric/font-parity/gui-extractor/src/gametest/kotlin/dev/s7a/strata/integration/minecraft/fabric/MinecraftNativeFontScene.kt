@@ -12,7 +12,7 @@ internal object MinecraftNativeFontScene {
      * Extracts the fixture's opaque background through the standard GUI fill path.
      */
     fun background(graphics: GuiGraphicsExtractor) {
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.background)
+        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), MinecraftFontParityFixture.BACKGROUND)
     }
 
     /**
