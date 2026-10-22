@@ -195,7 +195,7 @@ internal class StateSourceTest {
                 observers[registered.id] = registered
                 beforeReturn?.invoke()
                 beforeReturnValue?.let { value ->
-                    shouldDrain = enqueueLocked(value()) || shouldDrain
+                    shouldDrain = enqueueLocked(value())
                 }
             }
             if (shouldDrain) {

@@ -153,7 +153,8 @@ internal class ApiContractTest {
      * Verifies multipart unresolved text equality, hashing, composition, and validation.
      */
     private fun assertConcatenationValueSemantics() {
-        assertEquals(UiText.Literal(""), UiText.concat())
+        val expectedEmptyText = UiText.Literal("")
+        assertEquals(expectedEmptyText, UiText.concat())
         assertEquals(UiText.Literal("one"), UiText.concat(UiText.Literal("one")))
         val multipart = UiText.Concatenated(listOf(UiText.Literal("a"), UiText.Literal("b")))
         val equalMultipart = UiText.Concatenated(listOf(UiText.Literal("a"), UiText.Literal("b")))

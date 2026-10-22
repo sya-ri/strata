@@ -59,8 +59,10 @@ internal class BuiltinModifierContractTest {
         assertThrows(ArithmeticException::class.java) { Insets.all(Int.MAX_VALUE) }
         assertThrows(ArithmeticException::class.java) { Insets.symmetric(Int.MAX_VALUE, 0) }
         assertEquals(Insets.Zero, Insets())
-        assertEquals(Insets(2, 2, 2, 2), Insets.all(2))
-        assertEquals(Insets(3, 4, 3, 4), Insets.symmetric(3, 4))
+        val expectedUniformInsets = Insets(2, 2, 2, 2)
+        val expectedSymmetricInsets = Insets(3, 4, 3, 4)
+        assertEquals(expectedUniformInsets, Insets.all(2))
+        assertEquals(expectedSymmetricInsets, Insets.symmetric(3, 4))
         assertEquals(source, Insets(left = 1, top = 2, right = 3, bottom = 4))
     }
 

@@ -42,8 +42,8 @@ internal class ModifierCommonContractTest {
         assertEquals(Modifier.hashCode(), anotherEmpty.hashCode())
         assertEquals("Modifier([])", Modifier.toString())
         assertEquals(Modifier.toString(), anotherEmpty.toString())
-        assertFalse(Modifier.equals(chain))
-        assertFalse(chain.equals(Modifier))
+        assertFalse(Modifier == chain)
+        assertFalse(chain == Modifier)
         assertFalse(Modifier.equals(Unit))
     }
 

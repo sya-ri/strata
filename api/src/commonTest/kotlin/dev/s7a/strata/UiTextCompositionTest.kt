@@ -59,7 +59,7 @@ internal class UiTextCompositionTest {
     @Test
     fun emptyAndSingletonFactoriesKeepTheirExistingContracts() {
         val singleton = UiText.Translated("test.singleton", "fallback")
-        assertEquals(UiText.Literal(""), UiText.concat())
+        assertEquals(expected = UiText.Literal(""), actual = UiText.concat())
         assertSame(singleton, UiText.concat(singleton))
         assertSame(singleton, UiText.Concatenated(singleton).parts.single())
         assertSame(singleton, UiText.Concatenated(listOf(singleton)).parts.single())

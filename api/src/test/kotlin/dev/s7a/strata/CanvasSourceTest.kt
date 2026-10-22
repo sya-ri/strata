@@ -92,12 +92,10 @@ internal class CanvasSourceTest {
     fun arbitraryThreadCallbacksOnlyReplaceTheLatestPendingRevision() {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
         val binding =
-            canvasSource(
-                { callback ->
-                    observer = callback
-                    StateSubscription(snapshot(1)) {}
-                },
-            ).open(CanvasId(1))
+            canvasSource { callback ->
+                observer = callback
+                StateSubscription(snapshot(1)) {}
+            }.open(CanvasId(1))
         binding.use { _ ->
             val initialImage = paintedImage(binding)
             val task =
@@ -125,12 +123,10 @@ internal class CanvasSourceTest {
     @Test
     fun cutoffRetainsOnlyOneTemporaryObservationAndDoesNotConsumeALaterCallback() {
         lateinit var observer: (StateSnapshot<DrawImage>) -> Unit
-        canvasSource(
-            { callback ->
-                observer = callback
-                StateSubscription(snapshot(1)) {}
-            },
-        ).open(CanvasId(1)).use { binding ->
+        canvasSource { callback ->
+            observer = callback
+            StateSubscription(snapshot(1)) {}
+        }.open(CanvasId(1)).use { binding ->
             observer(snapshot(2))
             binding.captureFrame()
             observer(snapshot(3))
