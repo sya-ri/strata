@@ -53,6 +53,9 @@ def prepare_project(root, project_inventory, java):
         if not directories or set(directories) != {directory for directory in by_directory if directory.startswith(prefix)}:
             raise ValueError(f"discovered Minecraft {owner} projects differ from the configured inventory")
         required = ["file://$PROJECT_DIR$/" + by_directory[directory]["iml"] for directory in directories]
+        required += ["file://$PROJECT_DIR$/" + pathlib.PurePosixPath(by_directory[directory]["iml"]).with_name(
+            test["sourceSet"] + "-" + pathlib.PurePosixPath(by_directory[directory]["iml"]).name).as_posix()
+                     for directory in directories for test in by_directory[directory].get("testCompilations", [])]
         actual = [url for url in urls if url.startswith("file://$PROJECT_DIR$/" + prefix)]
         if collections.Counter(actual) != collections.Counter(required):
             raise ValueError(f"generated Minecraft {owner} modules differ from the discovered configured projects")

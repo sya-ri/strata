@@ -80,6 +80,25 @@ try:
 finally:
     checker.url_path = resolve_url
 assert library_resolutions and all(count <= library_edge_budget[edge] for edge, count in library_resolutions.items()), library_resolutions.most_common(5)
+for mutation in ("missing-source", "wrong-root-kind", "wrong-source-set", "missing-compilation"):
+    changed = copy.deepcopy(inventory)
+    owner = next(owner for owner in changed["projects"] if owner["project"] == ":support-kotlin")
+    test = owner["testCompilations"][0]
+    source = next(root for root in test["roots"] if root["exists"] and root["inputs"] and root["kind"] == "TestSource")
+    if mutation == "missing-source":
+        source["exists"] = False
+    elif mutation == "wrong-root-kind":
+        source["kind"] = "TestResource"
+    elif mutation == "wrong-source-set":
+        source["sourceSets"] = ["main"]
+    else:
+        owner["testCompilations"] = []
+    try:
+        checker.analysis_owners(changed)
+    except ValueError as failure:
+        assert "test compilation" in str(failure), (mutation, failure)
+    else:
+        raise AssertionError(f"Accepted invalid test compilation ownership: {mutation}")
 common_parent = next((owner for owner in inventory["projects"] if owner["project"] == ":shared-kmp"), None)
 if common_parent is not None:
     common_name = common_parent["module"] + ".commonMain"
@@ -128,10 +147,10 @@ if common_parent is not None:
         elif mutation == "generated-own-output":
             library = ET.SubElement(ET.SubElement(manager, "orderEntry", type="module-library", scope="TEST"), "library")
             ET.SubElement(ET.SubElement(library, "CLASSES"), "root", url="file://" + (root / own_output).as_posix())
-            expected = "sources duplicated by their compiled outputs"
+            expected = "JVM dependency closure"
         elif mutation == "imported-own-output":
             primary_import["orderEntries"].append(dict(type="Library", name=(root / own_output).as_posix()))
-            expected = "sources duplicated by their compiled outputs"
+            expected = "JVM dependency closure"
         elif mutation in {"missing-common-library", "wrong-common-library-kind", "extra-common-library", "test-common-library"}:
             common_manager = common_document.find("./component[@name='NewModuleRootManager']")
             library = common_manager.find("orderEntry[@type='module-library']")
@@ -143,7 +162,7 @@ if common_parent is not None:
                 expected = "compilation dependency"
             elif mutation == "wrong-common-library-kind":
                 library.find("library").attrib["type"] = "kotlin.common"
-                expected = "common JVM library has an incompatible name or platform kind"
+                expected = "JVM library has an incompatible name or platform kind"
             elif mutation == "test-common-library":
                 library.attrib["scope"] = "TEST"
                 expected = "incompatible compile/runtime scope"
@@ -152,7 +171,7 @@ if common_parent is not None:
                 classes = ET.SubElement(ET.SubElement(extra, "library"), "CLASSES")
                 ET.SubElement(classes, "root", url="file://" + (root / own_output).as_posix())
                 common_import["orderEntries"].append(dict(type="Library", name=(root / own_output).as_posix()))
-                expected = "common JVM dependency closure"
+                expected = "JVM dependency closure"
         elif mutation == "jvm-common-project":
             edge = common_document.find("./component[@name='NewModuleRootManager']/orderEntry[@type='module'][@module-name='common-support']")
             edge.attrib["module-name"] = "common-support.commonMain"

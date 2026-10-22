@@ -185,13 +185,15 @@ Kotlin facets retain the owning JVM compilation's module name, explicit API mode
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.
 The latter preserves mapped binaries without optional source remapping.
-The generated IDEA model assigns linked source roots, real compile/test/GameTest classpaths, and language levels to each owner; `rootJavaProjects` opens that model directly.
+The generated IDEA model assigns linked source roots, compiler classpaths, and language levels to each compilation; `rootJavaProjects` opens that model directly.
 Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
 Module registration and project SDK validation read XML structure rather than attribute order or line layout.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
-The shared JVM model exports configured auxiliary Java/Kotlin inputs and resources as `TestSource`/`TestResource` in their actual owner, including nondefault directories, and retains their real compile/runtime configurations in IDEA's TEST scope.
-Roots already admitted by production keep that ownership once.
-This IDE view is an analysis union; isolated Gradle compilations and `checkStrataSkillExampleClasspath` still enforce API-only skill dependencies.
+Production, ordinary tests, GameTests, benchmarks, and compiled documentation examples have separate modules derived from their actual source sets.
+Each module retains its own compile/runtime dependencies, Kotlin compiler identity, and friend paths; test modules identify their production owner through IDEA's test-module metadata.
+A dependency on another project's production module cannot expose that project's test stubs.
+Shared physical roots retain distinct compiler-selected views for every compilation that consumes them, including roots compiled as both production and auxiliary input.
+Isolated Gradle compilations and `checkStrataSkillExampleClasspath` also enforce API-only skill dependencies.
 `qodanaDeclarationInventory` discovers owners from the configured Gradle plugin/source-set model and records actual module identities, Java requirements, source/resource declarations, file membership and hashes, and resolved project/library dependency identities independently of IML and Qodana JSON.
 After compilation finishes, the inventory shares directory membership and fingerprints only within its current task action; each execution reads them afresh.
 Each JVM project resolves its compiler and runtime configurations in its own export task, and the root inventory consumes those revision-bound outputs without resolving another project's configurations.

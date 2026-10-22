@@ -38,14 +38,18 @@ internal class QodanaSourceContextAssertions(
             assertEquals(expected.toSet(), observed.toSet(), "Every real compiler context must retain its declared roots.")
             assertEquals(observed.size, observed.toSet().size, "A compiler context must not repeat a root.")
         }
-        assertTrue(Files.readString(directory.resolve("bench-two/resolved-bench-two.iml")).contains("name=\"friendPaths\""))
+        assertTrue(Files.readString(directory.resolve("bench-two/jmh-resolved-bench-two.iml")).contains("name=\"friendPaths\""))
         assertLibraryOutputRoots(projects)
     }
 
     /**
      * Retains only authored roots that actually exist in the current compiler input.
      */
-    private fun declaredRoots(project: Map<*, *>): List<Map<*, *>> = objects(project["roots"]).filter { it["exists"] == true && it["generated"] == false }
+    private fun declaredRoots(project: Map<*, *>): List<Map<*, *>> =
+        (
+            objects(project["roots"]).filter { (it["kind"] as String).startsWith("Test").not() } +
+                objects(project["testCompilations"]).flatMap { objects(it["roots"]) }
+        ).filter { it["exists"] == true && it["generated"] == false }
 
     /**
      * Assigns common production roots to their independent refinement module.
@@ -58,7 +62,7 @@ internal class QodanaSourceContextAssertions(
             when (rootKind(source)) {
                 RootKind.Source -> "kotlinRoots"
                 RootKind.Resource -> "resourceRoots"
-                RootKind.TestSource, RootKind.TestResource -> return project["module"] as String
+                RootKind.TestSource, RootKind.TestResource -> return "${(source["sourceSets"] as List<*>).single()}-${project["module"]}"
             }
         val common = objects(project["commonSourceSets"]).filter { source["path"] in it[key] as List<*> }
         assertTrue(common.size <= 1, "The fixture uses distinct source directories for each refinement.")
@@ -119,18 +123,22 @@ internal class QodanaSourceContextAssertions(
                 }.toSet()
         val unresolved =
             projects.flatMap { project ->
-                val modelFile = directory.resolve(project["iml"] as String)
-                val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(modelFile.toFile())
-                val urls =
-                    model
-                        .getElementsByTagName("CLASSES")
-                        .elements()
-                        .flatMap { it.getElementsByTagName("root").elements() }
-                        .map { it.getAttribute("url") }
-                urls
-                    .filter { it.startsWith("file://") }
-                    .filter { it.contains($$"$PROJECT_DIR$") || it.endsWith("/") || path(it, modelFile.parent) in missing }
-                    .map { "${project["module"]}: $it" }
+                val primary = directory.resolve(project["iml"] as String)
+                val modelFiles = (listOf(project["module"] as String) + declaredRoots(project).map { sourceModule(project, it) }).distinct()
+                modelFiles.flatMap { name ->
+                    val modelFile = primary.resolveSibling("$name.iml")
+                    val model = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(modelFile.toFile())
+                    val urls =
+                        model
+                            .getElementsByTagName("CLASSES")
+                            .elements()
+                            .flatMap { it.getElementsByTagName("root").elements() }
+                            .map { it.getAttribute("url") }
+                    urls
+                        .filter { it.startsWith("file://") }
+                        .filter { it.contains($$"$PROJECT_DIR$") || it.endsWith("/") || path(it, modelFile.parent) in missing }
+                        .map { "${project["module"]}: $it" }
+                }
             }
         assertEquals(emptyList<String>(), unresolved, "IDE libraries must not retain unresolved output roots.")
     }

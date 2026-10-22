@@ -89,9 +89,11 @@ internal class QodanaCompilerFixture(
                 compilerOptions.moduleName.set("fixture-support")
                 compilerOptions.freeCompilerArgs.add("-Xexplicit-api=strict")
             }
+            tasks.named<KotlinJvmCompile>("compileTestKotlin") { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
             """.trimIndent(),
         )
         write("support-kotlin/src/main/kotlin/fixture/KotlinSupport.kt", "package fixture\npublic fun kotlinValue(): Int = 5\n")
+        write("support-kotlin/src/test/kotlin/fixture/Support.kt", "package fixture\ninternal class Support { companion object { fun value(): Int = 99 } }\n")
     }
 
     /**
@@ -252,6 +254,7 @@ internal class QodanaCompilerFixture(
                 kotlin.sourceSets.named("main") {
                     kotlin.setSrcDirs(listOf(rootProject.file("shared-native/kotlin"), rootProject.file("variant-two/src/main/kotlin")))
                 }
+                dependencies { implementation(project(":support-kotlin")) }
                 """.trimIndent(),
             )
         }

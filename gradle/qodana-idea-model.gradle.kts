@@ -81,10 +81,11 @@ fun analysisOwners(owner: Map<*, *>): List<Map<*, *>> {
     }
     val primaryRefinements = refinements((owner["sourceSetDependencies"] as? List<*>).orEmpty())
     require(reachable == nodes.keys) { "Common source sets differ from the JVM compilation refinement graph: ${owner["module"]}" }
-    val original = owner + mapOf("roots" to retained, "common" to false, "templateIml" to owner["iml"],
-        "sourceSet" to owner["defaultSourceSet"], "refines" to primaryRefinements)
-    val compilation = if (declarations.isEmpty()) null else (owner["productionCompilations"] as List<*>).map { it as Map<*, *> }
-        .single { it["sourceSet"] == owner["defaultSourceSet"] }
+    val compilation = (owner["productionCompilations"] as List<*>).map { it as Map<*, *> }
+        .singleOrNull { it["sourceSet"] == (owner["defaultSourceSet"] ?: "main") }
+    val original = owner + mapOf("roots" to retained.filter { (it["kind"] as String).startsWith("Test").not() },
+        "common" to false, "templateIml" to owner["iml"], "sourceSet" to owner["defaultSourceSet"],
+        "refines" to primaryRefinements, "jvmCompilation" to compilation)
     val fragments = declarations.filter { it["name"] in active }.map { declaration ->
         val name = declaration["name"] as String
         require(name !in setOf(".", "..") && name.none { it in "/\\:" }) { "Noncanonical common source-set name: $name" }
@@ -96,7 +97,16 @@ fun analysisOwners(owner: Map<*, *>): List<Map<*, *>> {
             "jvmCompilation" to compilation,
             "compiler" to (compiler + mapOf("friends" to emptyList<Any>())))
     }
-    return listOf(original) + fragments
+    val tests = (owner["testCompilations"] as List<*>).map { it as Map<*, *> }.map { test ->
+        val sourceSet = test["sourceSet"] as String
+        require(sourceSet !in setOf(".", "..") && sourceSet.none { it in "/\\:" }) { "Noncanonical test source-set name: $sourceSet" }
+        val module = "$sourceSet-${owner["module"]}"
+        owner + mapOf("module" to module, "iml" to File(owner["iml"] as String).resolveSibling("$module.iml").invariantSeparatorsPath,
+            "templateIml" to owner["iml"], "roots" to test["roots"], "compiler" to test["compiler"],
+            "common" to false, "sourceSet" to sourceSet, "refines" to emptyList<String>(), "jvmCompilation" to test,
+            "productionModule" to owner["module"])
+    }
+    return listOf(original) + fragments + tests
 }
 
 val cleanQodanaSourceViews = tasks.register<Delete>("cleanQodanaSourceViews") {
@@ -209,7 +219,10 @@ tasks.register("qodanaKotlinModel") {
             primary.children("sourceFolder").forEach { primary.removeChild(it) }
             val common = owner["common"] == true
             if (common) manager.removeChild(primary)
-            if (common) {
+            (owner["productionModule"] as String?)?.let { parent ->
+                root.element("component", mapOf("name" to "TestModuleProperties", "production-module" to parent))
+            }
+            if (owner["jvmCompilation"] != null) {
                 manager.children("orderEntry").filter { it.getAttribute("type") in setOf("module", "module-library") }.forEach { manager.removeChild(it) }
                 val compilation = owner["jvmCompilation"] as Map<*, *>
                 val classpaths = compilation["classpaths"] as Map<*, *>
@@ -305,7 +318,7 @@ tasks.register("qodanaKotlinModel") {
         val projectOutput = rootProject.tasks.named("ideaProject").get().outputs.files.singleFile
         val projectDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(projectOutput)
         val moduleTable = projectDocument.documentElement.children("component").single { it.getAttribute("name") == "ProjectModuleManager" }.children("modules").single()
-        projects.filter { it["common"] == true }.forEach { owner ->
+        projects.filter { it["iml"] != it["templateIml"] }.forEach { owner ->
             val path = "\$PROJECT_DIR\$/${owner["iml"]}"
             moduleTable.element("module", mapOf("fileurl" to "file://$path", "filepath" to path))
         }

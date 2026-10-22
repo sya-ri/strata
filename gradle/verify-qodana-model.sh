@@ -512,7 +512,7 @@ target_source_path_allows_owner() {
   [[ ",$target_source_allowed_owners," == *",$owner,"* ]]
 }
 
-record_expected_target_source_roots() {
+record_expected_compilation_source_roots() {
   local owner=$1
   local version=$2
   local project_path=$3
@@ -809,6 +809,21 @@ PY
   done < "$parsed_iml_sources"
 }
 
+record_expected_target_source_roots() {
+  local owner=$1
+  local version=$2
+  local project_path=$3
+  local iml_name=$4
+  local compilation_iml
+  record_expected_compilation_source_roots "$owner" "$version" "$project_path" "$iml_name"
+  while IFS= read -r compilation_iml; do
+    record_expected_compilation_source_roots "$owner" "$version" "$project_path" "$compilation_iml"
+  done < <(portable_jq -r --arg directory "$project_path" '
+    .projects[] | select(.directory == $directory) as $project
+    | $project.testCompilations[]? | .sourceSet + "-" + ($project.iml | split("/") | last)
+  ' "$project_root/build/qodana/declarations.json")
+}
+
 for version in "${expected_versions[@]}"; do
   record_expected_target_source_roots \
     'runtime' \
@@ -1103,6 +1118,13 @@ target_source_mismatches=$(
               }
           );
       def targetIdentity($runtimePattern; $integrationPattern; $docsPattern; $fontPattern):
+        .name as $name
+        | ([ $declarations[0].projects[] as $project
+             | select(any($project.testCompilations[]?; .sourceSet + "-" + $project.module == $name))
+             | $project
+           ] | first) as $testOwner
+        | (if $testOwner != null then .name = $testOwner.module else . end)
+        |
         if .name | test($runtimePattern) then
           {
             owner: "runtime",

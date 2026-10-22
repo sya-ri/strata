@@ -193,8 +193,14 @@ def analysis_owners(inventory):
                 remaining = sorted(set(root["inputs"]) - moved[root["path"]])
                 if remaining:
                     retained.append(dict(root, inputs=remaining))
-        result.append(dict(owner, roots=retained, common=False, sourceSet=owner.get("defaultSourceSet"), refines=refines))
+        split = "testCompilations" in owner
+        primary_roots = [root for root in retained if not root["kind"].startswith("Test")] if split else retained
+        primary = dict(owner, roots=primary_roots, common=False, sourceSet=owner.get("defaultSourceSet"), refines=refines)
         compilations = [value for value in owner.get("productionCompilations", []) if value["sourceSet"] == owner.get("defaultSourceSet")]
+        if split:
+            compilations = [value for value in owner["productionCompilations"] if value["sourceSet"] == (owner.get("defaultSourceSet") or "main")]
+            primary["jvmCompilation"] = compilations[0] if len(compilations) == 1 else None
+        result.append(primary)
         if source_sets and len(compilations) != 1:
             fail(f"missing or duplicate JVM compilation for common sources: {owner['module']}")
         for name in sorted(active):
@@ -205,6 +211,31 @@ def analysis_owners(inventory):
             result.append(dict(owner, module=module, iml=iml, roots=assigned[name], common=True, sourceSet=name,
                                jvmCompilation=compilations[0],
                                refines=resolve(nodes[name]["dependsOn"]), compiler=dict(owner["compiler"], friends=[])))
+        tests = owner.get("testCompilations", [])
+        names = [test["sourceSet"] for test in tests]
+        if len(set(names)) != len(names):
+            fail(f"duplicate test compilation: {owner['module']}")
+        inputs = set()
+        for test in tests:
+            name = test["sourceSet"]
+            if not isinstance(name, str) or not name or name in {".", ".."} or any(char in name for char in "/\\:"):
+                fail(f"noncanonical test compilation identity: {name}")
+            module = name + "-" + owner["module"]
+            for root in test["roots"]:
+                original = [source for source in owner["roots"] if source["path"] == root["path"] and name in source["sourceSets"]]
+                if len(original) != 1:
+                    fail(f"test compilation has no unique compiler root: {module}: {root['path']}")
+                source = original[0]
+                expected_kind = "TestResource" if source["kind"].endswith("Resource") else "TestSource"
+                if root["kind"] != expected_kind or root["sourceSets"] != [name] or any(root[key] != source[key] for key in ("exists", "generated", "files")) or not set(root["inputs"]).issubset(source["inputs"]):
+                    fail(f"test compilation differs from its declared compiler roots: {module}: {root['path']}")
+                inputs.update(root["inputs"])
+            iml = pathlib.PurePosixPath(owner["iml"]).with_name(module + ".iml").as_posix()
+            result.append(dict(owner, module=module, iml=iml, roots=test["roots"], common=False, sourceSet=name,
+                               jvmCompilation=test, refines=[], compiler=test["compiler"], productionModule=owner["module"]))
+        required = {value for root in owner["roots"] if root["kind"].startswith("Test") and root["exists"] and not root["generated"] for value in root["inputs"]}
+        if split and not required.issubset(inputs):
+            fail(f"test compilation omits declared compiler inputs: {owner['module']}")
     if len({owner["module"] for owner in result}) != len(result) or len({owner["iml"] for owner in result}) != len(result):
         fail("analysis source-set module identities collide")
     return result
@@ -369,6 +400,13 @@ def verify_source_ownership(root, inventory, model, container_root=""):
                 fail(f"owned compiler outputs are missing or changed: {name}: {path}")
 
         compiler = owner["compiler"]
+        properties = ET.parse(iml).getroot().findall("./component[@name='TestModuleProperties']")
+        production_module = owner.get("productionModule")
+        if production_module:
+            if len(properties) != 1 or properties[0].attrib != {"name": "TestModuleProperties", "production-module": production_module}:
+                fail(f"test compilation has an incorrect production module: {name}")
+        elif properties:
+            fail(f"production compilation must not inherit a test module: {name}")
         if compiler:
             if "explicitApi" not in compiler or compiler["explicitApi"] not in (None, "strict", "warning", "disable"):
                 fail(f"missing or invalid explicit API compiler mode: {name}")
@@ -535,7 +573,7 @@ def verify_model(root, model_path, container_root, java_path):
     declarations_by_project = {entry["project"]: entry for entry in declared_projects}
     if len(declarations_by_project) != len(declared_projects) or set(projects) != {entry["project"] for entry in declared_projects if entry["jmh"]}:
         fail("the complete configured project inventory and JMH owner inventory differ")
-    if any(declarations_by_project[owner["project"]]["module"] != owner["module"] for owner in owners):
+    if any(("jmh-" if "testCompilations" in declarations_by_project[owner["project"]] else "") + declarations_by_project[owner["project"]]["module"] != owner["module"] for owner in owners):
         fail("JMH owner identity differs from the complete configured project model")
     if len(set(names)) != len(names) or len(set(projects)) != len(projects):
         fail("duplicate declared owner identity")
@@ -609,8 +647,8 @@ def verify_model(root, model_path, container_root, java_path):
             for dependency in closure:
                 if dependency["kind"] == "Module":
                     identity = dependency["identity"]
-                    required_project = declarations_by_project.get(dependency["project"])
-                    if not required_project or required_project["module"] != identity or len(modules[identity]) != 1:
+                    required_project = declarations_by_module.get(identity)
+                    if not required_project or required_project["project"] != dependency["project"] or len(modules[identity]) != 1:
                         fail(f"unresolved required project dependency: {name}: {identity}")
                     generated_dependencies = generated_index["Module", identity]
                     imported_dependencies = imported_index["Module", identity]
@@ -648,7 +686,7 @@ def verify_model(root, model_path, container_root, java_path):
             if not declaration["iml"]:
                 continue
             name = declaration["module"]
-            if declaration.get("common"):
+            if declaration.get("jvmCompilation") is not None:
                 if declaration["project"] + ":qodanaDependencyInventory" not in inventory["taskGraph"]:
                     fail(f"missing project-owned dependency export task: {name}")
                 directory = root / declaration["directory"]
@@ -661,9 +699,9 @@ def verify_model(root, model_path, container_root, java_path):
                 parent = declarations_by_project[declaration["project"]]["module"]
                 expected.update(("Module", parent + "." + source) for source in declaration["refines"])
                 if any(collections.Counter({key: len(entries) for key, entries in index.items() if entries}) != expected for index in (generated_index, imported_index)):
-                    fail(f"common JVM dependency closure differs from its compilation: {name}")
+                    fail(f"JVM dependency closure differs from its compilation: {name}")
                 if any(entry.find("library").attrib for entry in manager.findall("orderEntry[@type='module-library']")):
-                    fail(f"common JVM library has an incompatible name or platform kind: {name}")
+                    fail(f"JVM library has an incompatible name or platform kind: {name}")
                 continue
             compilations = declaration["productionCompilations"]
             if compilations and declaration["project"] + ":qodanaDependencyInventory" not in inventory["taskGraph"]:
@@ -781,7 +819,10 @@ def verify_model(root, model_path, container_root, java_path):
     auxiliary_by_module = collections.defaultdict(list)
     for owner in auxiliary:
         declaration = declarations_by_project.get(owner["project"])
-        if not declaration or declaration["module"] != owner["module"] or declaration["directory"] != owner["directory"]:
+        if declaration is None:
+            fail("auxiliary owner has no configured project")
+        identity = (owner["sourceSet"] + "-" if "testCompilations" in declaration else "") + declaration["module"]
+        if identity != owner["module"] or declaration["directory"] != owner["directory"]:
             fail("auxiliary owner differs from the complete configured project model")
         auxiliary_by_module[owner["module"]].append(owner)
     for name, compilations in auxiliary_by_module.items():
