@@ -2397,18 +2397,20 @@ subprojects {
     }
 
     if (path in setOf(":integration:paper", ":integration:velocity")) {
-        val fixture = extensions.getByType<SourceSetContainer>().named("main")
-        val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("main")
         val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         }
-        tasks.named<Detekt>("detekt") {
-            // Host callbacks supply operations; only the isolated testkit collects owner costs.
-            source(fixtureKotlin.map { it.kotlin })
-            classpath.from(fixture.map { it.compileClasspath }, fixture.map { it.runtimeClasspath })
-            jvmTarget.set(javaVersion.toString())
-            jdkHome.set(analysisJava.map { it.metadata.installationPath })
+        listOf("main" to "detektMain", "test" to "detektTest").forEach { (sourceSetName, taskName) ->
+            val fixture = extensions.getByType<SourceSetContainer>().named(sourceSetName)
+            val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named(sourceSetName)
+            tasks.named<Detekt>(taskName) {
+                setSource(fixtureKotlin.map { it.kotlin })
+                classpath.setFrom(fixture.map { it.compileClasspath }, fixture.map { it.runtimeClasspath })
+                jvmTarget.set(javaVersion.toString())
+                jdkHome.set(analysisJava.map { it.metadata.installationPath })
+            }
         }
+        tasks.named("detekt") { dependsOn("detektMain", "detektTest") }
     }
 
     extensions.configure<JavaPluginExtension> {
