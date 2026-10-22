@@ -127,7 +127,7 @@ public class IncomingFragmentFixture(
         var copied = 0L
         var admitted = 0L
         var admittedBytes = 0L
-        RemotePacketStream(templateAddress, limits, {}).use { stream ->
+        RemotePacketStream(templateAddress, limits) {}.use { stream ->
             if (workload == IncomingFragmentWorkload.Stale) {
                 templates.forEach { decoder.receive(stream, it) }
                 stream.drain(0) { }
@@ -249,7 +249,7 @@ public class IncomingFragmentFixture(
                 }
             }
         val stream =
-            owner.run { peer?.let { field(it, "stream") as RemotePacketStream } ?: RemotePacketStream(templateAddress, limits, {}) }
+            owner.run { peer?.let { field(it, "stream") as RemotePacketStream } ?: RemotePacketStream(templateAddress, limits) {} }
         val frames = templates
         private val serverPhase: Method? =
             peer?.let {

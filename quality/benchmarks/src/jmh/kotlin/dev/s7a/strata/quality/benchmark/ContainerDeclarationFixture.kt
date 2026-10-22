@@ -254,10 +254,10 @@ internal class ContainerDeclarationFixture(
         }
         val rasterSize = rasterSize(layout.size)
         val pixels = IntArray(rasterSize.width * rasterSize.height)
-        for (leaf in layout.leaves) {
-            for (y in leaf.bounds.top until leaf.bounds.bottom) {
-                for (x in leaf.bounds.left until leaf.bounds.right) {
-                    pixels[y * rasterSize.width + x] = color(leaf.ordinal, value).value
+        for ((ordinal, bounds) in layout.leaves) {
+            for (y in bounds.top until bounds.bottom) {
+                for (x in bounds.left until bounds.right) {
+                    pixels[y * rasterSize.width + x] = color(ordinal, value).value
                 }
             }
         }
@@ -434,59 +434,44 @@ internal class ContainerDeclarationFixture(
         private fun layout(
             container: Container,
             children: List<Layout>,
-        ): Layout {
-            if (container == Container.TiledImage) return Layout(IntSize(1_024, 1_024), children.flatMap { it.leaves })
-            if (children.isEmpty()) return Layout(IntSize.Zero, emptyList())
-            val columns = IntArray(4)
-            val rows = IntArray((children.size + 3) / 4)
-            children.forEachIndexed { index, child ->
-                columns[index % 4] = maxOf(columns[index % 4], child.size.width)
-                rows[index / 4] = maxOf(rows[index / 4], child.size.height)
-            }
-            val placements = ArrayList<PlacedLeaf>()
-            var x = 0
-            var y = 0
-            children.forEachIndexed { index, child ->
-                when (container) {
-                    Container.Row, Container.FlowRow -> {
-                        placements += child.at(x, 0)
-                        x += child.size.width
-                    }
-
-                    Container.Column -> {
-                        placements += child.at(0, y)
-                        y += child.size.height
-                    }
-
-                    Container.Stack -> {
-                        placements += child.leaves
-                    }
-
-                    Container.Grid -> {
-                        placements += child.at(columns.take(index % 4).sum(), rows.take(index / 4).sum())
-                    }
-
-                    Container.TiledImage -> {
-                        error("Tiled layout is handled above.")
-                    }
-                }
-            }
-            val size = naturalSize(container, children, columns, rows)
-            return Layout(size, placements)
-        }
-
-        private fun naturalSize(
-            container: Container,
-            children: List<Layout>,
-            columns: IntArray,
-            rows: IntArray,
-        ): IntSize =
+        ): Layout =
             when (container) {
-                Container.Row, Container.FlowRow -> IntSize(children.sumOf { it.size.width }, children.maxOf { it.size.height })
-                Container.Column -> IntSize(children.maxOf { it.size.width }, children.sumOf { it.size.height })
-                Container.Stack -> IntSize(children.maxOf { it.size.width }, children.maxOf { it.size.height })
-                Container.Grid -> IntSize(columns.sum(), rows.sum())
-                Container.TiledImage -> IntSize(1_024, 1_024)
+                Container.Row, Container.FlowRow -> {
+                    var x = 0
+                    val placements = children.flatMap { child -> child.at(x, 0).also { x += child.size.width } }
+                    Layout(IntSize(x, children.maxOfOrNull { it.size.height } ?: 0), placements)
+                }
+
+                Container.Column -> {
+                    var y = 0
+                    val placements = children.flatMap { child -> child.at(0, y).also { y += child.size.height } }
+                    Layout(IntSize(children.maxOfOrNull { it.size.width } ?: 0, y), placements)
+                }
+
+                Container.Stack -> {
+                    Layout(
+                        IntSize(children.maxOfOrNull { it.size.width } ?: 0, children.maxOfOrNull { it.size.height } ?: 0),
+                        children.flatMap { it.leaves },
+                    )
+                }
+
+                Container.Grid -> {
+                    val columns = IntArray(4)
+                    val rows = IntArray((children.size + 3) / 4)
+                    children.forEachIndexed { index, child ->
+                        columns[index % 4] = maxOf(columns[index % 4], child.size.width)
+                        rows[index / 4] = maxOf(rows[index / 4], child.size.height)
+                    }
+                    val placements =
+                        children.flatMapIndexed { index, child ->
+                            child.at(columns.take(index % 4).sum(), rows.take(index / 4).sum())
+                        }
+                    Layout(IntSize(columns.sum(), rows.sum()), placements)
+                }
+
+                Container.TiledImage -> {
+                    Layout(IntSize(1_024, 1_024), children.flatMap { it.leaves })
+                }
             }
 
         /**

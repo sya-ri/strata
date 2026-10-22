@@ -82,7 +82,7 @@ internal class TextLineLayoutReference(
         val row = rows.first()
         val first = row.offsets.indexOf(range.first)
         val last = row.offsets.indexOf(range.last + 1)
-        check(0 <= first && first <= last)
+        check(first in 0..last)
         val coordinates = row.positions.slice(first..last)
         check(TextAreaInputAccess.field(checkNotNull(underline), "firstLine") == 0)
         check(TextAreaInputAccess.field(underline, "ranges") == listOf(coordinates.min()..coordinates.max()))

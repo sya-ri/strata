@@ -42,7 +42,7 @@ internal object RemoteInventoryArguments {
                 addProperty("input_label", entries.keys.single())
                 addProperty("sha256", ArtifactIdentity.file(path))
             }
-        return arguments.map { if (it == argument) PREFIX + "<declared-inventory-input>" else it } to evidence
+        return arguments.map { if (it == argument) "$PREFIX<declared-inventory-input>" else it } to evidence
     }
 
     /**
@@ -99,7 +99,7 @@ internal object RemoteInventoryArguments {
         val argument = PREFIX + path
         val input = mapOf("inventory-control" to path)
         val actual = capture(ordinary + argument, path.toString(), input)
-        check(actual.first == ordinary + (PREFIX + "<declared-inventory-input>"))
+        check(actual.first == ordinary + ("$PREFIX<declared-inventory-input>"))
         check(actual.second?.get("argument")?.asString == argument)
         check(actual.second?.get("sha256")?.asString == ArtifactIdentity.file(path))
         listOf(ordinary, ordinary + listOf(argument, argument), ordinary + (PREFIX + "different")).forEach { invalid ->

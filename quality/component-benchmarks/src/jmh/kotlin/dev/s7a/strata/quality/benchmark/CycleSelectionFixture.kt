@@ -396,13 +396,13 @@ internal class CycleSelectionFixture(
                         width = width,
                         enabled = enabled,
                         modifier =
-                            Modifier.onCycle<Choice>({ value ->
+                            Modifier.onCycle<Choice> { value ->
                                 if (verify) {
                                     events.add(Event.Action to value.id)
                                     actionValues.add(value)
                                 }
                                 if (control == CycleSelectionControl.ActionCallbackReentersSelection) state.value = choices.last()
-                            }),
+                            },
                         label = ::label,
                     )
                 }
@@ -457,13 +457,15 @@ internal class CycleSelectionFixture(
             check(frame.drawCommands.size == independent.drawCommands.size)
             frame.drawCommands.zip(independent.drawCommands).forEach { (actual, expectedCommand) ->
                 val normalized =
-                    when {
-                        actual is DrawCommand.BlitImage && expectedCommand is DrawCommand.BlitImage -> {
+                    when (actual) {
+                        is DrawCommand.BlitImage -> {
+                            check(expectedCommand is DrawCommand.BlitImage)
                             check(actual.image.copyArgb().contentEquals(expectedCommand.image.copyArgb()))
                             actual.copy(image = expectedCommand.image)
                         }
 
-                        actual is DrawCommand.SampledImage && expectedCommand is DrawCommand.SampledImage -> {
+                        is DrawCommand.SampledImage -> {
+                            check(expectedCommand is DrawCommand.SampledImage)
                             check(actual.image.copyArgb().contentEquals(expectedCommand.image.copyArgb()))
                             actual.copy(image = expectedCommand.image)
                         }
