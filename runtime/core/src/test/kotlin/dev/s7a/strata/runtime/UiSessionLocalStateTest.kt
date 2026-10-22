@@ -97,8 +97,7 @@ internal class UiSessionLocalStateTest {
     fun contentMutationAndLifecycleReentrancyPoisonTheSession() {
         val probe = TestProbe()
         val mutationHolder = LocalHolder<Int>()
-        lateinit var mutationSession: UiSession
-        mutationSession =
+        val mutationSession =
             UiSession(TestOwnerDispatcher()) {
                 mutationHolder.value = 1
                 probe.root(emptyList())
@@ -152,8 +151,7 @@ internal class UiSessionLocalStateTest {
         var frameRejected = false
         var declarationRejected = false
         var bindRejected = false
-        lateinit var session: UiSession
-        session =
+        val session =
             UiSession(dispatcher) {
                 probe.root(emptyList())
             }

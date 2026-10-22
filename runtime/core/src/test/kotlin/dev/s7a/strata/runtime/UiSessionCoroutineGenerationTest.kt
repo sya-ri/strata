@@ -271,8 +271,7 @@ internal class UiSessionCoroutineGenerationTest {
         val failureOnOwner = arrayOfNulls<Thread>(1)
         val failures = ArrayList<Throwable>()
         val holder = StateHolder()
-        lateinit var session: UiSession
-        session =
+        val session =
             UiSession(dispatcher, { failure ->
                 failures.add(failure)
                 failureOnOwner[0] = Thread.currentThread()
@@ -282,7 +281,6 @@ internal class UiSessionCoroutineGenerationTest {
             }
         val releaseWorker = CountDownLatch(1)
         var primaryFailure: Throwable? = null
-        var cleanupFailures: FailureAccumulator? = null
         try {
             holder.delegate = session.state(0)
             session.attach()
@@ -316,11 +314,8 @@ internal class UiSessionCoroutineGenerationTest {
         } finally {
             val cleanup = cleanupWorkerStateAccess(session, worker, workerExecutor, releaseWorker, primaryFailure)
             if (primaryFailure == null) {
-                cleanupFailures = cleanup
+                cleanup.throwIfPresent()
             }
-        }
-        if (primaryFailure == null) {
-            cleanupFailures?.throwIfPresent()
         }
     }
 
