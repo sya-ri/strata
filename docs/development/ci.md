@@ -163,7 +163,7 @@ The declaration export validates each JVM owner's configured toolchain against a
 The bootstrap registers the SDK's actual JRT modules in a disposable IDE configuration; verification checks the generated table, imported SDKs and each module binding against the fresh declarations.
 The IDE may register its own SDK for source-free modules; every declared compiler SDK still requires one unchanged table entry and its original module bindings.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
-Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM implementation and test roots remain in the owning JVM module.
+Production common source sets retain separate analysis modules and their configured `dependsOn` relationships; JVM main and test compilations each retain their own module.
 Each common source-set fragment uses the owning JVM main compilation's platform, binary libraries and project dependencies, with the original compile/runtime scopes and no test dependencies.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
 Detekt reads each project's declared Kotlin source sets, including shared roots and compiled documentation examples.
@@ -180,7 +180,7 @@ No synthetic fallback library or cross-variant friend relationship substitutes f
 Analysis failures and error notifications fail completeness verification even when the inspection finding count is zero.
 Every SARIF run must identify the selected revision and explicitly record successful analysis invocations.
 The verifier also requires resolved Kotlin source owners and recorded Kotlin inspection work; matching exported metadata alone is insufficient.
-Kotlin facets retain the owning JVM compilation's module name, explicit API mode and bytecode target; common fragments identify their source set and declared refinement edges, while the owning JVM module retains its test friend paths.
+Kotlin facets retain the owning JVM compilation's module name, explicit API mode, bytecode target and friend paths; common fragments identify their source set and declared refinement edges.
 `UnusedSymbol` and `RedundantVisibilityModifier` remain enabled without path exclusions; Mixin annotations identify framework entry points.
 
 Bootstrap disables configuration on demand and sets `strata.completeIdeaModel` plus `fabric.loom.ci`.
