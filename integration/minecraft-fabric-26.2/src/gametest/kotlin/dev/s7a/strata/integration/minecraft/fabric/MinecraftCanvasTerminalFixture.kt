@@ -110,25 +110,27 @@ internal class MinecraftCanvasTerminalFixture {
         val remainingElements = countElements(state)
         val remainingTargets = NativeCanvasDevices.retainedTargetCount()
         val remainingPortableSets = NativeCanvasDevices.retainedGuiResourceSetCount()
+        val receipt =
+            mapOf(
+                "backend" to checkNotNull(backend).name,
+                "backendDescription" to backendDescription,
+                "queuedElementsBefore" to queuedElements.toString(),
+                "queuedElementsAdded" to elementsAdded.toString(),
+                "queuedBlitsAdded" to blitsAdded.toString(),
+                "queuedElementsAfter" to remainingElements.toString(),
+                "targetsBefore" to retainedTargets.toString(),
+                "targetsAfter" to remainingTargets.toString(),
+                "portableSetsBefore" to retainedPortableSets.toString(),
+                "portableSetsAfter" to remainingPortableSets.toString(),
+                "renderersOpened" to renderersOpened.toString(),
+                "renderCalls" to renderCalls.toString(),
+                "renderersClosed" to renderersClosed.toString(),
+            )
         check(remainingElements == 0) { "Production shutdown left native GUI references queued." }
         check(remainingTargets == 0) { "Production shutdown did not acknowledge physical Canvas target destruction." }
         check(remainingPortableSets == 0) { "Production shutdown did not acknowledge physical portable GUI resource destruction." }
         check(renderersOpened == 1 && renderCalls == 1 && renderersClosed == 1) { "Production shutdown did not release the renderer exactly once after its last GPU work." }
-        return mapOf(
-            "backend" to checkNotNull(backend).name,
-            "backendDescription" to backendDescription,
-            "queuedElementsBefore" to queuedElements.toString(),
-            "queuedElementsAdded" to elementsAdded.toString(),
-            "queuedBlitsAdded" to blitsAdded.toString(),
-            "queuedElementsAfter" to remainingElements.toString(),
-            "targetsBefore" to retainedTargets.toString(),
-            "targetsAfter" to remainingTargets.toString(),
-            "portableSetsBefore" to retainedPortableSets.toString(),
-            "portableSetsAfter" to remainingPortableSets.toString(),
-            "renderersOpened" to renderersOpened.toString(),
-            "renderCalls" to renderCalls.toString(),
-            "renderersClosed" to renderersClosed.toString(),
-        )
+        return receipt
     }
 
     private fun definition(source: CanvasSource): ScreenDefinition =
