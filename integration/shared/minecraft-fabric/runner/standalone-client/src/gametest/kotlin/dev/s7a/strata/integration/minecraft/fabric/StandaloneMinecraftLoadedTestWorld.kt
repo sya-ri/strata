@@ -1,9 +1,6 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
-import net.minecraft.client.gui.screens.GenericMessageScreen
-import net.minecraft.client.gui.screens.ReceivingLevelScreen
 import net.minecraft.client.gui.screens.TitleScreen
-import net.minecraft.network.chat.Component
 import net.minecraft.server.MinecraftServer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -34,15 +31,14 @@ internal class StandaloneMinecraftLoadedTestWorld(
 
     override fun awaitReady() {
         context.waitFor(WORLD_TIMEOUT_TICKS) { minecraft ->
-            minecraft.level != null && minecraft.player != null && minecraft.screen !is ReceivingLevelScreen
+            minecraft.level != null && minecraft.player != null && minecraft.screen == null
         }
         context.waitTicks(2)
     }
 
     override fun close() {
         context.computeOnClient { minecraft ->
-            minecraft.level?.disconnect()
-            minecraft.disconnect(GenericMessageScreen(Component.translatable("menu.savingLevel")))
+            MinecraftStandaloneWorldAccess.disconnect(minecraft)
         }
         context.waitFor(WORLD_TIMEOUT_TICKS) { minecraft -> minecraft.level == null && server.isRunning.not() }
         context.computeOnClient { minecraft -> minecraft.setScreen(TitleScreen()) }

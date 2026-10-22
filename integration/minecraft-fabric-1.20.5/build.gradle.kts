@@ -65,6 +65,8 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-graphics/src/gametest/kotlin"),
         )
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/synchronous/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/classic/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/version-field/src/gametest/kotlin"))
         kotlin.srcDirs(
             rootProject.file("integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin"),

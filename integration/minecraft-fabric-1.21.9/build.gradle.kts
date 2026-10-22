@@ -27,8 +27,17 @@ fabricApi {
         createSourceSet = true
         modId = "strata-integration-minecraft-fabric-1-21-9"
         enableGameTests = false
-        enableClientGameTests = true
+        enableClientGameTests = false
         eula = true
+    }
+}
+
+loom {
+    runs.register("clientGameTest") {
+        client()
+        sourceSet.set("gametest")
+        runDirectory.set(layout.buildDirectory.dir("run/clientGameTest"))
+        generateRunConfig.set(false)
     }
 }
 
@@ -43,7 +52,9 @@ extensions.configure<KotlinJvmProjectExtension> {
             rootProject.file("integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin"),
             rootProject.file("integration/shared/minecraft-fabric/transport/gui-graphics/src/gametest/kotlin"),
         )
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/callback/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/return-callback/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/version-accessor/src/gametest/kotlin"))
         kotlin.srcDirs(
             rootProject.file("integration/shared/minecraft-fabric/input/event-callbacks/src/gametest/kotlin"),
@@ -104,7 +115,6 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     dependsOn(deleteProductionGameTestRunDir, ":runtime:minecraft-fabric-1.21.9:remapJar")
     mods.from(runtimeRemappedJar)
     runDir.set(productionRunDirectory)
-    jvmArgs.add("-Dfabric.client.gametest")
     val verificationOutput = layout.buildDirectory.dir("minecraft-production-verification")
     jvmArgs.add(verificationOutput.map { directory -> "-Dstrata.minecraftLegacyOutput=${directory.asFile.absolutePath}" })
     jvmArgs.add(libs.versions.minecraft1219.map { version -> "-Dstrata.minecraftVersion=$version" })

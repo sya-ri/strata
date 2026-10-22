@@ -5,12 +5,10 @@ import dev.s7a.strata.geometry.IntSize
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.Minecraft
-import net.minecraft.client.Screenshot
 import net.minecraft.client.gui.components.AbstractButton
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen
 import net.minecraft.network.chat.Component
-import net.minecraft.world.level.GameRules
 import net.minecraft.world.level.levelgen.presets.WorldPresets
 import org.lwjgl.glfw.GLFW
 import java.nio.file.Path
@@ -20,7 +18,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Coordinates loaded-client verification on releases predating Fabric Client GameTest.
+ * Coordinates loaded-client verification through native client-thread, tick, image, and world boundaries.
  *
  * The context owns one tick signal registration for the process lifetime and schedules all Minecraft access on the client thread. Calls originate from the standalone test thread and fail when the client stops responding.
  */
@@ -70,7 +68,7 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
             val rawX = position.x.toDouble() * window.screenWidth / window.guiScaledWidth
             val rawY = position.y.toDouble() * window.screenHeight / window.guiScaledHeight
             GLFW.glfwSetCursorPos(
-                minecraft.window.window,
+                minecraftTestWindowHandle(),
                 rawX,
                 rawY,
             )
@@ -101,31 +99,17 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
                 method.name == callbackName && method.parameterTypes.contentEquals(parameterTypes)
             }
         check(callback.trySetAccessible()) { "The native Minecraft pointer callback is inaccessible." }
-        callback.invoke(handler, minecraft.window.window, rawX, rawY)
+        callback.invoke(handler, minecraftTestWindowHandle(), rawX, rawY)
     }
 
     override fun takeScreenshot(
         name: String,
         output: Path,
         size: IntSize,
-    ): Path {
-        val destination = output.resolve("$name.png")
-        computeOnClient { minecraft ->
-            Screenshot.takeScreenshot(minecraft.mainRenderTarget).use { image ->
-                require(image.getWidth() == size.width && image.getHeight() == size.height) {
-                    "The loaded client did not honor the configured verification viewport: " +
-                        "expected=${size.width}x${size.height}, screenshot=${image.getWidth()}x${image.getHeight()}, " +
-                        "window=${minecraft.window.width}x${minecraft.window.height}, " +
-                        "target=${minecraft.mainRenderTarget.width}x${minecraft.mainRenderTarget.height}."
-                }
-                image.writeToFile(destination)
-            }
-        }
-        return destination
-    }
+    ): Path = captureStandaloneMinecraftScreenshot(this, name, output, size)
 
     override fun createSingleplayerWorld(): MinecraftLoadedTestWorld {
-        computeOnClient { minecraft -> CreateWorldScreen.openFresh(minecraft, minecraft.screen) }
+        computeOnClient { minecraft -> MinecraftStandaloneWorldAccess.open(minecraft) }
         waitFor(WORLD_TIMEOUT_TICKS) { minecraft -> minecraft.screen is CreateWorldScreen }
         waitTicks(2)
 
@@ -136,9 +120,7 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
                 screen.uiState.setWorldType(screen.uiState.normalPresetList.single { it.preset()?.`is`(WorldPresets.FLAT) == true })
                 screen.uiState.setSeed("1")
                 screen.uiState.setGenerateStructures(false)
-                screen.uiState.gameRules
-                    .getRule(GameRules.RULE_DOMOBSPAWNING)
-                    .set(false, null)
+                MinecraftStandaloneWorldAccess.configure(screen)
                 val targetFolder = screen.uiState.targetFolder
                 pressButton(screen, "selectWorld.create")
                 targetFolder
@@ -163,7 +145,7 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
                 }
             }
         }
-        checkNotNull(match.get()) { "Could not find the create-world button." }.onPress()
+        MinecraftStandaloneWorldAccess.press(checkNotNull(match.get()) { "Could not find the create-world button." })
     }
 
     private companion object {

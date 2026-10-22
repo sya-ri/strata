@@ -61,7 +61,7 @@ Performance collection is serial and runs without other builds or clients on the
 Combining that property with an explicitly fixed parallel ceiling fails during configuration.
 Passing correctness checks in parallel does not establish controlled performance evidence.
 
-Client tasks seed disposable project-build run directories after cleanup, disabling accessibility onboarding, tutorials, narration, and sound.
+Client tasks seed disposable project-build run directories after cleanup, disabling accessibility onboarding, tutorials, narration, sound, and pausing when the test window loses focus.
 The Canvas/Slot oracle temporarily hides the HUD and restores it even on failure, preventing late tutorial/recipe toasts from covering pixels.
 Ordinary client launches and personal settings are unaffected; frame fences and pixel assertions remain enabled.
 
