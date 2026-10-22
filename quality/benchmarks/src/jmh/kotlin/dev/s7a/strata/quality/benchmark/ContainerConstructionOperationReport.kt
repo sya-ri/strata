@@ -67,7 +67,7 @@ public object ContainerConstructionOperationReport : JvmOperationReportAdapter {
             try {
                 scene.setUp()
                 val sample =
-                    JvmPerformanceRunner.measure<Any>(
+                    JvmPerformanceRunner.measure(
                         case.row.id,
                         plan,
                         afterOperation = { _, result ->

@@ -54,7 +54,7 @@ internal class CanvasSourceTest {
         var closes = 0
         val source =
             canvasSource(
-                StateSource {
+                {
                     subscriptions += 1
                     StateSubscription(initial) { closes += 1 }
                 },
@@ -76,7 +76,7 @@ internal class CanvasSourceTest {
         val initial = snapshot(1)
         val latest = snapshot(2)
         val source =
-            StateSource<DrawImage> { observer ->
+            StateSource { observer ->
                 observer(latest)
                 StateSubscription(initial) {}
             }
@@ -103,7 +103,7 @@ internal class CanvasSourceTest {
         binding.use { _ ->
             val initialImage = paintedImage(binding)
             val task =
-                FutureTask<Unit> {
+                FutureTask {
                     (2..500).forEach { revision -> observer(snapshot(revision.toLong())) }
                 }
             Thread(task).start()
@@ -153,7 +153,7 @@ internal class CanvasSourceTest {
         var closes = 0
         val binding =
             canvasSource(
-                StateSource { callback ->
+                { callback ->
                     observer = callback
                     StateSubscription(snapshot(1)) { closes += 1 }
                 },
@@ -173,7 +173,7 @@ internal class CanvasSourceTest {
         val empty = createDrawImage(IntSize.Zero, intArrayOf())
         val source =
             canvasSource(
-                StateSource {
+                {
                     StateSubscription(StateSnapshot(StateRevision(0), empty)) {
                         closes += 1
                         throw cleanupFailure

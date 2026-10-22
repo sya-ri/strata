@@ -93,7 +93,7 @@ internal class ScreenDefinitionTest {
             val ready = CountDownLatch(2)
             val start = CountDownLatch(1)
             val transfer =
-                FutureTask<Boolean> {
+                FutureTask {
                     ready.countDown()
                     start.await(5, TimeUnit.SECONDS)
                     runCatching {
@@ -102,7 +102,7 @@ internal class ScreenDefinitionTest {
                     }.isSuccess
                 }
             val close =
-                FutureTask<Boolean> {
+                FutureTask {
                     ready.countDown()
                     start.await(5, TimeUnit.SECONDS)
                     definition.close()

@@ -21,7 +21,7 @@ internal class RuntimeParityTest {
         val snapshots = ArrayList<List<String>>()
         createMinecraftUiHost(scenario.definition(), ParityProfile.create()).use { host ->
             host.attach()
-            val actions = listOf<() -> Unit>({}, scenario::advance, scenario::toggle, scenario::reorder, scenario::toggle)
+            val actions = listOf({}, scenario::advance, scenario::toggle, scenario::reorder, scenario::toggle)
             for (action in actions) {
                 action()
                 val frame = host.frame(ReactiveScenario.viewport)

@@ -112,7 +112,7 @@ internal class MinecraftCanvasTestFixture(
 
     private fun textureSource(origin: MinecraftCanvasTextureOrigin): CanvasSource =
         canvasSource(
-            MinecraftCanvasTextureProvider {
+            {
                 val lease = resources.lease(origin)
                 check(lease.snapshot == null) { "Native acceptance must not supply a CPU snapshot." }
                 leasesOpened++

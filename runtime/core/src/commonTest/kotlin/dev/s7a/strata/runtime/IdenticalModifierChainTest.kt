@@ -283,7 +283,7 @@ internal class IdenticalModifierChainTest {
         val modifiers = chain(List(8) { CountingModifier(probe) })
         val generation = mutableStateOf(0)
         val source = mutableStateOf(0)
-        val stable = StateSource<Unit> { StateSubscription(StateSnapshot(StateRevision(0), Unit)) { } }
+        val stable = StateSource { StateSubscription(StateSnapshot(StateRevision(0), Unit)) { } }
         val seen = ArrayList<Pair<Int, Int>>()
         createRuntimeUiSession {
             val parentValue = generation.value

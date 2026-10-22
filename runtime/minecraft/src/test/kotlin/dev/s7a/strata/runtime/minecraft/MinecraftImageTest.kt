@@ -261,7 +261,7 @@ internal class MinecraftImageTest {
                     val background = Modifier.imageBackground(source)
                     val runtime = ComponentRuntimeBridge.current()
                     val task =
-                        FutureTask<Throwable?> {
+                        FutureTask {
                             runCatching {
                                 runtime.image(source, null, null, Modifier, null)
                             }.exceptionOrNull()

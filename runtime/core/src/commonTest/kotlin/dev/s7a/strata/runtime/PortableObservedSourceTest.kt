@@ -98,7 +98,7 @@ internal class PortableObservedSourceTest {
         var subscriptions = 0
         var releases = 0
         val source =
-            StateSource<Int> { observer ->
+            StateSource { observer ->
                 subscriptions += 1
                 deliver = observer
                 StateSubscription(StateSnapshot(StateRevision(0), 0)) {

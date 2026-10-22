@@ -352,7 +352,7 @@ internal class MinecraftUiProfileTest {
         val release = CountDownLatch(1)
         var escaped: MinecraftUiProfileBuilder? = null
         val creation =
-            FutureTask<Throwable?> {
+            FutureTask {
                 runCatching {
                     createMinecraftUiProfile {
                         escaped = this
@@ -368,7 +368,7 @@ internal class MinecraftUiProfileTest {
         try {
             assertTrue(entered.await(5, TimeUnit.SECONDS))
             val wrongThread =
-                FutureTask<Throwable?> {
+                FutureTask {
                     runCatching {
                         checkNotNull(escaped).menuBackground(image(IntSize(16, 16)))
                     }.exceptionOrNull()
@@ -392,7 +392,7 @@ internal class MinecraftUiProfileTest {
         val start = CountDownLatch(1)
         val tasks =
             List(2) {
-                FutureTask<Boolean> {
+                FutureTask {
                     var host: MinecraftUiHost? = null
                     try {
                         ready.countDown()

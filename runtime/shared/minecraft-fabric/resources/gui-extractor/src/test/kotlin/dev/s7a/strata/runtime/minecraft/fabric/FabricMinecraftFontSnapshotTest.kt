@@ -99,7 +99,7 @@ internal class FabricMinecraftFontSnapshotTest {
             ),
             reads.toSet(),
         )
-        MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { ResourceFontBackend() }).use { engine ->
+        MinecraftFontEngine(snapshot, { ResourceFontBackend() }).use { engine ->
             val font = ResourceId("minecraft", "default")
             assertEquals(9.0f, engine.glyph(font, 'A'.code).advance)
             assertEquals(2.0f, engine.glyph(font, 'L'.code).advance)

@@ -96,7 +96,7 @@ internal class ApiContractTest {
 
     @Test
     fun textSnapshotsCollectionsPreserveValueSemanticsAndFallbacks() {
-        val arguments = mutableListOf<UiTextArgument>(UiTextArgument.IntValue(4), UiTextArgument.LongValue(5))
+        val arguments = mutableListOf(UiTextArgument.IntValue(4), UiTextArgument.LongValue(5))
         val parts = mutableListOf<UiText>(UiText.Literal("a"), UiText.Literal("b"))
         val translated = UiText.Translated("greeting", arguments, TranslationFallback.UseKey)
         val concatenated = UiText.Concatenated(parts)

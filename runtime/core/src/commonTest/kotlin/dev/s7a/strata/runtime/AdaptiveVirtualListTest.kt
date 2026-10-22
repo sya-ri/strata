@@ -126,7 +126,7 @@ internal class AdaptiveVirtualListTest {
     @Test
     fun nestedObservedRowsAreAttachedBeforeTheirFirstMeasurement() {
         val state = VirtualListState<Int>()
-        val height = StateSource<Int> { StateSubscription(StateSnapshot(StateRevision(0), 8)) {} }
+        val height = StateSource { StateSubscription(StateSnapshot(StateRevision(0), 8)) {} }
         val tree = UiTree()
         tree.update(
             evaluateComponentTree {

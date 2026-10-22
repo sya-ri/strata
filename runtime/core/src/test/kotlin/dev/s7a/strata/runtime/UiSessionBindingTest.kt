@@ -103,7 +103,7 @@ internal class UiSessionBindingTest {
         session.attach()
         session.frame(Constraints.fixed(2, 1))
         val task =
-            FutureTask<Unit> {
+            FutureTask {
                 (1..500).forEach { revision ->
                     source.publish(StateSnapshot(StateRevision(revision.toLong()), revision.toString()))
                 }
@@ -237,7 +237,7 @@ internal class UiSessionBindingTest {
         var closeCount = 0
         lateinit var session: UiSession
         val source =
-            StateSource<Int> { _ ->
+            StateSource { _ ->
                 StateSubscription(StateSnapshot(StateRevision(1), 1)) {
                     closeCount += 1
                     session.close()
@@ -375,7 +375,7 @@ internal class UiSessionBindingTest {
         assertEquals(UiSessionState.Created, session.lifecycleState)
         var closeCount = 0
         val validSource =
-            StateSource<Int> { _ ->
+            StateSource { _ ->
                 StateSubscription(StateSnapshot(StateRevision(1), 1)) { closeCount += 1 }
             }
         session.bind(validSource)

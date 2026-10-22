@@ -77,7 +77,7 @@ internal class MinecraftTextAreaFixture(
             "assets/test/font/area.ttf" to byteArrayOf(1),
         )
     private val profile = MinecraftProfileFixture.create(fontSnapshot = snapshot)
-    private val renderer = MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = cacheEntries))
+    private val renderer = MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = cacheEntries))
 
     /**
      * Supplies borrowed controller inputs for direct invalidation-count tests without adding production instrumentation.

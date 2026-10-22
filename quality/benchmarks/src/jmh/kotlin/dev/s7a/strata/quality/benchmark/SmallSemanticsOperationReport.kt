@@ -40,7 +40,7 @@ public object SmallSemanticsOperationReport : JvmOperationReportAdapter {
                 try {
                     scene.setUp()
                     val sample =
-                        JvmPerformanceRunner.measure<RuntimeUiFrame>(row.id, plan) {
+                        JvmPerformanceRunner.measure(row.id, plan) {
                             benchmark.collect(scene)
                         }
                     check(reports.put(row.id, sample.evidence) == null)

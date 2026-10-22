@@ -148,7 +148,7 @@ internal class UiSessionCoroutineGenerationTest {
         session.attach()
         session.screenScope.launch { bodyRan[0] = true }
         val task =
-            FutureTask<Throwable?> {
+            FutureTask {
                 runCatching { dispatcher.drain() }.exceptionOrNull()
             }
         val thread = Thread(task)
@@ -536,7 +536,7 @@ internal class UiSessionCoroutineGenerationTest {
     }
 
     private fun readJobOnWorker(scope: CoroutineScope): Job? {
-        val task = FutureTask<Job?> { scope.coroutineContext[Job] }
+        val task = FutureTask { scope.coroutineContext[Job] }
         val thread = Thread(task)
         thread.start()
         return task.get(5, TimeUnit.SECONDS)

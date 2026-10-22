@@ -45,7 +45,7 @@ internal class ObservedSourceRetentionTest {
         var callback: ((StateSnapshot<Any>) -> Unit)? = null
         val failure = IllegalStateException("Terminal observation fixture failure.")
         val source =
-            StateSource<Any> { observer ->
+            StateSource { observer ->
                 callback = observer
                 StateSubscription(StateSnapshot(StateRevision(0), Any())) {
                     if (termination == Termination.CloseFailure) throw failure

@@ -72,7 +72,7 @@ internal object RemoteInventoryArguments {
         }
         require(
             fixtures.all { fixture ->
-                generateSequence<Class<*>>(fixture) { it.superclass }.all { type ->
+                generateSequence(fixture) { it.superclass }.all { type ->
                     type.isAnnotationPresent(Fork::class.java).not() && type.declaredMethods.none { it.isAnnotationPresent(Fork::class.java) }
                 }
             },

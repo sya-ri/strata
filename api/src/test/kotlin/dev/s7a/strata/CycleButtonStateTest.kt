@@ -97,7 +97,7 @@ internal class CycleButtonStateTest {
     @Test
     fun collectionFactoryKeepsExistingOptionValidation() {
         assertThrows(IllegalArgumentException::class.java) {
-            CycleButtonState(emptyList<Int>(), 0) { value -> value.toString() }
+            CycleButtonState(emptyList(), 0) { value -> value.toString() }
         }
         assertThrows(IllegalArgumentException::class.java) {
             CycleButtonState(listOf(1, 1), 1) { value -> value.toString() }

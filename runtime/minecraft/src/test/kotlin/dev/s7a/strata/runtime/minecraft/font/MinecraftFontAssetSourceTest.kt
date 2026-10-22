@@ -70,7 +70,7 @@ internal class MinecraftFontAssetSourceTest {
             assertArrayEquals(definition.second, source.read(definition.first))
             assertNull(source.read("assets/test/missing"))
             val snapshot = MinecraftFontSnapshot.load(listOf(source), FontTestResources.compatibility)
-            MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { FontTestBackend() }).use { engine ->
+            MinecraftFontEngine(snapshot, { FontTestBackend() }).use { engine ->
                 assertEquals(8.0f, engine.glyph(FontTestResources.defaultFont, '日'.code).advance)
             }
         }
@@ -121,7 +121,7 @@ internal class MinecraftFontAssetSourceTest {
                     bytes[0] = 99
                     createDrawImage(IntSize(1, 1), intArrayOf(-1))
                 })
-            MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }).use { engine ->
+            MinecraftFontEngine(snapshot, { backend }).use { engine ->
                 assertEquals(9.0f, engine.glyph(FontTestResources.defaultFont, '日'.code).advance)
             }
         }

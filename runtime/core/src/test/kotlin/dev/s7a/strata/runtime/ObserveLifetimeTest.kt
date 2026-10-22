@@ -100,7 +100,7 @@ internal class ObserveLifetimeTest {
         var releases = 0
         var callback: ((StateSnapshot<Int>) -> Unit)? = null
         val broken =
-            StateSource<Int> { observer ->
+            StateSource { observer ->
                 callback = observer
                 StateSubscription(StateSnapshot(StateRevision(0), 0)) {
                     releases += 1

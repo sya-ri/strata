@@ -45,8 +45,8 @@ internal class CycleButtonConstructionTest {
     @Test
     fun listAndNonListConstructionPreserveValidationAndConversionFailures() {
         val convert: (Int) -> String = Int::toString
-        val emptyListFailure = assertFailsWith<IllegalArgumentException> { CycleButtonState(emptyList<Int>(), 0, convert) }
-        val emptyCollectionFailure = assertFailsWith<IllegalArgumentException> { CycleButtonState(emptySet<Int>(), 0, convert) }
+        val emptyListFailure = assertFailsWith<IllegalArgumentException> { CycleButtonState(emptyList(), 0, convert) }
+        val emptyCollectionFailure = assertFailsWith<IllegalArgumentException> { CycleButtonState(emptySet(), 0, convert) }
         assertEquals("CycleButton values must not be empty.", emptyListFailure.message)
         assertEquals(emptyListFailure.message, emptyCollectionFailure.message)
         val duplicate = assertFailsWith<IllegalArgumentException> { CycleButtonState(listOf(1, 1), 1, convert) }

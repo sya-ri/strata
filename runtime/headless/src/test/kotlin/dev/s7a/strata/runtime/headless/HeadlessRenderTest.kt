@@ -65,7 +65,7 @@ internal class HeadlessRenderTest {
         var closes = 0
         val source =
             canvasSource(
-                StateSource<DrawImage> { observer ->
+                StateSource { observer ->
                     observer(StateSnapshot(StateRevision(2), latest))
                     StateSubscription(StateSnapshot(StateRevision(1), initial)) { closes += 1 }
                 },

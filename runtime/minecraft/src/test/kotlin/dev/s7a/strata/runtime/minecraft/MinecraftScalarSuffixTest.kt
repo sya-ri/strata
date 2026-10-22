@@ -149,6 +149,6 @@ internal class MinecraftScalarSuffixTest {
                     MinecraftFontGlyph(metrics.getValue(codePoint), 0f, 0f, 0f, 0f, null)
                 })
             })
-        return MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0))
+        return MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0))
     }
 }

@@ -170,7 +170,7 @@ internal class CanvasSessionTest {
         lateinit var observer: (StateSnapshot<ComparisonValue>) -> Unit
         val session = session(source)
         session.bind(
-            StateSource { callback ->
+            { callback ->
                 observer = callback
                 StateSubscription(StateSnapshot(StateRevision(1), ComparisonValue(1) { frames.publish(later) })) {}
             },

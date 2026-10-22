@@ -41,7 +41,7 @@ internal class RemoteClientStateLifecycleTest {
             assertSame(
                 failure,
                 assertThrows(IllegalStateException::class.java) {
-                    states.flushEdits(RemoteClientActions { _, _, _ -> throw failure })
+                    states.flushEdits({ _, _, _ -> throw failure })
                 },
             )
             states.flushEdits(actions)

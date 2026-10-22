@@ -258,7 +258,7 @@ public open class StressRenderingBenchmark {
         private fun fresh(independent: Boolean = false): MinecraftUiHost {
             // Independent lifecycle hosts must not claim the existing retained list/editor state.
             val editor = if (independent) TextFieldState(field.value, field.maxLength) else field
-            val list = if (independent) VirtualListState<Int>() else navigation
+            val list = if (independent) VirtualListState() else navigation
             return createMinecraftUiHost(
                 UiDefinition("Stress ${workload.name}") {
                     Stack {

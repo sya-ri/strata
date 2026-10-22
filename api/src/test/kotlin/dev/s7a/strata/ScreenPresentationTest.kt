@@ -39,7 +39,7 @@ internal class ScreenPresentationTest {
         var received: ScreenDefinition? = null
         ScreenPresenters
             .install(
-                ScreenPresenter { candidate ->
+                { candidate ->
                     received = candidate
                     candidate.transfer()
                 },
@@ -54,9 +54,9 @@ internal class ScreenPresentationTest {
     @Test
     fun duplicateRegistrationFailsWithoutReplacingCurrentPresenter() {
         val calls = mutableListOf<String>()
-        ScreenPresenters.install(ScreenPresenter { definition -> calls += definition.transfer().literalTitle() }).use { first ->
+        ScreenPresenters.install({ definition -> calls += definition.transfer().literalTitle() }).use { first ->
             assertThrows(IllegalStateException::class.java) {
-                ScreenPresenters.install(ScreenPresenter { calls += "replacement" })
+                ScreenPresenters.install({ calls += "replacement" })
             }
             ScreenDefinition("current") {}.open()
         }
@@ -71,7 +71,7 @@ internal class ScreenPresentationTest {
         first.close()
         first.close()
 
-        ScreenPresenters.install(ScreenPresenter { definition -> definition.transfer() }).use { second ->
+        ScreenPresenters.install({ definition -> definition.transfer() }).use { second ->
             ScreenDefinition("replacement") {}.open()
         }
     }
@@ -93,14 +93,14 @@ internal class ScreenPresentationTest {
         val definition = ScreenDefinition("thread") {}
         ScreenPresenters
             .install(
-                ScreenPresenter {
+                {
                     throw ScreenOpenThreadException("Test presenter requires its owner thread.")
                 },
             ).use { wrongThread ->
                 assertThrows(ScreenOpenThreadException::class.java) { definition.open() }
             }
 
-        ScreenPresenters.install(ScreenPresenter { candidate -> candidate.transfer() }).use { ownerThread ->
+        ScreenPresenters.install({ candidate -> candidate.transfer() }).use { ownerThread ->
             definition.open()
         }
     }
@@ -111,7 +111,7 @@ internal class ScreenPresentationTest {
         val expected = IllegalArgumentException("presentation")
         ScreenPresenters
             .install(
-                ScreenPresenter { candidate ->
+                { candidate ->
                     candidate.transfer()
                     throw expected
                 },

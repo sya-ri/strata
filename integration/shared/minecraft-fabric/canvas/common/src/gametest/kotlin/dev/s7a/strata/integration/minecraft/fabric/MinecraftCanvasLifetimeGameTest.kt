@@ -154,7 +154,7 @@ internal object MinecraftCanvasLifetimeGameTest {
         context.onClient {
             val empty =
                 canvasSource(
-                    MinecraftCanvasTextureProvider {
+                    {
                         emptyCaptures++
                         null
                     },

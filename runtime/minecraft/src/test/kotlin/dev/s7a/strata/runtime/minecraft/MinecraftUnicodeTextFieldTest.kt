@@ -76,7 +76,7 @@ internal class MinecraftUnicodeTextFieldTest {
         }
         assertEquals("xyz", state.value)
 
-        val wrongThread = FutureTask<Throwable?> { runCatching { state.value }.exceptionOrNull() }
+        val wrongThread = FutureTask { runCatching { state.value }.exceptionOrNull() }
         val thread = Thread(wrongThread)
         thread.start()
         try {
@@ -563,7 +563,7 @@ internal class MinecraftUnicodeTextFieldTest {
                 TextField(state, size, ResourceId("example", "compact"), modifier = Modifier.initialFocus())
             },
             MinecraftProfileFixture.create(fontSnapshot = snapshot),
-            MinecraftFontBackendFactory { backend },
+            { backend },
         )
     }
 

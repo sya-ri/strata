@@ -110,7 +110,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val image = createDrawImage(IntSize(2, 1), intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt()))
         val definition =
             createApiOnlyCanvasDefinition(
-                frames = StateSource { StateSubscription(StateSnapshot(StateRevision(1), image)) {} },
+                frames = { StateSubscription(StateSnapshot(StateRevision(1), image)) {} },
                 size = IntSize(4, 2),
                 onCancel = {},
                 onPointerEvent = { _, _ -> InputResult.Ignored },
@@ -132,7 +132,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val image = createDrawImage(size, intArrayOf(0xFFFF0000.toInt(), 0xFF00FF00.toInt()))
         val definition =
             createApiOnlyTiledImageDefinition(
-                frames = StateSource { StateSubscription(StateSnapshot(StateRevision(1), TiledImageTile.Ready(image))) {} },
+                frames = { StateSubscription(StateSnapshot(StateRevision(1), TiledImageTile.Ready(image))) {} },
                 size = size,
             )
         createMinecraftUiHost(definition, profile()).use { host ->

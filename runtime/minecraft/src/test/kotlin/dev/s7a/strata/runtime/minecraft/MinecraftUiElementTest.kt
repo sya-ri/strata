@@ -364,7 +364,7 @@ internal class MinecraftUiElementTest {
     @Test
     fun everyNonLiteralAndUnsupportedLiteralFormFailsWithoutFallback() {
         val unsupported =
-            listOf<UiText>(
+            listOf(
                 UiText.Translated("menu.title"),
                 UiText.Concatenated(UiText.Literal("A")),
                 UiText.Platform(object : PlatformText {}),
@@ -436,7 +436,7 @@ internal class MinecraftUiElementTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition(UiText.Literal("test")) {
-                    val task = FutureTask<Throwable?> { runCatching { Modifier.menuBackground() }.exceptionOrNull() }
+                    val task = FutureTask { runCatching { Modifier.menuBackground() }.exceptionOrNull() }
                     val runner = Thread(task)
                     wrongThreadRunner = runner
                     runner.start()

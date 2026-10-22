@@ -48,7 +48,7 @@ public object NativeCanvasPresentationOperationReport : JvmOperationReportAdapte
                 try {
                     scene.setUp()
                     val sample =
-                        JvmPerformanceRunner.measure<Any>(row.id, plan) {
+                        JvmPerformanceRunner.measure(row.id, plan) {
                             when (operation) {
                                 Operation.Publish -> benchmark.publishMembership(scene)
                                 Operation.Prepare -> benchmark.prepareBatch(scene)

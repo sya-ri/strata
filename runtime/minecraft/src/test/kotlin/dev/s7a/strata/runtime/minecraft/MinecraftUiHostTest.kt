@@ -283,7 +283,7 @@ internal class MinecraftUiHostTest {
         assertEquals(0, platformCloses)
         val failure =
             assertThrows(IllegalStateException::class.java) {
-                createMinecraftUiHost(definition, profile, platform, MinecraftFontBackendFactory { throw expected })
+                createMinecraftUiHost(definition, profile, platform, { throw expected })
             }
         assertSame(expected, failure)
         assertEquals(0, evaluations)
@@ -544,7 +544,7 @@ internal class MinecraftUiHostTest {
         }
 
     private fun wrongThread(action: () -> Unit): Throwable? {
-        val task = FutureTask<Throwable?> { runCatching(action).exceptionOrNull() }
+        val task = FutureTask { runCatching(action).exceptionOrNull() }
         val thread = Thread(task)
         thread.start()
         return task.get(5, TimeUnit.SECONDS)

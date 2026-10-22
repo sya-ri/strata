@@ -170,7 +170,7 @@ internal class UiSessionLocalStateTest {
                     bindRejected =
                         runCatching {
                             session.bind(
-                                StateSource<Int> { _ ->
+                                StateSource { _ ->
                                     StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
                                 },
                             )

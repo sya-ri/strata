@@ -270,7 +270,7 @@ internal object MinecraftCanvasPointerGameTest {
     ) {
         val before = scene.traceCounts()
         val events =
-            listOf<() -> Any>(
+            listOf(
                 { screen.movePointer(inside) },
                 { context.pressPointer(screen, inside) },
                 { context.dragPointer(screen, dragPosition, dragDelta) },

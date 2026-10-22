@@ -40,7 +40,7 @@ internal class UiSessionLifecycleFailureTest {
         session.attach()
 
         val task =
-            FutureTask<Throwable?> {
+            FutureTask {
                 runCatching { session.frame(Constraints.fixed(2, 1)) }.exceptionOrNull()
             }
         val thread = Thread(task)
@@ -109,7 +109,7 @@ internal class UiSessionLifecycleFailureTest {
         var lifecycleRejected = false
         lateinit var session: UiSession
         val source =
-            StateSource<Int> { _ ->
+            StateSource { _ ->
                 StateSubscription(StateSnapshot(StateRevision(1), 1)) {}
             }
         session =
