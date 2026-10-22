@@ -5,7 +5,9 @@ name: Documentation
     - master
     paths:
     - api/**
-    - runtime/**
+    - runtime/**/src/main/**
+    - runtime/**/src/*Main/**
+    - runtime/**/*.gradle.kts
     - paper-api/**
     - velocity-api/**
     - examples/**
