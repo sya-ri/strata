@@ -4,6 +4,8 @@ import net.minecraft.resources.Identifier
 import net.minecraft.server.packs.resources.Resource
 import net.minecraft.server.packs.resources.ResourceManager
 import org.junit.jupiter.api.Assertions.assertEquals
+import java.io.BufferedReader
+import java.io.InputStream
 import java.util.Optional
 import java.util.function.Predicate
 
@@ -17,6 +19,13 @@ internal fun observedFontResources(
     checkReading: () -> Unit,
 ): ResourceManager =
     object : ResourceManager by manager {
+        // Keep inherited convenience methods on this wrapper so they observe and transform getResource reads.
+        override fun getResourceOrThrow(location: Identifier): Resource = super<ResourceManager>.getResourceOrThrow(location)
+
+        override fun open(location: Identifier): InputStream = super<ResourceManager>.open(location)
+
+        override fun openAsReader(location: Identifier): BufferedReader = super<ResourceManager>.openAsReader(location)
+
         override fun listResourceStacks(
             path: String,
             predicate: Predicate<Identifier>,

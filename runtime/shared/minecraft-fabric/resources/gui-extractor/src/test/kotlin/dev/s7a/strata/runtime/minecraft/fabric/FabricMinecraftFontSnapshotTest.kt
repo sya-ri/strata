@@ -43,6 +43,31 @@ import java.util.zip.ZipOutputStream
  */
 internal class FabricMinecraftFontSnapshotTest {
     @Test
+    fun nativeConvenienceReadsKeepObservationAndStreamOwnership(
+        @TempDir directory: Path,
+    ) {
+        val text = "observed resource"
+        val contents = text.toByteArray()
+        val location = Identifier.parse("test:font/default.json")
+        val pack = resourceFontPack(directory.resolve("convenience"), mapOf("assets/test/font/default.json" to contents))
+        MultiPackResourceManager(PackType.CLIENT_RESOURCES, listOf(pack)).use { manager ->
+            val reads = ArrayList<Identifier>()
+            val streams = ArrayList<TrackedFontStream>()
+            var checks = 0
+            val observed = observedFontResources(manager, reads, transform = { resource -> trackedFontResource(resource, streams) }) { checks += 1 }
+
+            observed.getResourceOrThrow(location).open().use { stream -> assertArrayEquals(contents, stream.readAllBytes()) }
+            observed.open(location).use { stream -> assertArrayEquals(contents, stream.readAllBytes()) }
+            observed.openAsReader(location).use { reader -> assertEquals(text, reader.readText()) }
+
+            assertEquals(List(3) { location }, reads)
+            assertEquals(3, checks)
+            assertEquals(3, streams.size)
+            assertTrue(streams.all(TrackedFontStream::closed))
+        }
+    }
+
+    @Test
     fun capturesFontStacksAndExactProviderAssetsWithoutRootEnumeration(
         @TempDir directory: Path,
     ) {
