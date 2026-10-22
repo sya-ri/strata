@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import kotlin.math.nextDown
 
 /**
  * Checks the uploaded integer lookup against the independent headless rasterizer at translated texel boundaries.
@@ -80,7 +81,7 @@ internal class FabricMinecraftSamplingMapTest {
             assertEquals(IntSize(3, 4), input.reservationSize)
         }
         val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 1f, 1f), alphaCutoff = 0f)
-        for (cutoff in listOf(0.1f, 0.5f, Math.nextDown(1f))) {
+        for (cutoff in listOf(0.1f, 0.5f, 1f.nextDown())) {
             assertThrows(IllegalArgumentException::class.java) { FabricMinecraftSamplingMap(command.copy(alphaCutoff = cutoff), IntRect(0, 0, 1, 1), 1) }
         }
         assertThrows(IllegalArgumentException::class.java) { FabricMinecraftSamplingMap(command.copy(tint = ArgbColor(0xFF00FF00.toInt())), IntRect(0, 0, 1, 1), 1) }

@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import kotlin.math.nextDown
+import kotlin.math.nextUp
 
 /**
  * Verifies complete nonpainting dispatch against independent ordered pixel-center and blend equations.
@@ -65,7 +67,7 @@ internal class HeadlessNonpaintingRasterTest {
         val bounds = IntRect(180, 60, 184, 64)
         for (scale in 1..4) {
             val center = 181f + 0.5f / scale
-            val edges = listOf(Math.nextDown(center), center, Math.nextUp(center))
+            val edges = listOf(center.nextDown(), center, center.nextUp())
             for (left in edges) {
                 for (right in edges.filter { left < it }) {
                     for (orientation in SampledImageOrientation.entries) {

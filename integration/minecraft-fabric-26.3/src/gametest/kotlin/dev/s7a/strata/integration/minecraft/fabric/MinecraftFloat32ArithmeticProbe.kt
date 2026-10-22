@@ -17,6 +17,8 @@ import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Optional
+import kotlin.math.nextDown
+import kotlin.math.nextUp
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -112,7 +114,7 @@ internal object MinecraftFloat32ArithmeticProbe {
             }
             for (byte in 0..254) {
                 val boundary = (byte.toFloat() + 0.5f) / 255f
-                for (value in listOf(Math.nextDown(boundary), boundary, Math.nextUp(boundary))) add(Case(Operation.Quantize, value, 0f))
+                for (value in listOf(boundary.nextDown(), boundary, boundary.nextUp())) add(Case(Operation.Quantize, value, 0f))
             }
             val random = Random(73471)
             repeat(16384) {
@@ -124,7 +126,7 @@ internal object MinecraftFloat32ArithmeticProbe {
             }
             for (distance in listOf(0, 1, 23, 24, 25, 31, 32, 33, 64)) {
                 add(Case(Operation.Add, 1f, Float.fromBits((127 - distance) shl 23)))
-                add(Case(Operation.Add, Math.nextUp(1f), Float.fromBits((127 - distance) shl 23)))
+                add(Case(Operation.Add, 1f.nextUp(), Float.fromBits((127 - distance) shl 23)))
             }
         }
 

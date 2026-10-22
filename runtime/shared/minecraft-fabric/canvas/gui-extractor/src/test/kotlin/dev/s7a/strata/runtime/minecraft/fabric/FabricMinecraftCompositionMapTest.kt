@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import kotlin.math.nextUp
 import kotlin.math.roundToInt
 
 /**
@@ -36,7 +37,7 @@ internal class FabricMinecraftCompositionMapTest {
         val destination = createDrawImage(size) { x, y -> (y shl 24) or ((y * 7919 + x * 1337) and 0xFFFFFF) }
         for (tint in listOf(0, -1, 0x017FC1E3, 0x80BFD7EF.toInt(), 0xFE7FC1E3.toInt())) {
             val boundary = (128f / 255f) * ((tint ushr 24).toFloat() / 255f)
-            for (cutoff in listOf(0f, boundary, Math.nextUp(boundary).coerceAtMost(1f), 1f)) {
+            for (cutoff in listOf(0f, boundary, boundary.nextUp().coerceAtMost(1f), 1f)) {
                 val commands = listOf(DrawCommand.BlitImagePixels(destination, bounds, bounds), DrawCommand.SampledImage(image, FloatRect(0f, 0f, 256f, 256f), FloatRect(0f, 0f, 256f, 256f), ArgbColor(tint), alphaCutoff = cutoff))
                 compare(commands, size, 1, IntOffset.Zero)
             }

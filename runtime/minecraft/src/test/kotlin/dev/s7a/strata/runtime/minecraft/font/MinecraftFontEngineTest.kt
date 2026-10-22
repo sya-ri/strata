@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
+import kotlin.math.nextUp
 
 /**
  * Verifies bounded derived caches, deterministic recomputation, and owner-thread terminal resource release.
@@ -28,7 +29,7 @@ internal class MinecraftFontEngineTest {
             assertEquals(expected, legacy.roundedWidth(advance))
             assertEquals(expected, modern.roundedWidth(advance))
         }
-        for (advance in listOf(Float.POSITIVE_INFINITY, Float.MAX_VALUE, Math.nextUp(Int.MAX_VALUE.toFloat()))) {
+        for (advance in listOf(Float.POSITIVE_INFINITY, Float.MAX_VALUE, Int.MAX_VALUE.toFloat().nextUp())) {
             assertEquals(Int.MIN_VALUE, legacy.roundedWidth(advance))
             assertEquals(Int.MAX_VALUE, modern.roundedWidth(advance))
         }
