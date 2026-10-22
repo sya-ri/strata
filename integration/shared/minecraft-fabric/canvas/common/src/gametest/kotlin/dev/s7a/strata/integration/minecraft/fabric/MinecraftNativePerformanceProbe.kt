@@ -252,16 +252,9 @@ internal class MinecraftNativePerformanceProbe(
         }
     }
 
-    // The optional class is compiled only for the native timestamp-query family; other targets report unavailable.
     private fun createGpuProbe(samples: Int): MinecraftNativeGpuProbe? {
         if (gpuQueries.not()) return null
-        val adapter =
-            try {
-                Class.forName("dev.s7a.strata.integration.minecraft.fabric.MinecraftGpuPerformanceProbe")
-            } catch (_: ClassNotFoundException) {
-                return null
-            }
-        return adapter.getConstructor(Int::class.javaPrimitiveType).newInstance(samples) as MinecraftNativeGpuProbe
+        return minecraftNativeGpuProbeFactory?.invoke(samples)
     }
 
     private val viewport = IntSize(1920, 1080)
