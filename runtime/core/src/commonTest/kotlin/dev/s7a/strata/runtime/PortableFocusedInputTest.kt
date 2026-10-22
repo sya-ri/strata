@@ -237,33 +237,31 @@ internal class PortableFocusedInputTest {
         val disabled = mutableStateOf(false)
         val observed = ArrayList<FocusEvent>()
         var evaluations = 0
-        val session =
-            createRuntimeUiSession {
-                evaluations += 1
-                evaluateComponentTree {
-                    Row {
-                        Spacer(
-                            modifier =
-                                Modifier
-                                    .size(10, 10)
-                                    .initialFocus()
-                                    .onKeyPress {
-                                        disabled.value = true
-                                        InputResult.Ignored
-                                    },
-                        )
-                        Spacer(
-                            modifier =
-                                if (disabled.value) {
-                                    Modifier.size(10, 10)
-                                } else {
-                                    Modifier.size(10, 10).onFocusChanged { observed += it }
+        createRuntimeUiSession {
+            evaluations += 1
+            evaluateComponentTree {
+                Row {
+                    Spacer(
+                        modifier =
+                            Modifier
+                                .size(10, 10)
+                                .initialFocus()
+                                .onKeyPress {
+                                    disabled.value = true
+                                    InputResult.Ignored
                                 },
-                        )
-                    }
+                    )
+                    Spacer(
+                        modifier =
+                            if (disabled.value) {
+                                Modifier.size(10, 10)
+                            } else {
+                                Modifier.size(10, 10).onFocusChanged { observed += it }
+                            },
+                    )
                 }
             }
-        try {
+        }.use { session ->
             session.attach()
             val constraints = Constraints.fixed(20, 10)
             session.frame(constraints)
@@ -275,8 +273,6 @@ internal class PortableFocusedInputTest {
             assertEquals(2, evaluations)
             assertEquals(listOf(FocusEvent.Gained), observed)
             session.resetInputState()
-        } finally {
-            session.close()
         }
     }
 

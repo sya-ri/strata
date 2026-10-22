@@ -21,8 +21,7 @@ internal class SmallSemanticsCollectorRetentionTest {
             val fixture = SemanticsCollectionFixture()
             val values = MutableList(count) { Semantics(label = UiText.Literal(it.toString())) }
             val node = fixture.node(0, values)
-            val session = createRuntimeUiSession { fixture.element(node) }
-            try {
+            createRuntimeUiSession { fixture.element(node) }.use { session ->
                 session.attach()
                 session.frame(Constraints.fixed(2, 1))
                 val scope = assertNotNull(node.scope)
@@ -31,8 +30,6 @@ internal class SmallSemanticsCollectorRetentionTest {
                     field.isAccessible = true
                     assertNull(field.get(scope), name)
                 }
-            } finally {
-                session.close()
             }
         }
     }

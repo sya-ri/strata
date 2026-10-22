@@ -41,8 +41,7 @@ internal class SmallSemanticsCollectionTest {
             listOf(passive, empty, one, many, hidden).map { node ->
                 fixture.element(node, modifier = if (node === one) Modifier.semantics(payload("modifier")) else Modifier)
             }
-        val session = createRuntimeUiSession { fixture.element(root, children, Modifier.semantics(payload("outer"))) }
-        try {
+        createRuntimeUiSession { fixture.element(root, children, Modifier.semantics(payload("outer"))) }.use { session ->
             session.attach()
             val frame = session.frame(Constraints.fixed(16, 4))
             val expected =
@@ -62,8 +61,6 @@ internal class SmallSemanticsCollectionTest {
             assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Move(IntOffset(1, 0))))
             assertEquals(1, passive.inputs)
             assertEquals(expected, frame.semantics)
-        } finally {
-            session.close()
         }
         assertEquals(listOf(5, 4, 3, 2, 1, 0), fixture.disposed)
     }
@@ -82,8 +79,7 @@ internal class SmallSemanticsCollectionTest {
                     node.invalidatePhase(DirtyPhase.Semantics)
                 }
             }
-            val tree = UiTree()
-            try {
+            UiTree().use { tree ->
                 tree.update(fixture.element(node))
                 tree.measure(Constraints.fixed(2, 1))
                 tree.layout()
@@ -102,8 +98,6 @@ internal class SmallSemanticsCollectionTest {
                 assertEquals(values.map { SemanticsEntry(IntRect(0, 0, 3, 1), it) }, tree.semantics())
                 assertEquals(3, node.callbacks)
                 assertEquals(expected, first)
-            } finally {
-                tree.close()
             }
         }
     }
@@ -189,15 +183,13 @@ internal class SmallSemanticsCollectionTest {
                 assertFailsWith<IllegalStateException> { tree.semantics() }
                 values.forEach(scope::emit)
             }
-            try {
+            tree.use { _ ->
                 tree.update(fixture.element(node))
                 tree.measure(Constraints.fixed(2, 1))
                 tree.layout()
                 assertEquals(values.map { SemanticsEntry(IntRect(0, 0, 2, 1), it) }, tree.semantics())
                 assertEquals(1, node.callbacks)
                 assertFailsWith<IllegalStateException> { checkNotNull(node.scope).emit(payload("late")) }
-            } finally {
-                tree.close()
             }
         }
     }

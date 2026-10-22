@@ -41,8 +41,7 @@ internal class RootOverlayScopeLifetimeTest {
                 assertEquals(IntRect(0, 0, 4, 4), scope.anchorBounds)
                 scope.fillRectangle(IntRect(1, 1, 3, 3), ArgbColor(-1))
             }
-            val tree = laidOut(probe)
-            try {
+            laidOut(probe).use { tree ->
                 val commands = tree.paint()
                 assertEquals(
                     listOf(DrawCommand.PushClip(IntRect(0, 0, 4, 4)), DrawCommand.PopClip, DrawCommand.FillRectangle(IntRect(1, 1, 3, 3), ArgbColor(-1))),
@@ -53,8 +52,6 @@ internal class RootOverlayScopeLifetimeTest {
                 assertEquals(0, probe.disposeCalls)
                 assertEquals(commands, tree.paint())
                 assertEquals(1, probe.rootOverlayCalls)
-            } finally {
-                tree.close()
             }
         }
     }
@@ -62,8 +59,7 @@ internal class RootOverlayScopeLifetimeTest {
     @Test
     fun returnedScopeRejectsBeforeAnyAdditionalPaintingOrCleanup() {
         val probe = RootOverlayProbe()
-        val tree = laidOut(probe)
-        try {
+        laidOut(probe).use { tree ->
             tree.paint()
             val scope = probe.scopes.single()
             repeat(3) {
@@ -75,8 +71,6 @@ internal class RootOverlayScopeLifetimeTest {
             assertEquals(1, probe.rootOverlayCalls)
             assertEquals(0, probe.detachCalls)
             assertEquals(0, probe.disposeCalls)
-        } finally {
-            tree.close()
         }
         assertFailsWith<IllegalStateException> { probe.scopes.single().anchorBounds }
         assertEquals(1, probe.detachCalls)
@@ -141,8 +135,7 @@ internal class RootOverlayScopeLifetimeTest {
         val first = RootOverlayProbe()
         val second = RootOverlayProbe()
         val content = mutableStateOf(first.element())
-        val session = createRuntimeUiSession { content.value }
-        try {
+        createRuntimeUiSession { content.value }.use { session ->
             session.attach()
             session.frame(Constraints.fixed(4, 4))
             val old = first.scopes.single()
@@ -164,8 +157,6 @@ internal class RootOverlayScopeLifetimeTest {
             session.frame(Constraints.fixed(4, 4))
             assertEquals(1, first.detachCalls)
             assertEquals(1, first.disposeCalls)
-        } finally {
-            session.close()
         }
         (first.scopes + second.scopes).forEach { scope -> assertFailsWith<IllegalStateException> { scope.anchorBounds } }
         assertEquals(1, second.detachCalls)
@@ -184,8 +175,7 @@ internal class RootOverlayScopeLifetimeTest {
         val dispose = IllegalStateException("dispose after guard failure")
         probe.detachFailure = detach
         probe.disposeFailure = dispose
-        val session = createRuntimeUiSession { probe.element() }
-        try {
+        createRuntimeUiSession { probe.element() }.use { session ->
             session.attach()
             val initial = session.frame(Constraints.fixed(4, 4))
             val committed = initial.drawCommands.toList()
@@ -207,8 +197,6 @@ internal class RootOverlayScopeLifetimeTest {
             assertEquals(committed, initial.drawCommands)
             probe.scopes.forEach { scope -> assertFailsWith<IllegalStateException> { scope.anchorBounds } }
             assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(4, 4)) }
-        } finally {
-            session.close()
         }
         assertEquals(1, probe.detachCalls)
         assertEquals(1, probe.disposeCalls)

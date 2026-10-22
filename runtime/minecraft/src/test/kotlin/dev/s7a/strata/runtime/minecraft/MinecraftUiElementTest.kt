@@ -149,12 +149,9 @@ internal class MinecraftUiElementTest {
             }
         host.attach()
         try {
-            val tree = UiTree()
-            try {
+            UiTree().use { tree ->
                 tree.update(checkNotNull(element))
                 assertEquals(IntSize(7, 5), tree.measure(Constraints()))
-            } finally {
-                tree.close()
             }
         } finally {
             host.close()
@@ -165,8 +162,7 @@ internal class MinecraftUiElementTest {
     fun menuValidationAndImageUpdatesUseTheStableRetainedType() {
         val first = createDrawImage(IntSize(16, 16), IntArray(256) { 0xFF101010.toInt() })
         val second = createDrawImage(IntSize(16, 16), IntArray(256) { 0xFF202020.toInt() })
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             assertThrows(IllegalArgumentException::class.java) {
                 tree.update(menuModifierElement(image(0)))
             }
@@ -199,8 +195,6 @@ internal class MinecraftUiElementTest {
                     .single()
                     .image,
             )
-        } finally {
-            tree.close()
         }
     }
 
@@ -283,8 +277,7 @@ internal class MinecraftUiElementTest {
             MinecraftTextRun.createNormal(UiText.Literal("AB")) { codePoint ->
                 if (codePoint == 'A'.code) glyphA else glyphB
             }
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(createMinecraftTextElement(run, Modifier, null))
             tree.measure(Constraints.fixed(5, 9))
             tree.layout()
@@ -296,8 +289,6 @@ internal class MinecraftUiElementTest {
             assertEquals(0xFF202020.toInt(), rendered.argbAt(1, 1))
             assertEquals(0xFF404040.toInt(), rendered.argbAt(3, 1))
             assertEquals(0xFF303030.toInt(), rendered.argbAt(10, 1))
-        } finally {
-            tree.close()
         }
     }
 
@@ -307,8 +298,7 @@ internal class MinecraftUiElementTest {
         val foreground = image(0xFFA0A0A0.toInt())
         val glyph = glyph(2, image(0xFF3F3F3F.toInt()), image(-1), shadow, foreground)
         val run = MinecraftTextRun.createInactive(UiText.Literal("A")) { glyph }
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(createMinecraftTextElement(run, Modifier, null))
             tree.measure(Constraints.fixed(2, 9))
             tree.layout()
@@ -318,8 +308,6 @@ internal class MinecraftUiElementTest {
             val rendered = rasterizeHeadless(commands, IntSize(9, 9))
             assertEquals(0xFFA0A0A0.toInt(), rendered.argbAt(1, 1))
             assertEquals(0xFF282828.toInt(), rendered.argbAt(8, 1))
-        } finally {
-            tree.close()
         }
     }
 
@@ -334,8 +322,7 @@ internal class MinecraftUiElementTest {
         val firstRun = MinecraftTextRun.createNormal(UiText.Literal("A")) { firstGlyph }
         val equalRun = MinecraftTextRun.createNormal(UiText.Literal("A")) { firstGlyph }
         val secondRun = MinecraftTextRun.createNormal(UiText.Literal("B")) { secondGlyph }
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(createMinecraftTextElement(firstRun, Modifier, null))
             tree.measure(Constraints.fixed(2, 9))
             tree.layout()
@@ -346,8 +333,6 @@ internal class MinecraftUiElementTest {
             tree.measure(Constraints.fixed(3, 9))
             tree.layout()
             assertSame(secondForeground, tree.paint().filterIsInstance<DrawCommand.BlitImage>()[1].image)
-        } finally {
-            tree.close()
         }
     }
 
@@ -358,14 +343,11 @@ internal class MinecraftUiElementTest {
         val narrowRun = MinecraftTextRun.createNormal(UiText.Literal("A")) { glyph(2, shadow, foreground) }
         val wideRun = MinecraftTextRun.createNormal(UiText.Literal("A")) { glyph(3, shadow, foreground) }
         val constraints = Constraints(maxWidth = 10, maxHeight = 10)
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(createMinecraftTextElement(narrowRun, Modifier, null))
             assertEquals(IntSize(2, 9), tree.measure(constraints))
             tree.update(createMinecraftTextElement(wideRun, Modifier, null))
             assertEquals(IntSize(3, 9), tree.measure(constraints))
-        } finally {
-            tree.close()
         }
     }
 

@@ -109,21 +109,19 @@ internal class PortableObservedSourceTest {
         val parity = source.map { it % 2 }
         val visible = mutableStateOf(true)
         val seen = ArrayList<Int>()
-        val session =
-            createRuntimeUiSession {
-                evaluateComponentTree {
-                    Stack {
-                        if (visible.value) {
-                            Observe(parity, parity) { left, right ->
-                                assertEquals(left, right)
-                                seen.add(left)
-                                Spacer()
-                            }
+        createRuntimeUiSession {
+            evaluateComponentTree {
+                Stack {
+                    if (visible.value) {
+                        Observe(parity, parity) { left, right ->
+                            assertEquals(left, right)
+                            seen.add(left)
+                            Spacer()
                         }
                     }
                 }
             }
-        try {
+        }.use { session ->
             session.attach()
             session.frame(Constraints())
             checkNotNull(deliver)(StateSnapshot(StateRevision(1), 2))
@@ -136,8 +134,6 @@ internal class PortableObservedSourceTest {
             visible.value = false
             session.frame(Constraints())
             assertEquals(1, releases)
-        } finally {
-            session.close()
         }
         assertEquals(1, releases)
     }

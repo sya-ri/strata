@@ -39,8 +39,7 @@ internal class PortableWeightedLayoutTest {
     ) {
         for (horizontal in listOf(true, false)) {
             val probe = TestProbe()
-            val tree = UiTree()
-            try {
+            UiTree().use { tree ->
                 tree.update(
                     evaluateComponentTree {
                         if (horizontal) {
@@ -62,8 +61,6 @@ internal class PortableWeightedLayoutTest {
                 tree.layout()
                 assertEquals(expected, probe.measureConstraints.map { if (horizontal) it.minWidth else it.minHeight })
                 assertEquals(expected, probe.measureConstraints.map { if (horizontal) it.maxWidth else it.maxHeight })
-            } finally {
-                tree.close()
             }
         }
     }

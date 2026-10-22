@@ -32,8 +32,7 @@ internal class PortableExtentTest {
     fun virtualListCanReachTheLastItemWithoutWrappingOverscan() {
         val state = VirtualListState<Int>()
         val created = mutableListOf<Int>()
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(
                 evaluateComponentTree {
                     VirtualList(
@@ -56,8 +55,6 @@ internal class PortableExtentTest {
             tree.measure(Constraints.fixed(1, 1))
             tree.layout()
             assertEquals(listOf(Int.MAX_VALUE - 2, Int.MAX_VALUE - 1), created)
-        } finally {
-            tree.close()
         }
     }
 
@@ -82,8 +79,7 @@ internal class PortableExtentTest {
                     error("An oversized working set must fail before subscribing.")
                 }
             }
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(
                 evaluateComponentTree {
                     TiledImage(
@@ -99,8 +95,6 @@ internal class PortableExtentTest {
                 tree.layout()
             }
             assertFalse(requested)
-        } finally {
-            tree.close()
         }
     }
 }

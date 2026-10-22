@@ -32,26 +32,22 @@ internal class MinecraftResourceImageRetentionTest {
         val overBound = ResourceId("example", "textures/gui/bounded_overflow.png")
         val resolved = solidImage(0xFF556677.toInt())
         val platform = FakeImagePlatform { resolved }
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Bounded resource image identifiers") {
-                    Stack {
-                        admitted.forEach { id -> Image(ImageSource.Resource(id)) }
-                        Image(ImageSource.Resource(overBound))
-                        Image(ImageSource.Resource(overBound))
-                        Image(ImageSource.Resource(admitted.first()))
-                    }
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Bounded resource image identifiers") {
+                Stack {
+                    admitted.forEach { id -> Image(ImageSource.Resource(id)) }
+                    Image(ImageSource.Resource(overBound))
+                    Image(ImageSource.Resource(overBound))
+                    Image(ImageSource.Resource(admitted.first()))
+                }
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             assertEquals(514, platform.imageCalls.size)
             assertEquals(1, platform.imageCalls.count { id -> id == admitted.first() })
             assertEquals(2, platform.imageCalls.count { id -> id == overBound })
-        } finally {
-            host.close()
         }
     }
 
@@ -61,26 +57,22 @@ internal class MinecraftResourceImageRetentionTest {
         val overBound = ResourceId("example", "textures/gui/large_overflow.png")
         val resolved = createDrawImage(IntSize(1024, 1024), IntArray(1024 * 1024) { 0xFF334455.toInt() })
         val platform = FakeImagePlatform { resolved }
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Bounded resource image payload") {
-                    Stack {
-                        admitted.forEach { id -> Image(ImageSource.Resource(id)) }
-                        Image(ImageSource.Resource(overBound))
-                        Image(ImageSource.Resource(overBound))
-                        Image(ImageSource.Resource(admitted.last()))
-                    }
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Bounded resource image payload") {
+                Stack {
+                    admitted.forEach { id -> Image(ImageSource.Resource(id)) }
+                    Image(ImageSource.Resource(overBound))
+                    Image(ImageSource.Resource(overBound))
+                    Image(ImageSource.Resource(admitted.last()))
+                }
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             assertEquals(34, platform.imageCalls.size)
             assertEquals(1, platform.imageCalls.count { id -> id == admitted.last() })
             assertEquals(2, platform.imageCalls.count { id -> id == overBound })
-        } finally {
-            host.close()
         }
     }
 
@@ -91,25 +83,23 @@ internal class MinecraftResourceImageRetentionTest {
         val platform = FakeImagePlatform { resolved }
         val state = VirtualListState<Int>()
         val materializedItems = ArrayList<Int>()
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("Deferred resource image jumps") {
-                    VirtualList(
-                        itemCount = 10_000,
-                        itemAt = { index -> index },
-                        keyAt = { index -> index },
-                        state = state,
-                        viewportSize = IntSize(1, 1),
-                        rowHeight = 1,
-                    ) { item ->
-                        materializedItems += item
-                        Image(ImageSource.Resource(ResourceId(id.namespace, id.path)))
-                    }
-                },
-                MinecraftProfileFixture.create(),
-                platform,
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("Deferred resource image jumps") {
+                VirtualList(
+                    itemCount = 10_000,
+                    itemAt = { index -> index },
+                    keyAt = { index -> index },
+                    state = state,
+                    viewportSize = IntSize(1, 1),
+                    rowHeight = 1,
+                ) { item ->
+                    materializedItems += item
+                    Image(ImageSource.Resource(ResourceId(id.namespace, id.path)))
+                }
+            },
+            MinecraftProfileFixture.create(),
+            platform,
+        ).use { host ->
             host.attach()
             val firstImages = sampledImages(host)
             assertTrue(materializedItems.contains(0))
@@ -127,8 +117,6 @@ internal class MinecraftResourceImageRetentionTest {
             assertTrue(middleImages.isNotEmpty())
             assertTrue(finalImages.isNotEmpty())
             (firstImages + middleImages + finalImages).forEach { image -> assertSame(resolved, image) }
-        } finally {
-            host.close()
         }
     }
 

@@ -29,8 +29,7 @@ internal class ActivationModifierTest {
     @Test
     fun primaryPointerAndFocusedEnterSpacePressesShareOneAction() {
         var activations = 0
-        val tree = tree(Modifier.size(10, 10).onActivate { activations += 1 })
-        try {
+        tree(Modifier.size(10, 10).onActivate { activations += 1 }).use { tree ->
             assertEquals(
                 InputResult.Ignored,
                 tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Secondary)),
@@ -52,8 +51,6 @@ internal class ActivationModifierTest {
             assertEquals(InputResult.Ignored, tree.dispatchKeyboard(KeyboardEvent.Release(KeyCode.Space, 8)))
             assertEquals(InputResult.Ignored, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Escape, 9)))
             assertEquals(4, activations)
-        } finally {
-            tree.close()
         }
     }
 
@@ -66,24 +63,19 @@ internal class ActivationModifierTest {
         assertEquals(base.elements(), disabled.elements())
 
         val tree = tree(disabled)
-        try {
+        tree.use { _ ->
             assertEquals(InputResult.Ignored, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
             assertEquals(
                 InputResult.Ignored,
                 tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary)),
             )
             assertEquals(0, activations)
-        } finally {
-            tree.close()
         }
 
-        val focusOnly = tree(base.focusable().onActivate(enabled = false) { activations += 1 })
-        try {
+        tree(base.focusable().onActivate(enabled = false) { activations += 1 }).use { focusOnly ->
             assertEquals(InputResult.Consumed, focusOnly.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
             assertEquals(InputResult.Ignored, focusOnly.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)))
             assertEquals(0, activations)
-        } finally {
-            focusOnly.close()
         }
     }
 
@@ -102,7 +94,7 @@ internal class ActivationModifierTest {
             tree.layout()
         }
 
-        try {
+        tree.use { _ ->
             update("first")
             assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
             assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)))
@@ -114,8 +106,6 @@ internal class ActivationModifierTest {
                 tree.dispatchPointer(PointerEvent.Press(IntOffset(1, 1), PointerButton.Primary)),
             )
             assertEquals(listOf("first", "second", "second"), observed)
-        } finally {
-            tree.close()
         }
     }
 

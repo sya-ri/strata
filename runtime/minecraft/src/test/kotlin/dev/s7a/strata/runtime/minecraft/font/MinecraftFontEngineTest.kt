@@ -288,8 +288,7 @@ internal class MinecraftFontEngineTest {
     @Test
     fun foreignThreadsCannotReadOrCloseTheOwnerEngine() {
         val backend = backend { codePoint -> rasterGlyph(codePoint) }
-        val engine = MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend })
-        try {
+        MinecraftFontEngine(trueTypeSnapshot("default"), MinecraftFontBackendFactory { backend }).use { engine ->
             val work =
                 FutureTask {
                     assertThrows(IllegalStateException::class.java) { engine.glyph(FontTestResources.defaultFont, '日'.code) }
@@ -300,8 +299,6 @@ internal class MinecraftFontEngineTest {
             work.get(10, TimeUnit.SECONDS)
             assertEquals(0, backend.closeCalls)
             assertEquals(1.0f, engine.glyph(FontTestResources.defaultFont, '日'.code).advance)
-        } finally {
-            engine.close()
         }
         assertEquals(1, backend.closeCalls)
     }

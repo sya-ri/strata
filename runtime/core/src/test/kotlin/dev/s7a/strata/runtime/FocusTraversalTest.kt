@@ -29,13 +29,11 @@ internal class FocusTraversalTest {
     @Test
     fun tabTraversesDeclaredSiblingsForwardAndShiftReversesWithWrap() {
         val transitions = ArrayList<Transition>()
-        val tree =
-            rowTree(
-                target(Target.First, transitions),
-                target(Target.Second, transitions),
-                target(Target.Third, transitions),
-            )
-        try {
+        rowTree(
+            target(Target.First, transitions),
+            target(Target.Second, transitions),
+            target(Target.Third, transitions),
+        ).use { tree ->
             assertEquals(InputResult.Ignored, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)))
             assertEquals(InputResult.Ignored, tree.dispatchKeyboard(KeyboardEvent.Release(KeyCode.Tab, 0)))
             assertEquals(
@@ -69,8 +67,6 @@ internal class FocusTraversalTest {
                 ),
                 transitions,
             )
-        } finally {
-            tree.close()
         }
     }
 
@@ -90,7 +86,7 @@ internal class FocusTraversalTest {
         )
         tree.measure(Constraints.fixed(20, 10))
         tree.layout()
-        try {
+        tree.use { _ ->
             repeat(3) {
                 assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
             }
@@ -104,8 +100,6 @@ internal class FocusTraversalTest {
                 ),
                 transitions,
             )
-        } finally {
-            tree.close()
         }
     }
 
@@ -121,8 +115,7 @@ internal class FocusTraversalTest {
                     handled += event
                     if (consume) InputResult.Consumed else InputResult.Ignored
                 }
-        val tree = rowTree(first, target(Target.Second, transitions))
-        try {
+        rowTree(first, target(Target.Second, transitions)).use { tree ->
             val tab = KeyboardEvent.Press(KeyCode.Tab, 4)
             assertEquals(InputResult.Consumed, tree.dispatchKeyboard(tab))
             assertEquals(listOf(Transition(Target.First, FocusEvent.Gained)), transitions)
@@ -138,16 +131,13 @@ internal class FocusTraversalTest {
                 ),
                 transitions,
             )
-        } finally {
-            tree.close()
         }
     }
 
     @Test
     fun oneEligibleOwnerConsumesTraversalWithoutRepeatingTransitionsAndZeroIgnores() {
         val transitions = ArrayList<Transition>()
-        val single = rowTree(target(Target.First, transitions).focusable())
-        try {
+        rowTree(target(Target.First, transitions).focusable()).use { single ->
             assertEquals(InputResult.Consumed, single.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
             assertEquals(InputResult.Consumed, single.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
             assertEquals(
@@ -155,15 +145,10 @@ internal class FocusTraversalTest {
                 single.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0, KeyboardModifiers(shift = true))),
             )
             assertEquals(listOf(Transition(Target.First, FocusEvent.Gained)), transitions)
-        } finally {
-            single.close()
         }
 
-        val empty = rowTree(Modifier.size(10, 10))
-        try {
+        rowTree(Modifier.size(10, 10)).use { empty ->
             assertEquals(InputResult.Ignored, empty.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
-        } finally {
-            empty.close()
         }
     }
 
@@ -194,7 +179,7 @@ internal class FocusTraversalTest {
             tree.layout()
         }
 
-        try {
+        tree.use { _ ->
             update(target(Target.First, transitions).initialFocus())
             update(Modifier.size(10, 10))
             assertEquals(
@@ -208,8 +193,6 @@ internal class FocusTraversalTest {
                 ),
                 transitions,
             )
-        } finally {
-            tree.close()
         }
     }
 

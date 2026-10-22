@@ -91,8 +91,7 @@ internal class StateObservationThreadIsolationTest {
         val before = mutableStateOf(0)
         val after = mutableStateOf(0)
         var invalidations = 0
-        val observation = StateObservation({}, {}, { invalidations += 1 }, {})
-        try {
+        StateObservation({}, {}, { invalidations += 1 }, {}).use { observation ->
             observation.evaluate {
                 assertEquals(0, before.value)
                 pause()
@@ -101,8 +100,6 @@ internal class StateObservationThreadIsolationTest {
             before.value = 1
             after.value = 1
             return invalidations
-        } finally {
-            observation.close()
         }
     }
 }

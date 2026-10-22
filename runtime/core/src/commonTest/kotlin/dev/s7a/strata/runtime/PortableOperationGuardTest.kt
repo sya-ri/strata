@@ -113,14 +113,11 @@ internal class PortableOperationGuardTest {
         session.close()
         assertEquals(1, disposals)
         state.value = 3
-        val healthy = createRuntimeUiSession { TestProbe().root(emptyList()) }
-        try {
+        createRuntimeUiSession { TestProbe().root(emptyList()) }.use { healthy ->
             healthy.attach()
             healthy.frame(Constraints.fixed(2, 1))
             healthy.dispatchAction { state.value = 4 }
             assertEquals(4, state.value)
-        } finally {
-            healthy.close()
         }
     }
 }

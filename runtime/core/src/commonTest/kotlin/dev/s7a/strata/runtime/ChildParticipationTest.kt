@@ -41,16 +41,13 @@ internal class ChildParticipationTest {
             )
         for (plan in plans) {
             val probe = TestProbe()
-            val tree = UiTree()
-            try {
+            UiTree().use { tree ->
                 tree.update(ParticipationElement(plan, children(probe, 2)))
                 assertFailsWith<IllegalStateException> {
                     tree.measure(Constraints(maxWidth = 40, maxHeight = 10))
                     tree.layout()
                 }
                 assertEquals(TreeState.Poisoned, tree.state)
-            } finally {
-                tree.close()
             }
         }
     }
@@ -68,16 +65,13 @@ internal class ChildParticipationTest {
             )
         for (plan in plans) {
             val probe = TestProbe()
-            val tree = UiTree()
-            try {
+            UiTree().use { tree ->
                 tree.update(ParticipationElement(plan, children(probe, 2)))
                 assertFailsWith<IllegalArgumentException> {
                     tree.measure(Constraints(maxWidth = 40, maxHeight = 10))
                     tree.layout()
                 }
                 assertEquals(TreeState.Poisoned, tree.state)
-            } finally {
-                tree.close()
             }
         }
     }
@@ -86,8 +80,7 @@ internal class ChildParticipationTest {
     fun sparseParticipationDoesNotReusePreviouslyMeasuredOrPlacedChildren() {
         val probe = TestProbe()
         val children = children(probe, 4_096)
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(ParticipationElement(Plan(listOf(0, 4_095), listOf(4_095)), children))
             frame(tree)
             assertEquals(2, probe.measureCalls)
@@ -106,8 +99,6 @@ internal class ChildParticipationTest {
             frame(tree)
             assertEquals(3, probe.measureCalls)
             assertVisible(tree, listOf(4_095))
-        } finally {
-            tree.close()
         }
     }
 
@@ -115,8 +106,7 @@ internal class ChildParticipationTest {
     fun layoutOnlyChangesKeepMeasuredChildrenButReplaceSparsePlacement() {
         val probe = TestProbe()
         val children = children(probe, 2)
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(ParticipationElement(Plan(listOf(0, 1), listOf(0)), children))
             frame(tree)
             assertVisible(tree, listOf(0))
@@ -126,8 +116,6 @@ internal class ChildParticipationTest {
             tree.layout()
             assertEquals(2, probe.measureCalls)
             assertVisible(tree, listOf(1))
-        } finally {
-            tree.close()
         }
     }
 
@@ -136,8 +124,7 @@ internal class ChildParticipationTest {
         val probe = TestProbe()
         val initial = children(probe, 2)
         val plan = Plan(listOf(0, 1), listOf(0, 1))
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             tree.update(ParticipationElement(plan, initial))
             frame(tree)
             val first = probe.nodeForTag(TestProbe.ProbeId("0"))
@@ -160,8 +147,6 @@ internal class ChildParticipationTest {
             frame(tree)
             assertEquals(listOf(UiText.Literal("1")), tree.semantics().map { it.semantics.label })
             assertGeometry(tree, listOf(0))
-        } finally {
-            tree.close()
         }
     }
 
@@ -170,8 +155,7 @@ internal class ChildParticipationTest {
         val probe = TestProbe()
         val children = children(probe, 2)
         val plan = Plan(listOf(0, 1), listOf(1))
-        val tree = UiTree()
-        try {
+        UiTree().use { tree ->
             for (modifier in listOf(Modifier, Modifier.padding(1), Modifier.padding(2), Modifier)) {
                 tree.update(ParticipationElement(plan, children, modifier))
                 frame(tree)
@@ -182,8 +166,6 @@ internal class ChildParticipationTest {
                 assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Move(IntOffset(bounds.left, bounds.top))))
                 assertEquals(listOf(TestProbe.ProbeId("1")), probe.inputEvents)
             }
-        } finally {
-            tree.close()
         }
     }
 

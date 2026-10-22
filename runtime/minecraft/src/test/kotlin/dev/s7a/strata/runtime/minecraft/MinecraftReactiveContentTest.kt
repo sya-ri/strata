@@ -43,7 +43,7 @@ internal class MinecraftReactiveContentTest {
                 MinecraftProfileFixture.create(),
             )
         val viewport = IntSize(100, 30)
-        try {
+        host.use { _ ->
             host.attach()
             assertCurrentLabel(host, viewport, "First")
             count.value = 1
@@ -57,8 +57,6 @@ internal class MinecraftReactiveContentTest {
             shown.value = true
             host.attach()
             assertCurrentLabel(host, viewport, "Next")
-        } finally {
-            host.close()
         }
         shown.value = false
     }

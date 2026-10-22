@@ -50,8 +50,7 @@ internal class EmptyRootOverlayTest {
         val child = RootNode(Tag.First, trace)
         val root = ProbeNode(Tag.Root, trace)
         root.offset = IntOffset(-2, -3)
-        val tree = laidOut(element(root, listOf(element(child))))
-        try {
+        laidOut(element(root, listOf(element(child)))).use { tree ->
             val expected = listOf(fill(IntRect(0, 0, 4, 4), ROOT), fill(IntRect(-2, -3, 2, 1), FIRST))
             assertEquals(expected, tree.paint())
             assertEquals(listOf(Event.Paint(Tag.Root), Event.Paint(Tag.First)), trace.filterIsInstance<Event.Paint>())
@@ -59,8 +58,6 @@ internal class EmptyRootOverlayTest {
             assertEquals(expected, tree.paint())
             assertEquals(1, child.geometry.size)
             assertFalse(root is RootOverlayPaintNode)
-        } finally {
-            tree.close()
         }
     }
 
@@ -76,7 +73,7 @@ internal class EmptyRootOverlayTest {
         val initial = session.frame(CONSTRAINTS)
         val ordinary = listOf(fill(BOUNDS, ROOT), fill(BOUNDS, FIRST), fill(BOUNDS, SECOND))
         assertEquals(ordinary + fill(SECOND_OVERLAY, SECOND), initial.drawCommands)
-        try {
+        session.use { _ ->
             first.rootPaint = { it.fillRectangle(FIRST_OVERLAY, FIRST) }
             root.rootPaint = { it.fillRectangle(ROOT_OVERLAY, ROOT) }
             first.refreshPaint()
@@ -94,8 +91,6 @@ internal class EmptyRootOverlayTest {
             assertSame(removed, session.frame(CONSTRAINTS))
             assertEquals(calls, trace)
             assertEquals(listOf(Event.Paint(Tag.Root), Event.Paint(Tag.First), Event.Paint(Tag.Second)), trace.filterIsInstance<Event.Paint>().take(3))
-        } finally {
-            session.close()
         }
         assertEquals(ordinary + fill(SECOND_OVERLAY, SECOND), initial.drawCommands)
         assertEquals(
@@ -112,21 +107,15 @@ internal class EmptyRootOverlayTest {
         val root = RootNode(Tag.Root, trace)
         root.placeChildren = false
         root.rootPaint = { it.fillRectangle(ROOT_OVERLAY, ROOT) }
-        val tree = laidOut(element(root, listOf(element(child))))
-        try {
+        laidOut(element(root, listOf(element(child)))).use { tree ->
             assertEquals(listOf(fill(BOUNDS, ROOT), fill(ROOT_OVERLAY, ROOT)), tree.paint())
             assertTrue(child.geometry.isEmpty())
             assertEquals(listOf(Event.Paint(Tag.Root)), trace.filterIsInstance<Event.Paint>())
-        } finally {
-            tree.close()
         }
         val alone = RootNode(Tag.Root, ArrayList())
         alone.rootPaint = { it.fillRectangle(ROOT_OVERLAY, ROOT) }
-        val zeroChild = laidOut(element(alone))
-        try {
+        laidOut(element(alone)).use { zeroChild ->
             assertEquals(listOf(fill(BOUNDS, ROOT), fill(ROOT_OVERLAY, ROOT)), zeroChild.paint())
-        } finally {
-            zeroChild.close()
         }
     }
 
@@ -137,8 +126,7 @@ internal class EmptyRootOverlayTest {
         val child = RootNode(Tag.First, trace)
         child.rootPaint = { it.fillRectangle(it.anchorBounds, FIRST) }
         root.offset = IntOffset(-2, -3)
-        val tree = laidOut(element(root, listOf(element(child))))
-        try {
+        laidOut(element(root, listOf(element(child)))).use { tree ->
             assertEquals(fill(IntRect(-2, -3, 2, 1), FIRST), tree.paint().last())
             tree.measure(Constraints.fixed(6, 5))
             tree.layout()
@@ -155,8 +143,6 @@ internal class EmptyRootOverlayTest {
             child.refreshPaint()
             assertEquals(transformed, tree.paint())
             assertEquals(calls + 1, child.geometry.size)
-        } finally {
-            tree.close()
         }
     }
 
@@ -178,8 +164,7 @@ internal class EmptyRootOverlayTest {
                 }
             }
         }
-        val tree = laidOut(element(root, listOf(element(child))))
-        try {
+        laidOut(element(root, listOf(element(child)))).use { tree ->
             assertEquals(
                 listOf(
                     fill(BOUNDS, ROOT),
@@ -195,8 +180,6 @@ internal class EmptyRootOverlayTest {
                 ),
                 tree.paint(),
             )
-        } finally {
-            tree.close()
         }
     }
 
@@ -218,14 +201,11 @@ internal class EmptyRootOverlayTest {
             )
             scope.fillRectangle(ROOT_OVERLAY, ROOT)
         }
-        val tree = laidOut(element(root))
-        try {
+        laidOut(element(root)).use { tree ->
             val expected = listOf(fill(BOUNDS, ROOT), DrawCommand.PushClip(ROOT_OVERLAY), DrawCommand.PushClip(FIRST_OVERLAY), fill(SECOND_OVERLAY, SECOND), DrawCommand.PopClip, DrawCommand.PopClip, fill(ROOT_OVERLAY, ROOT))
             assertEquals(expected, tree.paint())
             assertEquals(expected, tree.paint())
             assertEquals(TreeState.Active, tree.state)
-        } finally {
-            tree.close()
         }
     }
 
@@ -311,7 +291,7 @@ internal class EmptyRootOverlayTest {
             val session = createRuntimeUiSession { element(root, listOf(element(child))) }
             session.attach()
             val original = session.frame(CONSTRAINTS)
-            try {
+            session.use { _ ->
                 child.rootPaint = {}
                 child.refreshPaint()
                 val changed = session.frame(CONSTRAINTS)
@@ -319,8 +299,6 @@ internal class EmptyRootOverlayTest {
                 assertEquals(listOf(fill(BOUNDS, ROOT), fill(BOUNDS, FIRST), fill(FIRST_OVERLAY, FIRST)), original.drawCommands)
                 assertSame(changed, session.frame(CONSTRAINTS))
                 frames.add(changed.drawCommands)
-            } finally {
-                session.close()
             }
             assertEquals(listOf(fill(BOUNDS, ROOT), fill(BOUNDS, FIRST), fill(FIRST_OVERLAY, FIRST)), original.drawCommands)
         }
@@ -336,13 +314,11 @@ internal class EmptyRootOverlayTest {
                     val session = createRuntimeUiSession { element(root) }
                     session.attach()
                     val original = session.frame(CONSTRAINTS)
-                    try {
+                    session.use { _ ->
                         root.localPaint = { it.fillRectangle(FIRST_OVERLAY, FIRST) }
                         root.refreshPaint()
                         assertEquals(listOf(fill(FIRST_OVERLAY, FIRST)), session.frame(CONSTRAINTS).drawCommands)
                         assertEquals(listOf(fill(BOUNDS, ROOT)), original.drawCommands)
-                    } finally {
-                        session.close()
                     }
                     assertFailsWith<IllegalStateException> { root.refreshPaint() }
                     original

@@ -89,8 +89,7 @@ internal class MinecraftUnicodeTextFieldTest {
     @Test
     fun scalarEditingPreservesPairsAndMovesThroughCombiningMarksIndependently() {
         val state = TextFieldState("", maxLength = 16)
-        val host = host(state, Modifier.initialFocus())
-        try {
+        host(state, Modifier.initialFocus()).use { host ->
             host.attach()
             host.frame(fieldSize)
             listOf('日'.code, '한'.code, 0x1F642, 0x0301).forEach { codePoint ->
@@ -115,16 +114,13 @@ internal class MinecraftUnicodeTextFieldTest {
                 assertSame(InputResult.Consumed, host.dispatchTextInput(TextInputEvent.Character(codePoint)))
             }
             assertEquals("日本\u200D\u2066\u2069", state.value)
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun supplementaryInputFitsAtomicallyWithinTheUtf16Maximum() {
         val state = TextFieldState("", maxLength = 3)
-        val host = host(state, Modifier.initialFocus())
-        try {
+        host(state, Modifier.initialFocus()).use { host ->
             host.attach()
             host.frame(fieldSize)
             host.dispatchTextInput(TextInputEvent.Character('A'.code))
@@ -140,31 +136,25 @@ internal class MinecraftUnicodeTextFieldTest {
                 assertSame(InputResult.Ignored, host.dispatchTextInput(TextInputEvent.Character(codePoint)))
             }
             assertEquals("ABC", state.value)
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun externalWritesKeepTheRetainedCursorOnAScalarBoundary() {
         val state = TextFieldState("A")
-        val host = host(state, Modifier.initialFocus())
-        try {
+        host(state, Modifier.initialFocus()).use { host ->
             host.attach()
             host.frame(fieldSize)
             state.value = "🙂Z"
             host.dispatchTextInput(TextInputEvent.Character('B'.code))
             assertEquals("B🙂Z", state.value)
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun inlinePreeditUsesTheSuppliedCaretAndFocusedBlockWithoutCommittingText() {
         val state = TextFieldState("A")
-        val host = host(state, Modifier.initialFocus())
-        try {
+        host(state, Modifier.initialFocus()).use { host ->
             host.attach()
             host.frame(fieldSize)
             host.dispatchTextInput(TextInputEvent.Preedit("AA", 0, listOf("A", "A"), 1))
@@ -192,16 +182,13 @@ internal class MinecraftUnicodeTextFieldTest {
             host.dispatchTextInput(TextInputEvent.Preedit("", 0, emptyList(), -1))
             assertTrue(host.frame(fieldSize).drawCommands.none { command -> command is DrawCommand.FillRectangle })
             assertEquals("A", state.value)
-        } finally {
-            host.close()
         }
     }
 
     @Test
     fun unicodePreeditRejectsMalformedOffsetsAndCommitsOnlyCharacterEvents() {
         val state = TextFieldState("", maxLength = 8)
-        val host = host(state, Modifier.initialFocus())
-        try {
+        host(state, Modifier.initialFocus()).use { host ->
             host.attach()
             host.frame(fieldSize)
             assertSame(InputResult.Ignored, host.dispatchTextInput(TextInputEvent.Preedit("🙂", 1, listOf("🙂"), 0)))
@@ -210,8 +197,6 @@ internal class MinecraftUnicodeTextFieldTest {
             assertEquals("", state.value)
             host.dispatchTextInput(TextInputEvent.Character('한'.code))
             assertEquals("한", state.value)
-        } finally {
-            host.close()
         }
     }
 
@@ -230,7 +215,7 @@ internal class MinecraftUnicodeTextFieldTest {
                 },
                 MinecraftProfileFixture.create(),
             )
-        try {
+        host.use { _ ->
             assertNull(host.textInputFocus)
             host.attach()
             assertNull(host.textInputFocus)
@@ -262,8 +247,6 @@ internal class MinecraftUnicodeTextFieldTest {
             assertNotSame(first, checkNotNull(host.textInputFocus))
             assertEquals("A", firstState.value)
             assertEquals("CB", secondState.value)
-        } finally {
-            host.close()
         }
         assertThrows(IllegalStateException::class.java) { host.textInputFocus }
     }
@@ -314,7 +297,7 @@ internal class MinecraftUnicodeTextFieldTest {
         val backend = BitmapFieldFontBackend()
         val compactSize = IntSize(16, 20)
         val host = resourceFontHost(state, backend, compactSize)
-        try {
+        host.use { _ ->
             host.attach()
             host.frame(compactSize)
             host.dispatchTextInput(TextInputEvent.Character('한'.code))
@@ -352,8 +335,6 @@ internal class MinecraftUnicodeTextFieldTest {
             host.attach()
             host.frame(compactSize)
             assertEquals(0, backend.closeCalls)
-        } finally {
-            host.close()
         }
         host.close()
         assertEquals(1, backend.closeCalls)
@@ -363,8 +344,7 @@ internal class MinecraftUnicodeTextFieldTest {
     fun resourceFontPreeditKeepsUnicodeCaretAndBlockBoundariesSeparateFromCommittedValue() {
         val state = TextFieldState("日", maxLength = 8)
         val backend = BitmapFieldFontBackend()
-        val host = resourceFontHost(state, backend)
-        try {
+        resourceFontHost(state, backend).use { host ->
             host.attach()
             host.frame(fieldSize)
             host.dispatchTextInput(TextInputEvent.Preedit("🙂한", 2, listOf("🙂", "한"), 1))
@@ -380,8 +360,6 @@ internal class MinecraftUnicodeTextFieldTest {
             host.dispatchTextInput(TextInputEvent.Preedit("한", 0, listOf("한"), 0))
             host.dispatchPointer(PointerEvent.Press(IntOffset(fieldSize.width, 10), PointerButton.Primary))
             assertTrue(host.frame(fieldSize).drawCommands.none { command -> command is DrawCommand.FillRectangle })
-        } finally {
-            host.close()
         }
     }
 
@@ -389,8 +367,7 @@ internal class MinecraftUnicodeTextFieldTest {
     fun lineSeparatorsDoNotReplaceActivePreeditOrMoveItsScrolledCaret() {
         val state = TextFieldState("日한", maxLength = 5)
         val compactSize = IntSize(16, 20)
-        val host = resourceFontHost(state, BitmapFieldFontBackend(), compactSize)
-        try {
+        resourceFontHost(state, BitmapFieldFontBackend(), compactSize).use { host ->
             host.attach()
             host.frame(compactSize)
             assertSame(InputResult.Consumed, host.dispatchTextInput(TextInputEvent.Preedit("🙂한", 2, listOf("🙂", "한"), 1)))
@@ -410,8 +387,6 @@ internal class MinecraftUnicodeTextFieldTest {
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Left, 0))
             host.dispatchTextInput(TextInputEvent.Character(0x1F642))
             assertEquals("日한🙂A", state.value)
-        } finally {
-            host.close()
         }
     }
 
@@ -426,8 +401,7 @@ internal class MinecraftUnicodeTextFieldTest {
                 ): List<MinecraftVisualGlyph> = error("Editable text must not call the display shaping backend.")
             }
         val fontDefinition = """{"providers":[{"type":"bitmap","file":"example:font/input.png","height":5,"ascent":5,"chars":["אב🙂_A"]}]}"""
-        val host = resourceFontHost(state, backend, fontDefinition = fontDefinition)
-        try {
+        resourceFontHost(state, backend, fontDefinition = fontDefinition).use { host ->
             host.attach()
             val committed = host.frame(fieldSize)
             val glyphs =
@@ -451,8 +425,6 @@ internal class MinecraftUnicodeTextFieldTest {
             assertEquals("א🙂", state.value)
             host.dispatchTextInput(TextInputEvent.Character('ב'.code))
             assertEquals("אב🙂", state.value)
-        } finally {
-            host.close()
         }
     }
 
@@ -461,8 +433,7 @@ internal class MinecraftUnicodeTextFieldTest {
         val state = TextFieldState("A🙂", maxLength = 3)
         val compactSize = IntSize(12, 20)
         val fontDefinition = """{"providers":[{"type":"space","advances":{"A":20,"🙂":-19,"_":0}}]}"""
-        val host = resourceFontHost(state, BitmapFieldFontBackend(), compactSize, fontDefinition)
-        try {
+        resourceFontHost(state, BitmapFieldFontBackend(), compactSize, fontDefinition).use { host ->
             host.attach()
             assertEquals(
                 listOf(IntRect(5, 5, 6, 16)),
@@ -482,8 +453,6 @@ internal class MinecraftUnicodeTextFieldTest {
                     .map { it.bounds },
             )
             assertEquals("A🙂", state.value)
-        } finally {
-            host.close()
         }
     }
 
@@ -491,8 +460,7 @@ internal class MinecraftUnicodeTextFieldTest {
     fun negativeAdvanceMovesCaretBeforeTheTextOrigin() {
         val state = TextFieldState("A🙂", maxLength = 3)
         val fontDefinition = """{"providers":[{"type":"space","advances":{"A":2,"🙂":-3}}]}"""
-        val host = resourceFontHost(state, BitmapFieldFontBackend(), fontDefinition = fontDefinition)
-        try {
+        resourceFontHost(state, BitmapFieldFontBackend(), fontDefinition = fontDefinition).use { host ->
             host.attach()
             assertEquals(
                 listOf(IntRect(3, 5, 4, 16)),
@@ -502,8 +470,6 @@ internal class MinecraftUnicodeTextFieldTest {
                     .filterIsInstance<DrawCommand.FillRectangle>()
                     .map { it.bounds },
             )
-        } finally {
-            host.close()
         }
     }
 
@@ -511,8 +477,7 @@ internal class MinecraftUnicodeTextFieldTest {
     fun negativePreeditAdvanceUnderlinesTheVisibleReversedSpan() {
         val state = TextFieldState("A", maxLength = 3)
         val fontDefinition = """{"providers":[{"type":"space","advances":{"A":1,"🙂":-10}}]}"""
-        val host = resourceFontHost(state, BitmapFieldFontBackend(), fontDefinition = fontDefinition)
-        try {
+        resourceFontHost(state, BitmapFieldFontBackend(), fontDefinition = fontDefinition).use { host ->
             host.attach()
             host.frame(fieldSize)
             host.dispatchTextInput(TextInputEvent.Preedit("🙂", 2, listOf("🙂"), 0))
@@ -525,8 +490,6 @@ internal class MinecraftUnicodeTextFieldTest {
                     .map { it.bounds },
             )
             assertEquals("A", state.value)
-        } finally {
-            host.close()
         }
     }
 
@@ -534,15 +497,12 @@ internal class MinecraftUnicodeTextFieldTest {
     fun negativeAdvanceClickUsesTheSignedMidpointAndPreservesScalarBoundaries() {
         val state = TextFieldState("A🙂", maxLength = 3)
         val fontDefinition = """{"providers":[{"type":"space","advances":{"A":4,"🙂":-4}}]}"""
-        val host = resourceFontHost(state, BitmapFieldFontBackend(), fontDefinition = fontDefinition)
-        try {
+        resourceFontHost(state, BitmapFieldFontBackend(), fontDefinition = fontDefinition).use { host ->
             host.attach()
             host.frame(fieldSize)
             host.dispatchPointer(PointerEvent.Press(IntOffset(6, 10), PointerButton.Primary))
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Backspace, 0))
             assertEquals("A", state.value)
-        } finally {
-            host.close()
         }
     }
 
@@ -553,8 +513,7 @@ internal class MinecraftUnicodeTextFieldTest {
             listOf(false, true).forEach { saturatingCeil ->
                 val state = TextFieldState("A🙂", maxLength = 6)
                 val backend = NumericFieldFontBackend(mapOf('A'.code to advance, 0x1F642 to 1f, '_'.code to 1f))
-                val host = resourceFontHost(state, backend, fontDefinition = fontDefinition, saturatingCeil = saturatingCeil)
-                try {
+                resourceFontHost(state, backend, fontDefinition = fontDefinition, saturatingCeil = saturatingCeil).use { host ->
                     host.attach()
                     host.frame(fieldSize)
                     assertTrue(0 < backend.glyphCalls)
@@ -570,8 +529,6 @@ internal class MinecraftUnicodeTextFieldTest {
                     host.dispatchTextInput(TextInputEvent.Character(0x1F642))
                     assertEquals("A🙂", state.value)
                     host.frame(fieldSize)
-                } finally {
-                    host.close()
                 }
             }
         }

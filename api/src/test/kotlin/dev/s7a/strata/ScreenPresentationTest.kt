@@ -37,18 +37,15 @@ internal class ScreenPresentationTest {
     fun installedPresenterReceivesExactDefinitionSynchronously() {
         val definition = ScreenDefinition("present") {}
         var received: ScreenDefinition? = null
-        val registration =
-            ScreenPresenters.install(
+        ScreenPresenters
+            .install(
                 ScreenPresenter { candidate ->
                     received = candidate
                     candidate.transfer()
                 },
-            )
-        try {
-            definition.open()
-        } finally {
-            registration.close()
-        }
+            ).use { registration ->
+                definition.open()
+            }
 
         assertSame(definition, received)
         assertThrows(ScreenDefinitionUnavailableException::class.java) { definition.transfer() }
@@ -57,14 +54,11 @@ internal class ScreenPresentationTest {
     @Test
     fun duplicateRegistrationFailsWithoutReplacingCurrentPresenter() {
         val calls = mutableListOf<String>()
-        val first = ScreenPresenters.install(ScreenPresenter { definition -> calls += definition.transfer().literalTitle() })
-        try {
+        ScreenPresenters.install(ScreenPresenter { definition -> calls += definition.transfer().literalTitle() }).use { first ->
             assertThrows(IllegalStateException::class.java) {
                 ScreenPresenters.install(ScreenPresenter { calls += "replacement" })
             }
             ScreenDefinition("current") {}.open()
-        } finally {
-            first.close()
         }
 
         assertEquals(listOf("current"), calls)
@@ -77,11 +71,8 @@ internal class ScreenPresentationTest {
         first.close()
         first.close()
 
-        val second = ScreenPresenters.install(ScreenPresenter { definition -> definition.transfer() })
-        try {
+        ScreenPresenters.install(ScreenPresenter { definition -> definition.transfer() }).use { second ->
             ScreenDefinition("replacement") {}.open()
-        } finally {
-            second.close()
         }
     }
 
@@ -100,23 +91,17 @@ internal class ScreenPresentationTest {
     @Test
     fun threadRejectionOccursBeforeTransferAndAllowsRetry() {
         val definition = ScreenDefinition("thread") {}
-        val wrongThread =
-            ScreenPresenters.install(
+        ScreenPresenters
+            .install(
                 ScreenPresenter {
                     throw ScreenOpenThreadException("Test presenter requires its owner thread.")
                 },
-            )
-        try {
-            assertThrows(ScreenOpenThreadException::class.java) { definition.open() }
-        } finally {
-            wrongThread.close()
-        }
+            ).use { wrongThread ->
+                assertThrows(ScreenOpenThreadException::class.java) { definition.open() }
+            }
 
-        val ownerThread = ScreenPresenters.install(ScreenPresenter { candidate -> candidate.transfer() })
-        try {
+        ScreenPresenters.install(ScreenPresenter { candidate -> candidate.transfer() }).use { ownerThread ->
             definition.open()
-        } finally {
-            ownerThread.close()
         }
     }
 
@@ -124,18 +109,15 @@ internal class ScreenPresentationTest {
     fun failureAfterTransferDoesNotReturnOwnershipToCaller() {
         val definition = ScreenDefinition("failed") {}
         val expected = IllegalArgumentException("presentation")
-        val registration =
-            ScreenPresenters.install(
+        ScreenPresenters
+            .install(
                 ScreenPresenter { candidate ->
                     candidate.transfer()
                     throw expected
                 },
-            )
-        try {
-            assertSame(expected, assertThrows(IllegalArgumentException::class.java) { definition.open() })
-        } finally {
-            registration.close()
-        }
+            ).use { registration ->
+                assertSame(expected, assertThrows(IllegalArgumentException::class.java) { definition.open() })
+            }
 
         assertThrows(ScreenDefinitionUnavailableException::class.java) { definition.transfer() }
         assertPayloadReleased(definition)

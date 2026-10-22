@@ -172,7 +172,7 @@ internal class FocusedInputModifierTest {
             tree.layout()
         }
 
-        try {
+        tree.use { _ ->
             update(false)
             val owner = retainedFocusOwner(tree)
             assertNotNull(owner)
@@ -191,8 +191,6 @@ internal class FocusedInputModifierTest {
             assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost, FocusEvent.Gained, FocusEvent.Lost), targetTransitions)
             assertEquals(listOf(FocusEvent.Gained, FocusEvent.Lost), ownerTransitions)
             assertTrue(retainedFocusTargets(tree).isEmpty())
-        } finally {
-            tree.close()
         }
     }
 
@@ -211,7 +209,7 @@ internal class FocusedInputModifierTest {
             tree.layout()
         }
 
-        try {
+        tree.use { _ ->
             update(false)
             val owner = checkNotNull(retainedFocusOwner(tree))
             assertNull(tree.currentTextInputFocus())
@@ -234,8 +232,6 @@ internal class FocusedInputModifierTest {
             assertNull(tree.currentTextInputFocus())
             tree.layout()
             assertNotSame(second, checkNotNull(tree.currentTextInputFocus()))
-        } finally {
-            tree.close()
         }
         assertNull(retainedTextInputFocus(tree))
         assertTrue(retainedTextInputTargets(tree).isEmpty())
@@ -295,7 +291,7 @@ internal class FocusedInputModifierTest {
         val owner = checkNotNull(retainedFocusOwner(tree))
         val previousTarget = retainedFocusTargets(tree).first()
         val previousInterval = checkNotNull(tree.currentTextInputFocus())
-        try {
+        tree.use { _ ->
             tree.update(evaluateComponentTree { Spacer(modifier = modifier) })
             tree.measure(Constraints.fixed(10, 10))
             tree.layout()
@@ -315,8 +311,6 @@ internal class FocusedInputModifierTest {
             assertTrue(retainedTextInputTargets(tree).isEmpty())
             assertTrue(retainedFocusTargets(tree).isEmpty())
             assertEquals(listOf(FocusEvent.Gained, FocusEvent.Gained), transitions)
-        } finally {
-            tree.close()
         }
     }
 

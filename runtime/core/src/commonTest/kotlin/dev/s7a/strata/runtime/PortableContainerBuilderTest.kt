@@ -80,7 +80,7 @@ internal class PortableContainerBuilderTest {
                     }
                 }.also { declaration = it }
             }
-        try {
+        session.use { _ ->
             session.attach()
             val constraints = Constraints(maxWidth = 8, maxHeight = 8)
             // Tiled viewport geometry invalidates its tile observer during the first measurement.
@@ -119,8 +119,6 @@ internal class PortableContainerBuilderTest {
             assertEquals(listOf(UiText.Literal("second")), session.frame(constraints).semantics.map { it.semantics.label })
             assertSame(secondNode, probe.nodeForTag(second))
             assertEquals(1, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
-        } finally {
-            session.close()
         }
         assertEquals(2, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
         session.close()

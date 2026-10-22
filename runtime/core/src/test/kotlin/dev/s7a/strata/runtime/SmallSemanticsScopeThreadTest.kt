@@ -30,8 +30,7 @@ internal class SmallSemanticsScopeThreadTest {
                 thread.join()
                 values.forEach(scope::emit)
             }
-            val session = createRuntimeUiSession { fixture.element(node) }
-            try {
+            createRuntimeUiSession { fixture.element(node) }.use { session ->
                 session.attach()
                 val frame = session.frame(Constraints.fixed(2, 1))
                 val expected = values.toList()
@@ -47,8 +46,6 @@ internal class SmallSemanticsScopeThreadTest {
                 assertEquals("This runtime object requires its owning execution context.", failures.last().message)
                 session.close()
                 assertEquals(expected, frame.semantics.map { it.semantics })
-            } finally {
-                session.close()
             }
         }
     }

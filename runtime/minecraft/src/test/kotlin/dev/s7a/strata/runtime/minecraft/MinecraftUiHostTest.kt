@@ -319,17 +319,15 @@ internal class MinecraftUiHostTest {
                 platformCloses++
                 throw platformCleanup
             }
-        val host =
-            createMinecraftUiHost(
-                ScreenDefinition("font content") {
-                    Text("日")
-                    throw expected
-                },
-                resourceFontProfile(),
-                platform,
-                MinecraftFontBackendFactory { backend },
-            )
-        try {
+        createMinecraftUiHost(
+            ScreenDefinition("font content") {
+                Text("日")
+                throw expected
+            },
+            resourceFontProfile(),
+            platform,
+            MinecraftFontBackendFactory { backend },
+        ).use { host ->
             val failure = assertThrows(IllegalArgumentException::class.java, host::attach)
             assertSame(expected, failure)
             assertEquals(listOf(fontCleanup, platformCleanup), failure.suppressed.toList())
@@ -338,8 +336,6 @@ internal class MinecraftUiHostTest {
             assertEquals(1, platformCloses)
             assertNull(readPrivateField(host, "textRenderer"))
             assertNull(readPrivateField(host, "platform"))
-        } finally {
-            host.close()
         }
         assertEquals(1, backend.closeCalls)
         assertEquals(1, platformCloses)
