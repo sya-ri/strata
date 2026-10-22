@@ -1,4 +1,12 @@
+import dev.detekt.gradle.extensions.DetektExtension
+
 group = "dev.s7a.strata.examples"
+
+kotlin.sourceSets.named("main") { kotlin.srcDir("src/shared/kotlin") }
+
+extensions.configure<DetektExtension> {
+    source.from(kotlin.sourceSets.named("main").map { it.kotlin })
+}
 
 dependencies {
     compileOnly(project(":paper-api"))
