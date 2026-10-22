@@ -96,8 +96,7 @@ Those dependencies are compile-only, remain in the version catalog, and add neit
 The exact Loader dependency versions are checked against [its primary build configuration](https://github.com/FabricMC/fabric-loader) and the [MixinExtras setup contract](https://github.com/LlamaLad7/MixinExtras#setup).
 Detekt and Kotlinter are applied to all project modules.
 Root Detekt also analyzes the production and test sources of `build-logic`; the included build owns their compilation, formatting, ABI and TestKit checks.
-Detekt reads loaded-test files from the configured Kotlin `gametest` source set after version-specific roots and filters are applied, so every compiled test file is analyzed without an additional root allowlist.
-The shared runtime roots remain explicit because [the generic task](https://detekt.dev/docs/gettingstarted/gradle/#available-plugin-tasks) otherwise scans only conventional project directories.
+Detekt reads each project's configured Kotlin source sets after version-specific roots and filters are applied, including shared runtime code, loaded tests, and compiled documentation examples.
 Kover exposes HTML and XML reports without enforcing a coverage threshold.
 Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`; each fully qualified root report task first runs the ordinary JVM test suite selected by `koverJvmTests` without discovering same-named tasks in unrelated projects.
 `gradle/kover-jvm-projects.txt` is the single source of truth for that aggregation boundary: it includes modules with ordinary JVM tests and excludes testless remapped adapters, loaded-client-only integrations, and benchmarks so coverage does not configure or compile unrelated Loom projects.

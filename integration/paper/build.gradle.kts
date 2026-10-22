@@ -1,5 +1,3 @@
-import dev.detekt.gradle.extensions.DetektExtension
-
 group = "dev.s7a.strata.integration"
 
 dependencies {
@@ -29,7 +27,6 @@ tasks.register<JavaExec>("processPerformanceEvidence") {
 
 kotlin.sourceSets.named("main") { kotlin.srcDir(rootProject.file("integration/server-performance/src/main/kotlin")) }
 kotlin.sourceSets.named("test") { kotlin.srcDir(rootProject.file("integration/server-performance/src/test/kotlin")) }
-extensions.configure<DetektExtension> { source.from(rootProject.file("integration/server-performance/src/main/kotlin")) }
 
 tasks.withType<Test>().configureEach {
     val collector = project(":performance-testkit").tasks.named<Jar>("jvmJar").flatMap { it.archiveFile }

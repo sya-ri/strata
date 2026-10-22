@@ -1914,7 +1914,9 @@ subprojects {
         extensions.configure<DetektExtension> {
             buildUponDefaultConfig = true
             config.setFrom(rootProject.file("config/detekt/detekt.yml"))
-            source.from("src/main/kotlin", "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/jsMain/kotlin", "src/commonTest/kotlin", "src/jsTest/kotlin", "src/jvmTest/kotlin", "src/test/kotlin")
+            source.setFrom(providers.provider {
+                this@subprojects.extensions.getByType<KotlinMultiplatformExtension>().sourceSets.map { it.kotlin }
+            })
         }
         dependencies.add("detektPlugins", dependencies.project(":quality:detekt-rules"))
 
@@ -2042,9 +2044,6 @@ subprojects {
                 kotlin.srcDirs(testRoots.map { sourceRoot -> sourceRoot.resolve("kotlin") })
             }
         }
-        extensions.configure<DetektExtension> {
-            source.from((runtimeRoots + testRoots).map { sourceRoot -> sourceRoot.resolve("kotlin") })
-        }
     }
     minecraftFabricTargets.firstOrNull { target -> path == target.integrationProjectPath }?.let { target ->
         val nativeTests = target.canvasTestSourcePaths.map { sourcePath -> rootProject.file("$sourcePath/src/gametest") }
@@ -2069,14 +2068,6 @@ subprojects {
             sourceSets.matching { it.name == "gametest" }.configureEach {
                 kotlin.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("kotlin") })
             }
-        }
-        extensions.configure<DetektExtension> {
-            // Resolve selected files after all version-specific source sets and filters are configured.
-            source.from(
-                providers.provider {
-                    this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.findByName("gametest")?.kotlin?.files.orEmpty()
-                },
-            )
         }
     }
     if (completeIdeaModelActive) {
@@ -2219,6 +2210,9 @@ subprojects {
             "config/detekt/detekt.yml"
         }
         config.setFrom(rootProject.file(configFile))
+        source.setFrom(providers.provider {
+            this@subprojects.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.map { it.kotlin }
+        })
     }
 
     val publishableModule = path in publishableProjectPaths
