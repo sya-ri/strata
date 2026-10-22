@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 /**
  * Real negotiated messages prove event timing, ownership, reentrant controls, and terminal ordering.
@@ -217,6 +219,134 @@ internal class RemoteLifecycleEventTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(Retirement::class)
+    fun retiringAConnectionFromAReplacedScreenListenerDoesNotEvaluateTheNextDefinition(retirement: Retirement) {
+        Host().use { fixture ->
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            fixture.drain()
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    when (retirement) {
+                        Retirement.Service -> fixture.service.close()
+                        Retirement.Disconnect -> fixture.service.disconnect(Unit)
+                        Retirement.Reconnect -> fixture.service.join(Unit)
+                    }
+                }
+            }
+            var evaluations = 0
+            val result =
+                runCatching {
+                    fixture.service.open(
+                        owner,
+                        Unit,
+                        UiDefinition {
+                            evaluations += 1
+                            Spacer()
+                        },
+                    )
+                }
+            assertEquals(0, evaluations)
+            val replacement = result.getOrThrow()
+            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.Disconnected), replacement.status)
+            assertTrue(replacement.uiSession.status is UiSessionStatus.Closed)
+            assertNull(fixture.service.capabilities(Unit))
+            assertEquals(listOf(first.identity, replacement.identity), fixture.events.filterIsInstance<RemoteLifecycleEvent.Closed<*>>().map { it.identity })
+        }
+    }
+
+    @Test
+    fun openingAScreenFromAReplacementListenerKeepsOneForeground() {
+        Host().use { fixture ->
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            var newer: RemoteScreenSession? = null
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    newer = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+                }
+            }
+            val pending = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            val latest = checkNotNull(newer)
+            assertEquals(1, listOf(pending, latest).count { it.status == RemoteSessionStatus.Open })
+            assertEquals(listOf(RemoteFailure.Replaced), listOf(pending, latest).mapNotNull { (it.status as? RemoteSessionStatus.Closed)?.reason })
+        }
+    }
+
+    @Test
+    fun aNewerScreenOpenedDuringHudPromotionWinsTheForeground() {
+        Host().use { fixture ->
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            val hud = fixture.service.open(owner, Unit, UiDefinition(presentation = UiPresentation.Hud) { Spacer() })
+            fixture.drain().filterIsInstance<RemoteMessage.Snapshot>().forEach { snapshot ->
+                fixture.send(RemoteMessage.ControlApplied(snapshot.session, checkNotNull(snapshot.control).sequence))
+            }
+            var newer: RemoteScreenSession? = null
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    newer = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+                }
+            }
+            hud.uiSession.switch(UiPresentation.Screen)
+            val latest = checkNotNull(newer)
+            assertEquals(1, listOf(hud, latest).count { it.status == RemoteSessionStatus.Open })
+            assertEquals(RemoteSessionStatus.Closed(RemoteFailure.Replaced), hud.status)
+            assertEquals(RemoteSessionStatus.Open, latest.status)
+        }
+    }
+
+    @Test
+    fun aReentrantHudOpenRespectsCapacityUntilPromotionIsSent() {
+        Host(RemotePacket.limits.copy(hudSessions = 1)).use { fixture ->
+            assertEquals(1, checkNotNull(fixture.service.capabilities(Unit)).limits.hudSessions)
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            val hud = fixture.service.open(owner, Unit, UiDefinition(presentation = UiPresentation.Hud) { Spacer() })
+            fixture.drain().filterIsInstance<RemoteMessage.Snapshot>().forEach { snapshot ->
+                fixture.send(RemoteMessage.ControlApplied(snapshot.session, checkNotNull(snapshot.control).sequence))
+            }
+            var added: RemoteScreenSession? = null
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    added = fixture.service.open(owner, Unit, UiDefinition(presentation = UiPresentation.Hud) { Spacer() })
+                }
+            }
+            hud.uiSession.switch(UiPresentation.Screen)
+            val extra = checkNotNull(added)
+            val messages = fixture.drain()
+            if (extra.status == RemoteSessionStatus.Open) {
+                val promotion = messages.indexOfFirst { it is RemoteMessage.Control && it.session == hud.identity && it.state.presentation == UiPresentation.Screen }
+                val admission = messages.indexOfFirst { it is RemoteMessage.Snapshot && it.session == extra.identity }
+                assertTrue(0 <= promotion && promotion < admission, "Promotion $promotion must precede HUD admission $admission.")
+            } else {
+                assertEquals(RemoteSessionStatus.Closed(RemoteFailure.ResourceLimit), extra.status)
+            }
+        }
+    }
+
+    @Test
+    fun aReporterFailureDoesNotStrandAnAlreadyQueuedServiceClose() {
+        Host().use { fixture ->
+            val owner = Any()
+            val first = fixture.service.open(owner, Unit, UiDefinition { Spacer() })
+            val failure = IllegalStateException("Definition failed.")
+            var queued: RemoteScreenSession? = null
+            fixture.listener = { event ->
+                if (event is RemoteLifecycleEvent.Closed && event.identity == first.identity) {
+                    queued = fixture.service.open(owner, Unit, UiDefinition { throw failure })
+                    fixture.service.close()
+                }
+            }
+            assertSame(failure, assertThrows(IllegalStateException::class.java) { fixture.service.open(owner, Unit, UiDefinition { Spacer() }) })
+            assertTrue(checkNotNull(queued).status is RemoteSessionStatus.Closed)
+            assertTrue(checkNotNull(queued).uiSession.status is UiSessionStatus.Closed)
+            assertNull(fixture.service.capabilities(Unit))
+            assertThrows(IllegalStateException::class.java) { fixture.service.join(Unit) }
+        }
+    }
+
     @Test
     fun disconnectingOrReplacingFromAnOpenedListenerStopsTheRetiredTick() {
         listOf<(RemoteScreenService<Unit, Any>) -> Unit>(
@@ -238,9 +368,16 @@ internal class RemoteLifecycleEventTest {
     }
 
     /**
+     * Independent ways a close listener retires its authenticated connection.
+     */
+    enum class Retirement { Service, Disconnect, Reconnect }
+
+    /**
      * Authenticated packet route with explicit native-application acknowledgements.
      */
-    private class Host : AutoCloseable {
+    private class Host(
+        limits: RemoteLimits = RemotePacket.limits,
+    ) : AutoCloseable {
         val events = mutableListOf<RemoteLifecycleEvent<Any>>()
         var listener: (RemoteLifecycleEvent<Any>) -> Unit = {}
         val outgoing = ArrayDeque<ByteArray>()
@@ -253,7 +390,7 @@ internal class RemoteLifecycleEventTest {
         private val address: RemoteAddress
         private var sequence = 1L
         private val client =
-            RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types, RemotePacket.limits) {
+            RemoteConnection(RemoteRegistry().also(RemoteBuiltins::register).types, limits) {
                 incoming.addLast(RemotePacket.encode(RemotePacket.Frame(address, sequence++, it)))
             }
 
