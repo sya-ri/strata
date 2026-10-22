@@ -124,6 +124,7 @@ Full and reader-documentation jobs and development Pages builds use the same Loo
 Documentation builds include every versioned runtime, so full Qodana preparation may use their Loom cache as a fallback.
 Gradle prepares missing integration inputs before analysis, and the complete cache is saved only after model and report verification succeeds.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
+Aggregate Kover HTML and XML reports are regenerated after their JVM tests and are never stored in or loaded from the build cache.
 Acceptance evidence is generated for the selected revision.
 Each ordinary PR or full-CI Minecraft matrix job also runs `integration/fabric/run_acceptance.py` against a fresh loopback Fabric server using the production runtime and test Mod archives.
 The paired client confirms server-owned input, visible revisions, and two independent connections; the server confirms both closures and clean shutdown.
