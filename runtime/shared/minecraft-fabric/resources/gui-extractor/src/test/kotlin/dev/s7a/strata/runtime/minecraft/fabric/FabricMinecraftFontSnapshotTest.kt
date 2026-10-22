@@ -5,7 +5,6 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
-import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph

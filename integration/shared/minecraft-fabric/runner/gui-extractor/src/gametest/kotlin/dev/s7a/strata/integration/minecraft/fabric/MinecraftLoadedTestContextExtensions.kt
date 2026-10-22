@@ -59,7 +59,7 @@ internal fun MinecraftLoadedTestContext.assertScreenshotEquals(
     output: Path,
     size: IntSize,
 ) {
-    require(expected.getWidth() == size.width && expected.getHeight() == size.height) { "The reference screenshot has different dimensions: $size." }
+    require(expected.width == size.width && expected.height == size.height) { "The reference screenshot has different dimensions: $size." }
     val path = takeScreenshot(name, output, size)
     NativeImage.read(path.inputStream()).use { actual ->
         for (y in 0 until size.height) {

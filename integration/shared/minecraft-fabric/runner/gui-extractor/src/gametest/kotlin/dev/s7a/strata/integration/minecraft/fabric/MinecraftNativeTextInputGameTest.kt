@@ -138,7 +138,7 @@ internal class MinecraftNativeTextInputGameTest(
             check(nativeTextInputEnabled(minecraft)) { "Deferred Strata removal disabled the next native editor." }
             screen.close()
             check(nativeTextInputEnabled(minecraft)) { "Closing a detached screen disabled the active native editor." }
-            nativeParent.setFocused(null)
+            nativeParent.focused = null
             MinecraftClientScreenAccess.setScreen(minecraft, null)
             check(nativeTextInputEnabled(minecraft).not())
         }
@@ -149,7 +149,7 @@ internal class MinecraftNativeTextInputGameTest(
             runCanvasTestCleanup(
                 null,
                 { if (::screen.isInitialized) screen.close() },
-                { if (::nativeParent.isInitialized) nativeParent.setFocused(null) },
+                { if (::nativeParent.isInitialized) nativeParent.focused = null },
                 {
                     val active = MinecraftClientScreenAccess.currentScreen(minecraft)
                     val ownsScreen = ::screen.isInitialized && active === screen

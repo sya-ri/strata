@@ -64,7 +64,7 @@ internal object MinecraftSocialParity {
             )
         val headless =
             NativeImage.read(nativePath.inputStream()).use { native ->
-                require(native.getWidth() == viewport.width && native.getHeight() == viewport.height) {
+                require(native.width == viewport.width && native.height == viewport.height) {
                     "The native Social Interactions capture has the wrong size."
                 }
                 val rendered = renderHeadless(profile, assets)

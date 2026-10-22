@@ -186,7 +186,7 @@ internal class StrataMinecraftClientGameTest {
             context.runOnClient { minecraft ->
                 minecraft.options.guiScale().set(scale)
                 minecraft.resizeGui()
-                minecraft.window.setGuiScale(scale)
+                minecraft.window.guiScale = scale
                 check(minecraft.window.guiScaledWidth == viewport.width && minecraft.window.guiScaledHeight == viewport.height)
             }
             SampledParityScene.entries.forEach { scene -> runSampledImagePixelParityAtScale(context, profile, output, scale, physicalSize, scene) }
@@ -334,7 +334,7 @@ internal class StrataMinecraftClientGameTest {
         context.waitForScreen(DeterministicDirectJoinScreen::class.java)
         context.movePointerRaw(pointer.x.toDouble(), pointer.y.toDouble())
         context.runOnClient { minecraft ->
-            checkNotNull(MinecraftClientScreenAccess.currentScreen(minecraft)).setFocused(null)
+            checkNotNull(MinecraftClientScreenAccess.currentScreen(minecraft)).focused = null
         }
         context.waitTicks(2)
         val nativePath =
@@ -635,7 +635,7 @@ internal class StrataMinecraftClientGameTest {
 
     private class DeterministicScrollScreen : Screen(Component.literal("Strata Scroll parity")) {
         override fun init() {
-            addRenderableWidget(DeterministicSelectionList(checkNotNull(minecraft)))
+            addRenderableWidget(DeterministicSelectionList(minecraft))
         }
 
         override fun extractBackground(
@@ -724,7 +724,7 @@ internal class StrataMinecraftClientGameTest {
             hovered: Boolean,
             partialTick: Float,
         ) {
-            graphics.centeredText(Minecraft.getInstance().font, Component.literal(label), 160, getContentYMiddle() - 4, -1)
+            graphics.centeredText(Minecraft.getInstance().font, Component.literal(label), 160, contentYMiddle - 4, -1)
         }
 
         override fun getNarration(): Component = Component.literal(label)

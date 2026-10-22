@@ -20,7 +20,7 @@ internal interface MinecraftCanvasWindowTestAccess {
      * @param width positive logical width owned by the loaded-client test until restoration
      */
     @Accessor("width")
-    fun strataCanvasSetScreenWidth(width: Int): Unit
+    fun strataCanvasSetScreenWidth(width: Int)
 
     /**
      * Updates this borrowed window's logical viewport height without changing its native surface.
@@ -28,7 +28,7 @@ internal interface MinecraftCanvasWindowTestAccess {
      * @param height positive logical height owned by the loaded-client test until restoration
      */
     @Accessor("height")
-    fun strataCanvasSetScreenHeight(height: Int): Unit
+    fun strataCanvasSetScreenHeight(height: Int)
 
     /**
      * Invokes the SDL window focus callback with the supplied state.
@@ -36,17 +36,17 @@ internal interface MinecraftCanvasWindowTestAccess {
      * @param focused new native focus state, restored by the caller after the test
      */
     @Invoker("onFocus")
-    fun strataCanvasFocus(focused: Boolean): Unit
+    fun strataCanvasFocus(focused: Boolean)
 
     /**
      * Updates the test framebuffer width without resizing the SDL surface.
      */
     @Accessor("framebufferWidth")
-    fun strataCanvasSetFramebufferWidth(width: Int): Unit
+    fun strataCanvasSetFramebufferWidth(width: Int)
 
     /**
      * Updates the test framebuffer height without resizing the SDL surface.
      */
     @Accessor("framebufferHeight")
-    fun strataCanvasSetFramebufferHeight(height: Int): Unit
+    fun strataCanvasSetFramebufferHeight(height: Int)
 }

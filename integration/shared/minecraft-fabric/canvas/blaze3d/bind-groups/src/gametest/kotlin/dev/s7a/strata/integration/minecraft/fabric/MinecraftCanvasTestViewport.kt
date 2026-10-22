@@ -23,8 +23,8 @@ internal fun resizeMinecraftTestWindow(
             val access = MinecraftCanvasWindowTestAccess::class.java.cast(window)
             access.strataCanvasSetScreenWidth(logicalSize.width)
             access.strataCanvasSetScreenHeight(logicalSize.height)
-            window.setWidth(framebufferSize.width)
-            window.setHeight(framebufferSize.height)
+            window.width = framebufferSize.width
+            window.height = framebufferSize.height
             minecraft.gameRenderer.mainRenderTarget().resize(framebufferSize.width, framebufferSize.height)
         }
         return

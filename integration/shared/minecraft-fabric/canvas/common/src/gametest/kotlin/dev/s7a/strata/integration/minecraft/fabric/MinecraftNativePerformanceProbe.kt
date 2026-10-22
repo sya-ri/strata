@@ -154,7 +154,7 @@ internal class MinecraftNativePerformanceProbe(
                 gpu = createGpuProbe(plan.samples)
                 context.setScreen(screen)
                 meter = MinecraftPerformanceMeter(screen)
-                checkNotNull(meter).begin(
+                meter.begin(
                     "$name presented scale $scale",
                     plan,
                     NativePerformanceFixture(

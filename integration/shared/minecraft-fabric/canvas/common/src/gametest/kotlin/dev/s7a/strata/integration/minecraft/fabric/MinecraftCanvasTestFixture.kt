@@ -9,7 +9,6 @@ import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasContext
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasRenderer
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureLease
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureOrigin
-import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureProvider
 import dev.s7a.strata.runtime.minecraft.fabric.canvasSource
 
 /**

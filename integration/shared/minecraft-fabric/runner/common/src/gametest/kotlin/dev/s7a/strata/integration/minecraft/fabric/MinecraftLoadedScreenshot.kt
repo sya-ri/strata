@@ -22,8 +22,8 @@ internal fun captureStandaloneMinecraftScreenshot(
         readStandaloneMinecraftFramebuffer(minecraft) { image ->
             runCatching {
                 image.use {
-                    require(it.getWidth() == size.width && it.getHeight() == size.height) {
-                        "Loaded screenshot dimensions differ: expected=$size, actual=${it.getWidth()}x${it.getHeight()}."
+                    require(it.width == size.width && it.height == size.height) {
+                        "Loaded screenshot dimensions differ: expected=$size, actual=${it.width}x${it.height}."
                     }
                     it.writeToFile(destination)
                     destination

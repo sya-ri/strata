@@ -40,7 +40,7 @@ internal object MinecraftSlotTooltipTestStack {
         damage: Int,
     ): ItemStack {
         val stack = ItemStack(Items.DIAMOND_SWORD)
-        stack.setHoverName(Component.literal(name))
+        stack.hoverName = Component.literal(name)
         stack.enchant(Enchantments.UNBREAKING, 2)
         stack.damageValue = damage
         return stack

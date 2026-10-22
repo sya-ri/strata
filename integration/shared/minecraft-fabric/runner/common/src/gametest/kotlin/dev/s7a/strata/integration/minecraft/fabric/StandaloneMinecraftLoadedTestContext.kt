@@ -113,10 +113,10 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
         val worldId =
             computeOnClient { minecraft ->
                 val screen = MinecraftClientScreenAccess.currentScreen(minecraft) as? CreateWorldScreen ?: error("The create-world screen is not active.")
-                screen.uiState.setName(WORLD_NAME)
-                screen.uiState.setWorldType(screen.uiState.normalPresetList.single { it.preset()?.`is`(WorldPresets.FLAT) == true })
-                screen.uiState.setSeed("1")
-                screen.uiState.setGenerateStructures(false)
+                screen.uiState.name = WORLD_NAME
+                screen.uiState.worldType = screen.uiState.normalPresetList.single { it.preset()?.`is`(WorldPresets.FLAT) == true }
+                screen.uiState.seed = "1"
+                screen.uiState.isGenerateStructures = false
                 MinecraftStandaloneWorldAccess.configure(screen)
                 val targetFolder = screen.uiState.targetFolder
                 pressButton(screen, "selectWorld.create")

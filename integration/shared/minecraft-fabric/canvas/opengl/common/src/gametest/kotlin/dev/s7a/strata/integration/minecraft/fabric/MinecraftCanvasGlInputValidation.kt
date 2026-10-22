@@ -11,7 +11,6 @@ import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureLease
 import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureOrigin
-import dev.s7a.strata.runtime.minecraft.fabric.MinecraftCanvasTextureProvider
 import dev.s7a.strata.runtime.minecraft.fabric.canvasSource
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.screen.ScreenDefinition

@@ -198,7 +198,7 @@ internal class MinecraftComponentShowcaseParity(
             minecraft.options.guiScale().set(showcase.scale)
             minecraft.resizeGui()
             // Minimal component viewports are smaller than the options menu's 320 by 240 scale-selection floor.
-            minecraft.window.setGuiScale(showcase.scale)
+            minecraft.window.guiScale = showcase.scale
             check(minecraft.window.guiScaledWidth == showcase.viewport.width && minecraft.window.guiScaledHeight == showcase.viewport.height)
         }
         context.movePointerRaw(showcase.pointer.x.toDouble() * showcase.scale, showcase.pointer.y.toDouble() * showcase.scale)

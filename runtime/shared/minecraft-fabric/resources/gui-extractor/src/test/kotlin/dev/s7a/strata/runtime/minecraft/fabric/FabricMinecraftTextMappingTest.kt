@@ -25,31 +25,31 @@ internal class FabricMinecraftTextMappingTest {
         val nestedFont = ResourceId("example", "ui/icons")
         val text = UiText.concat(UiText.Literal("日本🙂").withFont(nestedFont), UiText.Literal("한국어")).withFont(font)
         val mapped = mapMinecraftText(text)
-        assertEquals("日本🙂한국어", mapped.getString())
-        assertEquals(FontDescription.Resource(minecraftResourceLocation(font.namespace, font.path)), mapped.getStyle().getFont())
+        assertEquals("日本🙂한국어", mapped.string)
+        assertEquals(FontDescription.Resource(minecraftResourceLocation(font.namespace, font.path)), mapped.style.font)
         assertEquals(
             FontDescription.Resource(minecraftResourceLocation(nestedFont.namespace, nestedFont.path)),
-            mapped.getSiblings()[0].getStyle().getFont(),
+            mapped.siblings[0].style.font,
         )
         val nested = mapMinecraftText(UiText.WithFont(UiText.WithFont(UiText.Literal("A"), nestedFont), font))
         assertEquals(
             FontDescription.Resource(minecraftResourceLocation(nestedFont.namespace, nestedFont.path)),
-            nested.getStyle().getFont(),
+            nested.style.font,
         )
     }
 
     @Test
     fun mapsLiteralConcatenatedAndTranslatedFallbackValues() {
-        assertEquals("literal", mapMinecraftText(UiText.Literal("literal")).getString())
+        assertEquals("literal", mapMinecraftText(UiText.Literal("literal")).string)
 
         val concatenated = mapMinecraftText(UiText.Concatenated(UiText.Literal("first"), UiText.Literal("second")))
-        assertEquals("firstsecond", concatenated.getString())
-        assertEquals(listOf("first", "second"), concatenated.getSiblings().map(Component::getString))
+        assertEquals("firstsecond", concatenated.string)
+        assertEquals(listOf("first", "second"), concatenated.siblings.map(Component::getString))
 
         val useKey = mapMinecraftText(UiText.Translated("strata.key"))
-        val useKeyContents = useKey.getContents() as TranslatableContents
-        assertEquals("strata.key", useKeyContents.getKey())
-        assertNull(useKeyContents.getFallback())
+        val useKeyContents = useKey.contents as TranslatableContents
+        assertEquals("strata.key", useKeyContents.key)
+        assertNull(useKeyContents.fallback)
 
         val literalFallback =
             mapMinecraftText(
@@ -57,8 +57,8 @@ internal class FabricMinecraftTextMappingTest {
                     "strata.fallback",
                     fallback = TranslationFallback.Literal("fallback"),
                 ),
-            ).getContents() as TranslatableContents
-        assertEquals("fallback", literalFallback.getFallback())
+            ).contents as TranslatableContents
+        assertEquals("fallback", literalFallback.fallback)
     }
 
     @Test
@@ -78,10 +78,10 @@ internal class FabricMinecraftTextMappingTest {
                             UiTextArgument.BooleanValue(true),
                         ),
                 ),
-            ).getContents() as TranslatableContents
+            ).contents as TranslatableContents
 
-        val arguments = mapped.getArgs()
-        assertEquals("nested", (arguments[0] as Component).getString())
+        val arguments = mapped.args
+        assertEquals("nested", (arguments[0] as Component).string)
         assertEquals("string", arguments[1])
         assertEquals(3, arguments[2])
         assertEquals(4L, arguments[3])
