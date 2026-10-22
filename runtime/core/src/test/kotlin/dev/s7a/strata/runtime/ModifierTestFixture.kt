@@ -346,17 +346,15 @@ internal class ModifierTestFixture {
         private val probe: Probe,
         val id: Int,
         val kind: Kind,
-        behavior: Behavior,
+        /**
+         * Current behavior after an update.
+         */
+        var behavior: Behavior,
     ) : ModifierNode(),
         PaintNode,
         PointerInputNode,
         SemanticsNode,
         LifecycleNode {
-        /**
-         * Current behavior after an update.
-         */
-        var behavior: Behavior = behavior
-
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,

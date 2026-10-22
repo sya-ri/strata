@@ -1,6 +1,7 @@
 package dev.s7a.strata.integration.external
 
 import dev.s7a.strata.geometry.Constraints
+import java.util.EnumMap
 
 /**
  * Test-owned observation probe passed explicitly through an external element description.
@@ -19,7 +20,7 @@ public class ExternalProbe {
     /**
      * External component nodes grouped by their typed identifiers.
      */
-    internal val componentNodes: MutableMap<ExternalNodeId, ExternalNode> = HashMap()
+    internal val componentNodes: MutableMap<ExternalNodeId, ExternalNode> = EnumMap(ExternalNodeId::class.java)
 
     /**
      * Number of external component update hooks observed.
