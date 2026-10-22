@@ -1,20 +1,16 @@
+@file:JvmName("GLFW")
+
 package org.lwjgl.glfw
 
 /**
- * Test-only GLFW boundary, proving minimized-window rejection rather than host compatibility.
+ * Attribute field expected by the reflective GLFW fallback in the window guard.
  */
-internal object GLFW {
-    const val GLFW_ICONIFIED = 1
-    var iconified = false
+public const val GLFW_ICONIFIED: Int = 1
 
-    /**
-     * Returns the fixture state only for the registered fake window and attribute.
-     */
-    @JvmStatic
-    fun glfwGetWindowAttrib(
-        handle: Long,
-        attribute: Int,
-    ): Int {
-        error("A modern Window handle must never be passed to GLFW: $handle/$attribute")
-    }
-}
+/**
+ * Fails an accidental GLFW lookup; modern window fixtures must read iconification from their own owner.
+ */
+public fun glfwGetWindowAttrib(
+    handle: Long,
+    attribute: Int,
+): Int = error("A modern Window handle must never be passed to GLFW: $handle/$attribute")
