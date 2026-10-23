@@ -23,7 +23,7 @@ public interface MinecraftCanvasWindowTestAccess {
      * @param width positive logical width owned by the loaded-client test until restoration
      */
     @Accessor("width")
-    public fun strataCanvasSetScreenWidth(width: Int): Unit
+    public fun strataCanvasSetScreenWidth(width: Int)
 
     /**
      * Updates this borrowed window's logical viewport height without changing its native surface.
@@ -31,7 +31,7 @@ public interface MinecraftCanvasWindowTestAccess {
      * @param height positive logical height owned by the loaded-client test until restoration
      */
     @Accessor("height")
-    public fun strataCanvasSetScreenHeight(height: Int): Unit
+    public fun strataCanvasSetScreenHeight(height: Int)
 
     /**
      * Invokes the native focus callback with the supplied window-owned handle.
@@ -43,5 +43,5 @@ public interface MinecraftCanvasWindowTestAccess {
     public fun strataCanvasFocus(
         window: Long,
         focused: Boolean,
-    ): Unit
+    )
 }
