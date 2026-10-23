@@ -62,10 +62,20 @@ class PartitionTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
-            actual = partition.validate_shards(root, dict(self.identity, runAttempt=2))
+            actual = partition.validate_shards(root, dict(self.identity, runAttempt=2), write_report=True)
             self.assertEqual(partition.keys(self.tasks), partition.keys(actual))
             parity = json.loads((root / "parity.json").read_text())
             self.assertEqual([1, 1, 1], [p["runAttempt"] for p in parity["producers"]])
+
+    def test_validation_preserves_existing_receipt_bytes_across_platform_newlines(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            path = root / "parity.json"
+            original = b'{"retained": "original producer bytes"}\n'
+            path.write_bytes(original)
+            partition.validate_shards(root, self.identity)
+            self.assertEqual(original, path.read_bytes())
 
     def test_missing_shard_cannot_produce_an_aggregate(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -73,7 +83,7 @@ class PartitionTest(unittest.TestCase):
             self.fixture(root)
             (root / "shards/web/shard.json").unlink()
             with self.assertRaises(FileNotFoundError):
-                partition.validate_shards(root, self.identity)
+                partition.validate_shards(root, self.identity, write_report=True)
 
     def test_aggregate_retains_nested_receipts_in_its_digest_inventory(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -136,7 +146,7 @@ class PartitionTest(unittest.TestCase):
             record["tasks"] = [t for t in record["tasks"] if not t["path"].endswith(":runProductionClientGameTest")]
             v.write_json(path, record)
             with self.assertRaisesRegex(ValueError, "omitted 1"):
-                partition.validate_shards(root, self.identity)
+                partition.validate_shards(root, self.identity, write_report=True)
             self.assertIn("runProductionClientGameTest", (root / "parity.json").read_text())
 
     def test_a_shard_cannot_substitute_a_different_plan_or_future_producer(self):

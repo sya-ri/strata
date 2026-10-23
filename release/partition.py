@@ -106,8 +106,8 @@ def seal(product):
                                                tasks=graph(product)))
 
 
-def validate_shards(root, expected):
-    """Require every planned producer, successful phase, and full transitive task coverage."""
+def validate_shards(root, expected, *, write_report=False):
+    """Validate immutable shard evidence; only aggregation writes its diagnostic parity report."""
     value = json.loads((root / "plan/plan.json").read_text())
     v.require(all(value.get(k) == entry for k, entry in expected.items() if k != "runAttempt")
               and 0 < value["runAttempt"] <= expected["runAttempt"], "Aggregate plan identity differs.")
@@ -128,8 +128,9 @@ def validate_shards(root, expected):
             tasks[(task["root"], task["build"], task["path"])] = task
         producers.append(dict(shard=shard["id"], runAttempt=record["runAttempt"]))
     missing = sorted(keys(value["tasks"]) - set(tasks))
-    v.write_json(root / "parity.json", dict(expectedTaskCount=len(keys(value["tasks"])),
-                                           actualTaskCount=len(tasks), missing=missing, producers=producers))
+    if write_report:
+        v.write_json(root / "parity.json", dict(expectedTaskCount=len(keys(value["tasks"])),
+                                               actualTaskCount=len(tasks), missing=missing, producers=producers))
     v.require(not missing, f"Partitioned verification omitted {len(missing)} full-command tasks: {missing[:20]}")
     return list(tasks.values())
 
@@ -160,7 +161,7 @@ def aggregate(product):
     value = json.loads((v.EVIDENCE / "plan/plan.json").read_text())
     for shard in value["shards"]:
         download(shard["id"], v.EVIDENCE / "shards" / shard["id"])
-    tasks = validate_shards(v.EVIDENCE, expected)
+    tasks = validate_shards(v.EVIDENCE, expected, write_report=True)
     files = {p.relative_to(v.EVIDENCE).as_posix(): v.digest(p) for p in sorted(v.EVIDENCE.rglob("*"))
              if p.is_file() and p != v.EVIDENCE / "receipt.json"}
     v.write_json(v.EVIDENCE / "receipt.json", dict(expected, command=v.FULL_CHECK, topology="partitioned",
