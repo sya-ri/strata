@@ -221,6 +221,15 @@ class ReleaseVerificationTest(unittest.TestCase):
         self.assertEqual(3, len(report["jobs"]))
         self.assertIsNone(next(job["seconds"] for job in report["jobs"] if job["name"] == "unselected"))
 
+    def test_successful_unsigned_checks_do_not_hide_later_signing_or_destination_failure(self):
+        results = dict(verification=dict(result="success", outputs=dict(failure_classification="success")))
+        self.assertEqual("success", recovery.classify_outcome(results, []))
+        for job in ("prepare", "central", "publish"):
+            results[job] = dict(result="failure")
+            self.assertTrue(recovery.classify_outcome(results, [job]).startswith("failure outside unsigned verification"))
+        results["verification"] = dict(result="failure", outputs=dict(failure_classification="deterministic verification failure"))
+        self.assertEqual("deterministic verification failure", recovery.classify_outcome(results, ["verification"]))
+
 
 if __name__ == "__main__":
     unittest.main()

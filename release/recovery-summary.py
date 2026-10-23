@@ -82,6 +82,19 @@ def retry_inputs(inputs, manifest, jobs):
                 prepared_run_id=str(manifest["runId"]), confirmation="release " + inputs["tag"], **selected)
 
 
+def classify_outcome(results, errors):
+    """Do not label signing or destination failures successful just because unsigned checks passed."""
+    if not errors:
+        return "success"
+    verification_result = results.get("verification", {})
+    candidate = verification_result.get("outputs", {}).get("failure_classification")
+    if verification_result.get("result") in ("failure", "cancelled"):
+        if candidate and candidate != "success":
+            return candidate
+        return "evidence collection or artifact failure; inspect verification job steps"
+    return "failure outside unsigned verification; inspect failed source, analysis, signing or destination jobs"
+
+
 def main():
     """Write recovery evidence even on failure, then fail for any unexpected skip or cancellation."""
     inputs, results = json.loads(os.environ["RELEASE_INPUTS"]), json.loads(os.environ["RESULTS"])
@@ -107,9 +120,9 @@ def main():
     failures = [dict(job=j["name"], step=next((s["name"] for s in j.get("steps", []) if s["conclusion"] == "failure"), None),
                      result=j["conclusion"], url=j.get("html_url")) for j in jobs if j["conclusion"] in ("failure", "cancelled")]
     failure_outputs = results.get("verification", {}).get("outputs", {})
-    classification = failure_outputs.get("failure_classification") or "unclassified failure; inspect retained cause chain"
-    if classification == "success" and results.get("verification", {}).get("result") != "success":
-        classification = "evidence collection or artifact failure after product checks; inspect job steps"
+    classification = classify_outcome(results, errors)
+    if restore_error:
+        classification = "immutable preparation recovery validation failed; original inputs must be reconciled"
     recovery = retry_inputs(inputs, manifest, jobs)
     report = dict(schemaVersion=1, sourceCommit=inputs["source_commit"], tag=inputs["tag"],
                   tagObject=os.environ.get("TAG_OBJECT"), controllerCommit=os.environ["GITHUB_SHA"],
@@ -126,7 +139,7 @@ def main():
             summary.write(f"| {key} | {results.get(key, {}).get('result', 'missing')} | {required} |\n")
         for failure in failures:
             summary.write(f"\n{failure['result']}: {failure['job']} / {failure['step']} ({failure['url']}).\n")
-        if errors:
+        if errors or restore_error:
             summary.write(f"\nVerification classification: {classification}.\n")
         summary.write("\nInspect the retained phase classification and cause chain. Retry only identified transient failures; compiler, assertion, analysis and integrity failures require a fix.\n")
         if manifest:
