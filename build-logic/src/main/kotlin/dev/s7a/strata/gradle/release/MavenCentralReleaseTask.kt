@@ -95,16 +95,15 @@ internal abstract class MavenCentralReleaseTask
                     }
 
                     Operation.VERIFY -> {
-                        val verified = verifier.verify(coordinates)
                         val directory =
                             canonicalSignatureDirectory.orNull?.asFile
                                 ?: error("Maven Central final verification requires a canonical signature output directory.")
                         val evidence =
                             canonicalEvidenceDirectory.orNull?.asFile
                                 ?: error("Maven Central final verification requires a canonical evidence output directory.")
-                        val signedFiles = verifier.stageCanonicalPublicationEvidence(coordinates, evidence.toPath())
+                        val verified = verifier.verify(coordinates, outputDirectory = evidence.toPath())
                         directory.mkdirs()
-                        signedFiles.filter(MavenCentralReleaseVerifier.SignedPublicationFile::githubDistributionSignature).forEach { file ->
+                        verified.signedFiles.filter(MavenCentralReleaseVerifier.SignedPublicationFile::githubDistributionSignature).forEach { file ->
                             val source = evidence.toPath().resolve(file.signatureRelativePath)
                             Files.copy(source, directory.toPath().resolve(Path.of(file.signatureRelativePath).fileName))
                         }

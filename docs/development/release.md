@@ -61,6 +61,9 @@ Both paths validate its producer, source identity, complete inventory, and hashe
 Missing archives, mismatched tag objects, or unsuccessful preparation stop the run instead of silently rebuilding a supposedly identical release.
 Published Maven downloads are compared with the saved inventory and their original detached signatures.
 Portal verification also requires and checks the signature checksum sidecars when the saved preparation contains them; historical base-only inventories retain their original verification contract.
+Final Central verification writes the canonical base files and detached signatures from the same successful inspection instead of downloading them again for evidence assembly.
+Every base-byte/checksum/signature requirement and bounded read/propagation retry remains enabled; failed or cancelled verification removes its partial staging directory.
+This reduces duplicate read requests in the local complete-inventory fixture; it does not measure Sonatype processing or public propagation time.
 
 Unsigned verification retains sanitized phase consoles, identities and timings, available test XML/HTML, browser/native parity output, loaded-client logs, and crash reports in a separate attempt-qualified artifact, including after failure.
 Phases that never reach screenshot capture are recorded without requiring nonexistent screenshots.
@@ -69,6 +72,7 @@ The result summary validates the reusable archive before offering its original p
 Unexpected skips and cancellation fail result aggregation.
 Inspect the primary cause before retrying: compiler errors, assertions, quality findings and integrity conflicts require a correction, while a demonstrated transient infrastructure failure may justify rerunning only failed jobs and their dependents.
 A rerun retains the original controller revision; a controller fix requires a new dispatch using the original successful `prepared_run_id`.
+The signing gate also refuses another preparation when the same run already saved a signed archive; select its original producer for recovery.
 
 ## Non-publishing qualification
 
@@ -99,6 +103,7 @@ Ordinary controller fixtures exercise failed/cancelled gates, late assertions, t
 Use one unchanged product/task inventory, toolchains and runner class for matched trials, record both controller revisions, alternate order, and retain cold/warm reusable-input conditions without caching acceptance evidence.
 The current rehearsal uses the ordinary read-only Gradle cache policy; its first samples do not establish controlled cold/warm performance parity.
 Job/step timestamps, phase durations and aggregate runner-minutes by OS are retained with their revision and attempt identities.
+Verification also records actual installed Java versions, runner image/architecture, logical processor count and hashes of the selected toolchain catalog and wrapper inputs.
 The summary labels unavailable resource/dependency-ready observations and excludes its still-running result job and post-summary time.
 Compare preparation-to-ready time, medians and ranges over at least three matched repetitions where practical; public visibility and Pages are separate milestones.
 No elapsed-time saving, full-matrix equivalence or Central-read speedup is established by controller fixtures alone.
