@@ -63,6 +63,8 @@ jobs:
       with:
         cache-read-only: true
         gradle-home-cache-excludes: caches/fabric-loom
+    - name: Record actual toolchain and runner profile
+      run: python3 release/verification.py profile
     - name: Install native dependencies
       timeout-minutes: 10
       run: python3 release/verification.py native

@@ -20,6 +20,8 @@ name: Qodana
         value: ${{ jobs.qodana.outputs.report_digest }}
       build_logic_report_digest:
         value: ${{ jobs.build-logic.outputs.report_digest }}
+      build_logic_source_commit:
+        value: ${{ jobs.build-logic.outputs.source_commit }}
 permissions:
   actions: read
   contents: read
@@ -134,6 +136,8 @@ jobs:
           qodana-index-${{ runner.os }}-${{ steps.analysis_inputs.outputs.qodana_hash }}-
     - name: Run Qodana
       uses: JetBrains/qodana-action@v2026.2
+      env:
+        QODANA_REVISION: ${{ steps.identity.outputs.source_commit }}
       with:
         cache-dir: ${{ runner.temp }}/qodana/caches
         results-dir: ${{ runner.temp }}/qodana/results

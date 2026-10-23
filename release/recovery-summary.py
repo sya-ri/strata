@@ -42,7 +42,7 @@ def timings(run, jobs):
         duration = seconds(job["started_at"], job["completed_at"]) if job.get("started_at") and job.get("completed_at") else None
         if duration is not None:
             minutes[platform] = minutes.get(platform, 0) + duration / 60
-        records.append(dict(id=job["id"], name=job["name"], attempt=job.get("run_attempt"), result=job["conclusion"],
+        records.append(dict(id=job["id"], name=job["name"], attempt=job.get("run_attempt"), result=job["conclusion"], runnerLabels=labels,
                             startedAt=job.get("started_at"), completedAt=job.get("completed_at"), seconds=duration,
                             steps=[dict(name=s["name"], result=s["conclusion"], startedAt=s.get("started_at"), completedAt=s.get("completed_at"))
                                    for s in job.get("steps", [])]))

@@ -68,8 +68,8 @@ class ReleaseVerificationTest(unittest.TestCase):
                     api.assert_not_called()
 
     def test_gate_accepts_same_run_successful_prior_attempt_and_checks_downloaded_digest(self):
-        for corrupt in (False, True):
-            with self.subTest(corrupt=corrupt), tempfile.TemporaryDirectory() as temporary:
+        for corrupt, saved in ((False, False), (True, False), (False, True)):
+            with self.subTest(corrupt=corrupt, saved=saved), tempfile.TemporaryDirectory() as temporary:
                 workspace = Path(temporary)
                 source = workspace / "original"
                 self.write_receipt(source)
@@ -86,6 +86,7 @@ class ReleaseVerificationTest(unittest.TestCase):
                 results = {name: {"result": "success"} for name in ("source", "analysis", "verification")}
                 results["verification"]["outputs"] = outputs
                 results["analysis"]["outputs"] = dict(source_commit="a" * 40, controller_commit="b" * 40,
+                                                       build_logic_source_commit="a" * 40,
                                                        producer_run_id="123", producer_attempt="1",
                                                        product_report_digest="d" * 64, build_logic_report_digest="e" * 64)
 
@@ -93,14 +94,21 @@ class ReleaseVerificationTest(unittest.TestCase):
                     self.assertEqual(["gh", "api", "repos/owner/repo/actions/artifacts/789/zip"], command)
                     kwargs["stdout"].write(b"corrupted archive" if corrupt else archive.read_bytes())
 
+                def metadata(command):
+                    previous = [dict(name="prepared-v7.8.9-1")] if saved else []
+                    return json.dumps([dict(artifacts=previous)]) if "--paginate" in command else json.dumps(artifact)
+
                 previous = Path.cwd()
                 try:
                     os.chdir(workspace)
                     with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repo"}), \
                             patch.object(verification, "identity", return_value=dict(self.identity, runAttempt=2)), \
-                            patch.object(verification.subprocess, "check_output", return_value=json.dumps(artifact)), \
+                            patch.object(verification.subprocess, "check_output", side_effect=metadata), \
                             patch.object(verification.subprocess, "run", side_effect=download):
-                        if corrupt:
+                        if saved:
+                            with self.assertRaisesRegex(ValueError, "instead of signing again"):
+                                verification.gate(Path("product"), results)
+                        elif corrupt:
                             with self.assertRaisesRegex(ValueError, "digest or size"):
                                 verification.gate(Path("product"), results)
                         else:

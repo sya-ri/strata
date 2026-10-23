@@ -69,6 +69,20 @@ def identity(product):
                 runAttempt=int(os.environ["GITHUB_RUN_ATTEMPT"]))
 
 
+def runtime_profile(product):
+    """Record actual installed toolchains and runner image for matched rehearsal comparisons."""
+    homes = {value for name, value in os.environ.items() if name == "JAVA_HOME" or re.fullmatch(r"JAVA_HOME_[0-9]+_X64", name)}
+    toolchains = []
+    for home in sorted(homes):
+        executable = Path(home) / "bin" / ("java.exe" if os.name == "nt" else "java")
+        result = subprocess.run([str(executable), "-version"], capture_output=True, check=True)
+        toolchains.append((result.stdout + result.stderr).decode("utf-8", errors="replace").strip())
+    return dict(javaVersions=sorted(set(toolchains)), logicalProcessors=os.cpu_count(),
+                runner={name: os.environ.get(name) for name in ("RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion")},
+                buildInputs={name: digest(product / name) for name in
+                             ("gradle/libs.versions.toml", "gradle/wrapper/gradle-wrapper.properties")})
+
+
 def classify(text):
     """Classify only evidenced failures; infrastructure-looking text never enables retries."""
     if re.search(r"Compilation error|Unresolved reference|compile.*FAILED|AssertionError|tests completed.*failed|quality gate", text, re.IGNORECASE):
@@ -185,6 +199,7 @@ def gate(product, results, output=Path("build/verification-gate.json")):
     expected = identity(product)
     analysis = results["analysis"]["outputs"]
     require(analysis.get("source_commit") == expected["sourceCommit"]
+            and analysis.get("build_logic_source_commit") == expected["sourceCommit"]
             and analysis.get("controller_commit") == expected["controllerCommit"]
             and analysis.get("producer_run_id") == str(expected["runId"])
             and 0 < int(analysis["producer_attempt"]) <= expected["runAttempt"]
@@ -197,6 +212,11 @@ def gate(product, results, output=Path("build/verification-gate.json")):
     artifact_id = outputs["artifact_id"]
     require(re.fullmatch(r"[1-9][0-9]*", artifact_id), "Verification artifact is missing.")
     repo, run = os.environ["GITHUB_REPOSITORY"], expected["runId"]
+    if expected["scope"] == "production":
+        pages = json.loads(subprocess.check_output(["gh", "api", "--paginate", "--slurp",
+                                                   f"repos/{repo}/actions/runs/{run}/artifacts?per_page=100"]))
+        require(not any(a["name"].startswith("prepared-") for page in pages for a in page["artifacts"]),
+                "This run already saved signed preparation; reuse its prepared_run_id instead of signing again.")
     artifact = json.loads(subprocess.check_output(["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}"]))
     binding = artifact.get("workflow_run", {})
     require(binding.get("id") == run and binding.get("head_sha") == expected["controllerCommit"]
@@ -229,11 +249,13 @@ def gate(product, results, output=Path("build/verification-gate.json")):
 def main():
     """Expose shared verification phases to production and non-publishing rehearsals."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=("init", "native", "npm", "browsers", "check", "collect", "summary", "receipt", "gate"))
+    parser.add_argument("operation", choices=("init", "profile", "native", "npm", "browsers", "check", "collect", "summary", "receipt", "gate"))
     parser.add_argument("--product", type=Path, default=Path("product"))
     args = parser.parse_args()
     if args.operation == "init":
         write_json(EVIDENCE / "source.json", identity(args.product))
+    elif args.operation == "profile":
+        write_json(EVIDENCE / "runtime-profile.json", runtime_profile(args.product))
     elif args.operation == "collect":
         collect(args.product)
     elif args.operation == "summary":
