@@ -1,8 +1,11 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.mixin.canvas.MinecraftCanvasWindowTestAccess
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.lwjgl.sdl.SDLError.SDL_GetError
 import org.lwjgl.sdl.SDLVideo.SDL_SetWindowSize
 
@@ -31,8 +34,8 @@ internal fun resizeMinecraftTestWindow(
         }
         return
     }
+    context.resizeWindow(logicalSize)
     context.runOnClient { minecraft ->
-        minecraft.window.setWindowed(logicalSize.width, logicalSize.height)
         check(SDL_SetWindowSize(minecraft.window.handle(), logicalSize.width, logicalSize.height)) { "Cannot resize the native acceptance window: ${SDL_GetError()}" }
     }
     var matches = 0

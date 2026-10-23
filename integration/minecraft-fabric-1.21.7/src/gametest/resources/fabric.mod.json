@@ -8,11 +8,11 @@
     "strata.canvas.tests.mixins.json"
   ],
   "entrypoints": {
+    "fabric-client-gametest": ["dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientVerification"],
     "main": ["dev.s7a.strata.integration.minecraft.fabric.FabricServerUiAcceptance"],
     "client": [
       "dev.s7a.strata.integration.minecraft.fabric.RemoteNativeCanvasFixture",
-      "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient",
-      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientVerification"
+      "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient"
     ]
   },
   "depends": {

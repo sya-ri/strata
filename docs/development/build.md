@@ -149,7 +149,9 @@ These JVM tests do not constitute a loaded Paper/Velocity run or operating-syste
 Paper/native acceptance uses matching game versions only; the [generated compatibility table](../reference/compatibility.md) records missing exact distributions separately from Fabric client targets.
 
 Each versioned integration project verifies its exact adapter through development outputs and packaged production jars.
-The standalone runner creates a fixed-seed flat world without structures or mob spawning so native movement assertions do not depend on random terrain or entity collisions.
+Fabric Client GameTest supplies controlled ticks, input, screenshots, and consistent flat-world settings on targets that provide its API.
+Earlier targets use the standalone runner with the same fixed-seed flat world without structures or mob spawning.
+Both coordinators run the same acceptance contracts.
 The legacy viewport fixture requests both Minecraft's test dimensions and the real GLFW window size, then requires two matching native/window/render-target samples.
 Run `:integration:minecraft-fabric-<version>:runClientGameTest` and `:integration:minecraft-fabric-<version>:runProductionClientGameTest` for the target being changed.
 Every supported integration project's `check` requires both gates.

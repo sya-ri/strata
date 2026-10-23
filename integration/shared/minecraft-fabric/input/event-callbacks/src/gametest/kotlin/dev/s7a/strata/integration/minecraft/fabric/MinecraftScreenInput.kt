@@ -2,6 +2,7 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.KeyCode
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.KeyEvent
@@ -101,6 +102,7 @@ internal fun pressMinecraftSpace(screen: Screen): Boolean = screen.keyPressed(Ke
  * The loaded test calls this on the client thread and restores the previous focus state; input-reset failures propagate unchanged.
  * Fabric's harness cancellation is bypassed only for this explicit invocation and remains enabled for ordinary callbacks.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal fun focusMinecraftWindow(focused: Boolean) {
     val window = Minecraft.getInstance().window
     MinecraftCanvasWindowTestScope.invoke(window, window.handle(), focused)

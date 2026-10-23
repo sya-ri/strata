@@ -1,8 +1,11 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.mixin.canvas.MinecraftCanvasWindowTestAccess
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Resizes the native OpenGL window and waits for its framebuffer and main render target to settle.
@@ -29,7 +32,7 @@ internal fun resizeMinecraftTestWindow(
         }
         return
     }
-    context.runOnClient { minecraft -> minecraft.window.setWindowed(logicalSize.width, logicalSize.height) }
+    context.resizeWindow(logicalSize)
     var matches = 0
     context.waitFor { minecraft ->
         val window = minecraft.window
