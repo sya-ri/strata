@@ -47,6 +47,7 @@ def build(tag, commit, scope):
         notes = Path("build/rehearsal-notes.md").resolve()
         notes.write_text(f"# Non-publishing rehearsal\n\nProduct: {commit}\nController: {os.environ['GITHUB_SHA']}\n", encoding="utf-8")
         os.environ["STRATA_REHEARSAL_NOTES"] = str(notes)
+        os.environ["STRATA_REHEARSAL_PRODUCT"] = str(Path("product").resolve())
         command += ["--init-script", "../release/rehearsal-metadata.gradle"]
     return verification.phase("signing", Path("product"), command, Path("build/preparation-diagnostics"))
 

@@ -18,6 +18,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
+    id 'fixture.marker'
 }
 group = 'org.fixture'
 version = '7.8.9'
@@ -90,8 +91,24 @@ def main():
         key = run(gpg + ["--armor", "--export-secret-keys"])
         environment = dict(os.environ, FIXTURE_SIGNING_KEY=key, FIXTURE_MAVEN=str(repository),
                            JAVA_TOOL_OPTIONS=f"-Dmaven.repo.local={repository.as_posix()}")
-        (product / "settings.gradle").write_text("rootProject.name = 'fixture'\n", encoding="utf-8")
+        (product / "settings.gradle").write_text("pluginManagement { includeBuild('build-logic') }\nrootProject.name = 'fixture'\n", encoding="utf-8")
         (product / "build.gradle").write_text(FIXTURE, encoding="utf-8")
+        plugin_build = product / "build-logic"
+        plugin_build.mkdir()
+        (plugin_build / "settings.gradle").write_text("rootProject.name = 'fixture-build-logic'\n", encoding="utf-8")
+        (plugin_build / "build.gradle").write_text("""
+plugins { id 'java-gradle-plugin' }
+gradlePlugin { plugins { marker { id = 'fixture.marker'; implementationClass = 'FixtureMarker' } } }
+""", encoding="utf-8")
+        plugin_source = plugin_build / "src/main/java/FixtureMarker.java"
+        plugin_source.parent.mkdir(parents=True)
+        plugin_source.write_text("""
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+public class FixtureMarker implements Plugin<Project> {
+    public void apply(Project project) {}
+}
+""", encoding="utf-8")
         java_source = product / "src/main/java/Fixture.java"
         java_source.parent.mkdir(parents=True)
         java_source.write_text("public class Fixture {}\n", encoding="utf-8")
@@ -105,6 +122,7 @@ def main():
         notes = root / "notes.md"
         notes.write_text("# Non-publishing rehearsal fixture\n", encoding="utf-8")
         environment["STRATA_REHEARSAL_NOTES"] = str(notes)
+        environment["STRATA_REHEARSAL_PRODUCT"] = str(product.resolve())
         run(command + ["-p", str(product), "--init-script", str(ROOT / "release/verification-tasks.gradle"),
                        "--init-script", str(ROOT / "release/rehearsal-metadata.gradle"), "prepareFixture"], env=environment)
         tasks = json.loads((product / "build/release-verification/tasks.json").read_text())
