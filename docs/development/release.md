@@ -93,8 +93,7 @@ gh workflow run jvm.yml --ref <controller-branch> -f rehearsal_source_commit=<fu
 Use `rehearsal_topology=overlap` for the paired scheduling plan.
 The wrapper forbids mixing rehearsal with paired performance inputs or selected-client inputs, and requires the selected rehearsal to succeed.
 After registration, dispatch `release-rehearsal.yml` directly with the same product and controller SHAs and `topology`.
-Check `gh run view <run-id> --json status,conclusion` at intervals of three to five minutes, then inspect terminal outcomes and only the required failure evidence.
-Do not repeatedly retrieve jobs, steps or annotations while waiting; if GitHub reports a rate limit, wait until its reset time before querying again.
+Follow [CI waiting](ci.md#waiting-for-ci) to check the outcome without repeatedly retrieving job details.
 
 Rehearsals generate a disposable signing key and retain only explicitly named rehearsal archives and diagnostics.
 They have no release environment, production signing/upload secrets, publication jobs, tag/release write permissions, Pages deployment, or publication-monitor dispatch.
