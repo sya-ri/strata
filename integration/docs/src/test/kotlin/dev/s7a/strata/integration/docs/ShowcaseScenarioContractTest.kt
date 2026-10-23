@@ -2,17 +2,11 @@
 
 package dev.s7a.strata.integration.docs
 
-import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.createConfirmScreenDefinition
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.layout.Arrangement
-import dev.s7a.strata.layout.HorizontalAlignment
-import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
-import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.remote.RemoteBuiltins
 import dev.s7a.strata.runtime.remote.RemoteComponentRuntime
@@ -22,8 +16,6 @@ import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteServerSession
 import dev.s7a.strata.runtime.remote.RemoteTree
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.text.TextLayout
-import dev.s7a.strata.text.TextOverflow
 import dev.s7a.strata.ui.UiDefinition
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

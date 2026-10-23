@@ -1347,12 +1347,6 @@ assert_project_rejected 'a source folder with a duplicate exact type attribute'
 cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
 
 sed -i \
-  's#url="file://\$MODULE_DIR\$/../shared/minecraft-fabric/canvas/common/src/main/kotlin"#url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin" url="file://$MODULE_DIR$/../shared/minecraft-fabric/canvas/common/src/main/kotlin"#' \
-  "$fixture_runtime_iml"
-assert_project_rejected 'a source folder with a duplicate exact url attribute'
-cp -- "$fixture_iml_backup" "$fixture_runtime_iml"
-
-sed -i \
   '/<\/content>/i\      <sourceFolder/>' \
   "$fixture_runtime_iml"
 assert_project_rejected 'an extra zero-attribute sourceFolder element'

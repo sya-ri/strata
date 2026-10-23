@@ -1,8 +1,13 @@
 package dev.s7a.strata.gradle.release
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 
 /**
@@ -18,7 +23,10 @@ internal class MockModrinthUploadTest : ModrinthReleaseTest() {
         fixture.client(server).createListedVersion(fixture.manifest, artifact, file)
         val contentType = checkNotNull(server.lastUploadContentType)
         val body = checkNotNull(server.lastUploadBody)
-        assertArrayEquals(file.readBytes(), MockModrinthUpload.parse(contentType, body, fixture).bytes)
+        val http = HttpClient.newHttpClient()
+        val download = http.send(HttpRequest.newBuilder(URI("${server.baseUrl}/cdn/${artifact.fileName}")).build(), HttpResponse.BodyHandlers.ofByteArray())
+        assertEquals(200, download.statusCode())
+        assertArrayEquals(file.readBytes(), download.body())
         val text = String(body, StandardCharsets.ISO_8859_1)
         val boundary = contentType.substringAfter("boundary=")
         val controls =
@@ -31,9 +39,18 @@ internal class MockModrinthUploadTest : ModrinthReleaseTest() {
                 text.substringBefore("\r\n--$boundary\r\nContent-Disposition: form-data; name=\"primary\"") + "\r\n--$boundary--\r\n",
             )
         controls.forEach { invalid ->
-            assertThrows(IllegalArgumentException::class.java) {
-                MockModrinthUpload.parse(contentType, invalid.toByteArray(StandardCharsets.ISO_8859_1), fixture)
-            }
+            val rejecting = server(fixture)
+            val request =
+                HttpRequest
+                    .newBuilder(URI("${rejecting.baseUrl}/v2/version"))
+                    .header("Content-Type", contentType)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(invalid.toByteArray(StandardCharsets.ISO_8859_1)))
+                    .build()
+            val response = http.send(request, HttpResponse.BodyHandlers.ofString())
+            assertEquals(400, response.statusCode())
+            assertTrue(response.body().contains("Upload"))
+            assertEquals(0, rejecting.createRequests)
+            assertTrue(rejecting.writeEvents.isEmpty())
         }
     }
 }

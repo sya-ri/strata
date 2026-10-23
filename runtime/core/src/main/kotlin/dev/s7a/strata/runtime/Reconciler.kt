@@ -181,7 +181,8 @@ internal class Reconciler(
                 .filter { DirtyPhase.Measure !in it.dirty }
                 .toList()
         val descriptions = constrained.dynamicChildren(constraints)
-        reconcileDynamicChildren(root, descriptions, validator)
+        // Ancestor summaries were already visited before constraint-dependent measurement began.
+        reconcileDynamicChildren(root, descriptions, validator, propagateSummary = true)
         val children = root.refreshChildren
         for (index in children.indices) refreshDynamicChildren(children[index], validator)
         lifecycle.attachPending(root)
@@ -192,11 +193,12 @@ internal class Reconciler(
         root: RetainedNode,
         descriptions: List<Element>,
         validator: DescriptionValidator,
+        propagateSummary: Boolean = false,
     ) {
         if (root.dynamicDescriptions === descriptions) return
         validator.validateChildren(descriptions)
         if (root.children.isNotEmpty() || descriptions.isNotEmpty()) {
-            reconcileChildren(root, descriptions, propagateSummary = false)
+            reconcileChildren(root, descriptions, propagateSummary = propagateSummary)
         }
         root.dynamicDescriptions = descriptions
     }

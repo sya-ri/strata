@@ -16,7 +16,6 @@ import dev.s7a.strata.component.buildComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
-import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.FlowRowAlignmentParentData
 import dev.s7a.strata.layout.FlowRowElement

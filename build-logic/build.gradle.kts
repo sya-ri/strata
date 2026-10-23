@@ -48,6 +48,7 @@ tasks.test {
     inputs.files(
         "../build.gradle.kts",
         "../settings.gradle.kts",
+        "../runtime/minecraft-fonts-lwjgl/verification.gradle.kts",
         "../gradle/libs.versions.toml",
         "../gradle/performance/bounded-jvm.init.gradle.kts",
         "../gradle/verify-selected-clients.init.gradle.kts",

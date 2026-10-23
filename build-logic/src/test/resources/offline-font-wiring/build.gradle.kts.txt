@@ -1,0 +1,21 @@
+plugins { base }
+
+__PARITY_MAPPING__
+
+subprojects {
+    repositories { mavenCentral() }
+    if (path.startsWith(":integration:minecraft-fabric-")) {
+        apply(plugin = "base")
+        val target = object { val version = name.removePrefix("minecraft-fabric-") }
+        tasks.register("runClientGameTest") {
+            val evidence = layout.buildDirectory.dir(if (target.version == "26.3") "minecraft-parity/font-parity" else "minecraft-verification/font-parity")
+            outputs.dir(evidence)
+            doLast {
+                evidence.get().asFile.mkdirs()
+                evidence.get().file("native.txt").asFile.writeText("native")
+            }
+        }
+        tasks.named("check") { dependsOn("runClientGameTest") }
+        __SELECTED_CHECK_WIRING__
+    }
+}

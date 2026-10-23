@@ -179,6 +179,20 @@ listOf(
     tasks.named("check") { dependsOn(work) }
 }
 
+// The registry has one terminal lifetime, so every success/failure admission gets its own JVM.
+listOf("Success", "Registry", "Pending", "Settled").forEach { scenario ->
+    val verification = tasks.register<JavaExec>("verifyNativeCleanupReport$scenario") {
+        group = "verification"
+        description = "Checks real native cleanup report admission and terminal release for $scenario in an isolated JVM."
+        dependsOn(componentGenerated, componentGenerator)
+        classpath = componentClasspath
+        javaLauncher.set(componentLauncher)
+        mainClass.set("dev.s7a.strata.quality.benchmark.NativeCleanupReportEvidence")
+        args(scenario)
+    }
+    tasks.named("check") { dependsOn(verification) }
+}
+
 tasks.register<JavaExec>("captureRuntimeSurfaceInventory") {
     group = "verification"
     description = "Stages exact loaded portable runtime API assignments for review; verification never updates the baseline."

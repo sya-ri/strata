@@ -1,0 +1,18 @@
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import java.nio.file.*;
+import static org.junit.jupiter.api.Assertions.*;
+class FixtureTest {
+    @Test void offline() throws Exception {
+        Path output = Path.of(System.getProperty("strata.fontOfflineOutput"));
+        Files.createDirectories(output);
+        Files.writeString(output.resolve("offline.txt"), "offline");
+    }
+    @Test @Tag("font-offline-parity") void comparison() throws Exception {
+        assertEquals("native", Files.readString(Path.of(System.getProperty("strata.fontNativeOutput"), "native.txt")));
+        assertEquals("offline", Files.readString(Path.of(System.getProperty("strata.fontOfflineOutput"), "offline.txt")));
+        Path output = Path.of(System.getProperty("strata.fontComparisonOutput"));
+        Files.createDirectories(output);
+        Files.writeString(output.resolve("comparison.txt"), "compared");
+    }
+}

@@ -43,7 +43,8 @@ internal object ComponentProfile {
             sliderHighlighted(image(200, 20), 1, NineSliceCenterMode.Tiled)
             sliderHandle(image(8, 20))
             sliderHandleHighlighted(image(8, 20))
-            loadingIndicator(image(5, 6))
+            // Distinct cells make a stalled animation observable during untimed admission.
+            loadingIndicator(createDrawImage(IntSize(5, 6), IntArray(30) { 0xFF426789.toInt() + it / 10 }))
             progressBarBorder(image(12, 12))
             progressBarFill(image(6, 6))
             progressBarFull(image(6, 6))

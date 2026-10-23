@@ -30,7 +30,6 @@ import dev.s7a.strata.state.MutableState
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiDefinition
-import java.lang.ref.WeakReference
 
 /**
  * One owner-confined public host operation with immutable producers prepared before measurement.
@@ -75,7 +74,6 @@ internal class CycleSelectionFixture(
     private val aliasEarlier = Choice(3, setOf(0, 1))
     private val events = ArrayList<Pair<Event, Int>>()
     private val actionValues = ArrayList<Choice>()
-    private val released = ArrayList<WeakReference<Any>>()
     private var lastFrame: RuntimeUiFrame? = null
     private val failure = ObserverFailure()
     private val viewport = IntSize(100, 20)
@@ -292,12 +290,13 @@ internal class CycleSelectionFixture(
             }
 
             CycleSelectionControl.DisposeCloseRelease -> {
-                released.add(WeakReference<Any>(state))
-                choices.forEach { released.add(WeakReference<Any>(it)) }
+                val retention = if (verify) CycleSelectionRetention(currentHost, state, checkNotNull(replacement)) else null
                 checkNotNull(selection).value = checkNotNull(replacement)
                 replacement = null
                 val frame = complete()
+                retention?.verifyReplacement()
                 close()
+                retention?.verifyClosed()
                 return frame
             }
         }
@@ -547,9 +546,6 @@ internal class CycleSelectionFixture(
         }
         if (control == CycleSelectionControl.DisposeCloseRelease) {
             check(closed)
-            check(released.isNotEmpty())
-            repeat(16) { System.gc() }
-            check(released.all { it.get() == null }) { "A closed reachable host retained old state or option values" }
         }
     }
 
