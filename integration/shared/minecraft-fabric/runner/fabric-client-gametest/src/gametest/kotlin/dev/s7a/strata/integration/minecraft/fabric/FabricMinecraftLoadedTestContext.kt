@@ -65,7 +65,14 @@ internal class FabricMinecraftLoadedTestContext(
         name: String,
         output: Path,
         size: IntSize,
-    ): Path = delegate.takeScreenshot(TestScreenshotOptions.of(name).withDestinationDir(output).withSize(size.width, size.height))
+    ): Path =
+        delegate.takeScreenshot(
+            TestScreenshotOptions
+                .of(name)
+                .disableCounterPrefix()
+                .withDestinationDir(output)
+                .withSize(size.width, size.height),
+        )
 
     override fun createSingleplayerWorld(): MinecraftLoadedTestWorld {
         val world = delegate.worldBuilder().setUseConsistentSettings(true).create()
