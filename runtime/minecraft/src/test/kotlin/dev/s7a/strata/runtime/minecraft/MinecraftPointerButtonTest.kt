@@ -100,25 +100,6 @@ internal class MinecraftPointerButtonTest {
     }
 
     @Test
-    fun hoverChangesOnlyAfterMoveAndUsesHighlightedSprite() {
-        val host = host { evaluateComponentTree { Button("A") } }
-        host.attach()
-        val normal = host.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
-        val normalSprite = normal.first().image
-
-        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Move(IntOffset(10, 10))))
-        val hovered = host.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
-        assertNotSame(normalSprite, hovered.first().image)
-        assertSame(hovered.first().image, hovered[1].image)
-        assertSame(hovered.first().image, hovered[2].image)
-
-        assertEquals(InputResult.Ignored, host.dispatchPointer(PointerEvent.Move(IntOffset(150, 20))))
-        val exited = host.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
-        assertSame(normalSprite, exited.first().image)
-        host.close()
-    }
-
-    @Test
     fun nonPrimaryReleaseAndScrollAreIgnoredWhilePrimaryIsConsumed() {
         var presses = 0
         val host = host { evaluateComponentTree { Button("A", modifier = Modifier.onPress { presses += 1 }) } }
@@ -285,6 +266,9 @@ internal class MinecraftPointerButtonTest {
                 .filterIsInstance<DrawCommand.BlitImage>()[0]
                 .image
         assertNotSame(normal, highlighted)
+        val slices = host.frame(IntSize(150, 20)).drawCommands.filterIsInstance<DrawCommand.BlitImage>()
+        assertSame(highlighted, slices[1].image)
+        assertSame(highlighted, slices[2].image)
         assertSame(
             highlighted,
             host

@@ -167,17 +167,22 @@ internal class HeadlessTiledImageTest {
     @Test
     fun edgeTilesOutsideNarrowBoundsRenderWhenTheirCenterDeltaExceedsLongRange() {
         val bounds = LongRect(-100L, 0L, 1L, 1L)
-        val transparent = createDrawImage(IntSize(1, 1), intArrayOf(0))
+        val requested = mutableListOf<TiledImageTileId>()
+        val red = createDrawImage(IntSize(1, 1), intArrayOf(0xFFFF0000.toInt()))
+        val green = createDrawImage(IntSize(1, 1), intArrayOf(0xFF00FF00.toInt()))
         val source =
             object : TiledImageSource {
                 override val bounds: LongRect = bounds
                 override val levels: List<TiledImageLevel> =
                     listOf(TiledImageLevel(IntSize(1, 1), Long.MAX_VALUE))
 
-                override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> =
-                    StateSource {
-                        StateSubscription(StateSnapshot(StateRevision(0L), TiledImageTile.Ready(transparent))) {}
+                override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> {
+                    requested += id
+                    val image = if (id.column < 0L) red else green
+                    return StateSource {
+                        StateSubscription(StateSnapshot(StateRevision(0L), TiledImageTile.Ready(image))) {}
                     }
+                }
             }
         val description =
             evaluateComponentTree {
@@ -191,7 +196,8 @@ internal class HeadlessTiledImageTest {
 
         val frame = renderHeadless(description, IntSize(1, 1))
 
-        assertEquals(0, frame.image.argbAt(0, 0))
+        assertEquals(setOf(TiledImageTileId(0, -1L, 0L), TiledImageTileId(0, 0L, 0L)), requested.toSet())
+        assertEquals(0xFFFF0000.toInt(), frame.image.argbAt(0, 0))
     }
 
     private fun assertLargeBoundaryTiles(

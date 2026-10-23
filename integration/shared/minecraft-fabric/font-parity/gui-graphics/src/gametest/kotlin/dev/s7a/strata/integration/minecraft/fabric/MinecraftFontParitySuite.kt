@@ -52,13 +52,6 @@ internal object MinecraftFontParitySuite {
             portableImages[scale] = portable
             val portablePath = output.resolve("font-headless-$scale.png")
             assertions.compareNative(nativePath, portable, portablePath, profile, scale)
-            val previousDither = context.computeOnClient { MinecraftNativeFontOracle.setDither(false) }
-            try {
-                context.waitTicks(3)
-                context.takeScreenshot("font-native-no-dither-$scale", output, size)
-            } finally {
-                context.computeOnClient { MinecraftNativeFontOracle.setDither(previousDither) }
-            }
         }
         context.computeOnClient { minecraft -> minecraft.setScreen(createMinecraftScreen(MinecraftFontParityFixture.definition(), profile, parent = null)) }
         context.waitFor { minecraft -> minecraft.screen is FabricMinecraftScreen }
@@ -71,7 +64,6 @@ internal object MinecraftFontParitySuite {
                 output.resolve("font-headless-$scale.png"),
             )
         }
-        captureColorProbes(context, output)
         assertions.verify()
         MinecraftFontParityChecks.writeReceipt(output, nativeLayout)
         context.computeOnClient { minecraft -> minecraft.setScreen(null) }
@@ -88,15 +80,6 @@ internal object MinecraftFontParitySuite {
         // Startup resource-recovery notifications are not part of either font scene; their causes remain in the game log.
         context.computeOnClient { minecraft -> minecraft.toasts.clear() }
         Files.writeString(output.resolve("native-reload.properties"), "preparationThreads=1\nimplementation=standard-font-manager\nresources=unchanged\n")
-    }
-
-    private fun captureColorProbes(
-        context: MinecraftLoadedTestContext,
-        output: Path,
-    ) {
-        context.computeOnClient { minecraft -> minecraft.setScreen(MinecraftNativeFontColorProbeScreen(output)) }
-        setScale(context, 1, MinecraftFontParityFixture.viewport)
-        context.takeScreenshot("font-native-color-probes", output, MinecraftFontParityFixture.viewport)
     }
 
     private fun setScale(

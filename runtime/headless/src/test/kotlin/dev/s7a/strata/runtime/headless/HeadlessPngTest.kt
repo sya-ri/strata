@@ -64,17 +64,6 @@ internal class HeadlessPngTest {
     }
 
     @Test
-    fun pngOutputAndDigestAreFreshAndRepeatable() {
-        val image = rasterizeHeadless(emptyList(), IntSize(2, 1))
-        val first = image.encodePng()
-        val second = image.encodePng()
-
-        assertTrue(first !== second)
-        assertEquals(first.toHex(), second.toHex())
-        assertEquals(sha256(first), sha256(second))
-    }
-
-    @Test
     fun oneByOnePayloadHasFilterZeroRgbaAndKnownAdler() {
         val png = rasterizeHeadless(emptyList(), IntSize(1, 1)).encodePng()
         val idat = parseChunks(png).single { chunk -> chunk.type === PngChunkType.IDAT }.payload
@@ -211,6 +200,7 @@ internal class HeadlessPngTest {
         val pixels = image.copyArgb()
         val first = image.encodePng()
         val second = image.encodePng()
+        assertTrue(first !== second)
         val expected = second.copyOf()
         first.fill(0)
         assertArrayEquals(expected, second)

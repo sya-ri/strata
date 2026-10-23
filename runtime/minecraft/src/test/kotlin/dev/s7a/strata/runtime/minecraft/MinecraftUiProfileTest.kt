@@ -215,7 +215,7 @@ internal class MinecraftUiProfileTest {
     }
 
     @Test
-    fun defaultFixtureUsesTheLockedMinecraftButtonPolicies() {
+    fun sharedFixtureSuppliesItsExpectedButtonDefaults() {
         val profile = MinecraftProfileFixture.create()
         val normal = button(profile, "normalButton")
         val highlighted = button(profile, "highlightedButton")

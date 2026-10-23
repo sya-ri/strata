@@ -16,20 +16,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Replays only native diagnostic drawing into an owned floating-point color target with the original native shaders and blending.
+ * Replays native acceptance scenes into an owned floating-point color target with the original native shaders and blending.
  * Opaque probe texels isolate shader output from RGBA8 export without replacing any renderer algorithm or acceptance expectation.
  * Work is render-thread confined; temporary GPU and native-memory resources are released and affected GL state is restored on every exit.
  */
 internal object MinecraftNativeFontFloatTarget {
-    /**
-     * Writes width, height, then top-down RGBA IEEE754 floats in big-endian order to a diagnostic-only binary file.
-     * The caller supplies the same native-only drawing used for the ordinary probe screen; no captured data enters a portable render input.
-     */
-    fun capture(
-        output: Path,
-        draw: (GuiGraphics) -> Unit,
-    ) = capture(output, "native-color-probes", MinecraftFontParityFixture.viewport, draw)
-
     /**
      * Captures the unchanged complete native scene at the active physical size and GUI density.
      * The callback is the same row drawing used by the native screen; precision metadata records actual native atlas extents.

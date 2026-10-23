@@ -262,20 +262,16 @@ internal class LwjglMinecraftFontBackendTest {
     @Test
     @Timeout(5)
     fun tinyNegativeStbScalePreservesMeasuredRaster() {
-        println("Tiny negative STB probe: test entered")
         rasterizers().filter { it == MinecraftTrueTypeRasterizer.Stb }.forEach { rasterizer ->
             LwjglMinecraftFontBackendFactory.open(compatibility(rasterizer)).use { backend ->
-                println("Tiny negative STB probe: backend opened")
                 backend.openTrueType(fixture(), MinecraftTrueTypeSettings(-0.01f, 1f, 0.25f, 0.75f)).use { face ->
-                    println("Tiny negative STB probe: face opened")
-                    println("Tiny negative STB probe: calling glyph U+0041")
                     val glyph = checkNotNull(face.glyph(0x41))
-                    println("Tiny negative STB probe: glyph returned")
                     assertEquals(700f * (-0.01f / 1000f), glyph.advance)
                     val image = checkNotNull(glyph.image)
                     assertEquals(IntSize(1, 1), image.size)
                     assertNull(glyph.oversizedRasterSize)
-                    println("Tiny negative STB raster: advanceBits=${glyph.advance.toRawBits()}, pixel=${image.argbAt(0, 0).toUInt().toString(16)}")
+                    // Independent stbtt_GetCodepointBitmapSubpixel calls with both pinned STB bindings yield transparent coverage.
+                    assertEquals(0, image.argbAt(0, 0))
                 }
             }
         }

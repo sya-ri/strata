@@ -32,26 +32,6 @@ import org.lwjgl.opengl.GL30
  */
 internal object MinecraftNativeFontOracle {
     /**
-     * Captures the backend-specific dither state needed to restore an OpenGL diagnostic or represent a backend without that fixed-function state.
-     */
-    internal enum class DitherState {
-        /**
-         * OpenGL dither was enabled before the diagnostic capture.
-         */
-        OpenGlEnabled,
-
-        /**
-         * OpenGL dither was disabled before the diagnostic capture.
-         */
-        OpenGlDisabled,
-
-        /**
-         * The active backend does not expose OpenGL fixed-function dither state.
-         */
-        Unsupported,
-    }
-
-    /**
      * Checks that the native resource manager selected the exact original fixture inputs used by the offline engine.
      * Every borrowed resource stream is closed before returning the detached source-pack diagnostic table.
      */
@@ -88,45 +68,6 @@ internal object MinecraftNativeFontOracle {
 
             MinecraftCanvasTestBackend.Vulkan -> {
                 "Vulkan ${deviceInfo.driverInfo()}; vendor=${deviceInfo.vendorName()}; renderer=${deviceInfo.name()}; dither=unsupported; framebufferSrgb=backend-managed; subpixelBits=backend-managed; mainColorFormat=$mainColorFormat"
-            }
-        }
-    }
-
-    /**
-     * Disables only the OpenGL diagnostic dither state and returns its prior typed state for mandatory finally restoration.
-     *
-     * Vulkan has no equivalent fixed-function state, so this operation records [DitherState.Unsupported] without calling OpenGL.
-     */
-    fun disableDither(): DitherState {
-        RenderSystem.assertOnRenderThread()
-        return when (MinecraftCanvasTestBackend.parse(RenderSystem.getDevice().deviceInfo.backendName())) {
-            MinecraftCanvasTestBackend.OpenGl -> {
-                val previous = if (GL11.glIsEnabled(GL11.GL_DITHER)) DitherState.OpenGlEnabled else DitherState.OpenGlDisabled
-                GL11.glDisable(GL11.GL_DITHER)
-                previous
-            }
-
-            MinecraftCanvasTestBackend.Vulkan -> {
-                DitherState.Unsupported
-            }
-        }
-    }
-
-    /**
-     * Restores a dither state returned by [disableDither] on the same active backend.
-     *
-     * Backend changes and an OpenGL state applied to Vulkan are rejected before a native call.
-     */
-    fun restoreDither(state: DitherState) {
-        RenderSystem.assertOnRenderThread()
-        when (MinecraftCanvasTestBackend.parse(RenderSystem.getDevice().deviceInfo.backendName())) {
-            MinecraftCanvasTestBackend.OpenGl -> {
-                require((state == DitherState.Unsupported).not()) { "An OpenGL dither capture requires an OpenGL restoration state." }
-                if (state == DitherState.OpenGlEnabled) GL11.glEnable(GL11.GL_DITHER) else GL11.glDisable(GL11.GL_DITHER)
-            }
-
-            MinecraftCanvasTestBackend.Vulkan -> {
-                require(state == DitherState.Unsupported) { "Vulkan cannot restore OpenGL dither state." }
             }
         }
     }

@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Verifies callback-driven terminal ownership without native dependencies or a loaded game.
- * Explicit native-call and release observations supplement the independent original provider walk.
+ * Explicit native-call, cache-order and release observations exercise the public glyph path.
  */
 internal class MinecraftFontTerminalOwnershipTest {
     @Test
@@ -22,7 +22,7 @@ internal class MinecraftFontTerminalOwnershipTest {
         for (entries in listOf(0, 2, 4_096)) {
             for (missing in listOf(false, true)) {
                 for (failure in failures()) {
-                    for (original in listOf(false, true)) verifyGlyphClose(snapshot, entries, missing, failure, original)
+                    verifyGlyphClose(snapshot, entries, missing, failure)
                 }
             }
         }
@@ -33,7 +33,6 @@ internal class MinecraftFontTerminalOwnershipTest {
         entries: Int,
         missing: Boolean,
         failure: Throwable?,
-        original: Boolean,
     ) {
         lateinit var owner: MinecraftFontEngine
         var closes = 0
@@ -62,7 +61,7 @@ internal class MinecraftFontTerminalOwnershipTest {
         owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
         val expected = if (missing) owner.glyph(ResourceId("unknown", "terminal"), 'A'.code) else detached
         owner.use { _ ->
-            val result = runCatching { FontTerminalTestSupport.glyph(snapshot, owner, original) }
+            val result = runCatching { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
             if (failure == null) assertEquals(expected, result.getOrThrow()) else assertSame(failure, result.exceptionOrNull())
             FontTerminalTestSupport.assertTerminal(owner)
             assertEquals(1, backend.openCalls)
@@ -77,7 +76,7 @@ internal class MinecraftFontTerminalOwnershipTest {
         for (entries in listOf(0, 2, 4_096)) {
             for (disabled in listOf(false, true)) {
                 for (failure in failures()) {
-                    for (original in listOf(false, true)) verifyLateFace(entries, disabled, failure, original)
+                    verifyLateFace(entries, disabled, failure)
                 }
             }
         }
@@ -87,7 +86,6 @@ internal class MinecraftFontTerminalOwnershipTest {
         entries: Int,
         disabled: Boolean,
         failure: Throwable?,
-        original: Boolean,
     ) {
         val extra = if (disabled) """, "filter":{"uniform":true}""" else ""
         val snapshot =
@@ -125,7 +123,7 @@ internal class MinecraftFontTerminalOwnershipTest {
         owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
         val missing = owner.glyph(ResourceId("unknown", "terminal"), 'A'.code)
         owner.use { _ ->
-            val result = runCatching { FontTerminalTestSupport.glyph(snapshot, owner, original) }
+            val result = runCatching { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
             if (failure == null) assertEquals(missing, result.getOrThrow()) else assertSame(failure, result.exceptionOrNull())
             assertEquals(0, active)
             assertEquals(0, glyphs)
@@ -142,7 +140,7 @@ internal class MinecraftFontTerminalOwnershipTest {
         for (entries in listOf(0, 2, 4_096)) {
             for (bitmap in listOf(false, true)) {
                 for (failure in failures()) {
-                    for (original in listOf(false, true)) verifyLoadingClose(entries, bitmap, failure, original)
+                    verifyLoadingClose(entries, bitmap, failure)
                 }
             }
         }
@@ -152,7 +150,6 @@ internal class MinecraftFontTerminalOwnershipTest {
         entries: Int,
         bitmap: Boolean,
         failure: Throwable?,
-        original: Boolean,
     ) {
         if (bitmap.not() && failure == null) return
         val snapshot = if (bitmap) bitmapSnapshot() else trueTypeSnapshot()
@@ -174,7 +171,7 @@ internal class MinecraftFontTerminalOwnershipTest {
         owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
         val missing = owner.glyph(ResourceId("unknown", "terminal"), 'A'.code)
         owner.use { _ ->
-            val result = runCatching { FontTerminalTestSupport.glyph(snapshot, owner, original) }
+            val result = runCatching { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
             if (failure == null || failure is Exception) {
                 assertEquals(missing, result.getOrThrow())
                 if (failure != null) {
@@ -203,52 +200,50 @@ internal class MinecraftFontTerminalOwnershipTest {
                 "assets/test/font/first.ttf" to byteArrayOf(1),
                 "assets/test/font/second.ttf" to byteArrayOf(2),
             )
-        for (original in listOf(false, true)) {
-            for (failure in failures()) {
-                lateinit var owner: MinecraftFontEngine
-                var closes = 0
-                var glyphs = 0
-                val backend =
-                    FontTestBackend(
-                        open = { _, _ ->
-                            FontTestFace(
-                                {
-                                    glyphs++
-                                    null
-                                },
-                                {
-                                    closes++
-                                    owner.close()
-                                    if (failure != null) throw failure
-                                },
-                            )
-                        },
-                        release = { owner.close() },
-                    )
-                owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = 2, maxFaces = 1)
-                val missing = owner.glyph(ResourceId("unknown", "terminal"), 'A'.code)
-                val result = runCatching { FontTerminalTestSupport.glyph(snapshot, owner, original) }
-                if (failure == null || failure is Exception) assertEquals(missing, result.getOrThrow()) else assertSame(failure, result.exceptionOrNull())
-                assertEquals(if (failure is Exception) listOf(failure.message) else emptyList<String>(), owner.diagnostics.map { it.message })
-                assertEquals(1, backend.openCalls)
-                assertEquals(1, backend.closeCalls)
-                assertEquals(1, closes)
-                assertEquals(0, glyphs)
-                FontTerminalTestSupport.assertTerminal(owner)
-            }
+
+        for (failure in failures()) {
+            lateinit var owner: MinecraftFontEngine
+            var closes = 0
+            var glyphs = 0
+            val backend =
+                FontTestBackend(
+                    open = { _, _ ->
+                        FontTestFace(
+                            {
+                                glyphs++
+                                null
+                            },
+                            {
+                                closes++
+                                owner.close()
+                                if (failure != null) throw failure
+                            },
+                        )
+                    },
+                    release = { owner.close() },
+                )
+            owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = 2, maxFaces = 1)
+            val missing = owner.glyph(ResourceId("unknown", "terminal"), 'A'.code)
+            val result = runCatching { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
+            if (failure == null || failure is Exception) assertEquals(missing, result.getOrThrow()) else assertSame(failure, result.exceptionOrNull())
+            assertEquals(if (failure is Exception) listOf(failure.message) else emptyList<String>(), owner.diagnostics.map { it.message })
+            assertEquals(1, backend.openCalls)
+            assertEquals(1, backend.closeCalls)
+            assertEquals(1, closes)
+            assertEquals(0, glyphs)
+            FontTerminalTestSupport.assertTerminal(owner)
         }
     }
 
     @Test
     fun validatedReopenReleasesALateFaceAndPropagatesItsExactCleanupFailure() {
         for (failure in failures()) {
-            for (original in listOf(false, true)) verifyReopenClose(failure, original)
+            verifyReopenClose(failure)
         }
     }
 
     private fun verifyReopenClose(
         failure: Throwable?,
-        original: Boolean,
     ) {
         val snapshot =
             FontTestResources.snapshot(
@@ -282,10 +277,10 @@ internal class MinecraftFontTerminalOwnershipTest {
                 },
             )
         owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0, maxFaces = 1)
-        assertEquals(7f, FontTerminalTestSupport.glyph(snapshot, owner, original).advance)
-        assertEquals(7f, FontTerminalTestSupport.glyph(snapshot, owner, original, font = ResourceId("test", "pressure")).advance)
+        assertEquals(7f, owner.glyph(FontTestResources.defaultFont, 'A'.code).advance)
+        assertEquals(7f, owner.glyph(ResourceId("test", "pressure"), 'A'.code).advance)
         val missing = owner.glyph(ResourceId("unknown", "terminal"), 'A'.code)
-        val result = runCatching { FontTerminalTestSupport.glyph(snapshot, owner, original) }
+        val result = runCatching { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
         if (failure == null) assertEquals(missing, result.getOrThrow()) else assertSame(failure, result.exceptionOrNull())
         assertEquals(3, backend.openCalls)
         assertEquals(1, backend.closeCalls)
@@ -304,58 +299,54 @@ internal class MinecraftFontTerminalOwnershipTest {
                 MinecraftFontLoadLimits(maxImageBytes = 16),
             )
         for (entries in listOf(0, 2, 4_096)) {
-            for (original in listOf(false, true)) {
-                val releaseFailure = IllegalStateException("terminal poisoned backend")
-                lateinit var owner: MinecraftFontEngine
-                var closes = 0
-                val backend =
-                    FontTestBackend(
-                        open = { _, _ ->
-                            FontTestFace(
-                                { raster(8) },
-                                {
-                                    closes++
-                                    owner.close()
-                                },
-                            )
-                        },
-                        release = {
-                            owner.close()
-                            throw releaseFailure
-                        },
-                    )
-                owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
-                val failure = assertThrows(MinecraftFontLoadLimitException::class.java) { FontTerminalTestSupport.glyph(snapshot, owner, original) }
-                assertEquals(listOf(releaseFailure), failure.suppressed.toList())
-                assertEquals(1, closes)
-                assertEquals(1, backend.openCalls)
-                assertEquals(1, backend.closeCalls)
-                FontTerminalTestSupport.assertTerminal(owner)
-            }
+            val releaseFailure = IllegalStateException("terminal poisoned backend")
+            lateinit var owner: MinecraftFontEngine
+            var closes = 0
+            val backend =
+                FontTestBackend(
+                    open = { _, _ ->
+                        FontTestFace(
+                            { raster(8) },
+                            {
+                                closes++
+                                owner.close()
+                            },
+                        )
+                    },
+                    release = {
+                        owner.close()
+                        throw releaseFailure
+                    },
+                )
+            owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
+            val failure = assertThrows(MinecraftFontLoadLimitException::class.java) { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
+            assertEquals(listOf(releaseFailure), failure.suppressed.toList())
+            assertEquals(1, closes)
+            assertEquals(1, backend.openCalls)
+            assertEquals(1, backend.closeCalls)
+            FontTerminalTestSupport.assertTerminal(owner)
         }
     }
 
     @Test
     fun imageChecksAfterCallbackCloseRetainTheExistingPublicClosedFailure() {
-        for (original in listOf(false, true)) {
-            val snapshot = trueTypeSnapshot()
-            lateinit var owner: MinecraftFontEngine
-            val detached = raster(1)
-            val backend =
-                FontTestBackend(
-                    open = { _, _ ->
-                        FontTestFace({
-                            owner.close()
-                            detached
-                        })
-                    },
-                )
-            owner = MinecraftFontEngine(snapshot, { backend })
-            val failure = assertThrows(IllegalStateException::class.java) { FontTerminalTestSupport.glyph(snapshot, owner, original) }
-            assertEquals("Font engine is closed.", failure.message)
-            assertEquals(-1, checkNotNull(detached.image).argbAt(0, 0))
-            FontTerminalTestSupport.assertTerminal(owner)
-        }
+        val snapshot = trueTypeSnapshot()
+        lateinit var owner: MinecraftFontEngine
+        val detached = raster(1)
+        val backend =
+            FontTestBackend(
+                open = { _, _ ->
+                    FontTestFace({
+                        owner.close()
+                        detached
+                    })
+                },
+            )
+        owner = MinecraftFontEngine(snapshot, { backend })
+        val failure = assertThrows(IllegalStateException::class.java) { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
+        assertEquals("Font engine is closed.", failure.message)
+        assertEquals(-1, checkNotNull(detached.image).argbAt(0, 0))
+        FontTerminalTestSupport.assertTerminal(owner)
     }
 
     @Test
@@ -386,37 +377,25 @@ internal class MinecraftFontTerminalOwnershipTest {
         }
         assertEquals(1, closes)
         assertEquals(1, backend.closeCalls)
-        var candidateGlyphs = 0
-        var referenceGlyphs = 0
+        var glyphs = 0
         val candidateBackend =
             FontTestBackend(open = { _, _ ->
                 FontTestFace({
-                    candidateGlyphs++
-                    raster(1)
-                })
-            })
-        val referenceBackend =
-            FontTestBackend(open = { _, _ ->
-                FontTestFace({
-                    referenceGlyphs++
+                    glyphs++
                     raster(1)
                 })
             })
         MinecraftFontEngine(snapshot, { candidateBackend }, cacheEntries = 2).use { candidate ->
-            MinecraftFontEngine(snapshot, { referenceBackend }, cacheEntries = 2).use { reference ->
-                for (scalar in listOf('A'.code, 'B'.code, 'A'.code, 'C'.code, 'B'.code)) {
-                    assertEquals(FontTerminalTestSupport.glyph(snapshot, reference, true, scalar), candidate.glyph(FontTestResources.defaultFont, scalar))
-                    assertEquals(FontTerminalTestSupport.rasterKeys(reference), FontTerminalTestSupport.rasterKeys(candidate))
-                    assertEquals(reference.retainedRasterBytes, candidate.retainedRasterBytes)
-                }
+            val expectedKeys = listOf(listOf('A'), listOf('A', 'B'), listOf('B', 'A'), listOf('A', 'C'), listOf('C', 'B'))
+            listOf('A', 'B', 'A', 'C', 'B').zip(expectedKeys).forEach { (scalar, keys) ->
+                assertEquals(raster(1), candidate.glyph(FontTestResources.defaultFont, scalar.code))
+                assertEquals(keys.map { it.code }, FontTerminalTestSupport.rasterCodePoints(candidate))
+                assertEquals(keys.size * 4L, candidate.retainedRasterBytes)
             }
         }
-        assertEquals(4, candidateGlyphs)
-        assertEquals(candidateGlyphs, referenceGlyphs)
+        assertEquals(4, glyphs)
         assertEquals(1, candidateBackend.openCalls)
-        assertEquals(candidateBackend.openCalls, referenceBackend.openCalls)
         assertEquals(1, candidateBackend.closeCalls)
-        assertEquals(candidateBackend.closeCalls, referenceBackend.closeCalls)
     }
 
     private fun assertForeignThreadCloseRejected(owner: MinecraftFontEngine) {

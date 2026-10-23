@@ -58,16 +58,6 @@ internal object MinecraftNativeFontOracle {
     }
 
     /**
-     * Changes only the diagnostic dither state and returns its prior value for mandatory finally restoration.
-     */
-    fun setDither(enabled: Boolean): Boolean {
-        RenderSystem.assertOnRenderThread()
-        val previous = GL11.glIsEnabled(GL11.GL_DITHER)
-        if (enabled) GL11.glEnable(GL11.GL_DITHER) else GL11.glDisable(GL11.GL_DITHER)
-        return previous
-    }
-
-    /**
      * Constructs the actual native styled Component used independently for both logical measurement and rendering.
      */
     fun component(row: MinecraftFontParityFixture.Row): Component = Component.literal(row.text).withStyle(Style.EMPTY.withFont(ResourceLocation(row.font.namespace, row.font.path)))
