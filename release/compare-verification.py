@@ -21,7 +21,8 @@ def inventory(root):
         if "/test-results/" not in name or not path.name.startswith("TEST-") or path.suffix != ".xml":
             continue
         for case in ET.parse(path).getroot().iter("testcase"):
-            key = (name, case.get("classname", ""), case.get("name", ""))
+            key = (name, case.get("classname", ""), case.get("name", ""),
+                   "skipped" if case.find("skipped") is not None else "executed")
             cases[key] += 1
             if case.find("failure") is not None or case.find("error") is not None:
                 failures.append(key)

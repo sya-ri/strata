@@ -95,6 +95,7 @@ class PartitionTest(unittest.TestCase):
                 partition.aggregate(Path("product"))
                 receipt = v.validate_receipt(output, self.identity)
             self.assertIn("shards/web/diagnostics/integration/web/build/parity/receipt.json", receipt["files"])
+            self.assertIn("artifact-producers.json", receipt["files"])
 
     def test_real_failed_shard_retains_its_console_and_cannot_be_sealed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -168,6 +169,10 @@ class PartitionTest(unittest.TestCase):
             self.assertEqual(1, len(incomplete["missingTasks"]))
             result = candidate / "diagnostics/api/build/test-results/test/TEST-fixture.xml"
             result.write_text('<testsuite><testcase classname="Fixture" name="other case"/></testsuite>', encoding="utf-8")
+            receipt["files"][result.relative_to(candidate).as_posix()] = v.digest(result)
+            v.write_json(path, receipt)
+            self.assertEqual(1, len(comparison.compare(baseline, candidate)["missingTests"]))
+            result.write_text('<testsuite><testcase classname="Fixture" name="required case"><skipped/></testcase></testsuite>', encoding="utf-8")
             receipt["files"][result.relative_to(candidate).as_posix()] = v.digest(result)
             v.write_json(path, receipt)
             self.assertEqual(1, len(comparison.compare(baseline, candidate)["missingTests"]))

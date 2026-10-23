@@ -140,6 +140,7 @@ def aggregate(product):
     pages = json.loads(subprocess.check_output(["gh", "api", "--paginate", "--slurp",
                                                f"repos/{repo}/actions/runs/{run}/artifacts?per_page=100"]))
     artifacts = [a for page in pages for a in page["artifacts"]]
+    producers = []
 
     def download(label, destination):
         """Allow carried-forward successful producers only from this immutable run and controller."""
@@ -147,8 +148,12 @@ def aggregate(product):
         matches = [(int(m[1]), a) for a in artifacts if (m := pattern.fullmatch(a["name"]))
                    and int(m[1]) <= expected["runAttempt"]]
         v.require(matches, f"Missing partition artifact: {label}")
-        _, artifact = max(matches, key=lambda entry: entry[0])
+        attempt, artifact = max(matches, key=lambda entry: entry[0])
         v.download_artifact(artifact, destination, expected, artifact["digest"].removeprefix("sha256:"))
+        record = json.loads((destination / ("plan.json" if label == "plan" else "shard.json")).read_text())
+        v.require(record["runAttempt"] == attempt, "Artifact name and sealed producer attempt differ.")
+        producers.append({k: artifact[k] for k in ("id", "name", "digest")})
+        v.write_json(v.EVIDENCE / "artifact-producers.json", producers)
 
     download("plan", v.EVIDENCE / "plan")
     value = json.loads((v.EVIDENCE / "plan/plan.json").read_text())
