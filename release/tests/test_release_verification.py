@@ -230,6 +230,61 @@ class ReleaseVerificationTest(unittest.TestCase):
         results["verification"] = dict(result="failure", outputs=dict(failure_classification="deterministic verification failure"))
         self.assertEqual("deterministic verification failure", recovery.classify_outcome(results, ["verification"]))
 
+    def test_complete_recovery_summary_preserves_failures_and_original_retry_inputs(self):
+        for scenario in ("success", "signing", "destination", "corrupt", "digest"):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                inputs = dict(operation="release", tag="v7.8.9", source_commit="a" * 40, prepared_run_id="",
+                              maven_central=False, github_release=True, modrinth=True, curseforge=False, hangar=False)
+                results = {key: dict(result="success", outputs={}) for key in ("source", "analysis", "verification", "prepare", "publish")}
+                results["central"] = dict(result="skipped")
+                results["verification"]["outputs"] = dict(failure_classification="success")
+                if scenario == "signing":
+                    results["prepare"]["result"] = "failure"
+                    results["publish"]["result"] = "skipped"
+                if scenario == "destination":
+                    results["publish"]["result"] = "failure"
+                jobs = [dict(id=index, name=name, conclusion="failure" if scenario == "destination" and index == 2 else "success",
+                             runner_id=index, labels=["ubuntu-latest"], steps=[], started_at="2026-10-23T00:00:01Z",
+                             completed_at="2026-10-23T00:00:02Z") for index, name in ((1, "Publish github"), (2, "Publish modrinth"))]
+                environment = dict(RELEASE_INPUTS=json.dumps(inputs), RESULTS=json.dumps(results), GITHUB_REPOSITORY="owner/repo",
+                                   GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="1", GITHUB_SHA="b" * 40, PREPARED_RUN_ID="123",
+                                   TAG_OBJECT="c" * 40, ARCHIVE_DIGEST="invalid" if scenario == "digest" else "",
+                                   GITHUB_STEP_SUMMARY=str(root / "summary.md"))
+
+                def restore(*_):
+                    if scenario == "corrupt":
+                        raise ValueError("Prepared archive checksum differs.")
+                    Path("build").mkdir(exist_ok=True)
+                    Path("build/release-prepared.tar.gz").write_bytes(b"original signed archive")
+                    return dict(runId=123, runAttempt=1, controllerCommit="b" * 40)
+
+                previous = Path.cwd()
+                try:
+                    os.chdir(root)
+                    with patch.dict(os.environ, environment), patch.object(recovery.prepared, "github", return_value=dict(
+                            created_at="2026-10-23T00:00:00Z", updated_at="2026-10-23T00:00:03Z")), \
+                            patch.object(recovery.subprocess, "check_output", return_value=json.dumps([dict(jobs=jobs)])), \
+                            patch.object(recovery.prepared, "restore", side_effect=restore) as restoring:
+                        with self.assertRaises(SystemExit) as result:
+                            recovery.main()
+                        self.assertEqual(0 if scenario == "success" else 1, result.exception.code)
+                        if scenario == "signing":
+                            restoring.assert_not_called()
+                        else:
+                            restoring.assert_called_once_with(123, "v7.8.9", "a" * 40, Path("build/recovery-prepared"), "c" * 40)
+                    report = json.loads(Path("build/release/recovery.json").read_text())
+                    if scenario == "destination":
+                        self.assertEqual("123", report["retryInputs"]["prepared_run_id"])
+                        self.assertTrue(report["retryInputs"]["modrinth"])
+                        self.assertFalse(report["retryInputs"]["github_release"])
+                    if scenario in ("signing", "corrupt", "digest"):
+                        self.assertIsNone(report["preparation"])
+                        self.assertIsNone(report["retryInputs"])
+                        self.assertNotEqual("success", report["classification"])
+                finally:
+                    os.chdir(previous)
+
 
 if __name__ == "__main__":
     unittest.main()

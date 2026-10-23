@@ -113,6 +113,7 @@ def main():
             expected_digest = os.environ.get("ARCHIVE_DIGEST")
             verification.require(not expected_digest or expected_digest == digest, "Prepared archive output digest differs.")
         except (ValueError, OSError, subprocess.SubprocessError) as error:
+            manifest, digest = None, None
             restore_error = str(error)
     expected = expected_results(inputs)
     errors = [f"{key}: expected {value}, got {results.get(key, {}).get('result', 'missing')}"
