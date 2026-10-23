@@ -182,10 +182,10 @@ class ReleaseVerificationTest(unittest.TestCase):
                 prepared.validate(root, "v7.8.9", "a" * 40, scope="rehearsal")
 
     def test_rehearsal_requires_only_selected_successful_topology(self):
-        for selected, unselected in (("serial", "overlap"), ("overlap", "serial")):
+        for selected in ("serial", "overlap", "partitioned"):
             inputs = dict(topology=selected)
             results = {name: {"result": "success"} for name in ("source", "analysis", "prepare", selected)}
-            results[unselected] = {"result": "skipped"}
+            results.update({name: {"result": "skipped"} for name in ("serial", "overlap", "partitioned") if name != selected})
             self.assertEqual([], rehearsal.check_results(inputs, results))
             results[selected]["result"] = "cancelled"
             self.assertTrue(rehearsal.check_results(inputs, results))

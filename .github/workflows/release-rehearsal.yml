@@ -11,11 +11,12 @@ name: Release rehearsal
         type: string
         required: true
       topology:
-        description: Serial baseline or overlapping analysis and complete verification
+        description: Serial, overlapping full-command, or partitioned verification
         type: choice
         options:
         - serial
         - overlap
+        - partitioned
         default: serial
   workflow_call:
     inputs:
@@ -73,10 +74,20 @@ jobs:
     with:
       source_commit: ${{ inputs.source_commit }}
       scope: rehearsal
+  partitioned:
+    needs: source
+    if: inputs.topology == 'partitioned'
+    uses: ./.github/workflows/release-partitioned.yml
+    with:
+      source_commit: ${{ inputs.source_commit }}
+      scope: rehearsal
+    permissions:
+      contents: read
+      actions: read
   prepare:
     name: Prepare rehearsal
-    needs: [source, analysis, serial, overlap]
-    if: always() && needs.source.result == 'success' && needs.analysis.result == 'success' && ((inputs.topology == 'serial' && needs.serial.result == 'success' && needs.overlap.result == 'skipped') || (inputs.topology == 'overlap' && needs.overlap.result == 'success' && needs.serial.result == 'skipped'))
+    needs: [source, analysis, serial, overlap, partitioned]
+    if: always() && needs.source.result == 'success' && needs.analysis.result == 'success' && ((inputs.topology == 'serial' && needs.serial.result == 'success' && needs.overlap.result == 'skipped' && needs.partitioned.result == 'skipped') || (inputs.topology == 'overlap' && needs.overlap.result == 'success' && needs.serial.result == 'skipped' && needs.partitioned.result == 'skipped') || (inputs.topology == 'partitioned' && needs.partitioned.result == 'success' && needs.serial.result == 'skipped' && needs.overlap.result == 'skipped'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -128,7 +139,7 @@ jobs:
           build/verification-gate.json
         if-no-files-found: warn
   result:
-    needs: [source, analysis, serial, overlap, prepare]
+    needs: [source, analysis, serial, overlap, partitioned, prepare]
     if: always()
     runs-on: ubuntu-latest
     permissions:

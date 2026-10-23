@@ -17,8 +17,8 @@ spec.loader.exec_module(recovery)
 def check_results(inputs, results):
     """Require exactly the chosen topology, both analysis owners and signed preparation."""
     selected = inputs["topology"]
-    verification.require(selected in ("serial", "overlap"), "Unknown rehearsal topology.")
-    expected = dict(source="success", analysis="success", prepare="success", serial="skipped", overlap="skipped")
+    verification.require(selected in ("serial", "overlap", "partitioned"), "Unknown rehearsal topology.")
+    expected = dict(source="success", analysis="success", prepare="success", serial="skipped", overlap="skipped", partitioned="skipped")
     expected[selected] = "success"
     return [f"{key}: expected {value}, got {results.get(key, {}).get('result', 'missing')}"
             for key, value in expected.items() if results.get(key, {}).get("result") != value]

@@ -77,12 +77,20 @@ The signing gate also refuses another preparation when the same run already save
 
 ## Non-publishing qualification
 
-**Release rehearsal** accepts full immutable `source_commit` and `controller_commit` SHAs and a `serial` or `overlap` topology.
+**Release rehearsal** accepts full immutable `source_commit` and `controller_commit` SHAs and a `serial`, `overlap` or `partitioned` topology.
 The controller SHA must match the dispatched workflow revision.
 It keeps the product's existing stable build version and generates rehearsal notes outside the source checkout, so it requires neither a new version nor a release tag.
 Both topologies share production's actual full verification, analysis, signed packaging, standalone consumers and archive assembly.
 `serial` waits for analysis before starting verification; `overlap` starts both independently.
 Both use a separate signing runner, so this compares scheduling plans under one controller rather than reproducing historical release-run setup costs.
+
+`partitioned` overlaps analysis with complete verification on isolated common, browser and versioned Minecraft runners, with at most eight verification shards running concurrently.
+Its planner exports the selected product's original full-command graph and derives check owners and all supported Minecraft versions from that product.
+Planning does not execute or satisfy verification.
+Each shard runs real checks and retains its own reports, source identity, command, runner profile and producer attempt.
+Aggregation verifies immutable artifact bytes and requires every planned shard plus coverage of every task in the original transitive graph before the existing signing gate can pass.
+Successful shards from an earlier attempt of the same run remain attributable when only failed jobs are rerun; a changed product, controller or plan cannot reuse them.
+The production route retains the full command while the partitioned topology is qualified against same-product task, test and evidence inventories and preparation timings.
 
 Before the new workflow is registered on the default branch, the existing **JVM checks** manual entry can call it from the implementation branch:
 

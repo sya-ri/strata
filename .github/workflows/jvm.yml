@@ -13,6 +13,7 @@ name: JVM checks
         options:
         - serial
         - overlap
+        - partitioned
         default: serial
       paired_manifest:
         description: Manifest path inside the paired_inputs metadata ZIP
