@@ -83,8 +83,11 @@ internal object RemoteNativeGameTest {
         address: String,
     ) {
         val run = requireNotNull(System.getProperty("strata.fabric.run"))
+        val output = Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput")))
+        Files.createDirectories(output)
+        Files.deleteIfExists(output.resolve("fabric-client.properties"))
         resizeMinecraftTestWindow(context, IntSize(352, 240))
-        repeat(2) {
+        repeat(2) { connection ->
             context.runOnClient { minecraft ->
                 minecraft.options.guiScale().set(1)
                 minecraft.resizeGui()
@@ -107,6 +110,11 @@ internal object RemoteNativeGameTest {
                 val screen = requireNotNull(MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen)
                 screen.captureCanvasFrame().filterIsInstance<DrawCommand.FillRectangle>().any { it.color == ArgbColor(-16776961) }
             }
+            val screen = context.computeOnClient { requireNotNull(MinecraftClientScreenAccess.currentScreen(it) as? FabricMinecraftScreen) }
+            val baseline = context.computeOnClient { MinecraftPresentationObservation.completedFrames(screen) }
+            context.waitFor { baseline < MinecraftPresentationObservation.completedFrames(screen) }
+            val screenshot = context.takeScreenshot("native-remote-dedicated-${connection + 1}", output, IntSize(352, 240))
+            RemoteNativeCanvasFixture.verifyPixels(screenshot)
             context.runOnClient { minecraft ->
                 RemoteNativeCanvasFixture.verifyRendering()
                 requireNotNull(MinecraftClientScreenAccess.currentScreen(minecraft) as? FabricMinecraftScreen).onClose()
@@ -120,8 +128,6 @@ internal object RemoteNativeGameTest {
             }
             context.waitTicks(5)
         }
-        val output = Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput")))
-        Files.createDirectories(output)
         Files.writeString(output.resolve("fabric-client.properties"), "runId=$run\nserver=dedicated\ninput=confirmed\nupdate=visible\nreconnect=confirmed\n")
     }
 

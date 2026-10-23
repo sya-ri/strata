@@ -124,7 +124,25 @@ internal class WebImageTest {
             )
         val root = document.createElement("div") as HTMLElement
         val host = mountWeb(UiDefinition { Stack { PlayerHead(PlayerSkinSource.Pixels(skin), PlayerHeadScale(1)) } }, root, IntSize(16, 16))
-        assertEquals(2, root.querySelectorAll("canvas").length)
+        val canvases = root.querySelectorAll("canvas")
+        assertEquals(2, canvases.length)
+        val face = canvases.item(0) as HTMLCanvasElement
+        val hat = canvases.item(1) as HTMLCanvasElement
+
+        fun pixel(canvas: HTMLCanvasElement): List<Int> {
+            val context = canvas.getContext("2d") as CanvasRenderingContext2D
+            val data = context.getImageData(0.0, 0.0, 1.0, 1.0).data
+            return (0 until 4).map { data[it].toInt() }
+        }
+        assertEquals(listOf(255, 0, 0, 255), pixel(face))
+        assertEquals(listOf(0, 255, 0, 128), pixel(hat))
+        val composite = document.createElement("canvas") as HTMLCanvasElement
+        composite.width = face.width
+        composite.height = face.height
+        val context = composite.getContext("2d") as CanvasRenderingContext2D
+        context.drawImage(face, 0.0, 0.0)
+        context.drawImage(hat, 0.0, 0.0)
+        assertEquals(listOf(127, 128, 0, 255), pixel(composite))
         host.close()
         assertFalse(root.hasChildNodes())
     }

@@ -11,6 +11,7 @@ import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.UiText
 import inboxScreen
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -84,6 +85,11 @@ internal class SkillForwardTest {
             val afterPrepend = host.frame(IntSize(160, 160))
             val beforeRows = beforePrepend.semantics.filter { it.bounds.top in 32 until 92 }
             val afterRows = afterPrepend.semantics.filter { it.bounds.top in 32 until 92 }
+            assertTrue(beforeRows.isNotEmpty())
+            val expectedLabels = initial.map { UiText.Literal(it.preview) }.toSet()
+            assertTrue(beforeRows.all { it.semantics.label in expectedLabels })
+            val anchor = beforeRows.first()
+            assertEquals(anchor.bounds, afterRows.single { it.semantics.label == anchor.semantics.label }.bounds)
             assertEquals(beforeRows, afterRows)
         }
     }

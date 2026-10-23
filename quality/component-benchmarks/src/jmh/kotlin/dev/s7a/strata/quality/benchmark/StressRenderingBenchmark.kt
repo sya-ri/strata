@@ -184,10 +184,11 @@ public open class StressRenderingBenchmark {
         public val checked: Boolean get() = checkbox.checked
 
         /**
-         * Checks tiled source pixels against an independent modulo-based image outside measurement.
+         * Checks visible rows, editor values and rendered pixels outside measurement.
          * The oracle keeps borders, shortened final tiles and source alpha without fixing a command strategy.
          */
-        public fun verifyNineSlicePixels(frame: RuntimeUiFrame) {
+        public fun verifyOutput(frame: RuntimeUiFrame) {
+            StressOutputAssertions.verify(workload, revision, frame, viewport)
             val extent = repeatExtent ?: return
             if (extent == 1) check(frame.drawCommands.isNotEmpty() && frame.drawCommands.size <= 9) { "The one-pixel repeated center must keep bounded drawing work" }
             val design = IntSize(319 + revision % 2, 239)

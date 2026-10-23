@@ -105,7 +105,13 @@ internal class DiscardedModifierTest {
                 }
                 """.trimIndent(),
             )
-        assertEquals(8, findings.size)
+        assertEquals(
+            listOf(4 to 29, 4 to 58, 6 to 28, 7 to 29, 9 to 20, 9 to 69, 11 to 18, 15 to 69),
+            findings.map {
+                it.entity.location.source
+                    .let { source -> source.line to source.column }
+            },
+        )
     }
 
     @Test

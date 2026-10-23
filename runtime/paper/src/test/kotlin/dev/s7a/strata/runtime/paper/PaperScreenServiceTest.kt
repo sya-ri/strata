@@ -256,12 +256,29 @@ internal class PaperScreenServiceTest {
     fun staleSessionActionsCannotInvokeTheReplacementScreen() {
         Harness().use { fixture ->
             fixture.negotiate()
-            val first = fixture.service.open(fixture.plugin, fixture.player, ScreenDefinition("Remote test") { Spacer() })
-            val second = fixture.service.open(fixture.plugin, fixture.player, ScreenDefinition("Remote test") { Spacer() })
-            fixture.client.send(RemoteMessage.Action(first.identity, 1, 1, BuiltinProjection.PointerPress.type, ProjectionInputCodec.pointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)))
+            var firstCalls = 0
+            var secondCalls = 0
+            val first = fixture.service.open(fixture.plugin, fixture.player, ScreenDefinition("Remote test") { Spacer(Modifier.onActivate { firstCalls += 1 }) })
+            val second = fixture.service.open(fixture.plugin, fixture.player, ScreenDefinition("Remote test") { Spacer(Modifier.onActivate { secondCalls += 1 }) })
+            val snapshot = fixture.receive().filterIsInstance<RemoteMessage.Snapshot>().single { it.session == second.identity }
+            val endpoint =
+                snapshot.tree.nodes.values
+                    .flatMap { it.modifiers }
+                    .single { it.type == BuiltinProjection.PointerPress.type }
+                    .value as ProjectionValue.Sequence
+            val endpointId = (endpoint.values[1] as ProjectionValue.Integer).value
+            val input = ProjectionInputCodec.pointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary), IntOffset.Zero)
+            fixture.client.send(RemoteMessage.Action(first.identity, 1, endpointId, BuiltinProjection.PointerPress.type, input))
             fixture.client.flush()
             fixture.service.tick()
+            assertEquals(0, firstCalls)
+            assertEquals(0, secondCalls)
             assertEquals(RemoteSessionStatus.Open, second.status)
+            fixture.client.send(RemoteMessage.Action(second.identity, 1, endpointId, BuiltinProjection.PointerPress.type, input))
+            fixture.client.flush()
+            fixture.service.tick()
+            assertEquals(0, firstCalls)
+            assertEquals(1, secondCalls)
         }
     }
 

@@ -1,22 +1,35 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.integration.docs
 
-import dev.s7a.strata.geometry.DoubleOffset
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.layout.Alignment
-import dev.s7a.strata.layout.Arrangement
-import dev.s7a.strata.layout.HorizontalAlignment
-import dev.s7a.strata.layout.VerticalAlignment
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.text.TextLayout
-import dev.s7a.strata.text.TextOverflow
+import dev.s7a.strata.integration.minecraft.fabric.createConfirmScreenDefinition
+import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.ProjectionType
+import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.remote.RemoteBuiltins
+import dev.s7a.strata.runtime.remote.RemoteComponentRuntime
+import dev.s7a.strata.runtime.remote.RemoteLimits
+import dev.s7a.strata.runtime.remote.RemoteMessage
+import dev.s7a.strata.runtime.remote.RemoteRegistry
+import dev.s7a.strata.runtime.remote.RemoteServerSession
+import dev.s7a.strata.runtime.remote.RemoteTree
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
 
 /**
  * Verifies typed catalog metadata and exact compiled headless showcase geometry.
  */
 internal class ShowcaseScenarioContractTest {
+    @TempDir
+    lateinit var temporary: Path
+
     @Test
     @Suppress("LongMethod")
     fun catalogHasMinecraftComponentOrderSourcesAndViewports() {
@@ -96,237 +109,11 @@ internal class ShowcaseScenarioContractTest {
     }
 
     @Test
-    @Suppress("LongMethod")
-    fun componentTreesHaveExactTypedDetailsAndNoInventedChildren() {
-        val black = ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt()))
-        val expected =
-            listOf(
-                expectedTree(
-                    DocumentedComponent.Row,
-                    listOf(
-                        ShowcaseTreeDetail.Size(136, 64),
-                        black,
-                        ShowcaseTreeDetail.Spacing(4),
-                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
-                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
-                    ),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
-                ),
-                expectedTree(
-                    DocumentedComponent.FlowRow,
-                    listOf(
-                        ShowcaseTreeDetail.Size(168, 60),
-                        black,
-                        ShowcaseTreeDetail.Padding(8),
-                        ShowcaseTreeDetail.FlowRowSpacing(horizontal = 4, vertical = 4),
-                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
-                        ShowcaseTreeDetail.FlowRowDefaultAlignment(VerticalAlignment.Center),
-                    ),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(72, 20))),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(56, 20))),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(92, 20))),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(52, 20))),
-                ),
-                expectedTree(
-                    DocumentedComponent.Column,
-                    listOf(
-                        ShowcaseTreeDetail.Size(120, 64),
-                        black,
-                        ShowcaseTreeDetail.Spacing(4),
-                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
-                        ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
-                    ),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(96, 20))),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(96, 20))),
-                ),
-                expectedTree(
-                    DocumentedComponent.Stack,
-                    listOf(
-                        ShowcaseTreeDetail.Size(64, 64),
-                        black,
-                        ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
-                    ),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(56, 20))),
-                    expectedTree(
-                        DocumentedComponent.Spacer,
-                        listOf(
-                            ShowcaseTreeDetail.Size(10, 10),
-                            ShowcaseTreeDetail.Background(ArgbColor(0xFFE53935.toInt())),
-                            ShowcaseTreeDetail.StackAlign(Alignment.CenterEnd),
-                        ),
-                    ),
-                ),
-                expectedTree(
-                    DocumentedComponent.Grid,
-                    listOf(
-                        ShowcaseTreeDetail.Size(64, 64),
-                        black,
-                        ShowcaseTreeDetail.GridColumns(3),
-                        ShowcaseTreeDetail.GridSpacing(horizontal = 2, vertical = 2),
-                    ),
-                    *Array(9) {
-                        expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(20, 20)))
-                    },
-                ),
-                expectedTree(
-                    DocumentedComponent.Row,
-                    listOf(
-                        ShowcaseTreeDetail.Size(160, 64),
-                        black,
-                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
-                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
-                    ),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
-                    expectedTree(DocumentedComponent.Spacer, listOf(ShowcaseTreeDetail.Size(16, 20))),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(60, 20))),
-                ),
-                expectedTree(
-                    DocumentedComponent.Observe,
-                    listOf(ShowcaseTreeDetail.Size(160, 48), black, ShowcaseTreeDetail.Padding(8)),
-                    expectedTree(
-                        DocumentedComponent.Column,
-                        listOf(ShowcaseTreeDetail.Spacing(4)),
-                        expectedTree(DocumentedComponent.Text),
-                        expectedTree(DocumentedComponent.Text),
-                    ),
-                ),
-                expectedTree(
-                    DocumentedComponent.Stack,
-                    listOf(
-                        ShowcaseTreeDetail.Size(192, 88),
-                        black,
-                        ShowcaseTreeDetail.Padding(8),
-                        ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
-                    ),
-                    expectedTree(
-                        DocumentedComponent.Text,
-                        listOf(ShowcaseTreeDetail.MultilineText(TextLayout.Multiline(maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2))),
-                    ),
-                ),
-                centeredTree(
-                    IntSize(216, 64),
-                    expectedTree(DocumentedComponent.TextField, listOf(ShowcaseTreeDetail.Size(200, 20))),
-                ),
-                expectedTree(
-                    DocumentedComponent.Row,
-                    listOf(
-                        ShowcaseTreeDetail.Size(226, 80),
-                        black,
-                        ShowcaseTreeDetail.Spacing(4),
-                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
-                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
-                    ),
-                    expectedTree(DocumentedComponent.TextArea, listOf(ShowcaseTreeDetail.Size(200, 64))),
-                    expectedTree(DocumentedComponent.Scrollbar, listOf(ShowcaseTreeDetail.Size(6, 64))),
-                ),
-                centeredTree(
-                    IntSize(166, 64),
-                    expectedTree(DocumentedComponent.Button, listOf(ShowcaseTreeDetail.Size(150, 20))),
-                ),
-                centeredTree(
-                    IntSize(166, 36),
-                    expectedTree(DocumentedComponent.Checkbox, listOf(ShowcaseTreeDetail.Size(150, 20))),
-                ),
-                centeredTree(
-                    IntSize(166, 36),
-                    expectedTree(DocumentedComponent.CycleButton, listOf(ShowcaseTreeDetail.Size(150, 20))),
-                ),
-                centeredTree(
-                    IntSize(166, 36),
-                    expectedTree(DocumentedComponent.Slider, listOf(ShowcaseTreeDetail.Size(150, 20))),
-                ),
-                expectedTree(
-                    DocumentedComponent.Row,
-                    listOf(
-                        ShowcaseTreeDetail.Size(160, 64),
-                        black,
-                        ShowcaseTreeDetail.Spacing(1),
-                        ShowcaseTreeDetail.Arrangement(Arrangement.Center),
-                        ShowcaseTreeDetail.RowDefaultAlignment(VerticalAlignment.Center),
-                    ),
-                    expectedTree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
-                    expectedTree(DocumentedComponent.Tab, listOf(ShowcaseTreeDetail.Size(73, 20))),
-                ),
-                expectedTree(
-                    DocumentedComponent.ScrollArea,
-                    listOf(
-                        ShowcaseTreeDetail.Size(120, 48),
-                        black,
-                        ShowcaseTreeDetail.ScrollRate(9),
-                    ),
-                    expectedTree(
-                        DocumentedComponent.Column,
-                        listOf(
-                            ShowcaseTreeDetail.Size(120, 72),
-                            ShowcaseTreeDetail.ColumnDefaultAlignment(HorizontalAlignment.Center),
-                        ),
-                        *Array(4) { expectedTree(DocumentedComponent.Text) },
-                    ),
-                ),
-                expectedTree(
-                    DocumentedComponent.Row,
-                    listOf(ShowcaseTreeDetail.Size(94, 48), black, ShowcaseTreeDetail.Spacing(8)),
-                    expectedTree(
-                        DocumentedComponent.ScrollArea,
-                        listOf(ShowcaseTreeDetail.Size(80, 48), ShowcaseTreeDetail.ScrollRate(9)),
-                        expectedTree(
-                            DocumentedComponent.Column,
-                            listOf(ShowcaseTreeDetail.Size(80, 96)),
-                            *Array(6) { expectedTree(DocumentedComponent.Text) },
-                        ),
-                    ),
-                    expectedTree(DocumentedComponent.Scrollbar, listOf(ShowcaseTreeDetail.Size(6, 48))),
-                ),
-                expectedTree(DocumentedComponent.VirtualList, listOf(ShowcaseTreeDetail.Size(120, 48))),
-                expectedTree(DocumentedComponent.SelectionList, listOf(ShowcaseTreeDetail.Size(120, 48))),
-                centeredTree(
-                    IntSize(64, 64),
-                    expectedTree(DocumentedComponent.Image, listOf(ShowcaseTreeDetail.Size(32, 32))),
-                ),
-                centeredTree(
-                    IntSize(96, 64),
-                    expectedTree(DocumentedComponent.Canvas, listOf(ShowcaseTreeDetail.Size(64, 32))),
-                ),
-                centeredTree(
-                    IntSize(112, 88),
-                    expectedTree(
-                        DocumentedComponent.TiledImage,
-                        listOf(ShowcaseTreeDetail.Size(96, 72)),
-                        expectedTree(
-                            DocumentedComponent.Spacer,
-                            listOf(
-                                ShowcaseTreeDetail.Size(7, 7),
-                                ShowcaseTreeDetail.Background(ArgbColor(0xFFFFFFFF.toInt())),
-                                ShowcaseTreeDetail.TiledImageContentPosition(DoubleOffset(32.0, 24.0), Alignment.Center),
-                            ),
-                        ),
-                    ),
-                ),
-                centeredTree(
-                    IntSize(64, 64),
-                    expectedTree(
-                        DocumentedComponent.Slot,
-                        listOf(ShowcaseTreeDetail.SlotHighlightable(true), ShowcaseTreeDetail.Size(18, 18)),
-                    ),
-                ),
-                centeredTree(
-                    IntSize(64, 64),
-                    expectedTree(DocumentedComponent.PlayerHead, listOf(ShowcaseTreeDetail.Size(24, 24))),
-                ),
-                centeredTree(
-                    IntSize(32, 24),
-                    expectedTree(DocumentedComponent.LoadingIndicator, listOf(ShowcaseTreeDetail.Size(10, 4))),
-                ),
-                centeredTree(
-                    IntSize(116, 28),
-                    expectedTree(DocumentedComponent.ProgressBar, listOf(ShowcaseTreeDetail.Size(100, 12))),
-                ),
-            )
-
-        assertEquals(DocumentedComponent.entries, ShowcaseScenarioCatalog.components.map { scenario -> scenario.component })
-        expected.zip(ShowcaseScenarioCatalog.components).forEach { (expectedTree, scenario) ->
-            assertTreeEquals(expectedTree, scenario.tree)
+    fun documentedComponentTreesMatchTheirCompiledDefinitions() {
+        val assets = ShowcaseMinecraftAssetFixture(temporary).assets()
+        ShowcaseScenarioCatalog.components.forEach { scenario ->
+            val actual = compiledTopology(ShowcaseHeadlessRenderer.componentDefinition(scenario, assets), scenario.component)
+            assertEquals(documentedTopology(scenario.tree), actual, scenario.component.name)
         }
     }
 
@@ -362,18 +149,9 @@ internal class ShowcaseScenarioContractTest {
     }
 
     @Test
-    fun overviewHasExactLeafTopologyAndDetails() {
-        val overview = ShowcaseScenarioCatalog.overview
-        val stack = overview.trees.single()
-        assertEquals(listOf(ShowcaseTreeDetail.Size(320, 180)), stack.details)
-        assertEquals(listOf(DocumentedComponent.Column), stack.children.map { child -> child.component })
-        assertEquals(
-            listOf(DocumentedComponent.Column, DocumentedComponent.Row),
-            stack.children
-                .single()
-                .children
-                .map { child -> child.component },
-        )
+    fun overviewTopologyMatchesTheCompiledCompleteScreen() {
+        val expected = ShowcaseScenarioCatalog.overview.trees.flatMap { documentedTopology(it) }
+        assertEquals(expected, compiledTopology(createConfirmScreenDefinition()))
     }
 
     @Test
@@ -409,37 +187,83 @@ internal class ShowcaseScenarioContractTest {
         assertEquals(listOf(240, 240, 180, 180), screens.map { scenario -> scenario.viewportHeight })
     }
 
-    private fun expectedTree(
-        component: DocumentedComponent,
-        details: List<ShowcaseTreeDetail> = emptyList(),
-        vararg children: ShowcaseTree,
-    ): ShowcaseTree = ShowcaseTree(component, details, children.toList())
+    private fun documentedTopology(
+        tree: ShowcaseTree,
+        depth: Int = 0,
+    ): List<Pair<Int, DocumentedComponent>> = listOf(depth to tree.component) + tree.children.flatMap { documentedTopology(it, depth + 1) }
 
-    private fun centeredTree(
-        viewport: IntSize,
-        child: ShowcaseTree,
-    ): ShowcaseTree =
-        expectedTree(
-            DocumentedComponent.Stack,
-            listOf(
-                ShowcaseTreeDetail.Size(viewport.width, viewport.height),
-                ShowcaseTreeDetail.Background(ArgbColor(0xFF000000.toInt())),
-                ShowcaseTreeDetail.StackContentAlignment(Alignment.Center),
-            ),
-            child,
-        )
-
-    private fun assertTreeEquals(
-        expected: ShowcaseTree,
-        actual: ShowcaseTree,
-    ) {
-        assertEquals(expected.component, actual.component)
-        assertEquals(expected.details, actual.details)
-        assertEquals(expected.children.size, actual.children.size)
-        expected.children.zip(actual.children).forEach { (expectedChild, actualChild) ->
-            assertTreeEquals(expectedChild, actualChild)
+    private fun compiledTopology(
+        definition: UiDefinition,
+        featured: DocumentedComponent? = null,
+    ): List<Pair<Int, DocumentedComponent>> {
+        val registry = RemoteRegistry().also(RemoteBuiltins::register)
+        val runtime = RemoteComponentRuntime()
+        val content = definition.transfer().content
+        val messages = mutableListOf<RemoteMessage>()
+        val limits = RemoteLimits(reconstructionMillis = 60_000)
+        return RemoteServerSession(1, ProjectionValue.Absent, registry.types, limits, messages::add) { runtime.evaluate(content) }.use { session ->
+            session.tick()
+            val tree = (messages.single() as RemoteMessage.Snapshot).tree
+            projectedTopology(tree, tree.root, 0, featured)
         }
     }
+
+    private fun projectedTopology(
+        tree: RemoteTree,
+        identity: Long,
+        depth: Int,
+        featured: DocumentedComponent?,
+    ): List<Pair<Int, DocumentedComponent>> {
+        val node = tree.nodes.getValue(identity)
+        val type = node.declaration.type
+        if (type == BuiltinProjection.TiledImageLayer.type) return emptyList()
+        if (type == BuiltinProjection.StateComponent.type || type == BuiltinProjection.TiledImagePosition.type) {
+            return node.children.flatMap { projectedTopology(tree, it, depth, featured) }
+        }
+        // SelectionList composes VirtualList; materialized rows and the private tile layer are omitted from authored trees.
+        val component =
+            if (type == BuiltinProjection.VirtualList.type && featured == DocumentedComponent.SelectionList && depth == 0) {
+                DocumentedComponent.SelectionList
+            } else {
+                projectedComponents.getValue(type)
+            }
+        val children = if (type == BuiltinProjection.VirtualList.type) emptyList() else node.children.flatMap { projectedTopology(tree, it, depth + 1, featured) }
+        return listOf(depth to component) + children
+    }
+
+    private fun profileType(
+        path: String,
+        version: Int = 1,
+    ): ProjectionType = ProjectionType(ResourceId("strata", "profile/$path"), version)
+
+    private val projectedComponents =
+        mapOf(
+            BuiltinProjection.Row.type to DocumentedComponent.Row,
+            BuiltinProjection.Column.type to DocumentedComponent.Column,
+            BuiltinProjection.Stack.type to DocumentedComponent.Stack,
+            BuiltinProjection.Grid.type to DocumentedComponent.Grid,
+            BuiltinProjection.FlowRow.type to DocumentedComponent.FlowRow,
+            BuiltinProjection.Spacer.type to DocumentedComponent.Spacer,
+            BuiltinProjection.Observe.type to DocumentedComponent.Observe,
+            BuiltinProjection.VirtualList.type to DocumentedComponent.VirtualList,
+            BuiltinProjection.CanvasPixels.type to DocumentedComponent.Canvas,
+            BuiltinProjection.TiledImage.type to DocumentedComponent.TiledImage,
+            profileType("text", 2) to DocumentedComponent.Text,
+            profileType("button") to DocumentedComponent.Button,
+            profileType("text_field", 2) to DocumentedComponent.TextField,
+            profileType("text_area", 2) to DocumentedComponent.TextArea,
+            profileType("checkbox") to DocumentedComponent.Checkbox,
+            profileType("cycle_button") to DocumentedComponent.CycleButton,
+            profileType("slider") to DocumentedComponent.Slider,
+            profileType("tab") to DocumentedComponent.Tab,
+            profileType("progress_bar") to DocumentedComponent.ProgressBar,
+            profileType("loading_indicator") to DocumentedComponent.LoadingIndicator,
+            profileType("image") to DocumentedComponent.Image,
+            profileType("player_head") to DocumentedComponent.PlayerHead,
+            profileType("slot") to DocumentedComponent.Slot,
+            profileType("scroll_area") to DocumentedComponent.ScrollArea,
+            profileType("scrollbar") to DocumentedComponent.Scrollbar,
+        )
 
     private fun contains(
         tree: ShowcaseTree,

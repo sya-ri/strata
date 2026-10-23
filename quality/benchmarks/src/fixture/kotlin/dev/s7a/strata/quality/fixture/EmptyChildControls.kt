@@ -554,21 +554,55 @@ public object EmptyChildControls {
     }
 
     private fun independentOwners() {
-        EmptyChildWorkload.entries.forEach { workload ->
-            val disabled =
-                EmptyChildFixture(workload).use { fixture ->
-                    fixture.execute()
-                    fixture.settle()
-                    fixture.observations()
-                }
-            val enabled =
-                EmptyChildFixture(workload).use { fixture ->
-                    fixture.execute()
-                    fixture.settle()
-                    fixture.observations()
-                }
-            check(disabled == enabled) { "Independent owners changed callbacks: $workload" }
+        val firstSource = Source(11)
+        val secondSource = Source(29)
+        val firstProbe = EmptyChildProbe()
+        val secondProbe = EmptyChildProbe()
+        val first = createRuntimeUiSession { evaluateComponentTree { Observe(firstSource) { element(firstProbe.element(1, it)) } } }
+        val second = createRuntimeUiSession { evaluateComponentTree { Observe(secondSource) { element(secondProbe.element(2, it)) } } }
+        first.use { a ->
+            second.use { b ->
+                a.attach()
+                b.attach()
+                val constraints = Constraints(maxWidth = 100, maxHeight = 4)
+                check(
+                    a
+                        .frame(constraints)
+                        .semantics
+                        .single()
+                        .semantics.value == UiText.Literal("11"),
+                )
+                val retained = b.frame(constraints)
+                check(
+                    retained.semantics
+                        .single()
+                        .semantics.value == UiText.Literal("29"),
+                )
+                firstSource.publish(17)
+                check(
+                    a
+                        .frame(constraints)
+                        .semantics
+                        .single()
+                        .semantics.value == UiText.Literal("17"),
+                )
+                check(b.frame(constraints) === retained)
+                a.close()
+                check(firstSource.subscribed.not() && firstProbe.nodes.all { it.disposed })
+                check(secondSource.subscribed && secondProbe.nodes.all { it.disposed.not() })
+                check(b.frame(constraints) === retained)
+                secondSource.publish(43)
+                check(
+                    b
+                        .frame(constraints)
+                        .semantics
+                        .single()
+                        .semantics.value == UiText.Literal("43"),
+                )
+                check(secondProbe.nodes.single().payload == 43)
+            }
         }
+        check(secondSource.subscribed.not() && secondProbe.nodes.all { it.disposed })
     }
 
     private fun ownerIsolation() {

@@ -108,7 +108,11 @@ internal class LifecycleFailureTest {
             assertThrows(IllegalStateException::class.java) {
                 tree.update(
                     probe.root(
-                        listOf(probe.element(id("first")), probe.element(id("leaf")), probe.element(id("last"))),
+                        listOf(
+                            probe.element(id("first")),
+                            probe.element(id("parent"), children = listOf(probe.element(id("inner-first")), probe.element(id("leaf")), probe.element(id("inner-last")))),
+                            probe.element(id("last")),
+                        ),
                     ),
                 )
             },
@@ -117,10 +121,17 @@ internal class LifecycleFailureTest {
             listOf(
                 TestProbe.Event.Attach(id("root")),
                 TestProbe.Event.Attach(id("first")),
+                TestProbe.Event.Attach(id("parent")),
+                TestProbe.Event.Attach(id("inner-first")),
                 TestProbe.Event.Attach(id("leaf")),
                 TestProbe.Event.Dispose(id("last")),
+                TestProbe.Event.Dispose(id("inner-last")),
                 TestProbe.Event.Detach(id("leaf")),
                 TestProbe.Event.Dispose(id("leaf")),
+                TestProbe.Event.Detach(id("inner-first")),
+                TestProbe.Event.Dispose(id("inner-first")),
+                TestProbe.Event.Detach(id("parent")),
+                TestProbe.Event.Dispose(id("parent")),
                 TestProbe.Event.Detach(id("first")),
                 TestProbe.Event.Dispose(id("first")),
                 TestProbe.Event.Detach(id("root")),

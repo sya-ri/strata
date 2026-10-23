@@ -174,9 +174,16 @@ public class ServerPerformanceIntervalTest {
         assertEquals(2, hostSummary.getAsJsonArray("workloads").size())
         assertTrue(hostSummary.getAsJsonArray("workloads").all { it.asJsonObject.getAsJsonArray("sources").size() == 3 })
         val unregistered = contractConstructor.newInstance("test-owner", intervals, mapOf("unregistered" to "kotlin.Unit"), setOf("fixture"))
-        assertFailsWith<InvocationTargetException> {
-            process.invoke(processor, requestPath, unregistered, loader)
-        }
+        val unregisteredOutput = directory.resolve("unregistered-summary.json")
+        val unregisteredRequestPath = directory.resolve("unregistered-request.json")
+        PerformanceJson.writeNew(unregisteredRequestPath, request.deepCopy().apply { addProperty("output", unregisteredOutput.toString()) })
+        val unregisteredFailure =
+            assertFailsWith<InvocationTargetException> {
+                process.invoke(processor, unregisteredRequestPath, unregistered, loader)
+            }
+        assertTrue(unregisteredFailure.targetException is IllegalArgumentException)
+        assertTrue(unregisteredFailure.targetException.stackTrace.any { it.methodName.contentEquals("verifyArchives") })
+        assertFalse(Files.exists(unregisteredOutput))
         val secondaryPath = checkNotNull(reports.first().parent).resolve("test-secondary.json")
         val originalSecondary = Files.readString(secondaryPath)
         val mixed = JvmPerformanceEvidence.readReport(secondaryPath)

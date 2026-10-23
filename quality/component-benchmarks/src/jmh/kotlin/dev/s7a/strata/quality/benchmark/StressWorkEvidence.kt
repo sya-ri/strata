@@ -29,12 +29,13 @@ public object StressWorkEvidence {
         try {
             state.monitorWork()
             val initial = state.idle()
-            state.verifyNineSlicePixels(initial)
+            state.verifyOutput(initial)
 
             check(state.idle() === initial)
             val before = state.subscriptions
             val updated = state.update()
-            state.verifyNineSlicePixels(updated)
+            state.verifyOutput(updated)
+            if (workload == StressWorkload.Animation) repeat(2) { state.verifyOutput(state.update()) }
             check(updated !== initial) { "The changed operation must commit a new frame" }
             if (workload == StressWorkload.Checkbox) check(state.checked) { "Actual pointer input did not toggle the checkbox" }
             state.lifecycle()

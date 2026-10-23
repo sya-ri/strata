@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Verifies independent concurrent low-level calls do not share mutable output state.
@@ -23,27 +25,37 @@ import java.util.concurrent.Executors
 internal class HeadlessConcurrencyTest {
     @Test
     fun concurrentRasterCallsProduceIndependentImages() {
-        val executor = Executors.newFixedThreadPool(4)
+        val ready = CountDownLatch(8)
+        val start = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(8)
         try {
             val futures =
-                (0 until 8).map {
-                    executor.submit<IntArray> {
-                        rasterizeHeadless(
-                            listOf(
-                                DrawCommandFactory.fill(
-                                    IntRect(0, 0, 2, 1),
-                                    0xFF123456.toInt(),
-                                ),
-                            ),
-                            IntSize(2, 1),
-                        ).copyArgb()
+                (0 until 8).map { index ->
+                    executor.submit<HeadlessImage> {
+                        ready.countDown()
+                        check(start.await(5, TimeUnit.SECONDS))
+                        val size = IntSize(index + 1, index % 3 + 1)
+                        rasterizeHeadless(listOf(DrawCommandFactory.fill(IntRect(0, 0, size.width, size.height), 0xFF123450.toInt() + index)), size)
                     }
                 }
-            futures.forEach { future ->
-                assertArrayEquals(intArrayOf(0xFF123456.toInt(), 0xFF123456.toInt()), future.get())
+            assertTrue(ready.await(5, TimeUnit.SECONDS))
+            start.countDown()
+            val images = futures.map { it.get(5, TimeUnit.SECONDS) }
+            images.forEachIndexed { index, image ->
+                val size = IntSize(index + 1, index % 3 + 1)
+                val color = 0xFF123450.toInt() + index
+                assertEquals(size, image.size)
+                val copied = image.copyArgb()
+                assertArrayEquals(IntArray(size.width * size.height) { color }, copied)
+                copied.fill(0)
+                for (y in 0 until size.height) {
+                    for (x in 0 until size.width) assertEquals(color, image.argbAt(x, y))
+                }
             }
         } finally {
+            start.countDown()
             executor.shutdownNow()
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
         }
     }
 

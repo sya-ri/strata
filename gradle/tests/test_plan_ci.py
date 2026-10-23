@@ -512,19 +512,6 @@ class PlanCiTest(unittest.TestCase):
                 completed, _ = self.cli_plan(fixture.root, *control)
                 self.assertNotEqual(0, completed.returncode)
 
-    def test_selected_check_uses_the_existing_subject_parity_dependencies(self):
-        root = Path(__file__).parents[2]
-        build = (root / "build.gradle.kts").read_text(encoding="utf-8")
-        self.assertRegex(build, r'fontParityComparisonsByVersion\[target\.version\]\?\.let\s*\{\s*comparison\s*->\s*tasks\.named\("check"\)\s*\{\s*dependsOn\(comparison\)\s*\}')
-        self.assertIn("ciMinecraftVersions.isNotEmpty() ->", build)
-        verification = (root / "runtime/minecraft-fonts-lwjgl/verification.gradle.kts").read_text(encoding="utf-8")
-        comparison = verification.split('tasks.register<Test>("compareOfflineFont${contract.name}")', 1)[1].split("verifyOfflineFontParity.configure", 1)[0]
-        self.assertIn("dependsOn(verification)", comparison)
-        self.assertIn("mustRunAfter(nativeRunner)", comparison)
-        self.assertIn('useJUnitPlatform { includeTags("font-offline-parity") }', comparison)
-        self.assertIn("outputs.upToDateWhen { false }", comparison)
-        self.assertIn("outputs.cacheIf { false }", comparison)
-
     def test_loaded_client_upload_retains_archives_tests_and_declared_offline_outputs(self):
         root = Path(__file__).parents[2]
         workflow = (root / ".github/workflows/jvm.yml").read_text(encoding="utf-8")

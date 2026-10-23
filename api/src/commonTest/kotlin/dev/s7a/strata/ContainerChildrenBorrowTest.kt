@@ -16,27 +16,21 @@ import kotlin.test.assertTrue
  */
 internal class ContainerChildrenBorrowTest {
     @Test
-    fun borrowedMembershipIsReleasedAfterSuccessAndConstructorFailure() {
-        for (fail in listOf(false, true)) {
-            val scope = UiScope.createRoot()
-            scope.element(ExternalElement())
-            scope.element(ExternalElement())
-            val borrowed = scope.borrowChildElements()
-            assertEquals(2, borrowed.size)
-            assertFailsWith<IllegalStateException> { scope.element(ExternalElement()) }
-            var detached: Element? = null
+    fun borrowedMembershipIsReleasedAndConstructedChildrenRemainDetached() {
+        val scope = UiScope.createRoot()
+        scope.element(ExternalElement())
+        scope.element(ExternalElement())
+        val borrowed = scope.borrowChildElements()
+        assertEquals(2, borrowed.size)
+        assertFailsWith<IllegalStateException> { scope.element(ExternalElement()) }
+        val detached =
             try {
-                if (fail) {
-                    assertFailsWith<IllegalArgumentException> { throw IllegalArgumentException("constructor failure") }
-                } else {
-                    detached = ExternalElement(borrowed)
-                }
+                ExternalElement(borrowed)
             } finally {
                 scope.close()
             }
-            assertTrue(borrowed.isEmpty())
-            if (fail.not()) assertEquals(2, checkNotNull(detached).children.size)
-        }
+        assertTrue(borrowed.isEmpty())
+        assertEquals(2, detached.children.size)
     }
 
     /**

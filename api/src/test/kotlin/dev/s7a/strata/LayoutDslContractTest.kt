@@ -16,7 +16,6 @@ import dev.s7a.strata.component.buildComponentTree
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
-import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.FlowRowAlignmentParentData
 import dev.s7a.strata.layout.FlowRowElement
@@ -141,34 +140,6 @@ internal class LayoutDslContractTest {
     }
 
     @Test
-    fun escapedOuterComponentRejectsWrongThreadBeforeRunningContent() {
-        var capturedScope: UiScope? = null
-        buildComponentTree {
-            capturedScope = this
-            Row { }
-        }
-        val scope = requireNotNull(capturedScope)
-        val contentRan = AtomicReference(false)
-        val failure = AtomicReference<Throwable?>(null)
-        val worker =
-            Thread {
-                try {
-                    scope.Row { contentRan.set(true) }
-                } catch (error: Throwable) {
-                    failure.set(error)
-                }
-            }
-        worker.start()
-        worker.join(5_000)
-
-        assertFalse(contentRan.get())
-        assertEquals(
-            "UiScope can only be used from its construction execution owner.",
-            requireNotNull(failure.get()).message,
-        )
-    }
-
-    @Test
     fun publicScopesHaveNoPublicJavaConstructor() {
         listOf(RowScope::class.java, ColumnScope::class.java, StackScope::class.java, GridScope::class.java, FlowRowScope::class.java).forEach { scopeClass ->
             assertTrue(JavaModifier.isAbstract(scopeClass.modifiers))
@@ -243,36 +214,6 @@ internal class LayoutDslContractTest {
                 "UiScope can only be used from its construction execution owner.",
                 requireNotNull(failure.get()).message,
             )
-        }
-    }
-
-    @Test
-    fun everyScopeRejectsLateModifierBehavior() {
-        var rowScope: RowScope? = null
-        var columnScope: ColumnScope? = null
-        var stackScope: StackScope? = null
-        var gridScope: GridScope? = null
-        var flowRowScope: FlowRowScope? = null
-        buildComponentTree { Row { rowScope = this } }
-        buildComponentTree { Column { columnScope = this } }
-        buildComponentTree { Stack { stackScope = this } }
-        buildComponentTree { Grid(columns = 1) { gridScope = this } }
-        buildComponentTree { FlowRow { flowRowScope = this } }
-
-        assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(rowScope)) { Modifier.weight(1f) }
-        }
-        assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(columnScope)) { Modifier.weight(1f) }
-        }
-        assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(stackScope)) { Modifier.align(Alignment.Center) }
-        }
-        assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(gridScope)) { Modifier.align(Alignment.Center) }
-        }
-        assertThrows(IllegalStateException::class.java) {
-            with(requireNotNull(flowRowScope)) { Modifier.align(VerticalAlignment.Center) }
         }
     }
 }

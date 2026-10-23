@@ -24,7 +24,13 @@ internal class StateCreatedDuringCompositionTest {
                 }
                 """.trimIndent(),
             )
-        assertEquals(2, findings.size)
+        assertEquals(
+            listOf(4 to 25, 5 to 11),
+            findings.map {
+                it.entity.location.source
+                    .let { source -> source.line to source.column }
+            },
+        )
     }
 
     @Test

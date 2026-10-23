@@ -31,137 +31,80 @@ import java.util.concurrent.TimeUnit
 internal class MinecraftUiProfileTest {
     @Test
     fun missingRequiredSlotsAreRejectedIndependently() {
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeGlyphs()
-                completeButtons()
-            }
+        completeProfile()
+        assertMissing("Menu background must be declared.") {
+            completeContainerAssets()
+            completeScrollAssets()
+            completeTextFieldAssets()
+            completeGlyphs()
+            completeButtons()
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                menuBackground(image(IntSize(16, 16)))
-                for (codePoint in 0x21 until 0x7E) {
-                    printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
-                }
-                completeButtons()
-            }
+        assertMissing("Every U+0021 through U+007E glyph must be declared.") {
+            menuBackground(image(IntSize(16, 16)))
+            completeContainerAssets()
+            completeScrollAssets()
+            completeTextFieldAssets()
+            for (codePoint in 0x21 until 0x7E) printableAsciiGlyph(codePoint, image(IntSize(8, 8)))
+            completeButtons()
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
-            }
+        assertMissing("Disabled Button sprite must be declared.") {
+            completeMenuAndGlyphs()
+            buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+            buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
-            }
+        assertMissing("Highlighted Button sprite must be declared.") {
+            completeMenuAndGlyphs()
+            buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
+            buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs()
-                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
-            }
+        assertMissing("Normal Button sprite must be declared.") {
+            completeMenuAndGlyphs()
+            buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
+            buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
         }
         TextFieldAsset.entries.forEach { omitted ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    menuBackground(image(IntSize(16, 16)))
-                    completeScrollAssets()
-                    completeTextFieldAssets(omitted)
-                    completeGlyphs()
-                    completeButtons()
-                }
+            assertMissing("${omitted.label} must be declared.") {
+                menuBackground(image(IntSize(16, 16)))
+                completeContainerAssets()
+                completeScrollAssets()
+                completeTextFieldAssets(omitted)
+                completeGlyphs()
+                completeButtons()
             }
         }
     }
 
     @Test
     fun menuAndEachRequiredSlotRejectDuplicates() {
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                menuBackground(image(IntSize(16, 16)))
-                menuBackground(image(IntSize(16, 16)))
-            }
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs()
-                printableAsciiGlyph(0x21, image(IntSize(8, 8)))
-            }
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
-            }
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
-            }
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs()
-                buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
-                buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled)
-            }
-        }
+        assertDeclarationRejected("Menu background was already declared.", afterComplete = true) { menuBackground(image(IntSize(16, 16))) }
+        assertDeclarationRejected("Glyph code point was already declared.", afterComplete = true) { printableAsciiGlyph(0x21, image(IntSize(8, 8))) }
+        assertDeclarationRejected("Normal Button sprite was already declared.", afterComplete = true) { buttonNormal(buttonImage(), 1, NineSliceCenterMode.Tiled) }
+        assertDeclarationRejected("Highlighted Button sprite was already declared.", afterComplete = true) { buttonHighlighted(buttonImage(), 1, NineSliceCenterMode.Tiled) }
+        assertDeclarationRejected("Disabled Button sprite was already declared.", afterComplete = true) { buttonDisabled(buttonImage(), 1, NineSliceCenterMode.Tiled) }
         ScrollAsset.entries.forEach { duplicate ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    completeMenuAndGlyphs()
-                    declareScrollAsset(duplicate)
-                }
-            }
+            assertDeclarationRejected("${duplicate.label} was already declared.", afterComplete = true) { declareScrollAsset(duplicate) }
         }
         TextFieldAsset.entries.forEach { duplicate ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    completeMenuAndGlyphs()
-                    declareTextFieldAsset(duplicate)
-                }
-            }
+            assertDeclarationRejected("${duplicate.label} was already declared.", afterComplete = true) { declareTextFieldAsset(duplicate) }
         }
     }
 
     @Test
     fun eachRequiredScrollAssetIsRequiredAndHasAnExactSize() {
+        completeProfile()
         ScrollAsset.entries.forEach { omitted ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    menuBackground(image(IntSize(16, 16)))
-                    completeScrollAssets(omitted)
-                    completeGlyphs()
-                    completeButtons()
-                }
+            assertMissing("${omitted.label} must be declared.") {
+                menuBackground(image(IntSize(16, 16)))
+                completeContainerAssets()
+                completeScrollAssets(omitted)
+                completeTextFieldAssets()
+                completeGlyphs()
+                completeButtons()
             }
         }
-        val wrongSizes =
-            mapOf(
-                ScrollAsset.ListBackground to IntSize(15, 16),
-                ScrollAsset.HeaderSeparator to IntSize(31, 2),
-                ScrollAsset.FooterSeparator to IntSize(32, 1),
-                ScrollAsset.ScrollbarBackground to IntSize(5, 32),
-                ScrollAsset.ScrollbarThumb to IntSize(6, 31),
-            )
-        wrongSizes.forEach { (slot, size) ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
+        ScrollAsset.entries.forEach { slot ->
+            listOf(IntSize(slot.size.width - 1, slot.size.height), IntSize(slot.size.width, slot.size.height - 1)).forEach { size ->
+                assertDeclarationRejected("${slot.label} must be ${slot.size.width} by ${slot.size.height} pixels.") {
                     declareScrollAsset(slot, size)
                 }
             }
@@ -171,51 +114,25 @@ internal class MinecraftUiProfileTest {
     @Test
     fun eachTextFieldSpriteRequiresTheExactSize() {
         TextFieldAsset.entries.forEach { slot ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    declareTextFieldAsset(slot, IntSize(199, 20))
-                }
-            }
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    declareTextFieldAsset(slot, IntSize(200, 19))
-                }
+            listOf(IntSize(199, 20), IntSize(200, 19)).forEach { size ->
+                assertDeclarationRejected("TextField sprites must be 200 by 20 pixels.") { declareTextFieldAsset(slot, size) }
             }
         }
     }
 
     @Test
     fun malformedMasksAndGlyphBoundsAreRejected() {
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                printableAsciiGlyph(0x21, createDrawImage(IntSize(7, 8), IntArray(56)))
-            }
+        assertDeclarationRejected("Glyph mask must be 8 by 8 pixels.") {
+            printableAsciiGlyph(0x21, createDrawImage(IntSize(7, 8), IntArray(56)))
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                printableAsciiGlyph(0x20, image(IntSize(8, 8)))
-            }
+        listOf(0x20, 0x7F).forEach { codePoint ->
+            assertDeclarationRejected("Glyph code point must be U+0021 through U+007E.") { printableAsciiGlyph(codePoint, image(IntSize(8, 8))) }
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                printableAsciiGlyph(0x7F, image(IntSize(8, 8)))
-            }
+        assertDeclarationRejected("Glyph masks must contain only transparent white or opaque white pixels.") {
+            printableAsciiGlyph(0x21, createDrawImage(IntSize(8, 8), IntArray(64) { 1 }))
         }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                printableAsciiGlyph(0x21, createDrawImage(IntSize(8, 8), IntArray(64) { 1 }))
-            }
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            createMinecraftUiProfile {
-                completeMenuAndGlyphs { codePoint ->
-                    if (codePoint == 0x21) {
-                        createDrawImage(IntSize(8, 8), IntArray(64) { index -> if (index == 8) 0 else 0x00FFFFFF })
-                    } else {
-                        image(IntSize(8, 8))
-                    }
-                }
-            }
+        assertDeclarationRejected("Glyph masks must contain only transparent white or opaque white pixels.") {
+            printableAsciiGlyph(0x21, createDrawImage(IntSize(8, 8), IntArray(64) { index -> if (index == 8) 0 else 0x00FFFFFF }))
         }
     }
 
@@ -265,31 +182,22 @@ internal class MinecraftUiProfileTest {
 
     @Test
     fun containerAssetSlotsRejectMissingDuplicateAndWrongSizes() {
+        completeProfile()
         ContainerAsset.entries.forEach { omitted ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    menuBackground(image(IntSize(16, 16)))
-                    completeContainerAssets(omitted)
-                    completeScrollAssets()
-                    completeTextFieldAssets()
-                    completeGlyphs()
-                    completeButtons()
-                }
-            }
-        }
-        ContainerAsset.entries.forEach { duplicated ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    declareContainerAsset(duplicated)
-                    declareContainerAsset(duplicated)
-                }
+            assertMissing("${omitted.label} must be declared.") {
+                menuBackground(image(IntSize(16, 16)))
+                completeContainerAssets(omitted)
+                completeScrollAssets()
+                completeTextFieldAssets()
+                completeGlyphs()
+                completeButtons()
             }
         }
         ContainerAsset.entries.forEach { slot ->
-            assertThrows(IllegalArgumentException::class.java) {
-                createMinecraftUiProfile {
-                    declareContainerAsset(slot, IntSize(slot.size.width - 1, slot.size.height))
-                }
+            assertDeclarationRejected("${slot.label} was already declared.", afterComplete = true) { declareContainerAsset(slot) }
+            val label = if (slot == ContainerAsset.Background) "Container background" else "Slot highlights"
+            assertDeclarationRejected("$label must be ${slot.size.width} by ${slot.size.height} pixels.") {
+                declareContainerAsset(slot, IntSize(slot.size.width - 1, slot.size.height))
             }
         }
     }
@@ -307,7 +215,7 @@ internal class MinecraftUiProfileTest {
     }
 
     @Test
-    fun defaultFixtureUsesTheLockedMinecraftButtonPolicies() {
+    fun sharedFixtureSuppliesItsExpectedButtonDefaults() {
         val profile = MinecraftProfileFixture.create()
         val normal = button(profile, "normalButton")
         val highlighted = button(profile, "highlightedButton")
@@ -415,6 +323,25 @@ internal class MinecraftUiProfileTest {
         } finally {
             start.countDown()
             threads.forEach { thread -> thread.join(5_000) }
+        }
+    }
+
+    private fun assertMissing(
+        message: String,
+        declaration: MinecraftUiProfileBuilder.() -> Unit,
+    ) {
+        assertEquals(message, assertThrows(IllegalArgumentException::class.java) { createMinecraftUiProfile(declaration) }.message)
+    }
+
+    private fun assertDeclarationRejected(
+        message: String,
+        afterComplete: Boolean = false,
+        declaration: MinecraftUiProfileBuilder.() -> Unit,
+    ) {
+        createMinecraftUiProfile {
+            if (afterComplete) completeProfileDeclarations()
+            assertEquals(message, assertThrows(IllegalArgumentException::class.java) { declaration() }.message)
+            if (afterComplete.not()) completeProfileDeclarations()
         }
     }
 
@@ -535,25 +462,29 @@ internal class MinecraftUiProfileTest {
 
     private enum class ScrollAsset(
         val size: IntSize,
+        val label: String,
     ) {
-        ListBackground(IntSize(16, 16)),
-        HeaderSeparator(IntSize(32, 2)),
-        FooterSeparator(IntSize(32, 2)),
-        ScrollbarBackground(IntSize(6, 32)),
-        ScrollbarThumb(IntSize(6, 32)),
+        ListBackground(IntSize(16, 16), "List background"),
+        HeaderSeparator(IntSize(32, 2), "List header separator"),
+        FooterSeparator(IntSize(32, 2), "List footer separator"),
+        ScrollbarBackground(IntSize(6, 32), "Scrollbar background"),
+        ScrollbarThumb(IntSize(6, 32), "Scrollbar thumb"),
     }
 
     private enum class ContainerAsset(
         val size: IntSize,
+        val label: String,
     ) {
-        Background(IntSize(256, 256)),
-        HighlightBack(IntSize(24, 24)),
-        HighlightFront(IntSize(24, 24)),
+        Background(IntSize(256, 256), "Container background"),
+        HighlightBack(IntSize(24, 24), "Slot back highlight"),
+        HighlightFront(IntSize(24, 24), "Slot front highlight"),
     }
 
-    private enum class TextFieldAsset {
-        Normal,
-        Highlighted,
+    private enum class TextFieldAsset(
+        val label: String,
+    ) {
+        Normal("Normal TextField sprite"),
+        Highlighted("Highlighted TextField sprite"),
     }
 
     private fun buttonImage(): DrawImage = image(IntSize(200, 20))

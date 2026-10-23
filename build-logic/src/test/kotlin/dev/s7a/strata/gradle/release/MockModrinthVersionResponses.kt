@@ -1,6 +1,8 @@
 package dev.s7a.strata.gradle.release
 
 import dev.s7a.strata.gradle.release.ModrinthReleaseFixture.Companion.PROJECT_ID
+import java.security.MessageDigest
+import java.util.HexFormat
 
 /**
  * Builds remote version response records independently of the production client parser.
@@ -14,11 +16,13 @@ internal class MockModrinthVersionResponses(
     var dependencyResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
     var fileResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
     var fileHashesResponseMutation: (MutableMap<String, Any?>) -> Unit = { _ -> }
+    val uploadedFiles: MutableMap<String, ByteArray> = linkedMapOf()
 
     /**
      * Builds one listed release, including deliberate response-schema mutations.
      */
     fun version(artifact: ModrinthManifest.Artifact): Map<String, Any?> {
+        val bytes = uploadedFiles[artifact.fileName] ?: fixture.bundle.resolve(artifact.relativePath).readBytes()
         val dependencies =
             ModrinthManifest.REQUIRED_PROJECT_DEPENDENCIES.map { projectId ->
                 linkedMapOf<String, Any?>(
@@ -32,8 +36,8 @@ internal class MockModrinthVersionResponses(
             }
         val hashes =
             linkedMapOf<String, Any?>(
-                "sha256" to artifact.sha256,
-                "sha512" to artifact.sha512,
+                "sha256" to HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)),
+                "sha512" to HexFormat.of().formatHex(MessageDigest.getInstance("SHA-512").digest(bytes)),
             )
         fileHashesResponseMutation(hashes)
         val file =
@@ -42,7 +46,7 @@ internal class MockModrinthVersionResponses(
                 "url" to "$baseUrl/cdn/${artifact.fileName}",
                 "filename" to artifact.fileName,
                 "primary" to true,
-                "size" to artifact.size,
+                "size" to bytes.size.toLong(),
             )
         fileResponseMutation(file)
         return linkedMapOf(

@@ -5,6 +5,7 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Spacer
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.VirtualList
 import dev.s7a.strata.component.VirtualListState
 import dev.s7a.strata.component.evaluateComponentTree
@@ -13,11 +14,15 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.height
+import dev.s7a.strata.modifier.semantics
+import dev.s7a.strata.modifier.size
+import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
 import dev.s7a.strata.state.StateSubscription
+import dev.s7a.strata.text.UiText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -27,6 +32,31 @@ import kotlin.test.assertTrue
  * Checks allocation-driven virtualization using the same retained engine on JVM and JavaScript.
  */
 internal class AdaptiveVirtualListTest {
+    @Test
+    fun replacedVirtualRowsKeepSemanticsThroughNestedAncestors() {
+        val state = VirtualListState<Int>()
+        UiTree().use { tree ->
+            tree.update(
+                evaluateComponentTree {
+                    Stack {
+                        Column {
+                            VirtualList(100, { it }, { it }, state, IntSize(80, 30), 10) { item ->
+                                Spacer(Modifier.size(80, 10).semantics(Semantics(label = UiText.Literal("Row $item"))))
+                            }
+                        }
+                    }
+                },
+            )
+            for (first in listOf(0, 97, 0)) {
+                assertTrue(state.jumpToIndex(first))
+                tree.measure(Constraints.fixed(80, 30))
+                tree.layout()
+                val visible = tree.semantics().filter { it.bounds.top in 0 until 30 }
+                assertEquals((first until first + 3).map { UiText.Literal("Row $it") }, visible.map { it.semantics.label })
+            }
+        }
+    }
+
     @Test
     fun fillsTheWeightedSpaceAfterFixedChildrenAndGaps() {
         val state = VirtualListState<Int>()
@@ -126,18 +156,34 @@ internal class AdaptiveVirtualListTest {
     @Test
     fun nestedObservedRowsAreAttachedBeforeTheirFirstMeasurement() {
         val state = VirtualListState<Int>()
-        val height = StateSource { StateSubscription(StateSnapshot(StateRevision(0), 8)) {} }
+        val constructed = mutableListOf<Int>()
+        val observed = mutableListOf<Int>()
+        var subscriptions = 0
+        var releases = 0
+        val height =
+            StateSource {
+                subscriptions += 1
+                StateSubscription(StateSnapshot(StateRevision(0), 8)) { releases += 1 }
+            }
         val tree = UiTree()
         tree.update(
             evaluateComponentTree {
-                VirtualList(itemCount = 100, itemAt = { it }, keyAt = { it }, state = state, rowHeight = 10) {
-                    Observe(height) { Spacer(Modifier.height(it)) }
+                VirtualList(itemCount = 100, itemAt = { it }, keyAt = { it }, state = state, rowHeight = 10) { row ->
+                    constructed += row
+                    Observe(height) {
+                        observed += row
+                        Spacer(Modifier.height(it))
+                    }
                 }
             },
         )
         tree.measure(Constraints.fixed(80, 20))
         tree.layout()
+        assertEquals(listOf(0, 1, 2), constructed)
+        assertEquals(constructed, observed)
+        assertEquals(1, subscriptions)
         tree.close()
+        assertEquals(1, releases)
     }
 
     @Test

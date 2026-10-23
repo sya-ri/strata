@@ -9,8 +9,11 @@ import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.internal.platform.appendScalar
 import dev.s7a.strata.internal.platform.scalarAt
 import dev.s7a.strata.layout.ParentDataKey
+import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.resource.parseUuid
+import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.mutableStateOf
@@ -22,6 +25,26 @@ import kotlin.test.assertFailsWith
  * Runs deterministic low-level portability contracts on JVM and JavaScript.
  */
 internal class PortableContractsTest {
+    @Test
+    fun builtInSemanticsRolesKeepTheirWireIdentities() {
+        val roles =
+            listOf(
+                SemanticsRole.Button to "button",
+                SemanticsRole.Text to "text",
+                SemanticsRole.TextField to "text_field",
+                SemanticsRole.TextArea to "text_area",
+                SemanticsRole.Tab to "tab",
+                SemanticsRole.Checkbox to "checkbox",
+                SemanticsRole.Slider to "slider",
+                SemanticsRole.CycleButton to "cycle_button",
+                SemanticsRole.ProgressBar to "progress_bar",
+                SemanticsRole.SelectionList to "selection_list",
+            )
+        roles.forEach { (role, path) ->
+            assertEquals(ProjectionType(ResourceId("strata", "role/$path")), role.projectionType)
+        }
+    }
+
     @Test
     fun geometryAndImageBoundariesRejectWrappedValues() {
         assertFailsWith<ArithmeticException> { IntOffset(Int.MAX_VALUE, 0) + IntOffset(1, 0) }

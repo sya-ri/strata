@@ -41,17 +41,9 @@ internal class ShowcasePathsTest {
         val target = temporaryRoot.resolve("target")
         val link = temporaryRoot.resolve("link")
         Files.createDirectories(target)
-        val created =
-            try {
-                Files.createSymbolicLink(link, target)
-                true
-            } catch (_: Exception) {
-                false
-            }
-        if (created) {
-            assertThrows(IllegalArgumentException::class.java) {
-                ShowcasePaths.requireSafeSegments(link.resolve("child"), "linked path")
-            }
+        TestSymbolicLinks.create(link, target)
+        assertThrows(IllegalArgumentException::class.java) {
+            ShowcasePaths.requireSafeSegments(link.resolve("child"), "linked path")
         }
     }
 }

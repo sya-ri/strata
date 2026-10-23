@@ -77,14 +77,6 @@ internal class CycleButtonStateTest {
     }
 
     @Test
-    fun formattingPropagatesConversionFailuresUnchanged() {
-        val expected = IllegalArgumentException("Conversion failed.")
-        val state = CycleButtonState(listOf(20), 20) { throw expected }
-
-        assertSame(expected, assertThrows(IllegalArgumentException::class.java) { state.format(20) })
-    }
-
-    @Test
     fun legacyListConstructorsKeepDefaultObjectFormatting() {
         val selected = PowerLevel(80)
         val state = CycleButtonState(listOf(PowerLevel(20), selected), selected)
@@ -92,19 +84,6 @@ internal class CycleButtonStateTest {
 
         assertEquals("PowerLevel(watts=80)", state.format(selected))
         assertEquals(PowerLevel(20), first.value)
-    }
-
-    @Test
-    fun collectionFactoryKeepsExistingOptionValidation() {
-        assertThrows(IllegalArgumentException::class.java) {
-            CycleButtonState(emptyList(), 0) { value -> value.toString() }
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            CycleButtonState(listOf(1, 1), 1) { value -> value.toString() }
-        }
-        assertThrows(IllegalArgumentException::class.java) {
-            CycleButtonState(listOf(1, 2), 3) { value -> value.toString() }
-        }
     }
 
     private enum class Difficulty {

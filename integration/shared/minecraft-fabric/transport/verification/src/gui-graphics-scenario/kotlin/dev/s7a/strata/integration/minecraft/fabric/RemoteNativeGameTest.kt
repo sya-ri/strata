@@ -75,8 +75,11 @@ internal object RemoteNativeGameTest {
         address: String,
     ) {
         val run = requireNotNull(System.getProperty("strata.fabric.run"))
+        val output = Path.of(requireNotNull(System.getProperty("strata.minecraftLegacyOutput")))
+        Files.createDirectories(output)
+        Files.deleteIfExists(output.resolve("fabric-client.properties"))
         context.configureVerificationViewport(IntSize(352, 240), 1)
-        repeat(2) {
+        repeat(2) { connection ->
             context.computeOnClient { RemoteNativeCanvasFixture.open() }
             context.computeOnClient { connectPaperTest(it, address) }
             context.waitFor(1200) { it.screen is FabricMinecraftScreen }
@@ -93,6 +96,11 @@ internal object RemoteNativeGameTest {
                 val screen = requireNotNull(minecraft.screen as? FabricMinecraftScreen)
                 screen.captureCanvasFrame().filterIsInstance<DrawCommand.FillRectangle>().any { it.color == ArgbColor(-16776961) }
             }
+            val screen = context.computeOnClient { requireNotNull(it.screen as? FabricMinecraftScreen) }
+            val baseline = context.computeOnClient { MinecraftPresentationObservation.completedFrames(screen) }
+            context.waitFor { baseline < MinecraftPresentationObservation.completedFrames(screen) }
+            val screenshot = context.takeScreenshot("native-remote-dedicated-${connection + 1}", output, IntSize(352, 240))
+            RemoteNativeCanvasFixture.verifyPixels(screenshot)
             context.computeOnClient { RemoteNativeCanvasFixture.verifyRendering() }
             context.computeOnClient { requireNotNull(it.screen as? FabricMinecraftScreen).onClose() }
             context.waitFor { RemoteNativeCanvasFixture.released() }
@@ -104,8 +112,6 @@ internal object RemoteNativeGameTest {
             }
             context.waitTicks(5)
         }
-        val output = Path.of(requireNotNull(System.getProperty("strata.minecraftLegacyOutput")))
-        Files.createDirectories(output)
         Files.writeString(output.resolve("fabric-client.properties"), "runId=$run\nserver=dedicated\ninput=confirmed\nupdate=visible\nreconnect=confirmed\n")
     }
 

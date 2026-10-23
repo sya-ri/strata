@@ -4,12 +4,13 @@ import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.charset.StandardCharsets
+import java.nio.file.AccessDeniedException
 import java.nio.file.FileSystemException
 import java.nio.file.Files
-import java.nio.file.LinkOption
 import java.nio.file.Path
 
 /**
@@ -110,10 +111,9 @@ internal class FabricClientTestOptionsTest {
         val run = Files.createDirectory(build.resolve("run"))
         val target = directory.resolve("personal-options.txt")
         Files.writeString(target, "narrator:2\n")
-        if (createSymbolicLinkIfAvailable(run.resolve("options.txt"), target)) {
-            assertThrows(IllegalArgumentException::class.java) {
-                FabricClientTestOptions.prepare(build.toFile(), run.toFile())
-            }
+        createSymbolicLink(run.resolve("options.txt"), target)
+        assertThrows(IllegalArgumentException::class.java) {
+            FabricClientTestOptions.prepare(build.toFile(), run.toFile())
         }
         assertEquals("narrator:2\n", Files.readString(target))
     }
@@ -124,10 +124,9 @@ internal class FabricClientTestOptionsTest {
         val personal = Files.createDirectory(directory.resolve("personal"))
         Files.writeString(personal.resolve("keep.txt"), "retained")
         val link = build.resolve("linked")
-        if (createSymbolicLinkIfAvailable(link, personal)) {
-            assertThrows(IllegalArgumentException::class.java) {
-                FabricClientTestOptions.prepare(build.toFile(), link.resolve("clientGameTest").toFile())
-            }
+        createSymbolicLink(link, personal)
+        assertThrows(IllegalArgumentException::class.java) {
+            FabricClientTestOptions.prepare(build.toFile(), link.resolve("clientGameTest").toFile())
         }
         assertFalse(Files.exists(personal.resolve("clientGameTest")))
         assertEquals("retained", Files.readString(personal.resolve("keep.txt")))
@@ -138,35 +137,38 @@ internal class FabricClientTestOptionsTest {
         val personal = Files.createDirectory(directory.resolve("personal"))
         Files.writeString(personal.resolve("keep.txt"), "retained")
         val build = directory.resolve("build")
-        if (createSymbolicLinkIfAvailable(build, personal)) {
-            assertThrows(IllegalArgumentException::class.java) {
-                FabricClientTestOptions.prepare(build.toFile(), build.resolve("clientGameTest").toFile())
-            }
+        createSymbolicLink(build, personal)
+        assertThrows(IllegalArgumentException::class.java) {
+            FabricClientTestOptions.prepare(build.toFile(), build.resolve("clientGameTest").toFile())
         }
         assertFalse(Files.exists(personal.resolve("clientGameTest")))
         assertEquals("retained", Files.readString(personal.resolve("keep.txt")))
     }
 
     /**
-     * Exercise real symbolic links where available without skipping the enclosing target-preservation assertions.
-     * Report unsupported filesystem or privilege failures explicitly; any other failure still fails the test.
+     * Creates real links or explicitly skips unsupported filesystem and privilege conditions.
+     * Invalid fixture paths remain failures.
      */
-    private fun createSymbolicLinkIfAvailable(
+    private fun createSymbolicLink(
         link: Path,
         target: Path,
-    ): Boolean {
-        val failure =
-            try {
-                Files.createSymbolicLink(link, target)
-                return true
-            } catch (failure: FileSystemException) {
-                failure
-            } catch (failure: UnsupportedOperationException) {
-                failure
-            }
-        assertFalse(Files.exists(link, LinkOption.NOFOLLOW_LINKS))
-        println("Symbolic-link fixture ${link.fileName} unavailable (${failure.javaClass.simpleName}); helper link-rejection coverage was not exercised.")
-        return false
+    ) {
+        try {
+            Files.createSymbolicLink(link, target)
+        } catch (failure: FileSystemException) {
+            val unavailableReasons =
+                setOf(
+                    "A required privilege is not held by the client.",
+                    "Operation not permitted",
+                    "Operation not supported",
+                    "Function not implemented",
+                    "\u30af\u30e9\u30a4\u30a2\u30f3\u30c8\u306f\u8981\u6c42\u3055\u308c\u305f\u7279\u6a29\u3092\u4fdd\u6709\u3057\u3066\u3044\u307e\u305b\u3093\u3002",
+                )
+            if (failure !is AccessDeniedException && failure.reason !in unavailableReasons) throw failure
+            assumeTrue(false, "Symbolic links unavailable: $failure")
+        } catch (failure: UnsupportedOperationException) {
+            assumeTrue(false, "Symbolic links unsupported: $failure")
+        }
     }
 
     /**

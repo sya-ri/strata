@@ -77,28 +77,11 @@ internal class StrataMinecraftFontGameTest {
                 images[scale] = portable
                 val portablePath = output.resolve("font-headless-$scale.png")
                 assertions.compareNative(nativePath, portable, portablePath, profile, scale)
-                captureWithoutDither(context, output, scale, size)
             }
         } finally {
             context.runOnClient { capture.close() }
         }
         return images
-    }
-
-    private fun captureWithoutDither(
-        context: MinecraftLoadedTestContext,
-        output: Path,
-        scale: Int,
-        size: IntSize,
-    ) {
-        val previousDither =
-            context.computeOnClient { MinecraftNativeFontOracle.disableDither() }
-        try {
-            context.waitTicks(3)
-            screenshot(context, output, "font-native-no-dither-$scale", size)
-        } finally {
-            context.runOnClient { MinecraftNativeFontOracle.restoreDither(previousDither) }
-        }
     }
 
     private fun reloadFonts(

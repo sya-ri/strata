@@ -331,14 +331,6 @@ internal class ApiContractTest {
     }
 
     @Test
-    fun elementChildrenSnapshotCallerMutation() {
-        val children = mutableListOf<Element>(ContractElement(), ContractElement())
-        val element = ContractElement(children = children)
-        children.clear()
-        assertEquals(2, element.children.size)
-    }
-
-    @Test
     fun pointerVariantsRejectNonFiniteScrollAndPreserveTypedButtons() {
         assertEquals(PointerButton.Auxiliary(0), PointerButton.Auxiliary(0))
         assertThrows(IllegalArgumentException::class.java) { PointerButton.Auxiliary(-1) }

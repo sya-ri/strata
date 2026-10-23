@@ -207,6 +207,10 @@ internal class StrataMinecraftLegacyLoadedSuite {
         context: MinecraftLoadedTestContext,
         output: Path,
     ) {
+        val reference = context.computeOnClient { MinecraftPublicApiGlyphReferenceScreen(minecraftVersion()) }
+        context.computeOnClient { it.setScreen(reference) }
+        context.waitFor { it.screen === reference && reference.rendered }
+        val expected = takeScreenshot(context, "strata-public-api-native-${minecraftVersion()}", output)
         val pressed = AtomicBoolean()
         movePointer(context, portableButtonCenter)
         context.computeOnClient {
@@ -217,7 +221,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         context.waitTicks(2)
 
         val screenshot = takeScreenshot(context, "strata-public-api-${minecraftVersion()}", output)
-        assertRenderedPixels(screenshot)
+        assertRenderedPixels(screenshot, expected)
         assertCleanFrameReuse(context)
         clickCurrentScreen(context, portableButtonCenter)
         context.waitFor { pressed.get() }
@@ -546,7 +550,11 @@ internal class StrataMinecraftLegacyLoadedSuite {
         require(inventoryRetained("minecraft") == null) { "A terminally closed Fabric screen retained the Minecraft client." }
     }
 
-    private fun assertRenderedPixels(path: Path) {
+    private fun assertRenderedPixels(
+        path: Path,
+        reference: Path,
+    ) {
+        val expected = requireNotNull(ImageIO.read(reference.toFile()))
         val image = requireNotNull(ImageIO.read(path.toFile())) { "The loaded public API screenshot is not a decodable image." }
         require(image.width == viewport.width && image.height == viewport.height) {
             "The loaded public API scene rendered at an unexpected size."
@@ -560,33 +568,30 @@ internal class StrataMinecraftLegacyLoadedSuite {
         require(MINIMUM_RENDERED_COLOR_COUNT <= colors.size) {
             "The loaded public API scene did not render enough distinct Minecraft UI colors."
         }
-        require(MINIMUM_TEXT_LIGHT_PIXEL_COUNT <= lightPixelCount(image, textRegion)) {
-            "The loaded public API scene did not render its Text glyphs."
-        }
-        require(MINIMUM_BUTTON_LABEL_LIGHT_PIXEL_COUNT <= lightPixelCount(image, buttonLabelRegion)) {
-            "The loaded public API scene did not render its Button label."
+        for (region in listOf(textRegion, buttonLabelRegion)) {
+            val nativeMask = glyphMask(expected, region)
+            require(nativeMask.any { it }) { "The independent native label reference is empty." }
+            require(glyphMask(image, region) == nativeMask) {
+                "The public API label differs from the loaded native font at $region."
+            }
         }
     }
 
-    private fun lightPixelCount(
+    private fun glyphMask(
         image: BufferedImage,
         region: IntRect,
-    ): Int {
-        require(0 <= region.left && region.right <= image.width && 0 <= region.top && region.bottom <= image.height) {
-            "The asserted Minecraft UI pixel region is outside the screenshot."
-        }
-        var count = 0
-        for (y in region.top until region.bottom) {
-            for (x in region.left until region.right) {
-                val pixel = image.getRGB(x, y)
-                val red = pixel ushr RED_SHIFT and CHANNEL_MASK
-                val green = pixel ushr GREEN_SHIFT and CHANNEL_MASK
-                val blue = pixel and CHANNEL_MASK
-                if (MINIMUM_LIGHT_CHANNEL <= red && MINIMUM_LIGHT_CHANNEL <= green && MINIMUM_LIGHT_CHANNEL <= blue) count += 1
+    ): List<Boolean> =
+        buildList {
+            for (y in region.top until region.bottom) {
+                for (x in region.left until region.right) {
+                    val pixel = image.getRGB(x, y)
+                    val red = pixel ushr RED_SHIFT and CHANNEL_MASK
+                    val green = pixel ushr GREEN_SHIFT and CHANNEL_MASK
+                    val blue = pixel and CHANNEL_MASK
+                    add(MINIMUM_LIGHT_CHANNEL <= red && MINIMUM_LIGHT_CHANNEL <= green && MINIMUM_LIGHT_CHANNEL <= blue)
+                }
             }
         }
-        return count
-    }
 
     private fun renderWork(context: MinecraftLoadedTestContext): RenderWork = context.computeOnClient { minecraft -> readRenderWork(minecraft) }
 
@@ -682,10 +687,6 @@ internal class StrataMinecraftLegacyLoadedSuite {
         private const val ITEM_COUNT = 7
 
         private const val MINIMUM_RENDERED_COLOR_COUNT = 4
-
-        private const val MINIMUM_TEXT_LIGHT_PIXEL_COUNT = 20
-
-        private const val MINIMUM_BUTTON_LABEL_LIGHT_PIXEL_COUNT = 20
 
         private const val MINIMUM_LIGHT_CHANNEL = 240
 

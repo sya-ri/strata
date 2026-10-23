@@ -1,0 +1,13 @@
+plugins { java }
+repositories { mavenCentral() }
+dependencies {
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+java { toolchain.languageVersion.set(JavaLanguageVersion.of(JavaVersion.current().majorVersion)) }
+apply(from = rootProject.file("verification.gradle.kts"))
+
+// These tiny JUnit producers need only the TestKit JVM; native dependency generations have their own real worker tests.
+tasks.withType<Test>().configureEach {
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(JavaVersion.current().majorVersion)) })
+}

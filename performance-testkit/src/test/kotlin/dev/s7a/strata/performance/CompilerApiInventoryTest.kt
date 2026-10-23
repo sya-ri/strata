@@ -41,8 +41,16 @@ internal class CompilerApiInventoryTest {
                     "}",
                 ),
             )
-        assertEquals(5, symbols.size)
-        assertEquals(3, symbols.count { "#public final fun render " in it })
+        assertEquals(
+            setOf(
+                "jvm:fixture/First#public final class fixture/First {",
+                "jvm:fixture/First#public final fun render (I)V",
+                "jvm:fixture/First#public final fun render (J)V",
+                "jvm:fixture/Second#public abstract interface class fixture/Second {",
+                "jvm:fixture/Second#public final fun render (I)V",
+            ),
+            symbols,
+        )
     }
 
     @Test
@@ -58,7 +66,15 @@ internal class CompilerApiInventoryTest {
                     "final fun fixture/Second.render(kotlin/Int) // fixture/Second.render|render(kotlin.Int){}[0]",
                 ),
             )
-        assertEquals(4, symbols.size)
+        assertEquals(
+            setOf(
+                "klib:fixture/First|null[0]#final class fixture/First {",
+                "klib:fixture/First.render|render(kotlin.Int){}[0]#final fun render(kotlin/Int)",
+                "klib:fixture/First.render|render(kotlin.Long){}[0]#final fun render(kotlin/Long)",
+                "klib:fixture/Second.render|render(kotlin.Int){}[0]#final fun fixture/Second.render(kotlin/Int)",
+            ),
+            symbols,
+        )
     }
 
     @Test
