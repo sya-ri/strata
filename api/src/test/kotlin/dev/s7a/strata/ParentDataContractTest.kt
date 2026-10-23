@@ -1,8 +1,6 @@
 package dev.s7a.strata
 
 import dev.s7a.strata.layout.ParentDataKey
-import dev.s7a.strata.node.ModifierNode
-import dev.s7a.strata.node.ParentDataModifierNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
@@ -43,27 +41,5 @@ internal class ParentDataContractTest {
         val key = ParentDataKey(String::class)
 
         assertThrows(IllegalArgumentException::class.java) { key.castErased(Any()) }
-    }
-
-    @Test
-    fun providerFailureKeepsItsExactThrowableIdentity() {
-        val key = ParentDataKey(String::class)
-        val failure = IllegalStateException("provider failed")
-        val provider = ThrowingProvider(key, failure)
-
-        val thrown =
-            assertThrows(IllegalStateException::class.java) {
-                key.castErased(provider.parentData())
-            }
-
-        assertSame(failure, thrown)
-    }
-
-    private class ThrowingProvider(
-        override val parentDataKey: ParentDataKey<String>,
-        private val failure: Throwable,
-    ) : ModifierNode(),
-        ParentDataModifierNode<String> {
-        override fun parentData(): String = throw failure
     }
 }

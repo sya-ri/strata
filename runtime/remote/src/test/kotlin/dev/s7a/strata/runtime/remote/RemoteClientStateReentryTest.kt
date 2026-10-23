@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Test
 
 /**
  * Requires an irreversible terminal cutoff and exactly-once ownership across trusted extension callback reentry.
- * The shared controls observe complete membership; the storage-specific subclass also requires an empty editable index.
+ * Every terminal control requires both the authoritative values and derived editable index to release their entries.
  */
 @Suppress("TooManyFunctions") // One lifecycle matrix covers creation, updates, retirement, polling and their failure/reentry boundaries.
-internal open class RemoteClientStateReentryTest {
+internal class RemoteClientStateReentryTest {
     @Test
     fun closingFromFactoryReleasesItsReturnedValueWithoutAdmissionOrResurrection() {
         val states = RemoteClientStates(RemoteLimits())
@@ -348,12 +348,17 @@ internal open class RemoteClientStateReentryTest {
         return field.get(states) as Map<*, *>
     }
 
-    /**
-     * Requires the original values store to release every entry before a terminal callback returns.
-     * Storage-specific controls may additionally inspect their derived membership.
-     */
-    protected open fun assertStorageReleased(states: RemoteClientStates) {
+    private fun assertStorageReleased(states: RemoteClientStates) {
         assertTrue(entries(states).isEmpty())
+        val field = RemoteClientStates::class.java.getDeclaredField("editable")
+        field.isAccessible = true
+        val empty =
+            when (val members = field.get(states)) {
+                is Map<*, *> -> members.isEmpty()
+                is Collection<*> -> members.isEmpty()
+                else -> error("Unsupported membership collection")
+            }
+        assertTrue(empty)
     }
 
     private class Owned(

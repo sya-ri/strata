@@ -126,18 +126,34 @@ internal class AdaptiveVirtualListTest {
     @Test
     fun nestedObservedRowsAreAttachedBeforeTheirFirstMeasurement() {
         val state = VirtualListState<Int>()
-        val height = StateSource { StateSubscription(StateSnapshot(StateRevision(0), 8)) {} }
+        val constructed = mutableListOf<Int>()
+        val observed = mutableListOf<Int>()
+        var subscriptions = 0
+        var releases = 0
+        val height =
+            StateSource {
+                subscriptions += 1
+                StateSubscription(StateSnapshot(StateRevision(0), 8)) { releases += 1 }
+            }
         val tree = UiTree()
         tree.update(
             evaluateComponentTree {
-                VirtualList(itemCount = 100, itemAt = { it }, keyAt = { it }, state = state, rowHeight = 10) {
-                    Observe(height) { Spacer(Modifier.height(it)) }
+                VirtualList(itemCount = 100, itemAt = { it }, keyAt = { it }, state = state, rowHeight = 10) { row ->
+                    constructed += row
+                    Observe(height) {
+                        observed += row
+                        Spacer(Modifier.height(it))
+                    }
                 }
             },
         )
         tree.measure(Constraints.fixed(80, 20))
         tree.layout()
+        assertEquals(listOf(0, 1, 2), constructed)
+        assertEquals(constructed, observed)
+        assertEquals(1, subscriptions)
         tree.close()
+        assertEquals(1, releases)
     }
 
     @Test
