@@ -36,26 +36,34 @@ def timings(run, jobs):
     """Retain run/attempt identities, all job and step durations and OS runner consumption."""
     minutes = {}
     records = []
+    allocated_jobs = [job for job in jobs if job.get("runner_id") and job["conclusion"] != "skipped"]
     for job in {job["id"]: job for job in jobs}.values():
         labels = job.get("labels", [])
         platform = next((os_name for os_name in ("ubuntu", "windows", "macos") if any(os_name in label.lower() for label in labels)), "unknown")
-        duration = seconds(job["started_at"], job["completed_at"]) if job.get("started_at") and job.get("completed_at") else None
+        allocated = bool(job.get("runner_id")) and job["conclusion"] != "skipped"
+        duration = seconds(job["started_at"], job["completed_at"]) if allocated and job.get("started_at") and job.get("completed_at") else None
+        if duration is not None and duration < 0:
+            duration = None
         if duration is not None:
             minutes[platform] = minutes.get(platform, 0) + duration / 60
-        records.append(dict(id=job["id"], name=job["name"], attempt=job.get("run_attempt"), result=job["conclusion"], runnerLabels=labels,
+        records.append(dict(id=job["id"], name=job["name"], attempt=job.get("run_attempt"), result=job["conclusion"],
+                            runnerId=job.get("runner_id"), runnerLabels=labels,
                             startedAt=job.get("started_at"), completedAt=job.get("completed_at"), seconds=duration,
                             steps=[dict(name=s["name"], result=s["conclusion"], startedAt=s.get("started_at"), completedAt=s.get("completed_at"))
                                    for s in job.get("steps", [])]))
-    starts = [j["started_at"] for j in jobs if j.get("started_at")]
+    starts = [j["started_at"] for j in allocated_jobs if j.get("started_at")]
+    failure_times = [step["completed_at"] for j in allocated_jobs for step in j.get("steps", [])
+                     if step["conclusion"] == "failure" and step.get("completed_at")]
     ready = [j["completed_at"] for j in jobs if j["name"].endswith(("Prepare release", "Prepare rehearsal"))
              and j.get("completed_at") and j.get("conclusion") == "success"]
     return dict(createdAt=run["created_at"], updatedAt=run["updated_at"],
                 dispatchToFirstJobSeconds=seconds(run["created_at"], min(starts)) if starts else None,
+                firstActionableFailureSeconds=seconds(run["created_at"], min(failure_times)) if failure_times else None,
                 observedElapsedSeconds=seconds(run["created_at"], run["updated_at"]),
                 preparationToReadySeconds=seconds(run["created_at"], min(ready)) if ready else None,
                 aggregateRunnerMinutesByOS=minutes, jobs=records,
-                unavailable=["runner dependency-ready timestamp", "peak RAM/CPU/GPU", "separate Pages/public-visibility milestone"],
-                note="In-progress result job and post-summary time are excluded. Timestamp gaps do not establish queue causes.")
+                unavailable=["runner dependency-ready timestamp", "peak RAM/CPU/GPU", "request/provisioning retry counts", "separate Pages/public-visibility milestone"],
+                note="Skipped/unallocated jobs, invalid negative durations, in-progress result job and post-summary time are excluded. Timestamp gaps do not establish queue causes.")
 
 
 def retry_inputs(inputs, manifest, jobs):

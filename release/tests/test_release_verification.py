@@ -205,6 +205,22 @@ class ReleaseVerificationTest(unittest.TestCase):
         inputs["prepared_run_id"] = "123"
         self.assertEqual("skipped", recovery.expected_results(inputs)["analysis"])
 
+    def test_timing_excludes_unallocated_skips_and_counts_carried_jobs_once(self):
+        run = dict(created_at="2026-10-23T00:00:00Z", updated_at="2026-10-23T00:00:20Z")
+        first = dict(id=1, name="source", conclusion="success", runner_id=101, labels=["ubuntu-latest"],
+                     started_at="2026-10-23T00:00:01Z", completed_at="2026-10-23T00:00:04Z", steps=[])
+        skipped = dict(id=2, name="unselected", conclusion="skipped", runner_id=0, labels=["windows-latest"],
+                       started_at="2026-10-23T00:00:01Z", completed_at="2026-10-23T00:00:00Z", steps=[])
+        failed = dict(id=3, name="verification", conclusion="failure", runner_id=102, labels=["ubuntu-latest"],
+                      started_at="2026-10-23T00:00:05Z", completed_at="2026-10-23T00:00:10Z",
+                      steps=[dict(name="compile", conclusion="failure", completed_at="2026-10-23T00:00:09Z")])
+        report = recovery.timings(run, [first, skipped, failed, first])
+        self.assertEqual(1, report["dispatchToFirstJobSeconds"])
+        self.assertEqual(9, report["firstActionableFailureSeconds"])
+        self.assertEqual({"ubuntu": 8 / 60}, report["aggregateRunnerMinutesByOS"])
+        self.assertEqual(3, len(report["jobs"]))
+        self.assertIsNone(next(job["seconds"] for job in report["jobs"] if job["name"] == "unselected"))
+
 
 if __name__ == "__main__":
     unittest.main()
