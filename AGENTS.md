@@ -81,7 +81,7 @@ Read the linked contract only when the change touches that area; [architecture](
 - Keep Detekt, Kotlinter, Qodana, Kotlin explicit API mode, warnings-as-errors, ABI validation, and Kover HTML/XML reports enabled.
   Kover reports must run after JVM tests and do not enforce a coverage threshold.
 - Before review, run affected checks and use the change-scoped PR CI results.
-  Manual full CI and first release preparation run `./gradlew check koverHtmlReport koverXmlReport -Pkover`.
+  Manual full CI runs `./gradlew check koverHtmlReport koverXmlReport -Pkover`; first release preparation runs the same inventory through the qualified partitioned route or its full fallback under [release publication](docs/development/release.md).
   Inspect `publishToMavenLocal` metadata when artifact packaging or publication definitions change; controller-only edits use isolated publication tests.
 - For Minecraft-specific facts, use the Minecraft evidence tools first, then inspect authoritative local files or search authoritative web sources.
   Do not infer version-sensitive behavior.

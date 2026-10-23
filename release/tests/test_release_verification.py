@@ -27,6 +27,7 @@ def load(name, filename):
 
 recovery = load("recovery", "recovery-summary.py")
 rehearsal = load("rehearsal", "rehearsal-summary.py")
+source_selector = load("source_selector", "select-prepared-source.py")
 prepared = preparation.prepared
 
 
@@ -43,6 +44,13 @@ class ReleaseVerificationTest(unittest.TestCase):
                      tasks=[dict(build="strata", path=":check")], files={"check.log": verification.digest(root / "check.log")})
         value.update(changes)
         verification.write_json(root / "receipt.json", value)
+
+    def test_unknown_release_topology_is_rejected_before_source_or_publication_work(self):
+        with patch.dict(os.environ, RELEASE_INPUTS=json.dumps(dict(verification_topology="changed_paths"))), \
+                patch.object(source_selector.subprocess, "run") as command:
+            with self.assertRaisesRegex(ValueError, "Unknown release verification topology"):
+                source_selector.main()
+            command.assert_not_called()
 
     def test_missing_wrong_revision_and_changed_artifact_fail_closed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -182,10 +190,10 @@ class ReleaseVerificationTest(unittest.TestCase):
                 prepared.validate(root, "v7.8.9", "a" * 40, scope="rehearsal")
 
     def test_rehearsal_requires_only_selected_successful_topology(self):
-        for selected, unselected in (("serial", "overlap"), ("overlap", "serial")):
+        for selected in ("serial", "overlap", "partitioned"):
             inputs = dict(topology=selected)
             results = {name: {"result": "success"} for name in ("source", "analysis", "prepare", selected)}
-            results[unselected] = {"result": "skipped"}
+            results.update({name: {"result": "skipped"} for name in ("serial", "overlap", "partitioned") if name != selected})
             self.assertEqual([], rehearsal.check_results(inputs, results))
             results[selected]["result"] = "cancelled"
             self.assertTrue(rehearsal.check_results(inputs, results))

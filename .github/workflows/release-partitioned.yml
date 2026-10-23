@@ -1,0 +1,169 @@
+name: Partitioned release verification
+'on':
+  workflow_call:
+    inputs:
+      source_commit:
+        type: string
+        required: true
+      tag_object:
+        type: string
+        default: ''
+      scope:
+        type: string
+        required: true
+    outputs:
+      artifact_id:
+        value: ${{ jobs.aggregate.outputs.artifact_id }}
+      artifact_digest:
+        value: ${{ jobs.aggregate.outputs.artifact_digest }}
+      receipt_digest:
+        value: ${{ jobs.aggregate.outputs.receipt_digest }}
+      producer_attempt:
+        value: ${{ jobs.aggregate.outputs.producer_attempt }}
+      failure_phase:
+        value: ${{ jobs.aggregate.outputs.receipt_digest == '' && 'partitioned verification' || '' }}
+      failure_classification:
+        value: ${{ jobs.aggregate.outputs.receipt_digest == '' && 'partitioned verification failed; inspect the failed shard and its retained phase classification' || 'success' }}
+permissions:
+  contents: read
+  actions: read
+env:
+  SOURCE_COMMIT: ${{ inputs.source_commit }}
+  TAG_OBJECT: ${{ inputs.tag_object }}
+  RELEASE_SCOPE: ${{ inputs.scope }}
+  GH_TOKEN: ${{ github.token }}
+jobs:
+  plan:
+    name: Inventory complete release verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      artifact_id: ${{ steps.evidence.outputs.artifact-id }}
+      artifact_digest: ${{ steps.evidence.outputs.artifact-digest }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.source_commit }}
+        path: product
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+      with:
+        directory: product
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Plan full product graph and owners
+      id: plan
+      run: python3 release/partition.py plan
+    - uses: actions/upload-artifact@v7
+      id: evidence
+      if: always()
+      with:
+        name: ${{ inputs.scope }}-partition-plan-${{ github.run_attempt }}
+        path: build/verification-plan
+        retention-days: 30
+        if-no-files-found: error
+  shard:
+    name: Verify ${{ matrix.id }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      SDL_VIDEO_FORCE_EGL: '1'
+      SHARD: ${{ matrix.id }}
+      PLAN_ARTIFACT_ID: ${{ needs.plan.outputs.artifact_id }}
+      PLAN_ARTIFACT_DIGEST: ${{ needs.plan.outputs.artifact_digest }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.source_commit }}
+        path: product
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Verify plan producer and digest
+      run: python3 release/partition.py restore-plan
+    - name: Record selected source
+      run: python3 release/verification.py init
+    - uses: ./.github/actions/setup-strata-java
+      with:
+        directory: product
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Record actual runner and toolchains
+      run: python3 release/verification.py profile
+    - name: Install native dependencies
+      if: matrix.kind == 'minecraft'
+      timeout-minutes: 10
+      run: python3 release/verification.py native
+    - name: Resolve browser dependencies
+      if: matrix.kind == 'web'
+      run: python3 release/verification.py npm
+    - name: Install browsers
+      if: matrix.kind == 'web'
+      run: python3 release/verification.py browsers
+    - name: Execute selected verification
+      run: python3 release/partition.py check
+    - name: Retain available diagnostics
+      if: always()
+      run: python3 release/verification.py collect
+    - name: Classify verification failure
+      if: always()
+      run: python3 release/verification.py summary
+    - name: Seal successful shard
+      run: python3 release/partition.py seal
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: ${{ inputs.scope }}-partition-${{ matrix.id }}-${{ github.run_attempt }}
+        path: build/release-verification
+        retention-days: 30
+        if-no-files-found: warn
+        include-hidden-files: true
+  aggregate:
+    name: Require every release verification shard
+    needs: [plan, shard]
+    if: always() && needs.plan.result == 'success' && needs.shard.result == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_id: ${{ steps.evidence.outputs.artifact-id }}
+      artifact_digest: ${{ steps.evidence.outputs.artifact-digest }}
+      receipt_digest: ${{ steps.receipt.outputs.digest }}
+      producer_attempt: ${{ github.run_attempt }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.source_commit }}
+        path: product
+        persist-credentials: false
+    - name: Require complete same-revision task coverage
+      id: receipt
+      run: |-
+        python3 release/partition.py aggregate
+        echo "digest=$(sha256sum build/release-verification/receipt.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+    - uses: actions/upload-artifact@v7
+      id: evidence
+      if: always()
+      with:
+        name: ${{ inputs.scope }}-verification-${{ github.run_attempt }}
+        path: build/release-verification
+        retention-days: 30
+        if-no-files-found: warn
+        include-hidden-files: true

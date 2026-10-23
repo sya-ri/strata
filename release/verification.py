@@ -126,7 +126,9 @@ def collect(product, output=EVIDENCE):
     target = output / "diagnostics"
     patterns = ("**/build/test-results/**/*", "**/build/reports/**/*", "**/build/*parity*/**/*",
                 "**/build/**/logs/*.log", "**/build/**/crash-reports/*.txt", "**/build/**/*evidence*/*",
-                "**/build/**/hs_err_pid*.log", "**/build/**/trace*.zip", "**/build/release-verification/tasks.json")
+                "**/build/**/hs_err_pid*.log", "**/build/**/trace*.zip", "**/build/release-verification/tasks.json",
+                "**/build/minecraft-verification/**/*", "**/build/minecraft-production-verification/**/*",
+                "**/build/*-offline*/**/*")
     for pattern in patterns:
         for source in product.glob(pattern):
             if not source.is_file() or source.is_symlink() or any(p.is_symlink() for p in source.parents):
@@ -186,7 +188,34 @@ def validate_receipt(root, expected):
     files = {p.relative_to(root).as_posix(): digest(p) for p in sorted(root.rglob("*"))
              if p.is_file() and p != root / "receipt.json"}
     require(value.get("files") and value["files"] == files, "Verification artifact contents differ.")
+    if value.get("topology") == "partitioned":
+        from partition import validate_shards
+        require(value["tasks"] == validate_shards(root, expected), "Aggregate task inventory differs.")
     return value
+
+
+def download_artifact(artifact, root, expected, archive_digest):
+    """Verify the actual immutable artifact bytes and producer before extracting bounded safe paths."""
+    binding = artifact.get("workflow_run", {})
+    require(binding.get("id") == expected["runId"] and binding.get("head_sha") == expected["controllerCommit"]
+            and artifact.get("digest") == "sha256:" + archive_digest and not artifact.get("expired"),
+            "Verification artifact producer or digest differs.")
+    require(not root.exists(), "Verification download directory already exists.")
+    repo, artifact_id = os.environ["GITHUB_REPOSITORY"], artifact["id"]
+    with tempfile.TemporaryDirectory() as directory:
+        archive = Path(directory) / "verification.zip"
+        with archive.open("wb") as stream:
+            subprocess.run(["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}/zip"], stdout=stream, check=True)
+        require(digest(archive) == archive_digest and archive.stat().st_size == artifact["size_in_bytes"],
+                "Downloaded verification artifact digest or size differs.")
+        with ZipFile(archive) as files:
+            require(len(files.namelist()) == len(set(files.namelist()))
+                    and sum(info.file_size for info in files.infolist()) <= 4 * 1024**3,
+                    "Verification artifact is duplicated or oversized.")
+            for name in files.namelist():
+                require(not name.startswith("/") and ".." not in Path(name).parts and "\\" not in name and ":" not in name,
+                        "Unsafe verification artifact entry.")
+            files.extractall(root)
 
 
 def gate(product, results, output=Path("build/verification-gate.json")):
@@ -218,27 +247,9 @@ def gate(product, results, output=Path("build/verification-gate.json")):
         require(not any(a["name"].startswith("prepared-") for page in pages for a in page["artifacts"]),
                 "This run already saved signed preparation; reuse its prepared_run_id instead of signing again.")
     artifact = json.loads(subprocess.check_output(["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}"]))
-    binding = artifact.get("workflow_run", {})
-    require(binding.get("id") == run and binding.get("head_sha") == expected["controllerCommit"]
-            and artifact.get("digest") == "sha256:" + outputs["artifact_digest"] and not artifact.get("expired"),
-            "Verification artifact producer or digest differs.")
     root = Path("build/verified-product")
-    require(not root.exists(), "Verification download directory already exists.")
     require(artifact["name"] == f"{expected['scope']}-verification-{attempt}", "Verification artifact name differs.")
-    with tempfile.TemporaryDirectory() as directory:
-        archive = Path(directory) / "verification.zip"
-        with archive.open("wb") as stream:
-            subprocess.run(["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}/zip"], stdout=stream, check=True)
-        require(digest(archive) == outputs["artifact_digest"] and archive.stat().st_size == artifact["size_in_bytes"],
-                "Downloaded verification artifact digest or size differs.")
-        with ZipFile(archive) as files:
-            require(len(files.namelist()) == len(set(files.namelist()))
-                    and sum(info.file_size for info in files.infolist()) <= 4 * 1024**3,
-                    "Verification artifact is duplicated or oversized.")
-            for name in files.namelist():
-                require(not name.startswith("/") and ".." not in Path(name).parts and "\\" not in name and ":" not in name,
-                        "Unsafe verification artifact entry.")
-            files.extractall(root)
+    download_artifact(dict(artifact, id=int(artifact_id)), root, expected, outputs["artifact_digest"])
     value = validate_receipt(root, expected)
     require(digest(root / "receipt.json") == outputs["receipt_digest"], "Verification receipt digest differs.")
     write_json(output, dict(expected, analysis="success", verificationArtifactId=int(artifact_id),

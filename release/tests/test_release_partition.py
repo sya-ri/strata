@@ -1,0 +1,206 @@
+"""Reject incomplete, stale and altered distributed release verification without service writes."""
+import json
+import importlib.util
+import contextlib
+import io
+import os
+import shutil
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).parents[1]))
+import partition
+import verification as v
+
+spec = importlib.util.spec_from_file_location("comparison", Path(__file__).parents[1] / "compare-verification.py")
+comparison = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(comparison)
+
+
+class PartitionTest(unittest.TestCase):
+    def setUp(self):
+        self.identity = dict(schemaVersion=1, scope="rehearsal", sourceCommit="a" * 40, controllerCommit="b" * 40,
+                             tagObject="", runId=123, runAttempt=1)
+        paths = [":check", ":api:check", ":new-module:check", ":koverHtmlReport", ":koverXmlReport",
+                 ":runtime:minecraft-fabric-1.20:check", ":integration:minecraft-fabric-1.20:check",
+                 ":integration:minecraft-fabric-1.20:runClientGameTest",
+                 ":integration:minecraft-fabric-1.20:runProductionClientGameTest", *partition.WEB_CHECKS]
+        self.tasks = [dict(root=".", build="strata", path=path) for path in paths]
+        self.plan = dict(self.identity, **partition.make_plan(self.tasks, ["1.20"]))
+
+    def fixture(self, root):
+        """Write successful distinct owners; shared prerequisites may appear in several shards."""
+        v.write_json(root / "plan/plan.json", self.plan)
+        for shard in self.plan["shards"]:
+            tasks = [t for t in self.tasks if (t["path"].startswith(":integration:minecraft-fabric-")
+                                             or t["path"].startswith(":runtime:minecraft-fabric-")) == (shard["kind"] == "minecraft")
+                     and (t["path"] in partition.WEB_CHECKS) == (shard["kind"] == "web")]
+            directory = root / "shards" / shard["id"]
+            v.write_json(directory / "shard.json", dict(self.identity, shard=shard,
+                         planDigest=v.digest(root / "plan/plan.json"), tasks=tasks))
+            for phase in partition.phases(shard):
+                v.write_json(directory / f"{phase}.json", dict(self.identity, command=partition.command(shard), exitCode=0))
+
+    def test_new_checks_are_owned_without_a_current_module_allowlist(self):
+        common, web, native = self.plan["shards"]
+        self.assertIn(":new-module:check", common["arguments"])
+        self.assertNotIn(":integration:minecraft-fabric-1.20:check", common["arguments"])
+        self.assertIn("-Pkover", common["arguments"])
+        self.assertIn(":api:check", web["arguments"])
+        self.assertIn(":runtime:core:check", web["arguments"])
+        self.assertNotIn(":api:check", common["arguments"])
+        self.assertIn("-Pstrata.minecraftVersions=1.20", native["arguments"])
+
+    def test_missing_native_owner_is_rejected_during_planning(self):
+        with self.assertRaises(ValueError):
+            partition.make_plan(self.tasks, ["1.20", "26.3"])
+
+    def test_successful_shards_from_an_earlier_same_run_attempt_remain_attributable(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            actual = partition.validate_shards(root, dict(self.identity, runAttempt=2), write_report=True)
+            self.assertEqual(partition.keys(self.tasks), partition.keys(actual))
+            parity = json.loads((root / "parity.json").read_text())
+            self.assertEqual([1, 1, 1], [p["runAttempt"] for p in parity["producers"]])
+
+    def test_validation_preserves_existing_receipt_bytes_across_platform_newlines(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            path = root / "parity.json"
+            original = b'{"retained": "original producer bytes"}\n'
+            path.write_bytes(original)
+            partition.validate_shards(root, self.identity)
+            self.assertEqual(original, path.read_bytes())
+
+    def test_missing_shard_cannot_produce_an_aggregate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            (root / "shards/web/shard.json").unlink()
+            with self.assertRaises(FileNotFoundError):
+                partition.validate_shards(root, self.identity, write_report=True)
+
+    def test_aggregate_retains_nested_receipts_in_its_digest_inventory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, output = root / "source", root / "aggregate"
+            self.fixture(source)
+            nested = source / "shards/web/diagnostics/integration/web/build/parity/receipt.json"
+            v.write_json(nested, dict(fresh=True))
+            labels = ["plan"] + [s["id"] for s in self.plan["shards"]]
+            artifacts = [dict(id=index, name="rehearsal-partition-" + label + "-1", digest="sha256:" + "d" * 64)
+                         for index, label in enumerate(labels, start=1)]
+
+            def download(artifact, destination, *_):
+                label = labels[artifact["id"] - 1]
+                shutil.copytree(source / ("plan" if label == "plan" else "shards/" + label), destination)
+
+            with patch.object(v, "identity", return_value=self.identity), patch.object(v, "EVIDENCE", output), \
+                    patch.dict(os.environ, GITHUB_REPOSITORY="owner/repo"), \
+                    patch.object(v.subprocess, "check_output", return_value=json.dumps([dict(artifacts=artifacts)])), \
+                    patch.object(v, "download_artifact", side_effect=download):
+                partition.aggregate(Path("product"))
+                receipt = v.validate_receipt(output, self.identity)
+            self.assertIn("shards/web/diagnostics/integration/web/build/parity/receipt.json", receipt["files"])
+            self.assertIn("artifact-producers.json", receipt["files"])
+
+    def test_real_failed_shard_retains_its_console_and_cannot_be_sealed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "evidence"
+            shard = self.plan["shards"][0]
+            command = [sys.executable, "-c", "import sys; print('AssertionError: late browser failure'); sys.exit(7)"]
+            with patch.object(v, "identity", return_value=self.identity), \
+                    patch.object(v, "EVIDENCE", output), patch.object(partition, "selected", return_value=(self.plan, shard)), \
+                    patch.object(partition, "command", return_value=command), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(7, v.phase("check", root, command, output))
+                with self.assertRaisesRegex(ValueError, "did not succeed"):
+                    partition.seal(root)
+            self.assertIn("late browser failure", (output / "check.log").read_text())
+            self.assertFalse((output / "shard.json").exists())
+
+    def test_failed_cancelled_wrong_revision_or_altered_shard_cannot_pass(self):
+        for field, value in (("exitCode", 7), ("exitCode", None), ("sourceCommit", "c" * 40),
+                             ("controllerCommit", "c" * 40), ("runId", 124), ("runAttempt", 2), ("command", ["help"])):
+            with self.subTest(field=field, value=value), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                self.fixture(root)
+                path = root / "shards/web/check.json"
+                record = json.loads(path.read_text())
+                record[field] = value
+                v.write_json(path, record)
+                with self.assertRaises(ValueError):
+                    partition.validate_shards(root, self.identity)
+
+    def test_transitively_required_production_client_cannot_be_omitted(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            path = root / "shards/minecraft-1-20/shard.json"
+            record = json.loads(path.read_text())
+            record["tasks"] = [t for t in record["tasks"] if not t["path"].endswith(":runProductionClientGameTest")]
+            v.write_json(path, record)
+            with self.assertRaisesRegex(ValueError, "omitted 1"):
+                partition.validate_shards(root, self.identity, write_report=True)
+            self.assertIn("runProductionClientGameTest", (root / "parity.json").read_text())
+
+    def test_a_shard_cannot_substitute_a_different_plan_or_future_producer(self):
+        for change in (dict(planDigest="d" * 64), dict(runAttempt=0), dict(runAttempt=2), dict(scope="production")):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                self.fixture(root)
+                path = root / "shards/web/shard.json"
+                record = json.loads(path.read_text())
+                record.update(change)
+                v.write_json(path, record)
+                with self.assertRaises(ValueError):
+                    partition.validate_shards(root, self.identity)
+
+    def test_comparison_requires_original_test_cases_and_transitive_tasks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            baseline, candidate = root / "baseline", root / "candidate"
+            for directory in (baseline, candidate):
+                result = directory / "diagnostics/api/build/test-results/test/TEST-fixture.xml"
+                result.parent.mkdir(parents=True)
+                result.write_text('<testsuite><testcase classname="Fixture" name="required case"/></testsuite>', encoding="utf-8")
+                v.write_json(directory / "receipt.json", dict(self.identity, command=v.FULL_CHECK, tasks=self.tasks,
+                             files={result.relative_to(directory).as_posix(): v.digest(result)}))
+            complete = comparison.compare(baseline, candidate)
+            self.assertEqual([], complete["missingTests"])
+            path = candidate / "receipt.json"
+            receipt = json.loads(path.read_text())
+            receipt["tasks"] = self.tasks[1:]
+            v.write_json(path, receipt)
+            incomplete = comparison.compare(baseline, candidate)
+            self.assertEqual(1, len(incomplete["missingTasks"]))
+            result = candidate / "diagnostics/api/build/test-results/test/TEST-fixture.xml"
+            result.write_text('<testsuite><testcase classname="Fixture" name="other case"/></testsuite>', encoding="utf-8")
+            receipt["files"][result.relative_to(candidate).as_posix()] = v.digest(result)
+            v.write_json(path, receipt)
+            self.assertEqual(1, len(comparison.compare(baseline, candidate)["missingTests"]))
+            result.write_text('<testsuite><testcase classname="Fixture" name="required case"><skipped/></testcase></testsuite>', encoding="utf-8")
+            receipt["files"][result.relative_to(candidate).as_posix()] = v.digest(result)
+            v.write_json(path, receipt)
+            self.assertEqual(1, len(comparison.compare(baseline, candidate)["missingTests"]))
+
+    def test_diagnostic_inventory_keeps_duplicate_test_runs_and_reports_failures(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for shard in ("common", "native"):
+                path = root / shard / "diagnostics/api/build/test-results/test/TEST-fixture.xml"
+                path.parent.mkdir(parents=True)
+                path.write_text('<testsuite><testcase classname="Fixture" name="case"><failure/></testcase></testsuite>', encoding="utf-8")
+            files, cases, failures = comparison.inventory(root)
+            self.assertEqual(1, len(files))
+            self.assertEqual(2, sum(cases.values()))
+            self.assertEqual(2, len(failures))
+
+
+if __name__ == "__main__":
+    unittest.main()

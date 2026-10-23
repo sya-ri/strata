@@ -16,7 +16,9 @@ Leave `prepared_run_id` empty only for the first preparation.
 The protected `release` environment controls signing and publication credentials.
 
 Unsigned full-product verification and Qodana start independently after signed-source admission.
-Verification retains the existing complete release command, including Kover after JVM tests; it does not use PR changed-path selection or partition the product task graph.
+Initial verification defaults to `verification_topology=partitioned`, with isolated common, browser and complete Minecraft-version checks and Kover after its JVM producers.
+It derives the selected product's original full-command graph and requires every transitive task before signing; it does not use PR changed-path selection.
+Use `verification_topology=full` for the original single-runner command, including when qualifying a product whose ownership model predates the partitioned route.
 Its task observer disables up-to-date and build-cache reuse for tasks implementing Gradle's `VerificationTask` contract while retaining reusable dependency and compilation inputs.
 Only **Prepare release** accesses the protected signing environment, after both verification and all required analysis succeed.
 Its gate checks the actual product and controller checkouts, signed tag object, producer run and attempt, analysis report digests, and the complete verification artifact's downloaded digest and receipt inventory.
@@ -77,12 +79,22 @@ The signing gate also refuses another preparation when the same run already save
 
 ## Non-publishing qualification
 
-**Release rehearsal** accepts full immutable `source_commit` and `controller_commit` SHAs and a `serial` or `overlap` topology.
+**Release rehearsal** accepts full immutable `source_commit` and `controller_commit` SHAs and a `serial`, `overlap` or `partitioned` topology.
 The controller SHA must match the dispatched workflow revision.
 It keeps the product's existing stable build version and generates rehearsal notes outside the source checkout, so it requires neither a new version nor a release tag.
-Both topologies share production's actual full verification, analysis, signed packaging, standalone consumers and archive assembly.
+All topologies share production's verification, analysis, signed packaging, standalone consumers and archive assembly.
 `serial` waits for analysis before starting verification; `overlap` starts both independently.
-Both use a separate signing runner, so this compares scheduling plans under one controller rather than reproducing historical release-run setup costs.
+Every topology uses a separate signing runner, so comparisons include its setup cost.
+
+`partitioned` overlaps analysis with complete verification on isolated common, browser and versioned Minecraft runners, with at most eight verification shards running concurrently.
+Its planner exports the selected product's original full-command graph and derives check owners and all supported Minecraft versions from that product.
+Planning does not execute or satisfy verification.
+Each shard runs real checks and retains its own reports, source identity, command, runner profile and producer attempt.
+The browser shard keeps the shared API/core JVM and JS checks together for complete multiplatform test reports; common coverage still runs its own fresh JVM producers.
+Aggregation verifies immutable artifact bytes and requires every planned shard plus coverage of every task in the original transitive graph before the existing signing gate can pass.
+Successful shards from an earlier attempt of the same run remain attributable when only failed jobs are rerun; a changed product, controller or plan cannot reuse them.
+Production uses the qualified partitioned topology by default and retains `full` as an explicit fallback.
+The [qualification evidence](https://github.com/sya-ri/strata/pull/482) compares one unchanged product with the complete command, including original task, test and diagnostic inventories, actual toolchains, runner image and signed preparation.
 
 Before the new workflow is registered on the default branch, the existing **JVM checks** manual entry can call it from the implementation branch:
 
@@ -108,7 +120,10 @@ Verification also records actual installed Java versions, runner image/architect
 The summary labels unavailable resource/dependency-ready observations and excludes its still-running result job and post-summary time.
 Compare preparation-to-ready time, medians and ranges over at least three matched repetitions where practical; public visibility and Pages are separate milestones.
 No elapsed-time saving, full-matrix equivalence or Central-read speedup is established by controller fixtures alone.
-Keep verification partitioning and read concurrency out of the production route until same-revision task/evidence parity and representative measurements qualify them.
+After independently checking the producer and ZIP digests, extract each successful verification artifact and run `python3 release/compare-verification.py <baseline-directory> <candidate-directory>`.
+The retained comparison requires the unchanged product and full-command contract, validates each receipt inventory, and checks transitive tasks, diagnostic paths, JUnit case identities and multiplicities, failures, toolchains and runner classes.
+Shared prerequisites may run in multiple shards, so extra fresh evidence is allowed; missing baseline evidence is an error.
+Requalify ownership changes against the complete command before adopting them; read concurrency still requires its own measurements.
 
 ## Credentials and project setup
 
