@@ -64,6 +64,9 @@ jobs:
     needs: [source, analysis]
     if: inputs.topology == 'serial'
     uses: ./.github/workflows/release-verification.yml
+    permissions:
+      contents: read
+      actions: read
     with:
       source_commit: ${{ inputs.source_commit }}
       scope: rehearsal
@@ -71,16 +74,20 @@ jobs:
     needs: source
     if: inputs.topology == 'overlap'
     uses: ./.github/workflows/release-verification.yml
+    permissions:
+      contents: read
+      actions: read
     with:
       source_commit: ${{ inputs.source_commit }}
       scope: rehearsal
   partitioned:
     needs: source
     if: inputs.topology == 'partitioned'
-    uses: ./.github/workflows/release-partitioned.yml
+    uses: ./.github/workflows/release-verification.yml
     with:
       source_commit: ${{ inputs.source_commit }}
       scope: rehearsal
+      topology: partitioned
     permissions:
       contents: read
       actions: read

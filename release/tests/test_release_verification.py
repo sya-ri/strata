@@ -27,6 +27,7 @@ def load(name, filename):
 
 recovery = load("recovery", "recovery-summary.py")
 rehearsal = load("rehearsal", "rehearsal-summary.py")
+source_selector = load("source_selector", "select-prepared-source.py")
 prepared = preparation.prepared
 
 
@@ -43,6 +44,13 @@ class ReleaseVerificationTest(unittest.TestCase):
                      tasks=[dict(build="strata", path=":check")], files={"check.log": verification.digest(root / "check.log")})
         value.update(changes)
         verification.write_json(root / "receipt.json", value)
+
+    def test_unknown_release_topology_is_rejected_before_source_or_publication_work(self):
+        with patch.dict(os.environ, RELEASE_INPUTS=json.dumps(dict(verification_topology="changed_paths"))), \
+                patch.object(source_selector.subprocess, "run") as command:
+            with self.assertRaisesRegex(ValueError, "Unknown release verification topology"):
+                source_selector.main()
+            command.assert_not_called()
 
     def test_missing_wrong_revision_and_changed_artifact_fail_closed(self):
         with tempfile.TemporaryDirectory() as temporary:

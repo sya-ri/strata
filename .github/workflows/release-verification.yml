@@ -1,4 +1,4 @@
-name: Full release verification
+name: Release verification
 'on':
   workflow_call:
     inputs:
@@ -11,23 +11,35 @@ name: Full release verification
       scope:
         type: string
         required: true
+      topology:
+        type: string
+        default: full
     outputs:
       artifact_id:
-        value: ${{ jobs.verify.outputs.artifact_id }}
+        value: ${{ jobs.verify.outputs.artifact_id || jobs.partitioned.outputs.artifact_id }}
       artifact_digest:
-        value: ${{ jobs.verify.outputs.artifact_digest }}
+        value: ${{ jobs.verify.outputs.artifact_digest || jobs.partitioned.outputs.artifact_digest }}
       receipt_digest:
-        value: ${{ jobs.verify.outputs.receipt_digest }}
+        value: ${{ jobs.verify.outputs.receipt_digest || jobs.partitioned.outputs.receipt_digest }}
       producer_attempt:
-        value: ${{ jobs.verify.outputs.producer_attempt }}
+        value: ${{ jobs.verify.outputs.producer_attempt || jobs.partitioned.outputs.producer_attempt }}
       failure_phase:
-        value: ${{ jobs.verify.outputs.failure_phase }}
+        value: ${{ jobs.verify.outputs.failure_phase || jobs.partitioned.outputs.failure_phase }}
       failure_classification:
-        value: ${{ jobs.verify.outputs.failure_classification }}
+        value: ${{ jobs.verify.outputs.failure_classification || jobs.partitioned.outputs.failure_classification }}
 permissions:
   contents: read
+  actions: read
 jobs:
+  partitioned:
+    if: inputs.topology == 'partitioned'
+    uses: ./.github/workflows/release-partitioned.yml
+    with:
+      source_commit: ${{ inputs.source_commit }}
+      tag_object: ${{ inputs.tag_object }}
+      scope: ${{ inputs.scope }}
   verify:
+    if: inputs.topology == 'full'
     name: Verify complete release product
     runs-on: ubuntu-latest
     timeout-minutes: 180

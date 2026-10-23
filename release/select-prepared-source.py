@@ -9,6 +9,8 @@ import subprocess
 def main():
     """Freeze the source and preparation producer for every publication job."""
     inputs = json.loads(os.environ["RELEASE_INPUTS"])
+    if inputs.get("verification_topology", "full") not in ("full", "partitioned"):
+        raise ValueError("Unknown release verification topology.")
     tag, commit = inputs["tag"], inputs["source_commit"]
     if os.environ["GITHUB_REF"] != "refs/heads/master" or inputs["confirmation"] != inputs["operation"] + " " + tag:
         raise ValueError("Release source or confirmation differs.")

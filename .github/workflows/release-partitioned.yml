@@ -20,6 +20,10 @@ name: Partitioned release verification
         value: ${{ jobs.aggregate.outputs.receipt_digest }}
       producer_attempt:
         value: ${{ jobs.aggregate.outputs.producer_attempt }}
+      failure_phase:
+        value: ${{ jobs.aggregate.outputs.receipt_digest == '' && 'partitioned verification' || '' }}
+      failure_classification:
+        value: ${{ jobs.aggregate.outputs.receipt_digest == '' && 'partitioned verification failed; inspect the failed shard and its retained phase classification' || 'success' }}
 permissions:
   contents: read
   actions: read

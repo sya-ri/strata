@@ -69,7 +69,7 @@ Common modules use the baseline toolchain, while adapters use their target's req
 ## Quality checks
 
 Run affected module checks while developing and wait for change-scoped PR CI before review.
-Manual full CI and first release preparation run the complete suite:
+Manual full CI runs the complete suite:
 
 ```shell
 ./gradlew check koverHtmlReport koverXmlReport -Pkover
@@ -77,6 +77,7 @@ Manual full CI and first release preparation run the complete suite:
 
 The unqualified `check` includes each selected project's checks; `:check` alone checks only the root project.
 The full command includes development and production loaded-client gates, isolated CPU font contracts, and configured native-to-offline comparisons.
+First release preparation runs the same inventory through the qualified [partitioned release route](release.md#prepare-and-publish), with the original command available as its `full` fallback.
 
 For isolated JVM tests, fixture verification, benchmark preparation and collection, use `-Pstrata.jvmOnly=true` as described in the [performance testkit](performance-testkit.md#collection-ownership).
 The Web model, `-Pstrata.webOnly=true`, supports its included module checks and the project-local Kover verification dependencies of `:integration:web:check`.

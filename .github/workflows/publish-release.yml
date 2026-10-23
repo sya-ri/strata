@@ -21,6 +21,13 @@ name: Publish release
       prepared_run_id:
         description: Reuse a successful preparation job (required for verification)
         type: string
+      verification_topology:
+        description: Initial verification; full retains the original single-runner fallback
+        type: choice
+        options:
+        - partitioned
+        - full
+        default: partitioned
       maven_central:
         description: Publish or verify Maven Central artifacts
         type: boolean
@@ -74,10 +81,14 @@ jobs:
     needs: source
     if: inputs.operation == 'release' && inputs.prepared_run_id == ''
     uses: ./.github/workflows/release-verification.yml
+    permissions:
+      contents: read
+      actions: read
     with:
       source_commit: ${{ inputs.source_commit }}
       tag_object: ${{ needs.source.outputs.tag_object }}
       scope: production
+      topology: ${{ inputs.verification_topology }}
   prepare:
     name: Prepare release
     permissions:
