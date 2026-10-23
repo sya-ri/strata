@@ -68,6 +68,7 @@ Ordinary client launches and personal settings are unaffected; frame fences and 
 ## Changes and job selection
 
 Heavy checks run on pull requests, with a manual full run available through `workflow_dispatch` with an empty `paired_manifest` input.
+An explicit `rehearsal_source_commit` instead selects the isolated non-publishing [release rehearsal](release.md#non-publishing-qualification), with its own strict result gate; ordinary PR/manual job selection is unchanged.
 Merging a PR does not repeat JVM or Qodana verification.
 The always-running planner and `CI result` job distinguish planned skips from failures, cancellation, and unexpected skipped checks.
 Planning prepares Java and Gradle only when native-only changes need the configured shared-source ownership model; other inputs are selected with Python alone.

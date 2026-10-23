@@ -70,17 +70,29 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         RELEASE_INPUTS: ${{ toJSON(inputs) }}
+  verification:
+    needs: source
+    if: inputs.operation == 'release' && inputs.prepared_run_id == ''
+    uses: ./.github/workflows/release-verification.yml
+    with:
+      source_commit: ${{ inputs.source_commit }}
+      tag_object: ${{ needs.source.outputs.tag_object }}
+      scope: production
   prepare:
     name: Prepare release
+    permissions:
+      contents: read
+      actions: read
     needs:
     - source
     - analysis
+    - verification
     if: inputs.operation == 'release' && inputs.prepared_run_id == ''
     environment: release
     runs-on: ubuntu-latest
     timeout-minutes: 180
-    env:
-      SDL_VIDEO_FORCE_EGL: '1'
+    outputs:
+      archive_digest: ${{ steps.archive.outputs.digest }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -92,43 +104,25 @@ jobs:
         path: product
         fetch-depth: 0
         persist-credentials: false
-    - uses: ./.github/actions/setup-strata-java
-      with:
-        directory: product
-    - uses: gradle/actions/setup-gradle@v6
-      with:
-        gradle-home-cache-excludes: caches/fabric-loom
-    - name: Install native dependencies
-      timeout-minutes: 10
-      run: |-
-        apt_options=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
-        sudo apt-get "${apt_options[@]}" update
-        sudo apt-get "${apt_options[@]}" install --yes --no-install-recommends libegl1 libegl-mesa0
-    - name: Install tagged browser dependencies
-      run: |-
-        bash ./gradlew kotlinNpmInstall
-        node build/js/node_modules/playwright/cli.js install --with-deps chromium firefox webkit
-      working-directory: product
-    - name: Check the tagged product once
-      run: bash ./gradlew check -x :integration:docs:check koverHtmlReport koverXmlReport -Pkover -Pstrata.webDemoInstallSystemDependencies=true
-      working-directory: product
-    - name: Build and verify signed publication inputs
-      run: bash ./gradlew --init-script ../release/prepare-fabric-sources.gradle verifyPublishedConsumer modrinthReleaseManifest hangarReleaseManifest -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$SOURCE_COMMIT"
-        -Pstrata.modrinthProjectId="$(jq -r .projectId release/modrinth-project.json)"
-      working-directory: product
+    - name: Verify complete source-bound quality results before signing
+      run: python3 release/verification.py gate
       env:
-        RELEASE_TAG: ${{ inputs.tag }}
+        GH_TOKEN: ${{ github.token }}
+        RESULTS: ${{ toJSON(needs) }}
         SOURCE_COMMIT: ${{ inputs.source_commit }}
-        ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-        ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-    - name: Save immutable prepared release
-      run: python3 release/prepared-release.py prepare --product product --tag "$RELEASE_TAG" --commit "$SOURCE_COMMIT" --tag-object "$TAG_OBJECT"
-      env:
-        RELEASE_TAG: ${{ inputs.tag }}
-        SOURCE_COMMIT: ${{ inputs.source_commit }}
-        ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-        ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
         TAG_OBJECT: ${{ needs.source.outputs.tag_object }}
+        RELEASE_SCOPE: production
+    - uses: ./.github/actions/prepare-release-product
+      with:
+        tag: ${{ inputs.tag }}
+        source-commit: ${{ inputs.source_commit }}
+        tag-object: ${{ needs.source.outputs.tag_object }}
+        scope: production
+        signing-key: ${{ secrets.SIGNING_KEY }}
+        signing-password: ${{ secrets.SIGNING_PASSWORD }}
+    - name: Record prepared archive digest
+      id: archive
+      run: echo "digest=$(cat build/release-prepared.sha256)" >> "$GITHUB_OUTPUT"
     - uses: actions/upload-artifact@v7
       with:
         name: prepared-${{ inputs.tag }}-${{ github.run_attempt }}
@@ -137,6 +131,15 @@ jobs:
           build/release-prepared.sha256
         retention-days: 90
         if-no-files-found: error
+    - name: Upload preparation diagnostics separately
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: preparation-diagnostics-${{ github.run_attempt }}
+        path: |-
+          build/preparation-diagnostics
+          build/verification-gate.json
+        if-no-files-found: warn
   central:
     name: Maven Central
     needs:
@@ -253,6 +256,7 @@ jobs:
     - central
     - publish
     - analysis
+    - verification
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -271,23 +275,28 @@ jobs:
         RELEASE_INPUTS: ${{ toJSON(inputs) }}
         PREPARED_RUN_ID: ${{ needs.source.outputs.prepared_run_id }}
         CURSEFORGE_READ_ENABLED: ${{ secrets.CURSEFORGE_API_KEY != '' }}
+    - name: Summarize publication jobs
+      if: always()
+      run: python3 release/recovery-summary.py
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_INPUTS: ${{ toJSON(inputs) }}
+        PREPARED_RUN_ID: ${{ needs.source.outputs.prepared_run_id }}
+        TAG_OBJECT: ${{ needs.source.outputs.tag_object }}
+        ARCHIVE_DIGEST: ${{ needs.prepare.outputs.archive_digest }}
+        RESULTS: ${{ toJSON(needs) }}
     - uses: actions/upload-artifact@v7
       if: always()
       with:
         name: publication-${{ inputs.tag }}-${{ github.run_id }}-${{ github.run_attempt }}
         path: |-
           build/release/publication-request.json
+          build/release/recovery.json
           build/release/modrinth-receipts/*.json
           build/release/hangar/receipt.json
           build/release/curseforge/receipt.json
         if-no-files-found: ignore
         retention-days: 90
-    - name: Summarize publication jobs
-      run: |
-        jq -r '"| Job | Result |", "| --- | --- |", (to_entries[] | "| \(.key) | \(.value.result) |")' <<< "$RESULTS" >> "$GITHUB_STEP_SUMMARY"
-        jq -e 'all(.[]; .result == "success" or .result == "skipped")' <<< "$RESULTS"
-      env:
-        RESULTS: ${{ toJSON(needs) }}
     - name: Request release documentation separately
       run: gh workflow run pages.yml --ref master -f release_tag="$RELEASE_TAG"
       if: inputs.operation == 'release' && inputs.github_release && needs.publish.result == 'success'

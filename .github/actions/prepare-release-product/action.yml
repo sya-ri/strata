@@ -1,0 +1,79 @@
+name: Sign and assemble verified release product
+description: Shared production and disposable-key preparation after a strict verification gate
+inputs:
+  tag:
+    description: Product build version expressed as a tag
+    required: true
+  source-commit:
+    description: Immutable product commit
+    required: true
+  tag-object:
+    description: Verified production tag object, empty only for rehearsal
+    default: ''
+  scope:
+    description: Production or rehearsal archive identity
+    required: true
+  signing-key:
+    description: Production signing key; rehearsal generates a disposable key
+    default: ''
+  signing-password:
+    description: Production signing password
+    default: ''
+runs:
+  using: composite
+  steps:
+  - uses: ./.github/actions/setup-strata-java
+    with:
+      directory: product
+  - uses: gradle/actions/setup-gradle@v6
+    with:
+      cache-read-only: true
+      gradle-home-cache-excludes: caches/fabric-loom
+  - name: Initialize isolated consumer repository
+    shell: bash
+    run: |-
+      test ! -e "$RUNNER_TEMP/strata-release-maven"
+      mkdir "$RUNNER_TEMP/strata-release-maven"
+  - name: Generate disposable rehearsal identity
+    if: inputs.scope == 'rehearsal'
+    shell: bash
+    run: |-
+      keyring=$(mktemp -d)
+      chmod 700 "$keyring"
+      trap 'rm -rf "$keyring"' EXIT
+      gpg --homedir "$keyring" --batch --pinentry-mode loopback --passphrase '' --quick-generate-key 'Strata rehearsal (not for publication)' rsa2048 sign 0
+      key=$(gpg --homedir "$keyring" --batch --armor --export-secret-keys)
+      while IFS= read -r line; do echo "::add-mask::$line"; done <<< "$key"
+      delimiter="rehearsal-$(cat /proc/sys/kernel/random/uuid)"
+      { echo "REHEARSAL_SIGNING_KEY<<$delimiter"; echo "$key"; echo "$delimiter"; } >> "$GITHUB_ENV"
+  - name: Build and verify signed publication inputs
+    shell: bash
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      SOURCE_COMMIT: ${{ inputs.source-commit }}
+      TAG_OBJECT: ${{ inputs.tag-object }}
+      RELEASE_SCOPE: ${{ inputs.scope }}
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ inputs.signing-key }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ inputs.signing-password }}
+      JAVA_TOOL_OPTIONS: -Dmaven.repo.local=${{ runner.temp }}/strata-release-maven
+    run: |-
+      if [[ "$RELEASE_SCOPE" == rehearsal ]]; then
+        export ORG_GRADLE_PROJECT_signingInMemoryKey="$REHEARSAL_SIGNING_KEY"
+        export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword=''
+      fi
+      python3 release/preparation.py build --tag "$RELEASE_TAG" --commit "$SOURCE_COMMIT" --scope "$RELEASE_SCOPE"
+  - name: Save immutable prepared inputs
+    shell: bash
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      SOURCE_COMMIT: ${{ inputs.source-commit }}
+      TAG_OBJECT: ${{ inputs.tag-object }}
+      RELEASE_SCOPE: ${{ inputs.scope }}
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ inputs.signing-key }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ inputs.signing-password }}
+    run: |-
+      if [[ "$RELEASE_SCOPE" == rehearsal ]]; then
+        export ORG_GRADLE_PROJECT_signingInMemoryKey="$REHEARSAL_SIGNING_KEY"
+        export ORG_GRADLE_PROJECT_signingInMemoryKeyPassword=''
+      fi
+      python3 release/preparation.py assemble --tag "$RELEASE_TAG" --commit "$SOURCE_COMMIT" --scope "$RELEASE_SCOPE" --tag-object "$TAG_OBJECT" --repository "$RUNNER_TEMP/strata-release-maven"

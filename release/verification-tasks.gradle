@@ -1,0 +1,10 @@
+import groovy.json.JsonOutput
+
+// Observe the actual release graph without changing its dependencies or task actions.
+gradle.taskGraph.whenReady { graph ->
+    def output = gradle.rootProject.layout.buildDirectory.file('release-verification/tasks.json').get().asFile
+    output.parentFile.mkdirs()
+    output.text = JsonOutput.prettyPrint(JsonOutput.toJson(graph.allTasks.collect { task ->
+        [build: task.project.rootProject.name, path: task.path]
+    })) + '\n'
+}

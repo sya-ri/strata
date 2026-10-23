@@ -6,6 +6,9 @@ name: Native build logic analysis
       ref:
         type: string
         default: ''
+    outputs:
+      report_digest:
+        value: ${{ jobs.analysis.outputs.report_digest }}
 permissions:
   actions: read
   contents: read
@@ -14,6 +17,8 @@ permissions:
 jobs:
   analysis:
     runs-on: ubuntu-latest
+    outputs:
+      report_digest: ${{ steps.report.outputs.artifact-digest }}
     steps:
     - name: Check out the analysis controller
       uses: actions/checkout@v7
@@ -49,6 +54,7 @@ jobs:
           --config=${{ github.workspace }}/build-logic/qodana.yaml
           --linter=qodana-jvm-community --within-docker=false
     - name: Retain the native analysis evidence
+      id: report
       if: always()
       uses: actions/upload-artifact@v7
       with:

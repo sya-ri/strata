@@ -7,13 +7,26 @@ name: Qodana
       ref:
         type: string
         required: true
+    outputs:
+      source_commit:
+        value: ${{ jobs.qodana.outputs.source_commit }}
+      controller_commit:
+        value: ${{ github.sha }}
+      producer_run_id:
+        value: ${{ github.run_id }}
+      producer_attempt:
+        value: ${{ jobs.result.outputs.producer_attempt }}
+      product_report_digest:
+        value: ${{ jobs.qodana.outputs.report_digest }}
+      build_logic_report_digest:
+        value: ${{ jobs.build-logic.outputs.report_digest }}
 permissions:
   actions: read
   contents: read
   checks: write
   pull-requests: write
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: strata-qodana-${{ github.workflow }}-${{ github.ref }}-${{ inputs.ref }}
   cancel-in-progress: true
 jobs:
   plan:
@@ -41,12 +54,18 @@ jobs:
         HEAD: ${{ github.event.pull_request.head.sha }}
   qodana:
     runs-on: ubuntu-latest
+    outputs:
+      source_commit: ${{ steps.identity.outputs.source_commit }}
+      report_digest: ${{ steps.report.outputs.artifact-digest }}
     steps:
     - name: Check out source
       uses: actions/checkout@v7
       with:
         ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 0
+    - name: Record analyzed product identity
+      id: identity
+      run: echo "source_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
     - name: Set up Java
       uses: ./.github/actions/setup-strata-java
     - name: Check analysis disk space
@@ -151,6 +170,7 @@ jobs:
         if-no-files-found: warn
         include-hidden-files: true
     - name: Upload Qodana report
+      id: report
       if: always()
       uses: actions/upload-artifact@v7
       with:
@@ -180,6 +200,8 @@ jobs:
       ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
   result:
     name: Qodana result
+    outputs:
+      producer_attempt: ${{ github.run_attempt }}
     needs:
     - plan
     - qodana

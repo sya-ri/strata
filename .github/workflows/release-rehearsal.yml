@@ -1,0 +1,152 @@
+name: Release rehearsal
+'on':
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Immutable product SHA; the existing build version is retained
+        type: string
+        required: true
+      controller_commit:
+        description: Full SHA of the workflow revision selected for this dispatch
+        type: string
+        required: true
+      topology:
+        description: Serial baseline or overlapping analysis and complete verification
+        type: choice
+        options:
+        - serial
+        - overlap
+        default: serial
+  workflow_call:
+    inputs:
+      source_commit:
+        type: string
+        required: true
+      controller_commit:
+        type: string
+        required: true
+      topology:
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: strata-release-rehearsal
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.source.outputs.tag }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Validate immutable rehearsal sources
+      id: source
+      run: python3 release/preparation.py select-rehearsal --commit "$SOURCE_COMMIT" --controller "$CONTROLLER_COMMIT"
+      env:
+        SOURCE_COMMIT: ${{ inputs.source_commit }}
+        CONTROLLER_COMMIT: ${{ inputs.controller_commit }}
+  analysis:
+    needs: source
+    uses: ./.github/workflows/qodana.yml
+    with:
+      ref: ${{ inputs.source_commit }}
+    permissions:
+      actions: read
+      contents: read
+      checks: write
+      pull-requests: write
+  serial:
+    needs: [source, analysis]
+    if: inputs.topology == 'serial'
+    uses: ./.github/workflows/release-verification.yml
+    with:
+      source_commit: ${{ inputs.source_commit }}
+      scope: rehearsal
+  overlap:
+    needs: source
+    if: inputs.topology == 'overlap'
+    uses: ./.github/workflows/release-verification.yml
+    with:
+      source_commit: ${{ inputs.source_commit }}
+      scope: rehearsal
+  prepare:
+    name: Prepare rehearsal
+    needs: [source, analysis, serial, overlap]
+    if: always() && needs.source.result == 'success' && needs.analysis.result == 'success' && ((inputs.topology == 'serial' && needs.serial.result == 'success' && needs.overlap.result == 'skipped') || (inputs.topology == 'overlap' && needs.overlap.result == 'success' && needs.serial.result == 'skipped'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.source_commit }}
+        path: product
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Verify complete rehearsal quality results before signing
+      run: |-
+        export RESULTS
+        RESULTS=$(python3 -c 'import json,os; r=json.loads(os.environ["ALL_RESULTS"]); r["verification"]=r[os.environ["TOPOLOGY"]]; print(json.dumps(r))')
+        python3 release/verification.py gate
+      env:
+        GH_TOKEN: ${{ github.token }}
+        SOURCE_COMMIT: ${{ inputs.source_commit }}
+        RELEASE_SCOPE: rehearsal
+        TOPOLOGY: ${{ inputs.topology }}
+        ALL_RESULTS: ${{ toJSON(needs) }}
+    - uses: ./.github/actions/prepare-release-product
+      with:
+        tag: ${{ needs.source.outputs.tag }}
+        source-commit: ${{ inputs.source_commit }}
+        scope: rehearsal
+    - name: Retain rehearsal archive
+      uses: actions/upload-artifact@v7
+      with:
+        name: rehearsal-prepared-${{ github.run_attempt }}
+        path: |-
+          build/rehearsal-prepared.tar.gz
+          build/rehearsal-prepared.sha256
+        retention-days: 30
+        if-no-files-found: error
+    - name: Retain rehearsal preparation diagnostics
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: rehearsal-preparation-diagnostics-${{ github.run_attempt }}
+        path: |-
+          build/preparation-diagnostics
+          build/verification-gate.json
+        if-no-files-found: warn
+  result:
+    needs: [source, analysis, serial, overlap, prepare]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - name: Summarize rehearsal timings and require complete outcomes
+      run: python3 release/rehearsal-summary.py
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_INPUTS: ${{ toJSON(inputs) }}
+        RESULTS: ${{ toJSON(needs) }}
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: rehearsal-timings-${{ github.run_attempt }}
+        path: build/rehearsal-timings.json
+        if-no-files-found: error

@@ -1,0 +1,6 @@
+// A rehearsal's generated notes live outside the immutable product checkout.
+gradle.projectsEvaluated {
+    gradle.rootProject.extensions.getByName('strataRelease').releaseNotesFile.set(
+        new File(System.getenv('STRATA_REHEARSAL_NOTES'))
+    )
+}
