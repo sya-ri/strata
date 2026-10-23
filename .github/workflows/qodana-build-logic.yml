@@ -6,6 +6,11 @@ name: Native build logic analysis
       ref:
         type: string
         default: ''
+    outputs:
+      report_digest:
+        value: ${{ jobs.analysis.outputs.report_digest }}
+      source_commit:
+        value: ${{ jobs.analysis.outputs.source_commit }}
 permissions:
   actions: read
   contents: read
@@ -14,6 +19,9 @@ permissions:
 jobs:
   analysis:
     runs-on: ubuntu-latest
+    outputs:
+      report_digest: ${{ steps.report.outputs.artifact-digest }}
+      source_commit: ${{ steps.identity.outputs.source_commit }}
     steps:
     - name: Check out the analysis controller
       uses: actions/checkout@v7
@@ -27,6 +35,9 @@ jobs:
         path: product
         fetch-depth: 0
         persist-credentials: false
+    - name: Record analyzed build logic identity
+      id: identity
+      run: echo "source_commit=$(git -C product rev-parse HEAD)" >> "$GITHUB_OUTPUT"
     - uses: ./.github/actions/setup-strata-java
       with:
         directory: product
@@ -39,6 +50,8 @@ jobs:
       working-directory: product
     - name: Analyze the included Gradle build
       uses: JetBrains/qodana-action@v2026.2
+      env:
+        QODANA_REVISION: ${{ steps.identity.outputs.source_commit }}
       with:
         cache-dir: ${{ runner.temp }}/qodana-build-logic/caches
         results-dir: ${{ runner.temp }}/qodana-build-logic/results
@@ -49,6 +62,7 @@ jobs:
           --config=${{ github.workspace }}/build-logic/qodana.yaml
           --linter=qodana-jvm-community --within-docker=false
     - name: Retain the native analysis evidence
+      id: report
       if: always()
       uses: actions/upload-artifact@v7
       with:

@@ -3,6 +3,17 @@ name: JVM checks
   pull_request: {}
   workflow_dispatch:
     inputs:
+      rehearsal_source_commit:
+        description: Optional immutable product SHA for non-publishing release qualification
+        type: string
+        default: ''
+      rehearsal_topology:
+        description: Release rehearsal scheduling; ignored without rehearsal_source_commit
+        type: choice
+        options:
+        - serial
+        - overlap
+        default: serial
       paired_manifest:
         description: Manifest path inside the paired_inputs metadata ZIP
         type: string
@@ -31,10 +42,11 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}${{ inputs.paired_inputs != '' && format('-paired-{0}', github.run_id) || '' }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}${{ inputs.paired_inputs != '' && format('-paired-{0}', github.run_id) || '' }}${{ inputs.rehearsal_source_commit != '' && format('-rehearsal-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 jobs:
   plan:
+    if: inputs.rehearsal_source_commit == ''
     runs-on: ubuntu-latest
     outputs:
       common: ${{ steps.plan.outputs.common }}
@@ -326,6 +338,7 @@ jobs:
         bash release/tests/verify-github-release-preflight.sh
         bash release/tests/verify-github-release-read.sh
         python3 -B release/tests/verify-fabric-sources.py
+        python3 -B release/tests/verify-release-preparation.py
     - name: Test Java toolchain inventory
       shell: bash
       run: bash release/tests/verify-java-toolchain-inventory.sh
@@ -687,6 +700,18 @@ jobs:
       env:
         MINECRAFT_VERSION: ${{ steps.assets.outputs.docs_version }}
     - *documentation_loom_save
+  rehearsal:
+    if: github.event_name == 'workflow_dispatch' && inputs.rehearsal_source_commit != '' && inputs.paired_manifest == '' && inputs.paired_inputs == '' && inputs.subject_ref == '' && inputs.minecraft_versions == '' && (inputs.minecraft_backend == '' || inputs.minecraft_backend == 'default')
+    uses: ./.github/workflows/release-rehearsal.yml
+    with:
+      source_commit: ${{ inputs.rehearsal_source_commit }}
+      controller_commit: ${{ github.sha }}
+      topology: ${{ inputs.rehearsal_topology }}
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
   result:
     name: CI result
     needs:
@@ -701,6 +726,7 @@ jobs:
     - minecraft
     - documentation
     - docs
+    - rehearsal
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -708,6 +734,12 @@ jobs:
       with:
         persist-credentials: false
     - name: Check planned job outcomes
+      if: inputs.rehearsal_source_commit == ''
       run: python3 gradle/plan-ci.py --check-results
       env:
         RESULTS: ${{ toJSON(needs) }}
+    - name: Require successful release rehearsal
+      if: inputs.rehearsal_source_commit != ''
+      run: test "$REHEARSAL_RESULT" = success
+      env:
+        REHEARSAL_RESULT: ${{ needs.rehearsal.result }}

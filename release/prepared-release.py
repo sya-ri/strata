@@ -25,6 +25,15 @@ def sha256(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def gpg_home_path(path):
+    """Use MSYS socket paths when Windows runs the GPG bundled with Git."""
+    value = Path(path).resolve().as_posix()
+    executable = (shutil.which("gpg") or "").replace("\\", "/")
+    if os.name == "nt" and "/Git/" in executable:
+        return "/" + value[0].lower() + value[2:]
+    return value
+
+
 def read_json(path):
     """Read a UTF-8 manifest."""
     return json.loads(path.read_text(encoding="utf-8"))
@@ -46,18 +55,19 @@ def inventory(root):
     return result
 
 
-def validate(root, tag, commit):
+def validate(root, tag, commit, *, scope="production"):
     """Check the complete saved inventory before publication or remote verification."""
     require(re.fullmatch(r"v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", tag), "Invalid release tag.")
     require(re.fullmatch(r"[0-9a-f]{40}", commit), "Invalid source commit.")
     manifest = read_json(root / "prepared.json")
-    require(manifest.get("schemaVersion") == 1 and manifest.get("tag") == tag
+    require(manifest.get("schemaVersion") == (1 if scope == "production" else 2)
+            and manifest.get("scope", "production") == scope and manifest.get("tag") == tag
             and manifest.get("sourceCommit") == commit, "Prepared release source differs.")
     require(manifest.get("files") and manifest["files"] == inventory(root), "Prepared release files differ.")
     return manifest
 
 
-def prepare(product, repository, output, tag, commit, tag_object):
+def prepare(product, repository, output, tag, commit, tag_object, *, scope="production", notes=None, verification=None):
     """Copy only publication-owned files, preserving the original signatures."""
     require(not output.exists(), "Prepared release output already exists.")
     output.mkdir(parents=True)
@@ -90,13 +100,16 @@ def prepare(product, repository, output, tag, commit, tag_object):
         require(artifact_version == version and sha256(canonical) == artifact["sha256"] == sha256(distribution),
                 "The distribution manifest and signed Maven artifact differ.")
         require(distribution.stat().st_size == artifact["size"], "The distribution manifest size differs.")
-    shutil.copyfile(product / f"docs/releases/{tag}.md", output / "release-notes.md")
+    shutil.copyfile(notes or product / f"docs/releases/{tag}.md", output / "release-notes.md")
     with tempfile.TemporaryDirectory() as keyring:
-        command = ["gpg", "--batch", "--homedir", keyring]
+        command = ["gpg", "--batch", "--homedir", gpg_home_path(keyring)]
         subprocess.run(command + ["--import"], input=os.environ["ORG_GRADLE_PROJECT_signingInMemoryKey"].encode(), capture_output=True, check=True)
         public_key = subprocess.check_output(command + ["--armor", "--export"])
         require(public_key, "Release signing public key is missing.")
         (output / "signing-key.asc").write_bytes(public_key)
+        for signature in sorted((output / "maven").rglob("*.asc")):
+            subprocess.run(command + ["--verify", str(signature), str(signature.with_suffix(""))],
+                           capture_output=True, check=True)
     hangar_path = release / "hangar/manifest.json"
     if hangar_path.is_file():
         hangar = read_json(hangar_path)
@@ -110,12 +123,15 @@ def prepare(product, repository, output, tag, commit, tag_object):
         for path in sorted((output / "maven").rglob("*")):
             if path.is_file():
                 archive.write(path, path.relative_to(output / "maven").as_posix())
+    if verification is not None:
+        shutil.copyfile(verification, output / "verification.json")
     write_json(output / "prepared.json", {
-        "schemaVersion": 1, "tag": tag, "sourceCommit": commit, "tagObject": tag_object,
+        "schemaVersion": 1 if scope == "production" else 2, "scope": scope,
+        "tag": tag, "sourceCommit": commit, "tagObject": tag_object,
         "controllerCommit": os.environ["GITHUB_SHA"], "runId": int(os.environ["GITHUB_RUN_ID"]),
         "runAttempt": int(os.environ["GITHUB_RUN_ATTEMPT"]), "files": inventory(output),
     })
-    validate(output, tag, commit)
+    validate(output, tag, commit, scope=scope)
 
 
 def unpack(archive_path, output, tag, commit):

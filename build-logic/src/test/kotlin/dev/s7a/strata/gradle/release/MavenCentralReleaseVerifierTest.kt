@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -189,6 +190,75 @@ internal class MavenCentralReleaseVerifierTest {
         val fileName = "$artifact-$version.jar.asc"
         val relativePath = "${group.replace('.', '/')}/$artifact/$version/$fileName"
         assertTrue(Files.readAllBytes(output.resolve(relativePath)).contentEquals(server.remoteBytes(relativePath)))
+    }
+
+    @Test
+    fun `final verification stages identical bytes with half the duplicate read requests`() {
+        val fixture = fixture()
+        val server = server(fixture)
+        val verifier = fixture.verifier(server)
+        verifier.verify(fixture.coordinates)
+        verifier.stageCanonicalPublicationEvidence(fixture.coordinates, temporaryDirectory.resolve("baseline-evidence"))
+        val baselineRequests = server.requestCount
+        server.requestCount = 0
+        val output = temporaryDirectory.resolve("single-pass-evidence")
+
+        val receipt = verifier.verify(fixture.coordinates, outputDirectory = output)
+
+        val baseFileCount = fixture.coordinates.size * BASE_SUFFIXES.size
+        assertEquals(baseFileCount * (CHECKSUM_COUNT_PER_BASE + 2), server.requestCount)
+        assertEquals(baselineRequests, server.requestCount * 2)
+        assertEquals(baseFileCount, receipt.signedFiles.size)
+        assertEquals(baseFileCount * 2, receipt.verifiedFileCount)
+        receipt.signedFiles.forEach { file ->
+            listOf(file.baseRelativePath, file.signatureRelativePath).forEach { path ->
+                assertTrue(Files.readAllBytes(output.resolve(path)).contentEquals(server.remoteBytes(path)))
+            }
+        }
+    }
+
+    @Test
+    fun `failed and cancelled verification discards partially staged bytes`() {
+        val fixture = fixture()
+        val server = server(fixture)
+        val output = temporaryDirectory.resolve("partial-evidence")
+        for (mode in listOf(Mode.MISSING_SIGNATURE, Mode.MISSING_BASE_CHECKSUM, Mode.MISMATCH)) {
+            server.mode = mode
+            assertThrows(IllegalStateException::class.java) {
+                fixture.verifier(server).verify(fixture.coordinates, maximumAttempts = 1, outputDirectory = output)
+            }
+            assertFalse(Files.exists(output))
+        }
+
+        server.mode = Mode.MISSING_SIGNATURE
+        val verifier =
+            MavenCentralReleaseVerifier(
+                localRepository = fixture.repository,
+                repositoryBaseUri = URI("${server.baseUrl}/maven2/"),
+                sleeper = { throw InterruptedException("cancelled propagation wait") },
+            )
+        assertThrows(InterruptedException::class.java) {
+            verifier.verify(fixture.coordinates, maximumAttempts = 2, outputDirectory = output)
+        }
+        assertFalse(Files.exists(output))
+    }
+
+    @Test
+    fun `staging retries transient reads and refuses existing evidence`() {
+        val fixture = fixture()
+        val server = server(fixture)
+        server.transientStatuses.addAll(listOf(429, 503))
+        val output = temporaryDirectory.resolve("retried-evidence")
+        val receipt = fixture.verifier(server).verify(fixture.coordinates, outputDirectory = output)
+        assertEquals(MavenCentralReleaseVerifier.State.EXACT, receipt.state)
+        assertEquals(fixture.coordinates.size * BASE_SUFFIXES.size * (CHECKSUM_COUNT_PER_BASE + 2) + 2, server.requestCount)
+        val originalRequests = server.requestCount
+        val originalFiles = Files.walk(output).use { it.filter(Files::isRegularFile).toList() }
+        assertThrows(IllegalStateException::class.java) {
+            fixture.verifier(server).verify(fixture.coordinates, outputDirectory = output)
+        }
+        assertEquals(originalRequests, server.requestCount)
+        assertTrue(originalFiles.all(Files::isRegularFile))
     }
 
     @Test

@@ -177,7 +177,8 @@ class PlanCiTest(unittest.TestCase):
         group = next(line.removeprefix("  group: ") for line in workflow.splitlines() if line.startswith("  group: "))
         self.assertEqual("${{ github.workflow }}-${{ github.ref }}"
                          "${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}"
-                         "${{ inputs.paired_inputs != '' && format('-paired-{0}', github.run_id) || '' }}", group)
+                         "${{ inputs.paired_inputs != '' && format('-paired-{0}', github.run_id) || '' }}"
+                         "${{ inputs.rehearsal_source_commit != '' && format('-rehearsal-{0}', github.run_id) || '' }}", group)
         self.assertIn("  cancel-in-progress: true\n", workflow)
         self.assertIn("    - name: Select opt-in paired JVM measurement\n      if: inputs.subject_ref == ''\n", workflow)
         minecraft = workflow.split("\n  minecraft:\n", 1)[1].split("\n  documentation:", 1)[0]

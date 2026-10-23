@@ -1,0 +1,98 @@
+name: Full release verification
+'on':
+  workflow_call:
+    inputs:
+      source_commit:
+        type: string
+        required: true
+      tag_object:
+        type: string
+        default: ''
+      scope:
+        type: string
+        required: true
+    outputs:
+      artifact_id:
+        value: ${{ jobs.verify.outputs.artifact_id }}
+      artifact_digest:
+        value: ${{ jobs.verify.outputs.artifact_digest }}
+      receipt_digest:
+        value: ${{ jobs.verify.outputs.receipt_digest }}
+      producer_attempt:
+        value: ${{ jobs.verify.outputs.producer_attempt }}
+      failure_phase:
+        value: ${{ jobs.verify.outputs.failure_phase }}
+      failure_classification:
+        value: ${{ jobs.verify.outputs.failure_classification }}
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Verify complete release product
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      SDL_VIDEO_FORCE_EGL: '1'
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      TAG_OBJECT: ${{ inputs.tag_object }}
+      RELEASE_SCOPE: ${{ inputs.scope }}
+    outputs:
+      artifact_id: ${{ steps.evidence.outputs.artifact-id }}
+      artifact_digest: ${{ steps.evidence.outputs.artifact-digest }}
+      receipt_digest: ${{ steps.receipt.outputs.digest }}
+      producer_attempt: ${{ github.run_attempt }}
+      failure_phase: ${{ steps.summary.outputs.phase }}
+      failure_classification: ${{ steps.summary.outputs.classification }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ inputs.source_commit }}
+        path: product
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Record selected source before provisioning
+      run: python3 release/verification.py init
+    - uses: ./.github/actions/setup-strata-java
+      with:
+        directory: product
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: true
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Record actual toolchain and runner profile
+      run: python3 release/verification.py profile
+    - name: Install native dependencies
+      timeout-minutes: 10
+      run: python3 release/verification.py native
+    - name: Resolve tagged npm dependencies
+      run: python3 release/verification.py npm
+    - name: Install tagged browser dependencies
+      run: python3 release/verification.py browsers
+    - name: Check the complete tagged product once
+      run: python3 release/verification.py check
+    - name: Retain available product diagnostics
+      if: always()
+      run: python3 release/verification.py collect
+    - name: Classify the first verification failure
+      id: summary
+      if: always()
+      run: python3 release/verification.py summary
+    - name: Record complete verification identity
+      id: receipt
+      run: |-
+        python3 release/verification.py receipt
+        echo "digest=$(sha256sum build/release-verification/receipt.json | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+    - name: Upload verification and failure evidence
+      id: evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.scope }}-verification-${{ github.run_attempt }}
+        path: build/release-verification
+        retention-days: 30
+        if-no-files-found: warn
+        include-hidden-files: true

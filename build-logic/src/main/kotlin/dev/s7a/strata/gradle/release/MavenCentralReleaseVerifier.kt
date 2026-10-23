@@ -78,6 +78,7 @@ internal class MavenCentralReleaseVerifier(
      * @param coordinateLines canonical `group:artifact:version` entries owned by the tracked release matrix.
      * @param maximumAttempts total remote inspections permitted, including the first read.
      * @param pollDelayMillis delay between incomplete propagation reads.
+     * @param outputDirectory optional empty task-owned directory receiving the same verified base/signature bytes; failure or cancellation removes partial evidence.
      * @return immutable exact-match evidence.
      * @throws IllegalStateException on local input errors, remote byte mismatch, or exhausted propagation attempts.
      */
@@ -85,23 +86,39 @@ internal class MavenCentralReleaseVerifier(
         coordinateLines: List<String>,
         maximumAttempts: Int = DEFAULT_VERIFICATION_ATTEMPTS,
         pollDelayMillis: Long = DEFAULT_VERIFICATION_DELAY_MILLIS,
+        outputDirectory: Path? = null,
     ): Receipt {
         require(0 < maximumAttempts) { "Maven Central verification requires at least one attempt." }
         require(0L <= pollDelayMillis) { "The Maven Central poll delay must not be negative." }
         val coordinates = parseCoordinates(coordinateLines)
-        for (attempt in 1..maximumAttempts) {
-            val inspection = inspect(coordinates)
-            if (inspection.state == State.EXACT) {
-                return Receipt(
-                    State.EXACT,
-                    coordinates.size,
-                    inspection.verifiedFileCount,
-                    inspection.verifiedChecksumCount,
-                )
+        if (outputDirectory != null) {
+            check(Files.exists(outputDirectory).not() || Files.list(outputDirectory).use { it.findAny().isEmpty }) {
+                "Canonical evidence output must be empty before verification."
             }
-            if (attempt < maximumAttempts) sleeper(pollDelayMillis)
+            Files.createDirectories(outputDirectory)
         }
-        error("Maven Central did not expose the exact ${coordinates.size}-coordinate release after $maximumAttempts inspections.")
+        return runCatching {
+            for (attempt in 1..maximumAttempts) {
+                val inspection = inspect(coordinates, outputDirectory)
+                if (inspection.state == State.EXACT) {
+                    return@runCatching Receipt(
+                        State.EXACT,
+                        coordinates.size,
+                        inspection.verifiedFileCount,
+                        inspection.verifiedChecksumCount,
+                        if (outputDirectory == null) emptyList() else signedFiles(coordinates),
+                    )
+                }
+                if (attempt < maximumAttempts) sleeper(pollDelayMillis)
+            }
+            error("Maven Central did not expose the exact ${coordinates.size}-coordinate release after $maximumAttempts inspections.")
+        }.onFailure { failure ->
+            if (outputDirectory != null) {
+                runCatching {
+                    check(outputDirectory.toFile().deleteRecursively()) { "Cannot discard incomplete canonical evidence." }
+                }.onFailure(failure::addSuppressed)
+            }
+        }.getOrThrow()
     }
 
     /**
@@ -118,29 +135,17 @@ internal class MavenCentralReleaseVerifier(
     internal fun stageCanonicalPublicationEvidence(
         coordinateLines: List<String>,
         outputDirectory: Path,
-    ): List<SignedPublicationFile> {
-        val coordinates = parseCoordinates(coordinateLines)
-        Files.createDirectories(outputDirectory)
+    ): List<SignedPublicationFile> = verify(coordinateLines, maximumAttempts = 1, outputDirectory = outputDirectory).signedFiles
+
+    /**
+     * Derives canonical signature identities only after the complete remote inspection succeeds.
+     */
+    private fun signedFiles(coordinates: List<Coordinate>): List<SignedPublicationFile> {
         val staged =
             coordinates.flatMap { coordinate ->
                 coordinate.suffixes.map { suffix ->
                     val basePath = coordinate.remotePath(suffix)
-                    val remoteBase = readOptional(basePath) ?: error("Maven Central publication file is missing: $basePath")
-                    val localBase = coordinate.localPath(localRepository, suffix).toFile().readBytes()
-                    check(remoteBase.contentEquals(localBase)) {
-                        "Maven Central publication file differs from the staged publication: $basePath"
-                    }
-                    check(verifyChecksums(basePath, remoteBase)) {
-                        "Maven Central publication checksums are incomplete: $basePath"
-                    }
                     val signaturePath = "$basePath.asc"
-                    val signature =
-                        readOptional(signaturePath)
-                            ?: error("Maven Central publication signature is missing: $signaturePath")
-                    val baseOutput = outputDirectory.resolve(basePath)
-                    Files.createDirectories(baseOutput.parent)
-                    Files.write(baseOutput, remoteBase)
-                    Files.write(outputDirectory.resolve(signaturePath), signature)
                     SignedPublicationFile(
                         baseRelativePath = basePath,
                         signatureRelativePath = signaturePath,
@@ -179,7 +184,10 @@ internal class MavenCentralReleaseVerifier(
         return coordinates
     }
 
-    private fun inspect(coordinates: List<Coordinate>): Inspection {
+    private fun inspect(
+        coordinates: List<Coordinate>,
+        outputDirectory: Path? = null,
+    ): Inspection {
         val pomBytes = linkedMapOf<Coordinate, ByteArray?>()
         coordinates.forEach { coordinate ->
             pomBytes[coordinate] = readOptional(coordinate.remotePath(POM_SUFFIX))
@@ -228,13 +236,30 @@ internal class MavenCentralReleaseVerifier(
                 }
                 verifiedChecksumCount += ChecksumAlgorithm.entries.size
                 val signaturePath = "$remotePath.asc"
-                if (readOptional(signaturePath) == null) {
-                    return Inspection(State.PARTIAL, presentCoordinateCount, verifiedFileCount, verifiedChecksumCount)
-                }
+                val signature =
+                    readOptional(signaturePath)
+                        ?: return Inspection(State.PARTIAL, presentCoordinateCount, verifiedFileCount, verifiedChecksumCount)
+                stageVerifiedFile(outputDirectory, remotePath, actual, signature)
                 verifiedFileCount += 2
             }
         }
         return Inspection(State.EXACT, presentCoordinateCount, verifiedFileCount, verifiedChecksumCount)
+    }
+
+    /**
+     * Writes task-owned evidence only after the base bytes, checksums and signature presence were verified.
+     */
+    private fun stageVerifiedFile(
+        outputDirectory: Path?,
+        remotePath: String,
+        content: ByteArray,
+        signature: ByteArray,
+    ) {
+        if (outputDirectory == null) return
+        val baseOutput = outputDirectory.resolve(remotePath)
+        Files.createDirectories(baseOutput.parent)
+        Files.write(baseOutput, content)
+        Files.write(outputDirectory.resolve("$remotePath.asc"), signature)
     }
 
     private fun expectedBaseFiles(coordinate: Coordinate): List<ExpectedFile> = coordinate.suffixes.map { suffix -> ExpectedFile(suffix, coordinate.localPath(localRepository, suffix)) }
@@ -340,12 +365,14 @@ internal class MavenCentralReleaseVerifier(
      * @property coordinateCount exact number of coordinates inspected.
      * @property verifiedFileCount base artifacts matching local bytes plus detached signatures required for external OpenPGP verification.
      * @property verifiedChecksumCount checksum sidecars independently matched against immutable base artifacts.
+     * @property signedFiles canonical files retained during this inspection when an output directory was requested; otherwise empty.
      */
     internal data class Receipt(
         val state: State,
         val coordinateCount: Int,
         val verifiedFileCount: Int,
         val verifiedChecksumCount: Int,
+        val signedFiles: List<SignedPublicationFile> = emptyList(),
     )
 
     /**
