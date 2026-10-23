@@ -48,12 +48,13 @@ internal class ShowcaseInventoryTest {
         val file = temporaryRoot.resolve("not-a-directory")
         Files.writeString(file, "file")
         assertThrows(IllegalArgumentException::class.java) { ShowcaseInventory.discover(listOf(file)) }
+    }
 
+    @Test
+    fun symbolicInventoryRootsAreRejected() {
         val link = temporaryRoot.resolve("linked")
-        val linkCreated = runCatching { Files.createSymbolicLink(link, classes) }.isSuccess
-        if (linkCreated) {
-            assertThrows(IllegalArgumentException::class.java) { ShowcaseInventory.discover(listOf(link)) }
-        }
+        TestSymbolicLinks.create(link, CompiledApiFixture.classes)
+        assertThrows(IllegalArgumentException::class.java) { ShowcaseInventory.discover(listOf(link)) }
     }
 
     @Test

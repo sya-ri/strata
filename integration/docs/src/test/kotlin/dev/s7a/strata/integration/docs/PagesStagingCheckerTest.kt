@@ -301,17 +301,14 @@ internal class PagesStagingCheckerTest {
         val externalSnapshot = Files.createDirectories(temporaryRoot.resolve("external-snapshot"))
         Files.writeString(externalSnapshot.resolve("index.html"), "<h1>External release</h1>")
         Files.createDirectories(site.resolve("older"))
-        val created = runCatching { Files.createSymbolicLink(site.resolve("older/0.1.0"), externalSnapshot) }.isSuccess
-        if (created) {
-            Files.writeString(project.resolve("README.md"), "${PAGES_BASE}older/0.1.0/index.html")
-            val inventory = writeInventory(project, site)
-
-            val failure =
-                assertThrows(IllegalArgumentException::class.java) {
-                    PagesStagingChecker.check(project, site, inventory)
-                }
-            assertTrue(failure.message.orEmpty().contains("symbolic ancestry"))
-        }
+        TestSymbolicLinks.create(site.resolve("older/0.1.0"), externalSnapshot)
+        Files.writeString(project.resolve("README.md"), "${PAGES_BASE}older/0.1.0/index.html")
+        val inventory = writeInventory(project, site)
+        val failure =
+            assertThrows(IllegalArgumentException::class.java) {
+                PagesStagingChecker.check(project, site, inventory)
+            }
+        assertTrue(failure.message.orEmpty().contains("symbolic ancestry"))
     }
 
     @Test

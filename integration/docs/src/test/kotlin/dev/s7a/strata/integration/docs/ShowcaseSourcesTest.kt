@@ -109,25 +109,23 @@ internal class ShowcaseSourcesTest {
     }
 
     @Test
-    fun rejectsSourceAndIntermediateLinks() {
+    fun rejectsSourceLinks() {
         write("Row.kt", VALID_SOURCE.toByteArray())
         val linked = temporaryRoot.resolve("Linked.kt")
-        val sourceLinkCreated = runCatching { Files.createSymbolicLink(linked, temporaryRoot.resolve("Row.kt")) }.isSuccess
-        if (sourceLinkCreated) {
-            assertThrows(IllegalArgumentException::class.java) {
-                ShowcaseSources.extract(SourceReference("Linked.kt", "row"), temporaryRoot)
-            }
+        TestSymbolicLinks.create(linked, temporaryRoot.resolve("Row.kt"))
+        assertThrows(IllegalArgumentException::class.java) {
+            ShowcaseSources.extract(SourceReference("Linked.kt", "row"), temporaryRoot)
         }
+    }
 
-        val directory = temporaryRoot.resolve("real")
-        Files.createDirectories(directory)
+    @Test
+    fun rejectsIntermediateLinks() {
+        val directory = Files.createDirectories(temporaryRoot.resolve("real"))
         write("real/Row.kt", VALID_SOURCE.toByteArray())
         val intermediate = temporaryRoot.resolve("alias")
-        val intermediateLinkCreated = runCatching { Files.createSymbolicLink(intermediate, directory) }.isSuccess
-        if (intermediateLinkCreated) {
-            assertThrows(IllegalArgumentException::class.java) {
-                ShowcaseSources.extract(SourceReference("alias/Row.kt", "row"), temporaryRoot)
-            }
+        TestSymbolicLinks.create(intermediate, directory)
+        assertThrows(IllegalArgumentException::class.java) {
+            ShowcaseSources.extract(SourceReference("alias/Row.kt", "row"), temporaryRoot)
         }
     }
 
