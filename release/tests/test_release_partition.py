@@ -49,7 +49,9 @@ class PartitionTest(unittest.TestCase):
         self.assertIn(":new-module:check", common["arguments"])
         self.assertNotIn(":integration:minecraft-fabric-1.20:check", common["arguments"])
         self.assertIn("-Pkover", common["arguments"])
-        self.assertIn(":api:jsTest", web["arguments"])
+        self.assertIn(":api:check", web["arguments"])
+        self.assertIn(":runtime:core:check", web["arguments"])
+        self.assertNotIn(":api:check", common["arguments"])
         self.assertIn("-Pstrata.minecraftVersions=1.20", native["arguments"])
 
     def test_missing_native_owner_is_rejected_during_planning(self):

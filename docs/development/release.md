@@ -88,6 +88,7 @@ Both use a separate signing runner, so this compares scheduling plans under one 
 Its planner exports the selected product's original full-command graph and derives check owners and all supported Minecraft versions from that product.
 Planning does not execute or satisfy verification.
 Each shard runs real checks and retains its own reports, source identity, command, runner profile and producer attempt.
+The browser shard keeps the shared API/core JVM and JS checks together for complete multiplatform test reports; common coverage still runs its own fresh JVM producers.
 Aggregation verifies immutable artifact bytes and requires every planned shard plus coverage of every task in the original transitive graph before the existing signing gate can pass.
 Successful shards from an earlier attempt of the same run remain attributable when only failed jobs are rerun; a changed product, controller or plan cannot reuse them.
 The production route retains the full command while the partitioned topology is qualified against same-product task, test and evidence inventories and preparation timings.

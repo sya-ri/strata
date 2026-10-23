@@ -11,7 +11,7 @@ import sys
 import verification as v
 
 PLAN = Path("build/verification-plan")
-WEB_CHECKS = {":runtime:web:check", ":examples:web:check", ":integration:web:check"}
+WEB_CHECKS = {":api:check", ":runtime:core:check", ":runtime:web:check", ":examples:web:check", ":integration:web:check"}
 JS_TESTS = [f":{owner}:{task}" for owner in ("api", "runtime:core")
             for task in ("jsBrowserTest", "jsNodeTest")]
 
@@ -36,8 +36,9 @@ def make_plan(tasks, versions):
     common = [p for p in checks if p not in native | WEB_CHECKS]
     common += ["koverHtmlReport", "koverXmlReport", "-Pkover"]
     common += [item for task in JS_TESTS for item in ("-x", task)]
+    # KMP's allTests report needs its JVM and JS results in one workspace; coverage still owns fresh JVM tests.
     shards = [dict(id="common", kind="common", arguments=common),
-              dict(id="web", kind="web", arguments=sorted(WEB_CHECKS) + [":api:jsTest", ":runtime:core:jsTest"])]
+              dict(id="web", kind="web", arguments=sorted(WEB_CHECKS))]
     shards += [dict(id="minecraft-" + version.replace(".", "-"), kind="minecraft",
                     arguments=[":ciMinecraftCheck", "-Pstrata.minecraftVersions=" + version]) for version in versions]
     return dict(tasks=tasks, shards=shards)
