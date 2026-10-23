@@ -66,6 +66,10 @@ internal class MockModrinthServer(
     var redirectToFailingCdn: Boolean = false
     var failingDownloadRequests: Int = 0
     var optimizedGalleryDownloadRequests: Int = 0
+    val rawGalleryDownloadRequests: MutableSet<String> = linkedSetOf()
+    var corruptRawGallery: Boolean = false
+    var lastUploadContentType: String? = null
+    var lastUploadBody: ByteArray? = null
     var timeoutFirstCreateAfterCommit: Boolean = false
     var rateLimitFirstCreateBeforeCommit: Boolean = false
     var requestTimeoutFirstCreateBeforeCommit: Boolean = false
@@ -238,6 +242,8 @@ internal class MockModrinthServer(
                 path.startsWith("/cdn/") -> download(exchange, path.removePrefix("/cdn/"))
                 else -> exchange.respond(404, "{}")
             }
+        } catch (failure: IllegalArgumentException) {
+            exchange.respond(400, JsonOutput.toJson(mapOf("error" to failure.message.orEmpty())))
         } catch (failure: Throwable) {
             runCatching { exchange.respond(500, JsonOutput.toJson(mapOf("error" to failure.message.orEmpty()))) }
         } finally {
@@ -488,11 +494,12 @@ internal class MockModrinthServer(
     }
 
     private fun create(exchange: HttpExchange) {
-        val body = String(exchange.requestBody.readBytes(), StandardCharsets.ISO_8859_1)
-        val artifact =
-            fixture.manifest.artifacts.singleOrNull { candidate ->
-                body.contains("\"version_number\":\"${candidate.versionNumber}\"")
-            } ?: error("Create request did not contain one exact known version number.")
+        val contentType = requireNotNull(exchange.requestHeaders.getFirst("Content-Type"))
+        val body = exchange.requestBody.readBytes()
+        lastUploadContentType = contentType
+        lastUploadBody = body.copyOf()
+        val upload = MockModrinthUpload.parse(contentType, body, fixture)
+        val artifact = upload.artifact
         createRequests += 1
         writeEvents += WriteEvent.CREATE_VERSION
         if (rejectInitialCreate(exchange)) return
@@ -503,6 +510,7 @@ internal class MockModrinthServer(
             )
             return
         }
+        responses.uploadedFiles[artifact.fileName] = upload.bytes
         if (versions.size == 1) {
             projectTypeAfterFirstVersion?.let { inferredType -> projectType = inferredType }
         }
@@ -595,7 +603,7 @@ internal class MockModrinthServer(
                 }
 
                 CdnKind.Gallery -> {
-                    "gallery-$name".toByteArray(StandardCharsets.UTF_8)
+                    galleryBytes(name)
                 }
 
                 CdnKind.OptimizedGallery -> {
@@ -605,11 +613,16 @@ internal class MockModrinthServer(
 
                 CdnKind.Artifact, CdnKind.Redirect, CdnKind.Failure -> {
                     downloadRequests += name
-                    fixture.bundle.resolve("artifacts/$name").readBytes()
+                    responses.uploadedFiles[name] ?: fixture.bundle.resolve("artifacts/$name").readBytes()
                 }
             }
         exchange.sendResponseHeaders(200, bytes.size.toLong())
         exchange.responseBody.write(bytes)
+    }
+
+    private fun galleryBytes(name: String): ByteArray {
+        rawGalleryDownloadRequests += name
+        return (if (corruptRawGallery) "corrupt-$name" else "gallery-$name").toByteArray(StandardCharsets.UTF_8)
     }
 
     /**

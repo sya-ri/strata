@@ -384,6 +384,24 @@ internal class ModrinthReleaseCoordinatorTest : ModrinthReleaseTest() {
         fixture.coordinator(server).preflight()
 
         assertEquals(0, server.optimizedGalleryDownloadRequests)
+        assertEquals(
+            fixture.manifest.project.gallery
+                .map { it.id }
+                .toSet(),
+            server.rawGalleryDownloadRequests,
+        )
+    }
+
+    @Test
+    fun `corrupt raw gallery bytes reject preflight before writes`() {
+        val fixture = fixture()
+        val server = server(fixture).also { it.corruptRawGallery = true }
+
+        assertThrows(IllegalStateException::class.java) { fixture.coordinator(server).preflight() }
+
+        assertTrue(server.rawGalleryDownloadRequests.isNotEmpty())
+        assertEquals(0, server.optimizedGalleryDownloadRequests)
+        assertTrue(server.writeEvents.isEmpty())
     }
 
     @Test
