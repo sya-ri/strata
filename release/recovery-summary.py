@@ -98,12 +98,17 @@ def main():
               for key, value in expected.items() if results.get(key, {}).get("result") != value]
     failures = [dict(job=j["name"], step=next((s["name"] for s in j.get("steps", []) if s["conclusion"] == "failure"), None),
                      result=j["conclusion"], url=j.get("html_url")) for j in jobs if j["conclusion"] in ("failure", "cancelled")]
+    failure_outputs = results.get("verification", {}).get("outputs", {})
+    classification = failure_outputs.get("failure_classification") or "unclassified failure; inspect retained cause chain"
+    if classification == "success" and results.get("verification", {}).get("result") != "success":
+        classification = "evidence collection or artifact failure after product checks; inspect job steps"
     recovery = retry_inputs(inputs, manifest, jobs)
     report = dict(schemaVersion=1, sourceCommit=inputs["source_commit"], tag=inputs["tag"],
                   tagObject=os.environ.get("TAG_OBJECT"), controllerCommit=os.environ["GITHUB_SHA"],
                   runId=int(run_id), runAttempt=int(os.environ["GITHUB_RUN_ATTEMPT"]),
                   preparation=manifest and {k: manifest[k] for k in ("runId", "runAttempt", "controllerCommit")},
-                  archiveDigest=digest, failures=failures, retryInputs=recovery, errors=errors,
+                  archiveDigest=digest, failures=failures, classification=classification,
+                  primaryPhase=failure_outputs.get("failure_phase"), retryInputs=recovery, errors=errors,
                   restoreError=restore_error, timings=timings(run, jobs))
     verification.write_json(Path("build/release/recovery.json"), report)
     with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
@@ -113,6 +118,8 @@ def main():
             summary.write(f"| {key} | {results.get(key, {}).get('result', 'missing')} | {required} |\n")
         for failure in failures:
             summary.write(f"\n{failure['result']}: {failure['job']} / {failure['step']} ({failure['url']}).\n")
+        if errors:
+            summary.write(f"\nVerification classification: {classification}.\n")
         summary.write("\nInspect the retained phase classification and cause chain. Retry only identified transient failures; compiler, assertion, analysis and integrity failures require a fix.\n")
         if manifest:
             summary.write(f"\nReusable preparation: run `{manifest['runId']}`, attempt `{manifest['runAttempt']}`, SHA-256 `{digest}`.\n")

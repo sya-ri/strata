@@ -128,8 +128,8 @@ class ReleaseVerificationTest(unittest.TestCase):
                     verification.receipt(product, evidence)
 
     def test_late_browser_failure_and_transient_read_keep_original_evidence_without_retry(self):
-        cases = (("late-browser", "AssertionError: advance width differs", "deterministic verification failure"),
-                 ("provisioning", "HTTP 503 timed out", "possible transient infrastructure failure"))
+        cases = (("check", "AssertionError: advance width differs", "deterministic verification failure"),
+                 ("npm", "HTTP 503 timed out", "possible transient infrastructure failure"))
         for name, message, classification in cases:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
@@ -144,6 +144,9 @@ class ReleaseVerificationTest(unittest.TestCase):
                 self.assertIn(message, log)
                 self.assertNotIn("token-value", log)
                 self.assertEqual(1, log.count(message))
+                summary = verification.summarize_phases(root / "evidence")
+                self.assertEqual(name, summary["phase"])
+                self.assertTrue(summary["classification"].startswith(classification))
 
     def test_missing_producer_diagnostics_do_not_hide_the_primary_failure(self):
         with tempfile.TemporaryDirectory() as temporary:

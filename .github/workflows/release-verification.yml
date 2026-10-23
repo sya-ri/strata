@@ -20,6 +20,10 @@ name: Full release verification
         value: ${{ jobs.verify.outputs.receipt_digest }}
       producer_attempt:
         value: ${{ jobs.verify.outputs.producer_attempt }}
+      failure_phase:
+        value: ${{ jobs.verify.outputs.failure_phase }}
+      failure_classification:
+        value: ${{ jobs.verify.outputs.failure_classification }}
 permissions:
   contents: read
 jobs:
@@ -37,6 +41,8 @@ jobs:
       artifact_digest: ${{ steps.evidence.outputs.artifact-digest }}
       receipt_digest: ${{ steps.receipt.outputs.digest }}
       producer_attempt: ${{ github.run_attempt }}
+      failure_phase: ${{ steps.summary.outputs.phase }}
+      failure_classification: ${{ steps.summary.outputs.classification }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -69,6 +75,10 @@ jobs:
     - name: Retain available product diagnostics
       if: always()
       run: python3 release/verification.py collect
+    - name: Classify the first verification failure
+      id: summary
+      if: always()
+      run: python3 release/verification.py summary
     - name: Record complete verification identity
       id: receipt
       run: |-

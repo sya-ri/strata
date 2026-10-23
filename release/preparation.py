@@ -53,6 +53,9 @@ def build(tag, commit, scope):
 
 def assemble(tag, commit, tag_object, scope, repository):
     """Package original signatures and bind the complete quality gate into the saved inventory."""
+    current = verification.identity(Path("product"))
+    verification.require(current["scope"] == scope and current["sourceCommit"] == commit
+                         and current["tagObject"] == tag_object, "Signed preparation sources differ from admission.")
     rehearsal = scope == "rehearsal"
     name = "rehearsal-prepared" if rehearsal else "release-prepared"
     output = Path("build/rehearsal" if rehearsal else "build/prepared")

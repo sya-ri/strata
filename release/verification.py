@@ -152,6 +152,18 @@ def check_command():
             "--init-script", "../release/verification-tasks.gradle"]
 
 
+def summarize_phases(output=EVIDENCE):
+    """Expose the first failed or interrupted producer without inventing absent screenshots."""
+    for name in ("native", "npm", "browsers", "check"):
+        path = output / f"{name}.json"
+        if path.is_file():
+            record = json.loads(path.read_text())
+            if record.get("exitCode") != 0:
+                return dict(phase=name, classification=record.get("classification", "interrupted phase; inspect diagnostics"))
+    return dict(phase="", classification="success" if (output / "check.json").is_file()
+                else "provisioning failed before verification; inspect job steps")
+
+
 def validate_receipt(root, expected):
     """Reject missing, stale, altered or rehearsal verification at the signing boundary."""
     value = json.loads((root / "receipt.json").read_text())
@@ -217,13 +229,19 @@ def gate(product, results, output=Path("build/verification-gate.json")):
 def main():
     """Expose shared verification phases to production and non-publishing rehearsals."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=("init", "native", "npm", "browsers", "check", "collect", "receipt", "gate"))
+    parser.add_argument("operation", choices=("init", "native", "npm", "browsers", "check", "collect", "summary", "receipt", "gate"))
     parser.add_argument("--product", type=Path, default=Path("product"))
     args = parser.parse_args()
     if args.operation == "init":
         write_json(EVIDENCE / "source.json", identity(args.product))
     elif args.operation == "collect":
         collect(args.product)
+    elif args.operation == "summary":
+        value = summarize_phases()
+        write_json(EVIDENCE / "summary.json", value)
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+            for key, entry in value.items():
+                output.write(f"{key}={entry}\n")
     elif args.operation == "receipt":
         receipt(args.product)
     elif args.operation == "gate":
