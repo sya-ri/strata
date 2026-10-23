@@ -156,7 +156,7 @@ def aggregate(product):
         download(shard["id"], v.EVIDENCE / "shards" / shard["id"])
     tasks = validate_shards(v.EVIDENCE, expected)
     files = {p.relative_to(v.EVIDENCE).as_posix(): v.digest(p) for p in sorted(v.EVIDENCE.rglob("*"))
-             if p.is_file() and p.name != "receipt.json"}
+             if p.is_file() and p != v.EVIDENCE / "receipt.json"}
     v.write_json(v.EVIDENCE / "receipt.json", dict(expected, command=v.FULL_CHECK, topology="partitioned",
                                                 tasks=tasks, files=files))
 

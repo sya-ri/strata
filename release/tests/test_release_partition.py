@@ -3,6 +3,8 @@ import json
 import importlib.util
 import contextlib
 import io
+import os
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -70,6 +72,29 @@ class PartitionTest(unittest.TestCase):
             (root / "shards/web/shard.json").unlink()
             with self.assertRaises(FileNotFoundError):
                 partition.validate_shards(root, self.identity)
+
+    def test_aggregate_retains_nested_receipts_in_its_digest_inventory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, output = root / "source", root / "aggregate"
+            self.fixture(source)
+            nested = source / "shards/web/diagnostics/integration/web/build/parity/receipt.json"
+            v.write_json(nested, dict(fresh=True))
+            labels = ["plan"] + [s["id"] for s in self.plan["shards"]]
+            artifacts = [dict(id=index, name="rehearsal-partition-" + label + "-1", digest="sha256:" + "d" * 64)
+                         for index, label in enumerate(labels, start=1)]
+
+            def download(artifact, destination, *_):
+                label = labels[artifact["id"] - 1]
+                shutil.copytree(source / ("plan" if label == "plan" else "shards/" + label), destination)
+
+            with patch.object(v, "identity", return_value=self.identity), patch.object(v, "EVIDENCE", output), \
+                    patch.dict(os.environ, GITHUB_REPOSITORY="owner/repo"), \
+                    patch.object(v.subprocess, "check_output", return_value=json.dumps([dict(artifacts=artifacts)])), \
+                    patch.object(v, "download_artifact", side_effect=download):
+                partition.aggregate(Path("product"))
+                receipt = v.validate_receipt(output, self.identity)
+            self.assertIn("shards/web/diagnostics/integration/web/build/parity/receipt.json", receipt["files"])
 
     def test_real_failed_shard_retains_its_console_and_cannot_be_sealed(self):
         with tempfile.TemporaryDirectory() as temporary:
