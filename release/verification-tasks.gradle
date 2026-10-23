@@ -1,4 +1,15 @@
 import groovy.json.JsonOutput
+import org.gradle.api.tasks.VerificationTask
+
+// Dependency and compilation caches remain reusable; verification evidence is invocation-owned.
+gradle.beforeProject { project ->
+    project.tasks.configureEach { task ->
+        if (task instanceof VerificationTask) {
+            task.outputs.upToDateWhen { false }
+            task.outputs.cacheIf { false }
+        }
+    }
+}
 
 // Observe the actual release graph without changing its dependencies or task actions.
 gradle.taskGraph.whenReady { graph ->

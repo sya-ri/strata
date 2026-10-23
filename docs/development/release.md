@@ -17,6 +17,7 @@ The protected `release` environment controls signing and publication credentials
 
 Unsigned full-product verification and Qodana start independently after signed-source admission.
 Verification retains the existing complete release command, including Kover after JVM tests; it does not use PR changed-path selection or partition the product task graph.
+Its task observer disables up-to-date and build-cache reuse for tasks implementing Gradle's `VerificationTask` contract while retaining reusable dependency and compilation inputs.
 Only **Prepare release** accesses the protected signing environment, after both verification and all required analysis succeed.
 Its gate checks the actual product and controller checkouts, signed tag object, producer run and attempt, analysis report digests, and the complete verification artifact's downloaded digest and receipt inventory.
 Missing, failed, cancelled, skipped, wrong-revision, or altered required evidence prevents signing and preparation reuse.
