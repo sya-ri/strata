@@ -1,13 +1,21 @@
 """Reject incomplete, stale and altered distributed release verification without service writes."""
 import json
+import importlib.util
+import contextlib
+import io
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 import partition
 import verification as v
+
+spec = importlib.util.spec_from_file_location("comparison", Path(__file__).parents[1] / "compare-verification.py")
+comparison = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(comparison)
 
 
 class PartitionTest(unittest.TestCase):
@@ -63,6 +71,21 @@ class PartitionTest(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 partition.validate_shards(root, self.identity)
 
+    def test_real_failed_shard_retains_its_console_and_cannot_be_sealed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "evidence"
+            shard = self.plan["shards"][0]
+            command = [sys.executable, "-c", "import sys; print('AssertionError: late browser failure'); sys.exit(7)"]
+            with patch.object(v, "identity", return_value=self.identity), \
+                    patch.object(v, "EVIDENCE", output), patch.object(partition, "selected", return_value=(self.plan, shard)), \
+                    patch.object(partition, "command", return_value=command), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(7, v.phase("check", root, command, output))
+                with self.assertRaisesRegex(ValueError, "did not succeed"):
+                    partition.seal(root)
+            self.assertIn("late browser failure", (output / "check.log").read_text())
+            self.assertFalse((output / "shard.json").exists())
+
     def test_failed_cancelled_wrong_revision_or_altered_shard_cannot_pass(self):
         for field, value in (("exitCode", 7), ("exitCode", None), ("sourceCommit", "c" * 40),
                              ("controllerCommit", "c" * 40), ("runId", 124), ("runAttempt", 2), ("command", ["help"])):
@@ -99,6 +122,42 @@ class PartitionTest(unittest.TestCase):
                 v.write_json(path, record)
                 with self.assertRaises(ValueError):
                     partition.validate_shards(root, self.identity)
+
+    def test_comparison_requires_original_test_cases_and_transitive_tasks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            baseline, candidate = root / "baseline", root / "candidate"
+            for directory in (baseline, candidate):
+                result = directory / "diagnostics/api/build/test-results/test/TEST-fixture.xml"
+                result.parent.mkdir(parents=True)
+                result.write_text('<testsuite><testcase classname="Fixture" name="required case"/></testsuite>', encoding="utf-8")
+                v.write_json(directory / "receipt.json", dict(self.identity, command=v.FULL_CHECK, tasks=self.tasks,
+                             files={result.relative_to(directory).as_posix(): v.digest(result)}))
+            complete = comparison.compare(baseline, candidate)
+            self.assertEqual([], complete["missingTests"])
+            path = candidate / "receipt.json"
+            receipt = json.loads(path.read_text())
+            receipt["tasks"] = self.tasks[1:]
+            v.write_json(path, receipt)
+            incomplete = comparison.compare(baseline, candidate)
+            self.assertEqual(1, len(incomplete["missingTasks"]))
+            result = candidate / "diagnostics/api/build/test-results/test/TEST-fixture.xml"
+            result.write_text('<testsuite><testcase classname="Fixture" name="other case"/></testsuite>', encoding="utf-8")
+            receipt["files"][result.relative_to(candidate).as_posix()] = v.digest(result)
+            v.write_json(path, receipt)
+            self.assertEqual(1, len(comparison.compare(baseline, candidate)["missingTests"]))
+
+    def test_diagnostic_inventory_keeps_duplicate_test_runs_and_reports_failures(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for shard in ("common", "native"):
+                path = root / shard / "diagnostics/api/build/test-results/test/TEST-fixture.xml"
+                path.parent.mkdir(parents=True)
+                path.write_text('<testsuite><testcase classname="Fixture" name="case"><failure/></testcase></testsuite>', encoding="utf-8")
+            files, cases, failures = comparison.inventory(root)
+            self.assertEqual(1, len(files))
+            self.assertEqual(2, sum(cases.values()))
+            self.assertEqual(2, len(failures))
 
 
 if __name__ == "__main__":

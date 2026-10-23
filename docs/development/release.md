@@ -116,6 +116,9 @@ Verification also records actual installed Java versions, runner image/architect
 The summary labels unavailable resource/dependency-ready observations and excludes its still-running result job and post-summary time.
 Compare preparation-to-ready time, medians and ranges over at least three matched repetitions where practical; public visibility and Pages are separate milestones.
 No elapsed-time saving, full-matrix equivalence or Central-read speedup is established by controller fixtures alone.
+After independently checking the producer and ZIP digests, extract each successful verification artifact and run `python3 release/compare-verification.py <baseline-directory> <candidate-directory>`.
+The retained comparison requires the unchanged product and full-command contract, validates each receipt inventory, and checks transitive tasks, diagnostic paths, JUnit case identities and multiplicities, failures, toolchains and runner classes.
+Shared prerequisites may run in multiple shards, so extra fresh evidence is allowed; missing baseline evidence is an error.
 Keep verification partitioning and read concurrency out of the production route until same-revision task/evidence parity and representative measurements qualify them.
 
 ## Credentials and project setup

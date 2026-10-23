@@ -126,7 +126,9 @@ def collect(product, output=EVIDENCE):
     target = output / "diagnostics"
     patterns = ("**/build/test-results/**/*", "**/build/reports/**/*", "**/build/*parity*/**/*",
                 "**/build/**/logs/*.log", "**/build/**/crash-reports/*.txt", "**/build/**/*evidence*/*",
-                "**/build/**/hs_err_pid*.log", "**/build/**/trace*.zip", "**/build/release-verification/tasks.json")
+                "**/build/**/hs_err_pid*.log", "**/build/**/trace*.zip", "**/build/release-verification/tasks.json",
+                "**/build/minecraft-verification/**/*", "**/build/minecraft-production-verification/**/*",
+                "**/build/*-offline*/**/*")
     for pattern in patterns:
         for source in product.glob(pattern):
             if not source.is_file() or source.is_symlink() or any(p.is_symlink() for p in source.parents):
