@@ -35,6 +35,12 @@ internal interface MinecraftLoadedTestContext {
     fun restoreDefaultGameOptions()
 
     /**
+     * Applies a positive logical viewport through the selected runner's native or simulated window boundary.
+     * Callers separately verify physical framebuffer readiness when their acceptance requires it.
+     */
+    fun resizeWindow(size: IntSize)
+
+    /**
      * Delivers a native pointer move in physical window coordinates on the client thread.
      */
     fun movePointerRaw(

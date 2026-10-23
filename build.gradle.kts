@@ -42,6 +42,7 @@ import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
+import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.dokka.gradle.DokkaExtension
@@ -2125,9 +2126,17 @@ subprojects {
                 minecraftTargetByProjectPath[task.project.path]?.integrationProjectPath == task.project.path
         }
         .configureEach {
+            val verificationArguments = project.providers.provider {
+                val sources = project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.getByName("gametest").kotlin.srcDirs
+                if (rootProject.file("integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin") in sources) {
+                    listOf("-Dfabric.client.gametest", "-Dfabric.client.gametest.disableNetworkSynchronizer=true")
+                } else {
+                    listOf("-Dstrata.clientVerification=true")
+                }
+            }
             when (this) {
-                is ClientProductionRunTask -> jvmArgs.add("-Dstrata.clientVerification=true")
-                is JavaExec -> systemProperty("strata.clientVerification", true)
+                is ClientProductionRunTask -> jvmArgs.addAll(verificationArguments)
+                is JavaExec -> jvmArgumentProviders.add(CommandLineArgumentProvider { verificationArguments.get() })
             }
             usesService(minecraftClientExecutionService)
             minecraftClientResourceService?.let { service ->

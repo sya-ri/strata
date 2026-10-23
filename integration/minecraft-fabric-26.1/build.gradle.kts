@@ -26,26 +26,15 @@ fabricApi {
         createSourceSet = true
         modId = "strata-integration-minecraft-fabric-26-1"
         enableGameTests = false
-        enableClientGameTests = false
+        enableClientGameTests = true
         eula = true
-    }
-}
-
-loom {
-    runs.register("clientGameTest") {
-        client()
-        sourceSet.set("gametest")
-        runDirectory.set(layout.buildDirectory.dir("run/clientGameTest"))
-        generateRunConfig.set(false)
     }
 }
 
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/screenshot/extracted/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/world/typed-rules/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/pointer/named/src/gametest/kotlin"))
-        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/standalone-client/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/fabric-client-gametest/src/gametest/kotlin"))
+        kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/runner/fabric-client-gametest/level-context/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/kotlin"))
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor/src/gametest/kotlin"))
         kotlin.srcDirs(

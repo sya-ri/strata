@@ -13,7 +13,7 @@ internal fun resizeMinecraftTestWindow(
 ) {
     require(0 < logicalSize.width && 0 < logicalSize.height) { "Minecraft acceptance requires a positive logical viewport." }
     require(0 < framebufferSize.width && 0 < framebufferSize.height) { "Minecraft acceptance requires a positive framebuffer." }
-    context.runOnClient { minecraft -> minecraft.window.setWindowed(logicalSize.width, logicalSize.height) }
+    context.resizeWindow(logicalSize)
     var matches = 0
     context.waitFor { minecraft ->
         val window = minecraft.window

@@ -6,9 +6,9 @@
   "environment": "*",
   "mixins": ${gameTestMixins},
   "entrypoints": {
+    "fabric-client-gametest": ["dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientVerification"],
     "main": ["dev.s7a.strata.integration.minecraft.fabric.FabricServerUiAcceptance"],
     "client": [
-      "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftClientVerification",
       "dev.s7a.strata.integration.minecraft.fabric.RemoteNativeCanvasFixture",
       "dev.s7a.strata.integration.minecraft.fabric.ManualImeVerification"
     ]

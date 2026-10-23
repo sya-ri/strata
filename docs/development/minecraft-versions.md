@@ -124,9 +124,11 @@ Detekt checks every selected Kotlin main and test root instead of a list of indi
 ## Integration runner boundaries
 
 The nonpublished `integration:minecraft-fabric-1.21.11` through `integration:minecraft-fabric-1.20` modules compile the complete shared GUI-graphics loaded-client suite and the matching input-generation and version-name roots against their remapped adapters, required Java toolchains, and exact Fabric API dependencies.
-Every supported version uses the shared standalone client coordinator for bounded client/server handoffs, tick waits, screenshots, and disposable-world ownership.
-Each target explicitly selects the native world, pointer, and screenshot adapters that compile against its exact APIs.
-Development and production tasks activate the verification entrypoint through `strata.clientVerification`; ordinary client launches do not start acceptance.
+Targets with the Fabric Client GameTest API use its test thread, controlled client/server ticks, input helpers, screenshots, and disposable-world ownership through a shared acceptance adapter.
+Earlier targets retain the standalone coordinator and explicitly select their native world, pointer, and screenshot adapters.
+Development and production tasks select the activation properties from the configured runner source root; ordinary client launches do not start acceptance.
+Experimental-API suppression is limited to the files that adapt the official GameTest entrypoint, context, and world-accessor names; product and test compilations retain their separate analysis modules.
+The network synchronizer remains disabled for the suites' real asynchronous delivery and external server hosts.
 Fabric API is required by both published runtimes and integration modules.
 The generated Minecraft CI plan invokes `ciMinecraftCheck` for every discovered version pair and writes version-qualified build evidence after exercising each remapped adapter inside its actual client.
 Those checks package and remap every applicable integration test Mod and runtime Mod, then repeat the loaded suite from the production jars with their nested common runtime jars.
