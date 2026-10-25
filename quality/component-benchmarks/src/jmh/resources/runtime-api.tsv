@@ -3723,6 +3723,7 @@ core	Core	dev.s7a.strata.runtime.spi.RuntimeUiFrameSnapshotKt#type:17:java.lang.
 core	Core	dev.s7a.strata.runtime.spi.RuntimeUiInput#constructor:1:(Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 core	Core	dev.s7a.strata.runtime.spi.RuntimeUiInput#method:17:configure:(Ldev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiInputPolicy;Z)V
 core	Core	dev.s7a.strata.runtime.spi.RuntimeUiInput#method:17:event:(Ljava/util/Collection;ZZ)V
+core	Core	dev.s7a.strata.runtime.spi.RuntimeUiInput#method:17:inheritHeld:(Ljava/util/Collection;Lkotlin/jvm/functions/Function1;)V
 core	Core	dev.s7a.strata.runtime.spi.RuntimeUiInput#method:17:reset:()V
 core	Core	dev.s7a.strata.runtime.spi.RuntimeUiInput#method:1:close:()V
 core	Core	dev.s7a.strata.runtime.spi.RuntimeUiInput#type:17:java.lang.Object:java.lang.AutoCloseable
