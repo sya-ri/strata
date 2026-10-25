@@ -10,6 +10,15 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
+## 0.3.2 - 2026-10-26
+
+- Fabric screens and interactive HUDs preserve permitted movement, jump, sneak and sprint bindings already held when acquiring input from gameplay.
+  Remapped bindings retain their held state without replaying queued presses; text editing, focus loss, permission changes and closing release that state.
+- Failed Fabric UI initialization removes the failed screen while preserving the original content error, preventing later drawing from accessing released resources.
+- `VirtualList` rows introduced during scrolling remain present in semantics through nested containers.
+
+[Detailed changes and upgrade notes](docs/releases/v0.3.2.md)
+
 ## 0.3.1 - 2026-10-22
 
 - `VirtualList` can omit `viewportSize` to fill its parent's finite allocation, including remaining space assigned by `weight`.

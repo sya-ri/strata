@@ -27,8 +27,8 @@ Install the same runtime and dependencies on a Fabric server to use `Strata`; se
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.3.1")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.3.1")
+    compileOnly("dev.s7a.strata:strata-api:0.3.2")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.3.2")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
     modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:<compatible-version>")
 }
