@@ -86,10 +86,7 @@ public class FabricMinecraftScreen private constructor(
                 lifecycle.requestAttach()
             }
         } catch (failure: Throwable) {
-            // Native addition precedes initialization, but failed attachment still needs Fabric removal events.
-            runCatching { FabricMinecraftScreenAccess.initialize(minecraftClient, this) }
-                .exceptionOrNull()
-                ?.let { FabricMinecraftFailures.addSuppressed(failure, it) }
+            prepareFailedAttachment(minecraftClient, failure)
             terminalFailure(failure)
         }
     }
