@@ -14,6 +14,42 @@ import org.junit.jupiter.api.Test
  */
 internal class UiInputGateTest {
     @Test
+    fun inheritedBindingsRestoreOnlyAllowedHeldStateAndNeverReplayPresses() {
+        val down = mutableSetOf<UiGameAction>()
+        var presses = 0
+        val gate = RuntimeUiInput(UiGameAction.entries.associateWith { it }, { presses++ }, { down.remove(it) })
+        val session = UnpresentedUiSession {}
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        assertEquals(emptySet<UiGameAction>(), down)
+        gate.configure(session, UiInputPolicy.Movement, editing = false)
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        assertEquals(setOf(UiGameAction.Movement, UiGameAction.Jump, UiGameAction.Sneak, UiGameAction.Sprint), down)
+        gate.event(UiGameAction.entries, down = true, consumed = false)
+        assertEquals(0, presses)
+        gate.event(listOf(UiGameAction.Movement), down = false, consumed = false)
+        assertEquals(setOf(UiGameAction.Jump, UiGameAction.Sneak, UiGameAction.Sprint), down)
+        gate.configure(session, UiInputPolicy.Movement, editing = true)
+        assertEquals(emptySet<UiGameAction>(), down)
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        gate.configure(session, UiInputPolicy.Movement, editing = false)
+        assertEquals(emptySet<UiGameAction>(), down)
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        gate.configure(session, UiInputPolicy.BlockAll, editing = false)
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        assertEquals(emptySet<UiGameAction>(), down)
+        gate.configure(session, UiInputPolicy.Movement, editing = false)
+        assertEquals(emptySet<UiGameAction>(), down)
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        gate.configure(UnpresentedUiSession {}, UiInputPolicy.Movement, editing = false)
+        assertEquals(emptySet<UiGameAction>(), down)
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        gate.close()
+        gate.inheritHeld(UiGameAction.entries) { down.add(it) }
+        assertEquals(emptySet<UiGameAction>(), down)
+        assertEquals(0, presses)
+    }
+
+    @Test
     fun consumedInputAndTextEditingBlockForwardingAndReleaseHeldBindings() {
         val pressed = mutableSetOf<UiGameAction>()
         val gate = RuntimeUiInput(UiGameAction.entries.associateWith { it }, { pressed.add(it) }, { pressed.remove(it) })

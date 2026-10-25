@@ -65,6 +65,23 @@ public class RuntimeUiInput<K : Any>(
     }
 
     /**
+     * Adopts already-held bindings for the configured session without generating another press.
+     * The adapter calls this once after a successful gameplay-to-UI transition and restores only native held state.
+     * Policy and text focus still apply; adopted bindings participate in the same release boundaries as new presses.
+     */
+    public fun inheritHeld(
+        matches: Collection<K>,
+        restore: (K) -> Unit,
+    ) {
+        checkOwner()
+        if (closed || inputSession == null || editing) return
+        matches.forEach { key ->
+            val action = bindings[key] ?: return@forEach
+            if (policy.allows(action) && pressed.add(key)) restore(key)
+        }
+    }
+
+    /**
      * Releases all forwarded inputs without changing configuration, including queued native clicks.
      */
     public fun reset() {
