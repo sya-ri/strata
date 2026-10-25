@@ -5764,6 +5764,7 @@
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiInput#public final class dev/s7a/strata/runtime/spi/RuntimeUiInput : java/lang/AutoCloseable {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiInput#public final fun configure (Ldev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiInputPolicy;Z)V
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiInput#public final fun event (Ljava/util/Collection;ZZ)V
+:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiInput#public final fun inheritHeld (Ljava/util/Collection;Lkotlin/jvm/functions/Function1;)V
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiInput#public final fun reset ()V
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiInput#public fun <init> (Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeUiInput#public fun close ()V
@@ -5994,6 +5995,7 @@
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiInput.close|close(){}[0]#final fun close()
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiInput.configure|configure(dev.s7a.strata.ui.UiSession?;dev.s7a.strata.ui.UiInputPolicy;kotlin.Boolean){}[0]#final fun configure(dev.s7a.strata.ui/UiSession?, dev.s7a.strata.ui/UiInputPolicy, kotlin/Boolean)
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiInput.event|event(kotlin.collections.Collection<1:0>;kotlin.Boolean;kotlin.Boolean){}[0]#final fun event(kotlin.collections/Collection<#A>, kotlin/Boolean, kotlin/Boolean)
+:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiInput.inheritHeld|inheritHeld(kotlin.collections.Collection<1:0>;kotlin.Function1<1:0,kotlin.Unit>){}[0]#final fun inheritHeld(kotlin.collections/Collection<#A>, kotlin/Function1<#A, kotlin/Unit>)
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiInput.reset|reset(){}[0]#final fun reset()
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiInput|null[0]#final class <#A: kotlin/Any> dev.s7a.strata.runtime.spi/RuntimeUiInput : kotlin/AutoCloseable {
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeUiSession.attach|attach(){}[0]#abstract fun attach()

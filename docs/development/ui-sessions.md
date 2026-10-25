@@ -18,10 +18,15 @@ Binding remains available during cleanup notifications, but the owning handle is
 Standalone trees and engines supply an unpresented receiver that supports deferred close and rejects native presentation/input operations.
 
 Minecraft keeps one retained host and exchanges only its foreground/HUD attachment; native wrapper removal detaches without closing that host.
+If attachment fails before native initialization, the adapter prepares native screen events before terminal cleanup removes the wrapper.
 Screen/HUD switching clears focus, capture, and native key ownership before installing the next presentation.
 HUD visibility uses category, then native screen kind, then the definition default; hidden content retains source/remote updates.
 The adapter owns version-specific HUD, mouse, and native gameplay hooks; the public runtime has no Fabric API dependency.
 `RuntimeUiInput` bounds held state by the adapter's mapping set and releases it on input-session, policy, editing, focus, and terminal boundaries.
+When acquiring input directly from active gameplay, the Fabric adapter captures effective movement, jump, sneak, and sprint bindings before native resets and adopts the permitted held state only after successful installation for the same owner.
+Adoption restores held state without replaying presses, queued clicks, or toggle transitions; attack, use, and discrete actions are never inherited.
+Entering an editor, changing policy or owner, losing window focus, closing, and world or connection teardown release adopted state through the ordinary input gate.
+Leaving an editor or restoring permission does not revive that state, and replacing another screen never inherits its input.
 
 Remote controls are ordered by the owning Fabric, Paper, Folia, or Velocity session and confirmed after the client applies native presentation.
 See the [remote protocol](../reference/remote-protocol.md) for application versus declaration acknowledgements and connection-wide budgets.

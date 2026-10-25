@@ -194,6 +194,7 @@ final class <#A: kotlin/Any> dev.s7a.strata.runtime.spi/RuntimeUiInput : kotlin/
     final fun close() // dev.s7a.strata.runtime.spi/RuntimeUiInput.close|close(){}[0]
     final fun configure(dev.s7a.strata.ui/UiSession?, dev.s7a.strata.ui/UiInputPolicy, kotlin/Boolean) // dev.s7a.strata.runtime.spi/RuntimeUiInput.configure|configure(dev.s7a.strata.ui.UiSession?;dev.s7a.strata.ui.UiInputPolicy;kotlin.Boolean){}[0]
     final fun event(kotlin.collections/Collection<#A>, kotlin/Boolean, kotlin/Boolean) // dev.s7a.strata.runtime.spi/RuntimeUiInput.event|event(kotlin.collections.Collection<1:0>;kotlin.Boolean;kotlin.Boolean){}[0]
+    final fun inheritHeld(kotlin.collections/Collection<#A>, kotlin/Function1<#A, kotlin/Unit>) // dev.s7a.strata.runtime.spi/RuntimeUiInput.inheritHeld|inheritHeld(kotlin.collections.Collection<1:0>;kotlin.Function1<1:0,kotlin.Unit>){}[0]
     final fun reset() // dev.s7a.strata.runtime.spi/RuntimeUiInput.reset|reset(){}[0]
 }
 

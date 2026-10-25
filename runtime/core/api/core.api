@@ -252,6 +252,7 @@ public final class dev/s7a/strata/runtime/spi/RuntimeUiInput : java/lang/AutoClo
 	public fun close ()V
 	public final fun configure (Ldev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiInputPolicy;Z)V
 	public final fun event (Ljava/util/Collection;ZZ)V
+	public final fun inheritHeld (Ljava/util/Collection;Lkotlin/jvm/functions/Function1;)V
 	public final fun reset ()V
 }
 

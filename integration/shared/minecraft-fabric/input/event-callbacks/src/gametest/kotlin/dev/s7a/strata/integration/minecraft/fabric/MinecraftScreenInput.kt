@@ -88,6 +88,11 @@ internal fun pressMinecraftTab(
 internal fun pressMinecraftEnter(screen: Screen): Boolean = screen.keyPressed(KeyEvent(GLFW.GLFW_KEY_ENTER, NO_SCAN_CODE, NO_MODIFIERS))
 
 /**
+ * Releases the remapped Enter binding through the native screen callback.
+ */
+internal fun releaseMinecraftEnter(screen: Screen): Boolean = screen.keyReleased(KeyEvent(GLFW.GLFW_KEY_ENTER, NO_SCAN_CODE, NO_MODIFIERS))
+
+/**
  * Delivers one native Space press through the record-based screen callback.
  *
  * @param screen borrowed active test screen on the client thread.
@@ -107,11 +112,6 @@ internal fun focusMinecraftWindow(focused: Boolean) {
     val window = Minecraft.getInstance().window
     MinecraftCanvasWindowTestScope.invoke(window, window.handle(), focused)
 }
-
-/**
- * Returns the borrowed native handle on the client thread for physical framebuffer verification.
- */
-internal fun minecraftTestWindowHandle(): Long = Minecraft.getInstance().window.handle()
 
 private fun IntOffset.mouseEvent(): MouseButtonEvent = MouseButtonEvent(x.toDouble(), y.toDouble(), MouseButtonInfo(PRIMARY_MOUSE_BUTTON, NO_MODIFIERS))
 

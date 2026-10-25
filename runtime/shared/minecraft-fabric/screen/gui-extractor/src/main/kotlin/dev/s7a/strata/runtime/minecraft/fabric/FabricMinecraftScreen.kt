@@ -106,6 +106,7 @@ public class FabricMinecraftScreen private constructor(
             }
             synchronizeTextInputFocus()
         } catch (failure: Throwable) {
+            prepareFailedAttachment(minecraftClient, failure)
             terminalFailure(failure)
         }
     }

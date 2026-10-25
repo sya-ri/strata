@@ -94,6 +94,7 @@ public class FabricMinecraftScreen private constructor(
                 lifecycle.requestAttach()
             }
         } catch (failure: Throwable) {
+            prepareFailedAttachment(minecraftClient, failure)
             terminalFailure(failure)
         }
     }

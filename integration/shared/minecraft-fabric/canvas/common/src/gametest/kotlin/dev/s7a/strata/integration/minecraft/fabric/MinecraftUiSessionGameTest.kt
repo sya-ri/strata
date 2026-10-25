@@ -72,6 +72,7 @@ internal object MinecraftUiSessionGameTest {
                 context.onClient { context.setScreen(null) }
                 verifyHud(context, sessions)
                 verifyInput(context, sessions)
+                MinecraftHeldMovementGameTest.run(context, sessions)
             }
         runCanvasTestCleanup(
             result.exceptionOrNull(),
@@ -100,7 +101,7 @@ internal object MinecraftUiSessionGameTest {
             { context.onClient { Minecraft.getInstance().options.pauseOnLostFocus = pauseOnLostFocus } },
         )
         result.getOrThrow()
-        Files.writeString(context.outputDirectory.resolve("strata-ui-sessions.txt"), "checked=hud-pixels,draw-order,category,hide,close,f1,exclusive-interaction,hud-pointer-owner,hud-input-owner,event-switch,event-close,retained-host,remapped-movement,native-player-movement,native-attack,permission-release,focus-release,toggle-release\n")
+        Files.writeString(context.outputDirectory.resolve("strata-ui-sessions.txt"), "checked=hud-pixels,draw-order,category,hide,close,f1,exclusive-interaction,hud-pointer-owner,hud-input-owner,event-switch,event-close,retained-host,remapped-movement,native-player-movement,native-attack,permission-release,focus-release,toggle-release,held-movement,multiple-held-bindings,held-release,no-click-replay,no-owner-transfer,editor-release,failed-open-release,world-exit-release\n")
     }
 
     private fun verifyHud(
@@ -238,6 +239,7 @@ internal object MinecraftUiSessionGameTest {
                 KeyMapping.releaseAll()
                 options.keyUp.setKey(InputConstants.getKey("key.keyboard.enter"))
                 KeyMapping.resetMapping()
+                options.keyUp.isDown = true
                 UiDefinition(inputPolicy = UiInputPolicy.Movement) {
                     Spacer(Modifier.size(16, 16).onActivate { close() })
                 }.open().also(sessions::add)
@@ -312,7 +314,11 @@ internal object MinecraftUiSessionGameTest {
             context.onClient {
                 val player = checkNotNull(Minecraft.getInstance().player)
                 val position = player.x to player.z
-                pressMinecraftEnter(checkNotNull(FabricUiSessions.nativeScreen(session)))
+                check(
+                    Minecraft
+                        .getInstance()
+                        .options.keyUp.isDown,
+                ) { "Movement held before opening must survive native installation." }
                 position
             }
         context.waitFor {

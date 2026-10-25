@@ -77,6 +77,7 @@ There is no built-in activation keybinding.
 Individual settings also control look, attack, use, hotbar selection, drop, swap hands, and pick.
 `session.setInputPolicy(...)` changes them while open.
 The adapter uses actual native key assignments and ordinary gameplay handling.
+When a Fabric screen or interactive HUD acquires input from gameplay, permitted movement bindings already held remain down without replaying presses.
 Consumed UI input is not forwarded a second time; text editing suspends all forwarding.
 Focus loss, permission changes, input-owner changes, switching, and closing release held inputs.
 

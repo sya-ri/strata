@@ -223,7 +223,9 @@ public object FabricUiSessions {
                 controls.rejected(request.sequence, rejection)
                 return
             }
-            if (current === owned || request.presentation == UiPresentation.Screen || request.interactionMode != UiInteractionMode.None) FabricUiInput.reset()
+            val acquiresInput = request.presentation == UiPresentation.Screen || request.interactionMode != UiInteractionMode.None
+            val heldMovement = FabricUiInput.captureHeldMovement(acquiresInput)
+            if (current === owned || acquiresInput) FabricUiInput.reset()
             owned.releaseUiInput()
             if (controls.status is UiSessionStatus.Closed) return
             if (state.interaction === this) state.interaction = null
@@ -251,6 +253,7 @@ public object FabricUiSessions {
             controls.applied(request.sequence)
             FabricUiInput.applyMode(owned, request.interactionMode)
             refresh()
+            FabricUiInput.inheritHeldMovement(owned, controls, heldMovement)
         }
 
         private fun interactionRejection(
