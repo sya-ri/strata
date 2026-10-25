@@ -156,10 +156,16 @@ internal object MinecraftHeldMovementGameTest {
         sessions: MutableList<UiSession>,
     ) {
         hold(movement())
-        val failure = runCatching { UiDefinition(inputPolicy = UiInputPolicy.Movement) { error("Rejected test content") }.open() }
-        check(failure.isFailure) { "The failure fixture must reject installation." }
-        check(movement().none { it.isDown }) { "Failed installation must discard its captured input." }
-        context.setScreen(null)
+        val expected = IllegalStateException("Rejected test content")
+        val failure = runCatching { UiDefinition(inputPolicy = UiInputPolicy.Movement) { throw expected }.open() }
+        try {
+            check(failure.exceptionOrNull() === expected) { "Installation must preserve the content failure: ${failure.exceptionOrNull()}" }
+            check(movement().none { it.isDown }) { "Failed installation must discard its captured input." }
+            check(context.currentScreen() == null) { "Failed installation must remove its native screen." }
+            check(expected.suppressed.isEmpty()) { "Failed installation cleanup must not introduce another failure." }
+        } finally {
+            context.setScreen(null)
+        }
         val next = UiDefinition(inputPolicy = UiInputPolicy.Movement) { Spacer() }.open().also(sessions::add)
         check(movement().none { it.isDown }) { "A later owner must not receive a failed installation's snapshot." }
         next.close()

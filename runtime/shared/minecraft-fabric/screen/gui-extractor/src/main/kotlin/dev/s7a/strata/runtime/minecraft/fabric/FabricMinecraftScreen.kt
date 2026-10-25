@@ -106,6 +106,10 @@ public class FabricMinecraftScreen private constructor(
             }
             synchronizeTextInputFocus()
         } catch (failure: Throwable) {
+            // Native addition precedes initialization, but failed attachment still needs Fabric removal events.
+            runCatching { FabricMinecraftScreenAccess.initialize(minecraftClient, this) }
+                .exceptionOrNull()
+                ?.let { FabricMinecraftFailures.addSuppressed(failure, it) }
             terminalFailure(failure)
         }
     }

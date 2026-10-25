@@ -18,6 +18,7 @@ Binding remains available during cleanup notifications, but the owning handle is
 Standalone trees and engines supply an unpresented receiver that supports deferred close and rejects native presentation/input operations.
 
 Minecraft keeps one retained host and exchanges only its foreground/HUD attachment; native wrapper removal detaches without closing that host.
+If attachment fails before native initialization, the adapter prepares native screen events before terminal cleanup removes the wrapper.
 Screen/HUD switching clears focus, capture, and native key ownership before installing the next presentation.
 HUD visibility uses category, then native screen kind, then the definition default; hidden content retains source/remote updates.
 The adapter owns version-specific HUD, mouse, and native gameplay hooks; the public runtime has no Fabric API dependency.
