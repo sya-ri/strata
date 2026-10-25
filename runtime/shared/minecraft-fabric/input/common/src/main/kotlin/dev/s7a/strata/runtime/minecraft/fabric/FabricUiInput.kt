@@ -12,6 +12,7 @@ import dev.s7a.strata.ui.UiGameAction
 import dev.s7a.strata.ui.UiInputPolicy
 import dev.s7a.strata.ui.UiInteractionMode
 import dev.s7a.strata.ui.UiSession
+import dev.s7a.strata.ui.UiSessionStatus
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
 
@@ -212,6 +213,30 @@ public object FabricUiInput {
     }
 
     /**
+     * Captures effective movement bindings only when acquiring input directly from active gameplay.
+     * The caller keeps this snapshot on the client stack until native installation and all resets succeed.
+     */
+    @JvmSynthetic
+    internal fun captureHeldMovement(acquiresInput: Boolean): List<KeyMapping> {
+        if (acquiresInput.not() || FabricMinecraftScreenAccess.currentScreen(client) != null || gameplayAvailable().not()) return emptyList()
+        return bindings.filter { (mapping, action) -> UiInputPolicy.Movement.allows(action) && mapping.isDown }.keys.toList()
+    }
+
+    /**
+     * Restores held state without clicks or toggle transitions, and only for the successfully installed owner.
+     */
+    @JvmSynthetic
+    internal fun inheritHeldMovement(
+        screen: FabricMinecraftScreen,
+        owner: UiSession,
+        held: List<KeyMapping>,
+    ) {
+        if (held.isEmpty() || owner.status is UiSessionStatus.Closed) return
+        if (configure(screen) !== owner) return
+        gate.inheritHeld(held) { (it as FabricUiKeyMappingAccess).strataDown(true) }
+    }
+
+    /**
      * Releases forwarded presses immediately when a retained frame changes editable focus.
      */
     @JvmSynthetic
@@ -231,9 +256,10 @@ public object FabricUiInput {
 
     private fun configure(screen: FabricMinecraftScreen?): UiSession? {
         val current = FabricMinecraftScreenAccess.currentScreen(client)
-        val gameplayAvailable = client.isWindowActive && client.player != null && FabricMinecraftScreenAccess.hasOverlay(client).not()
-        val owner = if (screen != null && current === screen && gameplayAvailable) FabricUiSessions.inputOwner(screen) else null
+        val owner = if (screen != null && current === screen && gameplayAvailable()) FabricUiSessions.inputOwner(screen) else null
         gate.configure(owner, owner?.inputPolicy ?: UiInputPolicy.BlockAll, screen?.isEditingText() == true)
         return owner
     }
+
+    private fun gameplayAvailable(): Boolean = client.isWindowActive && client.player != null && FabricMinecraftScreenAccess.hasOverlay(client).not()
 }

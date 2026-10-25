@@ -88,6 +88,11 @@ internal fun pressMinecraftTab(
 internal fun pressMinecraftEnter(screen: Screen): Boolean = screen.keyPressed(KeyEvent(GLFW.GLFW_KEY_ENTER, NO_SCAN_CODE, NO_MODIFIERS))
 
 /**
+ * Releases the remapped Enter binding through the native screen callback.
+ */
+internal fun releaseMinecraftEnter(screen: Screen): Boolean = screen.keyReleased(KeyEvent(GLFW.GLFW_KEY_ENTER, NO_SCAN_CODE, NO_MODIFIERS))
+
+/**
  * Delivers one native Space press through the record-based screen callback.
  *
  * @param screen borrowed active test screen on the client thread.
