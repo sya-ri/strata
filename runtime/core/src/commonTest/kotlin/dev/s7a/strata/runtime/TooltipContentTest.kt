@@ -136,12 +136,10 @@ internal class TooltipContentTest {
             assertEquals(IntRect(1, 9, 7, 13), (commands[index] as DrawCommand.FillRectangle).bounds)
             val clips =
                 commands.take(index).sumOf {
-                    if (it is DrawCommand.PushClip) {
-                        1
-                    } else if (it is DrawCommand.PopClip) {
-                        -1
-                    } else {
-                        0
+                    when (it) {
+                        is DrawCommand.PushClip -> 1
+                        DrawCommand.PopClip -> -1
+                        else -> 0
                     }
                 }
             assertEquals(1, clips)
