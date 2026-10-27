@@ -15,13 +15,13 @@ internal class ModifierInventoryTest {
         val inventory = ModifierInventory.discover(listOf(apiClasses()))
 
         assertEquals(44, inventory.modifiers.size)
-        assertEquals(69, inventory.modifiers.values.sum())
+        assertEquals(72, inventory.modifiers.values.sum())
         assertEquals(ModifierDocumentationCatalog.entries.keys, inventory.modifiers.keys)
         assertEquals(ModifierInventory.ParentScopeModifier.entries.toSet(), inventory.parentScopeModifiers.keys)
         assertEquals(9, inventory.parentScopeModifiers.values.sum())
         assertEquals(4, inventory.modifiers.getValue("padding"))
         assertEquals(2, inventory.modifiers.getValue("imageBackground"))
-        assertEquals(2, inventory.modifiers.getValue("tooltip"))
+        assertEquals(5, inventory.modifiers.getValue("tooltip"))
         assertEquals(3, inventory.modifiers.getValue("onActivate"))
     }
 

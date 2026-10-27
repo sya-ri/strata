@@ -63,7 +63,7 @@ internal object ModifierDocumentationCatalog {
             "semantics" to Entry("Semantics", "Adds unresolved accessible semantics without coupling them to rendering."),
             "size" to Entry("Size", "Requires one exact logical width and height."),
             "sizeIn" to Entry("Size", "Constrains logical width and height to optional minimums and maximums."),
-            "tooltip" to Entry("Semantics", "Associates unresolved tooltip text and optional positioning with the element."),
+            "tooltip" to Entry("Semantics", "Shows delayed display-only text or component content above the screen; `padding = false` removes the standard inset while preserving its frame."),
             "width" to Entry("Size", "Requires one exact logical width."),
             "widthIn" to Entry("Size", "Constrains logical width to an optional minimum and maximum."),
         )

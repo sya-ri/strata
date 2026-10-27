@@ -89,6 +89,24 @@ Cancellation clears the pipeline reference before user callbacks, and throwing c
 
 The active modifier SPI and built-in modifiers are exercised through a third-party integration TCK.
 
+## Display-only root content
+
+`RootOverlayModifierElement.content` declares one independently retained root associated with an active modifier.
+The engine validates it with the incoming description, reconciles it by ordinary type and key rules, and owns its attachment, source cutoff, state observation, and terminal cleanup in the same session.
+It is separate from logical children: the modifier's measure and layout scopes still expose exactly one virtual child, and the target's layout size is unchanged.
+
+The corresponding modifier node implements `RootOverlayContentNode` and invalidates layout when `overlayVisible` changes.
+A visible root is measured with viewport maxima, placed four pixels below the transformed anchor or above it when needed, clamped to the viewport, and painted after ordinary screen content outside ancestor clips.
+The viewport and content's own clips still apply.
+The content does not inherit the anchor's scale and never participates in input or focus traversal.
+Hidden roots remain attached and observe state; hidden presentation skips measure and paint.
+Removing the modifier cleans its content before the modifier itself, preserving ordinary primary-failure and cleanup-once rules.
+
+Native `PlatformDrawCommand` implementations with interactive widgets must implement `withoutInput()` to return a detached display-only presentation.
+Drawing-only payloads can use its default implementation.
+Root-content painting applies this policy to every native command, including nested root overlays.
+Remote declaration snapshots expose the auxiliary root separately from logical children; unsupported projection capabilities fail explicitly.
+
 ## Related contracts
 
 [Element SPI](../reference/element-spi.md) defines the shared node and pipeline obligations.

@@ -1,15 +1,19 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 // showcase-source-begin:image
+import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.modifier.tooltip
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.ui.UiDefinition
 
 /**
@@ -27,7 +31,17 @@ internal fun createImageShowcaseScreenDefinition(source: ImageSource): UiDefinit
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
-            Image(source, size = IntSize(32, 32))
+            Image(
+                source,
+                size = IntSize(32, 32),
+                modifier =
+                    Modifier.tooltip(padding = false) {
+                        Column {
+                            Text("Image preview")
+                            Image(ImageSource.Pixels(createDrawImage(IntSize(2, 2), intArrayOf(-65536, -16711936, -16776961, -1))), size = IntSize(16, 16))
+                        }
+                    },
+            )
         }
     }
 // showcase-source-end:image

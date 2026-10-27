@@ -8,6 +8,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.modifier.tooltip
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextOverflow
@@ -35,6 +36,7 @@ internal fun createTextShowcaseScreenDefinition(): UiDefinition =
                     "This paragraph wraps to the available width.\n" +
                     "Explicit newlines stay separate.\n" +
                     "Only four lines are visible; extra text receives an ellipsis.",
+                modifier = Modifier.tooltip("Resource-font text with bounded wrapping", padding = false),
                 layout = TextLayout.Multiline(wrap = TextWrap.Word, maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2),
             )
         }

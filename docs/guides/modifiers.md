@@ -73,6 +73,37 @@ Updating the callback at the same modifier position preserves capture.
 It updates on pointer moves/drags and exits on detach; layout movement below a stationary pointer waits for another pointer event.
 See [UI sessions](../development/ui-sessions.md#frames-and-input) for dispatch ordering and cleanup failures.
 
+## Tooltips
+
+Use `Modifier.tooltip("Explanation")` or the `UiText` overload for a label.
+Use `Modifier.tooltip { ... }` for a component tree, such as a title with an image preview.
+The callback runs during declaration and must emit exactly one root; group multiple components in a `Column`, `Row`, or `Stack`.
+
+```kotlin
+Text("Status", modifier = Modifier.tooltip("Current connection status"))
+
+Text("Preview", modifier = Modifier.tooltip(padding = false) {
+    Column {
+        Text("Preview title")
+        Text("Additional details")
+    }
+})
+```
+
+Both forms apply the runtime's standard background, frame, and three-pixel content inset.
+`padding = false` removes only that inset; decoration and the four-pixel gap from the target remain.
+The default `delayMillis` is 500; zero shows the tooltip immediately on hover.
+The tooltip appears below the target, moves above it when needed, and is constrained and clipped to the viewport independently of ancestor clips.
+It does not change the target's layout size.
+
+Tooltip content is display-only and never receives pointer input or keyboard focus, even when it contains a button or editor.
+Leaving the target, resetting input, or detaching the session hides the tooltip and resets its delay.
+Content updates preserve an active delay; changing `delayMillis` restarts it.
+Hidden content remains retained and observes state, but its presentation is not measured or painted until shown.
+String labels clip to the allocated content viewport.
+Component content keeps its ordinary layout constraints; use `TextLayout.Multiline` when custom text must fit a narrower allocation.
+Each runtime supports its ordinary component capabilities inside the tooltip; remote declarations additionally require negotiated projection support for the content.
+
 ## Keyboard focus and text input
 
 `focusable` accepts keyboard/text focus; `initialFocus` requests the single unambiguous target after layout.
