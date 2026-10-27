@@ -93,6 +93,7 @@ def prepare(product, repository, output, tag, commit, tag_object, *, scope="prod
                     checksum = hashlib.file_digest(stream, algorithm).hexdigest()
                 target.with_name(target.name + "." + algorithm).write_text(checksum, encoding="ascii")
     shutil.copytree(release / "modrinth", output / "modrinth")
+    github_files = []
     for artifact in read_json(output / "modrinth/manifest.json")["artifacts"]:
         group, name, artifact_version = artifact["mavenCoordinate"].split(":")
         canonical = output / "maven" / group.replace(".", "/") / name / artifact_version / artifact["fileName"]
@@ -100,6 +101,7 @@ def prepare(product, repository, output, tag, commit, tag_object, *, scope="prod
         require(artifact_version == version and sha256(canonical) == artifact["sha256"] == sha256(distribution),
                 "The distribution manifest and signed Maven artifact differ.")
         require(distribution.stat().st_size == artifact["size"], "The distribution manifest size differs.")
+        github_files.append(canonical.relative_to(output).as_posix())
     shutil.copyfile(notes or product / f"docs/releases/{tag}.md", output / "release-notes.md")
     with tempfile.TemporaryDirectory() as keyring:
         command = ["gpg", "--batch", "--homedir", gpg_home_path(keyring)]
@@ -118,7 +120,11 @@ def prepare(product, repository, output, tag, commit, tag_object, *, scope="prod
             require(sha256(output / relative) == artifact["sha256"], "Hangar and Maven plugin JARs differ.")
             artifact["path"] = relative
             artifact["canonicalPath"] = relative
+            github_files.append(relative)
         write_json(output / "hangar/manifest.json", hangar)
+    require(len(github_files) == len({PurePosixPath(path).name for path in github_files}),
+            "GitHub release asset names collide.")
+    (output / "github-files.txt").write_text("".join(path + "\n" for path in sorted(github_files)), encoding="utf-8")
     with ZipFile(output / "central-bundle.zip", "w", compression=ZIP_DEFLATED) as archive:
         for path in sorted((output / "maven").rglob("*")):
             if path.is_file():

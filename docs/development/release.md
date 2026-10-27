@@ -40,7 +40,8 @@ Maven Central, GitHub, Modrinth, CurseForge, and Hangar run as independent paral
 Only selected destinations run, so one service's outage does not block or restart the others.
 An exact existing publication is reused, an absent publication can be added, and a partial or conflicting publication stops that destination.
 Publication and verification run from the saved bundle using isolated controller tools; they do not configure, build, test, or sign the product again.
-GitHub receives the original preparation archive and signatures from the saved Maven inventory before its release becomes public and immutable.
+GitHub receives the Fabric JARs and installable Paper/Folia and Velocity plugin JARs, their original signatures from the saved Maven inventory, and the preparation archive before its release becomes public and immutable.
+Preparation saves this destination inventory in `github-files.txt`; historical preparations without it retain their original Fabric-only asset inventory for retries and verification.
 After creating a draft, the controller retries its read-only lookup briefly; if it stays invisible, publication stops and can resume from the same preparation.
 It does not fetch signatures from Maven Central or wait for Central publication.
 

@@ -16,6 +16,60 @@ spec.loader.exec_module(prepared)
 
 
 class PreparedReleaseTest(unittest.TestCase):
+    def test_preparation_freezes_only_installable_github_jars_and_original_signatures(self):
+        for include_plugins in (False, True):
+            with self.subTest(include_plugins=include_plugins), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                product, repository, output = root / "product", root / "repository", root / "prepared"
+                release = product / "build/release"
+                release.mkdir(parents=True)
+                fabric = "strata-runtime-minecraft-fabric-1.20"
+                coordinates = [fabric, "strata-api", "strata-runtime-paper", "strata-runtime-velocity"]
+                records, plugins = [], {}
+                for coordinate in coordinates:
+                    suffixes = [".jar", "-sources.jar", "-javadoc.jar", ".pom"]
+                    if coordinate in ("strata-runtime-paper", "strata-runtime-velocity"):
+                        suffixes.append("-plugin.jar")
+                    for suffix in suffixes:
+                        records.append(f"dev.s7a.strata:{coordinate}:{suffix}")
+                        artifact = repository / f"dev/s7a/strata/{coordinate}/7.8.9/{coordinate}-7.8.9{suffix}"
+                        artifact.parent.mkdir(parents=True, exist_ok=True)
+                        artifact.write_bytes(artifact.name.encode())
+                        artifact.with_name(artifact.name + ".asc").write_bytes((artifact.name + " original signature").encode())
+                        if suffix == "-plugin.jar":
+                            plugins[coordinate.removeprefix("strata-runtime-").upper()] = {
+                                "fileName": artifact.name, "sha256": prepared.sha256(artifact)}
+                (release / "maven-coordinates.txt").write_text("\n".join("dev.s7a.strata:" + name for name in coordinates) + "\n")
+                (release / "maven-files.txt").write_text("\n".join(records) + "\n")
+                distribution = release / f"modrinth/artifacts/{fabric}-7.8.9.jar"
+                distribution.parent.mkdir(parents=True)
+                distribution.write_bytes(distribution.name.encode())
+                prepared.write_json(release / "modrinth/manifest.json", {"artifacts": [{
+                    "mavenCoordinate": f"dev.s7a.strata:{fabric}:7.8.9", "fileName": distribution.name,
+                    "relativePath": "artifacts/" + distribution.name, "sha256": prepared.sha256(distribution),
+                    "size": distribution.stat().st_size}]})
+                if include_plugins:
+                    prepared.write_json(release / "hangar/manifest.json", {"artifacts": plugins})
+                notes = root / "notes.md"
+                notes.write_text("Release notes")
+                environment = {"ORG_GRADLE_PROJECT_signingInMemoryKey": "fixture key", "GITHUB_SHA": "b" * 40,
+                               "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "1"}
+                with patch.dict(os.environ, environment), patch.object(prepared.subprocess, "run"), patch.object(prepared.subprocess, "check_output", return_value=b"public key"):
+                    prepared.prepare(product, repository, output, "v7.8.9", "a" * 40, "c" * 40, notes=notes)
+                files = (output / "github-files.txt").read_text().splitlines()
+                expected = {distribution.name} | ({plugin["fileName"] for plugin in plugins.values()} if include_plugins else set())
+                self.assertEqual(expected, {Path(path).name for path in files})
+                identity = prepared.validate(output, "v7.8.9", "a" * 40)
+                self.assertIn("github-files.txt", identity["files"])
+                for path in files:
+                    relative = Path(path).relative_to("maven")
+                    self.assertEqual((repository / relative).read_bytes(), (output / path).read_bytes())
+                    self.assertEqual((repository / relative).with_name(relative.name + ".asc").read_bytes(),
+                                     (output / path).with_name(relative.name + ".asc").read_bytes())
+                (output / "github-files.txt").write_text("")
+                with self.assertRaisesRegex(ValueError, "files differ"):
+                    prepared.validate(output, "v7.8.9", "a" * 40)
+
     def test_reuse_requires_every_original_byte_and_source_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -81,12 +81,18 @@ def github_release(root, operation, identity):
     """Append missing draft assets, verifying exact content before making a release public."""
     bundle = root.parent / "github-bundle"
     bundle.mkdir(parents=True, exist_ok=True)
-    manifest = prepared.read_json(root / "modrinth/manifest.json")
-    for artifact in manifest["artifacts"]:
-        name = artifact["githubAssetName"]
-        shutil.copyfile(root / "modrinth" / artifact["relativePath"], bundle / name)
-        group, coordinate, version = artifact["mavenCoordinate"].split(":")
-        canonical = root / "maven" / group.replace(".", "/") / coordinate / version / artifact["fileName"]
+    inventory = root / "github-files.txt"
+    if inventory.is_file():
+        artifacts = [root / path for path in inventory.read_text(encoding="utf-8").splitlines()]
+    else:
+        # Historical preparations retain their original Fabric-only immutable asset inventory.
+        artifacts = []
+        for artifact in prepared.read_json(root / "modrinth/manifest.json")["artifacts"]:
+            group, coordinate, version = artifact["mavenCoordinate"].split(":")
+            artifacts.append(root / "maven" / group.replace(".", "/") / coordinate / version / artifact["fileName"])
+    for canonical in artifacts:
+        name = canonical.name
+        shutil.copyfile(canonical, bundle / name)
         shutil.copyfile(canonical.with_name(canonical.name + ".asc"), bundle / (name + ".asc"))
     verify_signatures(bundle, root / "signing-key.asc")
     shutil.copyfile(root.parent / "release-prepared.tar.gz", bundle / "release-prepared.tar.gz")
