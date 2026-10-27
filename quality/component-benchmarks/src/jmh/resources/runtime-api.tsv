@@ -1986,6 +1986,10 @@ api	Api	dev.s7a.strata.modifier.PointerInputModifier$Node#method:1:onPointerHove
 api	Api	dev.s7a.strata.modifier.PointerInputModifier$Node#method:65:onPointerGesture:(Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 api	Api	dev.s7a.strata.modifier.PointerInputModifier$Node#type:25:dev.s7a.strata.node.ModifierNode:dev.s7a.strata.node.LifecycleNode,dev.s7a.strata.node.PointerHoverNode,dev.s7a.strata.node.PointerInputNode
 api	Api	dev.s7a.strata.modifier.RemoteComponentActionExtensionsKt#type:17:java.lang.Object:
+api	Api	dev.s7a.strata.modifier.RootOverlayModifierElement#method:1025:getContent:()Ldev/s7a/strata/element/Element;
+api	Api	dev.s7a.strata.modifier.RootOverlayModifierElement#type:1537::dev.s7a.strata.modifier.ModifierElement
+api	Api	dev.s7a.strata.modifier.RootOverlayModifierElement$DefaultImpls#method:9:getProjection:(Ldev/s7a/strata/modifier/RootOverlayModifierElement;)Ldev/s7a/strata/projection/DeclarationProjection;
+api	Api	dev.s7a.strata.modifier.RootOverlayModifierElement$DefaultImpls#type:25:java.lang.Object:
 api	Api	dev.s7a.strata.modifier.ScaleToFitExtensionsKt#method:25:scaleToFit:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/layout/Alignment;Z)Ldev/s7a/strata/modifier/Modifier;
 api	Api	dev.s7a.strata.modifier.ScaleToFitExtensionsKt#type:17:java.lang.Object:
 api	Api	dev.s7a.strata.modifier.ScaleToFitModifier#field:25:INSTANCE:Ldev/s7a/strata/modifier/ScaleToFitModifier;
@@ -2062,8 +2066,11 @@ api	Api	dev.s7a.strata.modifier.SizeModifier$Node#constructor:1:(Ldev/s7a/strata
 api	Api	dev.s7a.strata.modifier.SizeModifier$Node#method:17:update-FtRg8Cc$dev_s7a_strata_api:(Ldev/s7a/strata/modifier/SizeModifier$Element;)I
 api	Api	dev.s7a.strata.modifier.SizeModifier$Node#method:1:measure:(Ldev/s7a/strata/layout/MeasureScope;Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
 api	Api	dev.s7a.strata.modifier.SizeModifier$Node#type:25:dev.s7a.strata.node.ModifierNode:
+api	Api	dev.s7a.strata.modifier.TooltipModifiers#method:25:tooltip:(Ldev/s7a/strata/modifier/Modifier;JZLkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 api	Api	dev.s7a.strata.modifier.TooltipModifiers#method:25:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
+api	Api	dev.s7a.strata.modifier.TooltipModifiers#method:25:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 api	Api	dev.s7a.strata.modifier.TooltipModifiers#method:25:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;J)Ldev/s7a/strata/modifier/Modifier;
+api	Api	dev.s7a.strata.modifier.TooltipModifiers#method:25:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;ZJ)Ldev/s7a/strata/modifier/Modifier;
 api	Api	dev.s7a.strata.modifier.TooltipModifiers#type:17:java.lang.Object:
 api	Api	dev.s7a.strata.node.ChildTransform#constructor:1:(DLdev/s7a/strata/geometry/DoubleOffset;)V
 api	Api	dev.s7a.strata.node.ChildTransform#field:25:Companion:Ldev/s7a/strata/node/ChildTransform$Companion;
@@ -2180,6 +2187,8 @@ api	Api	dev.s7a.strata.node.PointerInputNode$DefaultImpls#method:9:onPointerGest
 api	Api	dev.s7a.strata.node.PointerInputNode$DefaultImpls#type:25:java.lang.Object:
 api	Api	dev.s7a.strata.node.ReactiveContentNode#method:1025:invalidateObservedContent:()V
 api	Api	dev.s7a.strata.node.ReactiveContentNode#type:1537::dev.s7a.strata.node.DeferredContentNode
+api	Api	dev.s7a.strata.node.RootOverlayContentNode#method:1025:getOverlayVisible:()Z
+api	Api	dev.s7a.strata.node.RootOverlayContentNode#type:1537::
 api	Api	dev.s7a.strata.node.RootOverlayPaintNode#method:1025:paintRootOverlay:(Ldev/s7a/strata/render/RootOverlayPaintScope;)V
 api	Api	dev.s7a.strata.node.RootOverlayPaintNode#type:1537::
 api	Api	dev.s7a.strata.node.SemanticsNode#method:1025:semantics:(Ldev/s7a/strata/semantics/SemanticsScope;)V
@@ -2395,8 +2404,10 @@ api	Api	dev.s7a.strata.render.PaintScope$DefaultImpls#method:9:sampledImage-wyvh
 api	Api	dev.s7a.strata.render.PaintScope$DefaultImpls#method:9:withClip:(Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/geometry/IntRect;Lkotlin/jvm/functions/Function0;)V
 api	Api	dev.s7a.strata.render.PaintScope$DefaultImpls#type:25:java.lang.Object:
 api	Api	dev.s7a.strata.render.PlatformDrawCommand#method:1:transformed:(Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+api	Api	dev.s7a.strata.render.PlatformDrawCommand#method:1:withoutInput:()Ldev/s7a/strata/render/PlatformDrawCommand;
 api	Api	dev.s7a.strata.render.PlatformDrawCommand#type:1537::
 api	Api	dev.s7a.strata.render.PlatformDrawCommand$DefaultImpls#method:9:transformed:(Ldev/s7a/strata/render/PlatformDrawCommand;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+api	Api	dev.s7a.strata.render.PlatformDrawCommand$DefaultImpls#method:9:withoutInput:(Ldev/s7a/strata/render/PlatformDrawCommand;)Ldev/s7a/strata/render/PlatformDrawCommand;
 api	Api	dev.s7a.strata.render.PlatformDrawCommand$DefaultImpls#type:25:java.lang.Object:
 api	Api	dev.s7a.strata.render.RootOverlayPaintScope#method:1025:getAnchorBounds:()Ldev/s7a/strata/geometry/IntRect;
 api	Api	dev.s7a.strata.render.RootOverlayPaintScope#type:1537::dev.s7a.strata.render.PaintScope
@@ -2570,6 +2581,8 @@ api	Api	dev.s7a.strata.spi.ComponentRuntime#method:1:textArea:(Ldev/s7a/strata/c
 api	Api	dev.s7a.strata.spi.ComponentRuntime#method:1:textField:(Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 api	Api	dev.s7a.strata.spi.ComponentRuntime#method:1:textField:(Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 api	Api	dev.s7a.strata.spi.ComponentRuntime#method:1:textField:(Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+api	Api	dev.s7a.strata.spi.ComponentRuntime#method:1:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/Element;ZJ)Ldev/s7a/strata/modifier/Modifier;
+api	Api	dev.s7a.strata.spi.ComponentRuntime#method:1:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 api	Api	dev.s7a.strata.spi.ComponentRuntime#type:1537::
 api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:text:(Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/text/TextLayout;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:textArea:(Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextAreaState;Ldev/s7a/strata/component/TextAreaViewport;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/text/TextWrap;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
@@ -2579,6 +2592,8 @@ api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:textArea:(Ldev
 api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:textField:(Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:textField:(Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:textField:(Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:tooltip:(Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/Element;ZJ)Ldev/s7a/strata/modifier/Modifier;
+api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#method:9:tooltip:(Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 api	Api	dev.s7a.strata.spi.ComponentRuntime$DefaultImpls#type:25:java.lang.Object:
 api	Api	dev.s7a.strata.spi.ComponentRuntimeBridge#field:25:INSTANCE:Ldev/s7a/strata/spi/ComponentRuntimeBridge;
 api	Api	dev.s7a.strata.spi.ComponentRuntimeBridge#method:17:current:()Ldev/s7a/strata/spi/ComponentRuntime;
@@ -2610,6 +2625,12 @@ api	Api	dev.s7a.strata.spi.ScreenPresenters#field:25:INSTANCE:Ldev/s7a/strata/sp
 api	Api	dev.s7a.strata.spi.ScreenPresenters#method:17:install:(Ldev/s7a/strata/spi/ScreenPresenter;)Ldev/s7a/strata/spi/ScreenPresenterRegistration;
 api	Api	dev.s7a.strata.spi.ScreenPresenters#method:17:present:(Ldev/s7a/strata/screen/ScreenDefinition;)V
 api	Api	dev.s7a.strata.spi.ScreenPresenters#type:17:java.lang.Object:
+api	Api	dev.s7a.strata.spi.TooltipModifier#constructor:1:(Ldev/s7a/strata/element/Element;JLdev/s7a/strata/projection/DeclarationProjection;)V
+api	Api	dev.s7a.strata.spi.TooltipModifier#method:17:getDelayMillis:()J
+api	Api	dev.s7a.strata.spi.TooltipModifier#method:1:getContent:()Ldev/s7a/strata/element/Element;
+api	Api	dev.s7a.strata.spi.TooltipModifier#method:1:getProjection:()Ldev/s7a/strata/projection/DeclarationProjection;
+api	Api	dev.s7a.strata.spi.TooltipModifier#method:1:getType:()Ldev/s7a/strata/modifier/ModifierNodeType;
+api	Api	dev.s7a.strata.spi.TooltipModifier#type:17:java.lang.Object:dev.s7a.strata.modifier.RootOverlayModifierElement
 api	Api	dev.s7a.strata.spi.UiPresenter#method:1025:present:(Ldev/s7a/strata/ui/UiDefinition;)Ldev/s7a/strata/ui/UiSession;
 api	Api	dev.s7a.strata.spi.UiPresenter#type:1537::
 api	Api	dev.s7a.strata.spi.UiPresenters#field:25:INSTANCE:Ldev/s7a/strata/spi/UiPresenters;
@@ -3053,6 +3074,8 @@ core	Core	dev.s7a.strata.runtime.DirtyTracker#method:17:getStructureRevision:()J
 core	Core	dev.s7a.strata.runtime.DirtyTracker#method:17:record-AC5Qm9I:(Ldev/s7a/strata/runtime/RetainedEntry;I)V
 core	Core	dev.s7a.strata.runtime.DirtyTracker#method:17:structural:(Ldev/s7a/strata/runtime/RetainedEntry;)V
 core	Core	dev.s7a.strata.runtime.DirtyTracker#type:17:java.lang.Object:
+core	Core	dev.s7a.strata.runtime.DrawCommandInputExtensionsKt#method:25:withoutInput:(Ldev/s7a/strata/runtime/render/DrawCommand;)Ldev/s7a/strata/runtime/render/DrawCommand;
+core	Core	dev.s7a.strata.runtime.DrawCommandInputExtensionsKt#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.DrawCommandValidationKt#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.FailureAccumulator#constructor:1:()V
 core	Core	dev.s7a.strata.runtime.FailureAccumulator#constructor:1:(Ljava/lang/Throwable;)V
@@ -3332,8 +3355,10 @@ core	Core	dev.s7a.strata.runtime.RetainedEntry#type:1025:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.RetainedModifier#constructor:1:(Ldev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/node/ModifierNode;)V
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:getElement:()Ldev/s7a/strata/modifier/ModifierElement;
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:getModifierNode:()Ldev/s7a/strata/node/ModifierNode;
+core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:getOverlay:()Ldev/s7a/strata/runtime/RetainedNode;
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:getVirtualChild:()Ldev/s7a/strata/runtime/RetainedEntry;
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:setElement:(Ldev/s7a/strata/modifier/ModifierElement;)V
+core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:setOverlay:(Ldev/s7a/strata/runtime/RetainedNode;)V
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:setVirtualChild:(Ldev/s7a/strata/runtime/RetainedEntry;)V
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:1:effectiveChildAt:(I)Ldev/s7a/strata/runtime/RetainedEntry;
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:1:getEffectiveChildCount:()I
@@ -3353,6 +3378,7 @@ core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getHasPendingAttachments
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getHasSemantics:()Z
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getLogicalParent:()Ldev/s7a/strata/runtime/RetainedNode;
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getModifiers:()Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getOverlayOwner:()Ldev/s7a/strata/runtime/RetainedModifier;
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getOwnsFocusTargets:()Z
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getRefreshChildren:()Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:getSemanticsChildren:()Ljava/util/List;
@@ -3363,6 +3389,7 @@ core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setContentObservation:(L
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setDynamicDescriptions:(Ljava/util/List;)V
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setElement:(Ldev/s7a/strata/element/Element;)V
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setLogicalParent:(Ldev/s7a/strata/runtime/RetainedNode;)V
+core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setOverlayOwner:(Ldev/s7a/strata/runtime/RetainedModifier;)V
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setSemanticsId:(J)V
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:1:effectiveChildAt:(I)Ldev/s7a/strata/runtime/RetainedEntry;
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:1:getEffectiveChildCount:()I
@@ -3677,7 +3704,8 @@ core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration#method:17:getIdentity:()
 core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration#method:17:getModifiers:()Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration#method:17:getProjection:()Ldev/s7a/strata/projection/DeclarationProjection;
 core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration#type:17:java.lang.Object:
-core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration$Modifier#constructor:1:(JLdev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/projection/DeclarationProjection;)V
+core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration$Modifier#constructor:1:(JLdev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/projection/DeclarationProjection;Ldev/s7a/strata/runtime/spi/RuntimeDeclaration;)V
+core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration$Modifier#method:17:getContent:()Ldev/s7a/strata/runtime/spi/RuntimeDeclaration;
 core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration$Modifier#method:17:getElement:()Ldev/s7a/strata/modifier/ModifierElement;
 core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration$Modifier#method:17:getIdentity:()J
 core	Core	dev.s7a.strata.runtime.spi.RuntimeDeclaration$Modifier#method:17:getProjection:()Ldev/s7a/strata/projection/DeclarationProjection;
@@ -3970,14 +3998,14 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextVerticalBounds
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextVerticalMetrics#type:17:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextVerticalMetrics$Builder#constructor:1:()V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextVerticalMetrics$Builder#type:25:java.lang.Object:
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipModifierKt#method:25:createMinecraftTooltipModifier:(Ldev/s7a/strata/runtime/minecraft/MinecraftTextRun;Ldev/s7a/strata/runtime/minecraft/MinecraftTooltipStyle;J)Ldev/s7a/strata/modifier/ModifierElement;
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipModifierKt#method:25:createMinecraftTooltipContent:(Ldev/s7a/strata/element/Element;Ldev/s7a/strata/runtime/minecraft/MinecraftTooltipStyle;Z)Ldev/s7a/strata/element/Element;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipModifierKt#type:17:java.lang.Object:
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle#method:1025:paint:(Ldev/s7a/strata/render/RootOverlayPaintScope;Ldev/s7a/strata/geometry/IntRect;)V
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle#method:1025:paint:(Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/geometry/IntRect;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle#type:1537::
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle$Legacy#method:1:paint:(Ldev/s7a/strata/render/RootOverlayPaintScope;Ldev/s7a/strata/geometry/IntRect;)V
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle$Legacy#method:1:paint:(Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/geometry/IntRect;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle$Legacy#type:25:java.lang.Object:dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle$Sprites#constructor:1:(Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/render/DrawImage;)V
-minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle$Sprites#method:1:paint:(Ldev/s7a/strata/render/RootOverlayPaintScope;Ldev/s7a/strata/geometry/IntRect;)V
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle$Sprites#method:1:paint:(Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/geometry/IntRect;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle$Sprites#type:25:java.lang.Object:dev.s7a.strata.runtime.minecraft.MinecraftTooltipStyle
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftUiHost#method:1025:attach:()V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftUiHost#method:1025:close:()V
@@ -4100,6 +4128,7 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasRequest#
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasRequest#method:17:getAttachmentId$dev_s7a_strata_minecraft:()J
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasRequest#method:17:getDeviceId$dev_s7a_strata_minecraft:()J
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasRequest#method:65:transformed:(Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasRequest#method:65:withoutInput:()Ldev/s7a/strata/render/PlatformDrawCommand;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasRequest#type:17:java.lang.Object:dev.s7a.strata.render.PlatformDrawCommand
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasSnapshot#constructor:1:(Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken;Ldev/s7a/strata/render/DrawImage;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasSnapshot#method:17:getImage$dev_s7a_strata_minecraft:()Ldev/s7a/strata/render/DrawImage;
@@ -4119,6 +4148,7 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasToken#me
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasToken#method:17:getGeneration$dev_s7a_strata_minecraft:()J
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasToken#method:17:getPhysicalSize:()Ldev/s7a/strata/geometry/IntSize;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasToken#method:65:transformed:(Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasToken#method:65:withoutInput:()Ldev/s7a/strata/render/PlatformDrawCommand;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasToken#type:17:java.lang.Object:dev.s7a.strata.render.PlatformDrawCommand
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource#method:1025:close:()V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource#method:1:isDestroyed:()Z
