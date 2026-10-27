@@ -21,17 +21,20 @@ inventory="$temporary_root/inventory.txt"
 assets_json="$temporary_root/assets.json"
 release_json="$temporary_root/release.json"
 real_jq="$(command -v jq)"
-fixture_target_count=3
-expected_asset_count=$((fixture_target_count * 2 + 1))
+fixture_artifacts=(
+  strata-runtime-minecraft-fabric-test-0.1.0.jar
+  strata-runtime-paper-0.1.0-plugin.jar
+  strata-runtime-velocity-0.1.0-plugin.jar
+)
+expected_asset_count=$(( ${#fixture_artifacts[@]} * 2 + 1 ))
 mkdir -p "$fixture/release" "$fixture/docs/releases" "$bundle" "$fake_bin"
 cp "$repository_root/release/github-release-preflight.sh" "$fixture/release/github-release-preflight.sh"
 cp "$repository_root/release/github-release-read.sh" "$fixture/release/github-release-read.sh"
 printf '# Test release\n\nExact body.\n' > "$fixture/docs/releases/v0.1.0.md"
 
-for index in $(seq 1 "$fixture_target_count"); do
-  jar="strata-runtime-minecraft-fabric-test-$index-0.1.0.jar"
-  printf 'jar-%s\n' "$index" > "$bundle/$jar"
-  printf 'signature-%s\n' "$index" > "$bundle/$jar.asc"
+for jar in "${fixture_artifacts[@]}"; do
+  printf 'jar-%s\n' "$jar" > "$bundle/$jar"
+  printf 'signature-%s\n' "$jar" > "$bundle/$jar.asc"
 done
 (
   cd "$bundle"
