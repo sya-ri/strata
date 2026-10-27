@@ -12,13 +12,18 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
+## 0.3.3 - 2026-10-27
+
 - `Modifier.tooltip { ... }` accepts a component tree, allowing text, images and layouts to form a display-only tooltip that preserves the target's layout size and never receives input or focus.
 - Text and component tooltips use the runtime's standard tooltip background, frame and content inset by default; `decorated = false` displays only the content.
 - The Web runtime supports text and component tooltips with shared hover timing and viewport-aware placement.
 - Minecraft tooltip sprites retain their native outer margin, keeping the background and frame visible for short, single-line content.
+- GitHub Releases include installable Paper/Folia and Velocity plugin JARs and their signatures alongside the Fabric artifacts.
 
 Remote component tooltips and explicit decoration settings require clients supporting the new negotiated tooltip schemas.
 See [tooltips](docs/guides/modifiers.md#tooltips) for usage and composition examples.
+
+[Detailed changes and upgrade notes](docs/releases/v0.3.3.md)
 
 ## 0.3.2 - 2026-10-26
 
