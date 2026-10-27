@@ -385,6 +385,7 @@ internal class Reconciler(
             linkEntries(overlay)
             markInstalled(overlay)
         }
+        if (previous !== modifier.overlay) dirtyTracker.structural(modifier)
     }
 
     private fun linkEntries(retained: RetainedNode) {

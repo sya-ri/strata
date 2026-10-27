@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.evaluateComponentTree
@@ -23,6 +24,10 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.TooltipModifier
+import dev.s7a.strata.state.StateRevision
+import dev.s7a.strata.state.StateSnapshot
+import dev.s7a.strata.state.StateSource
+import dev.s7a.strata.state.StateSubscription
 import dev.s7a.strata.state.mutableStateOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -234,6 +239,42 @@ internal class TooltipContentTest {
         assertEquals(1, probe.disposeCalls)
         session.close()
         assertEquals(1, probe.disposeCalls)
+    }
+
+    @Test
+    fun observedReplacementInvalidatesTheCachedFrame() {
+        val source = StateSource { StateSubscription(StateSnapshot(StateRevision(0), Unit)) {} }
+        val replacement = mutableStateOf(false)
+        val first = RootOverlayProbe()
+        val second = RootOverlayProbe()
+        first.paint = { it.fillRectangle(IntRect(0, 0, 4, 4), ArgbColor(7)) }
+        second.paint = { it.fillRectangle(IntRect(0, 0, 4, 4), ArgbColor(9)) }
+        var declarations = 0
+        createRuntimeUiSession {
+            declarations += 1
+            evaluateComponentTree {
+                Stack(Modifier.size(40, 30)) {
+                    Observe(source) {
+                        val probe = if (replacement.value) second else first
+                        Spacer(Modifier.size(4, 4).then(TooltipModifier(probe.element(), 0)))
+                    }
+                }
+            }
+        }.use { session ->
+            session.attach()
+            val constraints = Constraints.fixed(40, 30)
+            session.frame(constraints)
+            session.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
+            val visible = session.frame(constraints)
+            assertSame(visible, session.frame(constraints))
+            replacement.value = true
+            val changed = session.frame(constraints)
+            assertEquals(1, declarations)
+            assertEquals(1, first.disposeCalls)
+            val rectangles = changed.drawCommands.filterIsInstance<DrawCommand.FillRectangle>()
+            assertEquals(ArgbColor(9), rectangles.single().color)
+        }
+        assertEquals(1, second.disposeCalls)
     }
 
     @Test
