@@ -1,5 +1,6 @@
 """Exercise publication and partial retries without rebuilding or contacting a service."""
 import importlib.util
+from itertools import product
 import json
 import os
 from pathlib import Path
@@ -43,15 +44,29 @@ class PublishPreparedTest(unittest.TestCase):
                 opener.assert_not_called()
 
     def test_github_resumes_only_missing_assets_and_preserves_original_preparation_bytes(self):
-        for already_exists, delayed_reads in ((False, 0), (False, 2), (False, 5), (True, 0)):
-            with self.subTest(already_exists=already_exists, delayed_reads=delayed_reads), tempfile.TemporaryDirectory() as temporary:
+        for include_plugins, (already_exists, delayed_reads) in product((False, True), ((False, 0), (False, 2), (False, 5), (True, 0))):
+            with self.subTest(include_plugins=include_plugins, already_exists=already_exists, delayed_reads=delayed_reads), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary) / "prepared"
                 (root / "modrinth/artifacts").mkdir(parents=True)
                 name = "strata-runtime-minecraft-fabric-1.20-7.8.9.jar"
                 (root / "modrinth/artifacts" / name).write_bytes(b"canonical jar")
                 canonical = root / "maven/dev/s7a/strata/strata-runtime-minecraft-fabric-1.20/7.8.9"
                 canonical.mkdir(parents=True)
+                (canonical / name).write_bytes(b"canonical jar")
                 (canonical / (name + ".asc")).write_bytes(b"original prepared signature")
+                files = [canonical / name]
+                plugins = {}
+                for platform in ("paper", "velocity"):
+                    plugin = root / f"maven/dev/s7a/strata/strata-runtime-{platform}/7.8.9/strata-runtime-{platform}-7.8.9-plugin.jar"
+                    plugin.parent.mkdir(parents=True)
+                    plugin.write_bytes((platform + " installable plugin").encode())
+                    plugin.with_name(plugin.name + ".asc").write_bytes((platform + " original signature").encode())
+                    plugins[platform.upper()] = {"path": plugin.relative_to(root).as_posix()}
+                    if include_plugins:
+                        files.append(plugin)
+                publisher.prepared.write_json(root / "hangar/manifest.json", {"artifacts": plugins})
+                if include_plugins:
+                    (root / "github-files.txt").write_text("".join(path.relative_to(root).as_posix() + "\n" for path in files))
                 (root.parent / "release-prepared.tar.gz").write_bytes(b"original archive")
                 (root / "modrinth/manifest.json").write_text(json.dumps({"artifacts": [{"githubAssetName": name, "fileName": name, "mavenCoordinate": "dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:7.8.9", "relativePath": "artifacts/" + name}]}))
                 draft = {"id": 42, "draft": True, "assets": [{"name": name}] if already_exists else []}
@@ -66,7 +81,9 @@ class PublishPreparedTest(unittest.TestCase):
                     self.assertEqual(min(delayed_reads, 4), sleep.call_count)
                 commands = [call.args[0] for call in run.call_args_list]
                 uploads = [Path(command[-1]).name for command in commands if command[:3] == ["gh", "release", "upload"]]
-                expected = {name + ".asc", "SHA256SUMS", "release-prepared.tar.gz"} | (set() if already_exists else {name})
+                expected = {path.name + suffix for path in files for suffix in ("", ".asc")} | {"SHA256SUMS", "release-prepared.tar.gz"}
+                if already_exists:
+                    expected.remove(name)
                 self.assertEqual(set() if delayed_reads == 5 else expected, set(uploads))
                 if delayed_reads == 5:
                     self.assertFalse(any(command[:4] == ["gh", "api", "--method", "PATCH"] for command in commands))
@@ -74,6 +91,19 @@ class PublishPreparedTest(unittest.TestCase):
                 self.assertEqual(b"original prepared signature", (root.parent / "github-bundle" / (name + ".asc")).read_bytes())
                 self.assertEqual(0 if already_exists else 1, sum(command[:3] == ["gh", "release", "create"] for command in commands))
                 self.assertFalse(any("gradlew" in str(command) for command in commands))
+                bundle = root.parent / "github-bundle"
+                self.assertEqual({path.name + suffix for path in files for suffix in ("", ".asc")} | {"SHA256SUMS", "release-prepared.tar.gz"},
+                                 {path.name for path in bundle.iterdir()})
+                for path in files:
+                    for suffix in ("", ".asc"):
+                        saved = path.with_name(path.name + suffix)
+                        self.assertEqual(saved.read_bytes(), (bundle / saved.name).read_bytes())
+                        self.assertIn(f"{publisher.prepared.sha256(saved)}  {saved.name}\n", (bundle / "SHA256SUMS").read_text())
+                if delayed_reads != 5:
+                    with patch.object(publisher, "verify_signatures"), patch.object(publisher.subprocess, "check_output", return_value=b'{"draft": false}'), patch.object(publisher.subprocess, "run") as verify:
+                        publisher.github_release(root, "verify", {"tag": "v7.8.9"})
+                    self.assertEqual(1, verify.call_count)
+                    self.assertIn("github-release-preflight.sh", verify.call_args.args[0][1])
 
 
 if __name__ == "__main__":
