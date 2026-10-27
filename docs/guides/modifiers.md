@@ -94,7 +94,6 @@ Both forms default to `decorated = true`, applying the runtime's standard toolti
 Minecraft uses its native tooltip design; Web uses the active theme's standard surface.
 `decorated = false` displays only the supplied text or component tree, without the background, frame, or inset.
 The four-pixel gap from the target remains in either mode.
-The decorated frame paints above the content so opaque components cannot cover it.
 The default `delayMillis` is 500; zero shows the tooltip immediately on hover.
 The tooltip appears below the target, moves above it when needed, and is constrained and clipped to the viewport independently of ancestor clips.
 It does not change the target's layout size.

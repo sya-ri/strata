@@ -11,7 +11,6 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
-import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -35,14 +34,9 @@ private object MinecraftTooltipModifier {
     class Retained(
         var style: MinecraftTooltipStyle,
     ) : ModifierNode(),
-        PaintNode,
-        OverlayPaintNode {
+        PaintNode {
         override fun paint(scope: PaintScope) {
-            style.paintBackground(scope, IntRect(0, 0, scope.size.width, scope.size.height))
-        }
-
-        override fun paintOverlay(scope: PaintScope) {
-            style.paintFrame(scope, IntRect(0, 0, scope.size.width, scope.size.height))
+            style.paint(scope, IntRect(0, 0, scope.size.width, scope.size.height))
         }
     }
 

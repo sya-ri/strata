@@ -43,7 +43,7 @@ import kotlin.test.assertTrue
  */
 internal class WebTooltipTest {
     @Test
-    fun opaqueContentKeepsItsOriginAndCannotCoverTheFrame() {
+    fun decorationKeepsOpaqueContentInsideItsFrame() {
         for (decorated in listOf(true, false)) {
             val root = document.createElement("div") as HTMLElement
             document.body?.appendChild(root)
@@ -81,7 +81,13 @@ internal class WebTooltipTest {
                         }
                     }
                 assertEquals(if (decorated) 4 else 0, edges.size)
-                assertTrue(edges.all { image.style.zIndex.toInt() < it.style.zIndex.toInt() })
+                val contentBounds = image.getBoundingClientRect()
+                edges.forEach { edge ->
+                    val bounds = edge.getBoundingClientRect()
+                    val horizontal = bounds.right <= contentBounds.left || contentBounds.right <= bounds.left
+                    val vertical = bounds.bottom <= contentBounds.top || contentBounds.bottom <= bounds.top
+                    assertTrue(horizontal || vertical)
+                }
             } finally {
                 session.close()
                 renderer.close()

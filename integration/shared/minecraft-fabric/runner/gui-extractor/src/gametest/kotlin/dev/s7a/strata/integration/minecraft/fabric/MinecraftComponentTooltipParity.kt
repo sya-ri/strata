@@ -72,18 +72,18 @@ internal object MinecraftComponentTooltipParity {
         output: Path,
     ) {
         val viewport = IntSize(320, 180)
-        for (size in listOf(IntSize(8, 9), IntSize(40, 18))) {
+        for ((width, height) in listOf(IntSize(8, 9), IntSize(40, 18))) {
             val definition =
                 UiDefinition("Tooltip surface parity") {
                     Stack(Modifier.size(320, 180).background(ArgbColor(0xFF000000.toInt())).padding(left = 40, top = 40)) {
-                        Spacer(Modifier.size(4, 4).tooltip(delayMillis = 0) { Spacer(Modifier.size(size.width, size.height)) })
+                        Spacer(Modifier.size(4, 4).tooltip(delayMillis = 0) { Spacer(Modifier.size(width, height)) })
                     }
                 }
-            val name = "strata-tooltip-surface-${size.width}x${size.height}"
+            val name = "strata-tooltip-surface-${width}x$height"
             val expected = context.computeOnClient { renderHeadless(profile, definition, viewport, IntOffset(41, 41)) }
             val path = output.resolve("$name-headless.png")
             Files.write(path, expected.encodePng())
-            context.setScreen { MinecraftTooltipSurfaceReferenceScreen(IntRect(43, 51, 43 + size.width, 51 + size.height)) }
+            context.setScreen { MinecraftTooltipSurfaceReferenceScreen(IntRect(43, 51, 43 + width, 51 + height)) }
             try {
                 context.waitForScreen(MinecraftTooltipSurfaceReferenceScreen::class.java)
                 context.waitTicks(2)

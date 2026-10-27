@@ -6,7 +6,6 @@ import dev.s7a.strata.modifier.ModifierNodeType
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
-import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
@@ -25,21 +24,14 @@ internal data class WebTooltipSurface(
     private class Retained(
         var theme: WebTheme,
     ) : ModifierNode(),
-        PaintNode,
-        OverlayPaintNode {
+        PaintNode {
         override fun paint(scope: PaintScope) {
             val width = scope.size.width
             val height = scope.size.height
             if (width == 0 || height == 0) return
             val background = if (theme == WebTheme.Minecraft) ArgbColor(0xF0100010.toInt()) else ArgbColor(0xF0202020.toInt())
-            scope.fillRectangle(IntRect(0, 0, width, height), background)
-        }
-
-        override fun paintOverlay(scope: PaintScope) {
-            val width = scope.size.width
-            val height = scope.size.height
-            if (width == 0 || height == 0) return
             val border = if (theme == WebTheme.Minecraft) ArgbColor(0xFF5000FF.toInt()) else ArgbColor(0xFF808080.toInt())
+            scope.fillRectangle(IntRect(0, 0, width, height), background)
             scope.fillRectangle(IntRect(0, 0, width, 1), border)
             scope.fillRectangle(IntRect(0, height - 1, width, height), border)
             scope.fillRectangle(IntRect(0, 0, 1, height), border)

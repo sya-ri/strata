@@ -13,20 +13,12 @@ import dev.s7a.strata.render.PaintScope
  */
 internal sealed interface MinecraftTooltipStyle {
     /**
-     * Paints the tooltip background before its content at [bounds].
+     * Paints one complete tooltip decoration at [bounds].
      *
      * @param scope active local decoration paint scope.
      * @param bounds complete tooltip surface including the requested content inset.
      */
-    fun paintBackground(
-        scope: PaintScope,
-        bounds: IntRect,
-    )
-
-    /**
-     * Paints the frame after content so an opaque root cannot hide its edges.
-     */
-    fun paintFrame(
+    fun paint(
         scope: PaintScope,
         bounds: IntRect,
     )
@@ -47,7 +39,7 @@ internal sealed interface MinecraftTooltipStyle {
             require(frame.size == IntSize(100, 100)) { "Tooltip frame sprite must be 100 by 100 pixels." }
         }
 
-        override fun paintBackground(
+        override fun paint(
             scope: PaintScope,
             bounds: IntRect,
         ) {
@@ -57,12 +49,6 @@ internal sealed interface MinecraftTooltipStyle {
                 Insets.all(BACKGROUND_BORDER),
                 NineSliceCenterMode.Tiled,
             )
-        }
-
-        override fun paintFrame(
-            scope: PaintScope,
-            bounds: IntRect,
-        ) {
             paintMinecraftNineSlice(
                 MinecraftRectPaintScope(scope, spriteBounds(bounds)),
                 frame,
@@ -98,7 +84,7 @@ internal sealed interface MinecraftTooltipStyle {
         private val borderTop: ArgbColor,
         private val borderBottom: ArgbColor,
     ) : MinecraftTooltipStyle {
-        override fun paintBackground(
+        override fun paint(
             scope: PaintScope,
             bounds: IntRect,
         ) {
@@ -107,12 +93,7 @@ internal sealed interface MinecraftTooltipStyle {
             scope.fillRectangle(bounds, backgroundColor)
             scope.fillRectangle(IntRect(bounds.left - 1, bounds.top, bounds.left, bounds.bottom), backgroundColor)
             scope.fillRectangle(IntRect(bounds.right, bounds.top, bounds.right + 1, bounds.bottom), backgroundColor)
-        }
 
-        override fun paintFrame(
-            scope: PaintScope,
-            bounds: IntRect,
-        ) {
             scope.fillRectangle(IntRect(bounds.left, bounds.top, bounds.right, bounds.top + 1), borderTop)
             scope.fillRectangle(IntRect(bounds.left, bounds.bottom - 1, bounds.right, bounds.bottom), borderBottom)
             val sideHeight = bounds.height - 2

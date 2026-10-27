@@ -132,7 +132,7 @@ internal class MinecraftTooltipTest {
     }
 
     @Test
-    fun spriteFramePaintsOverOpaqueContentWithoutMovingItsOrigin() {
+    fun spriteFrameSurroundsOpaqueContentWithoutMovingItsOrigin() {
         val blue = ArgbColor(0xFF0000FF.toInt())
         val red = ArgbColor(0xFFFF0000.toInt())
         val background =
@@ -211,6 +211,7 @@ internal class MinecraftTooltipTest {
         val firstTooltip = images.indexOfFirst { command -> command.image === background }
         assertTrue(0 < firstTooltip)
         assertTrue(images.drop(firstTooltip).any { command -> command.image === frame })
+        assertTrue(images.indexOfLast { command -> command.image === frame } < images.lastIndex)
         assertTrue(visible.drawCommands.any { command -> command is DrawCommand.PushClip && command.bounds == IntRect(0, 0, 40, 30) })
         assertEquals(visible.size, rasterizeHeadless(visible.drawCommands, visible.size).size)
         host.close()
