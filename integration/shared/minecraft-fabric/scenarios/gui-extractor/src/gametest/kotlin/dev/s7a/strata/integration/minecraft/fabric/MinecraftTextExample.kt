@@ -36,7 +36,7 @@ internal fun createTextShowcaseScreenDefinition(): UiDefinition =
                     "This paragraph wraps to the available width.\n" +
                     "Explicit newlines stay separate.\n" +
                     "Only four lines are visible; extra text receives an ellipsis.",
-                modifier = Modifier.tooltip("Resource-font text with bounded wrapping", padding = false),
+                modifier = Modifier.tooltip("Resource-font text with bounded wrapping"),
                 layout = TextLayout.Multiline(wrap = TextWrap.Word, maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2),
             )
         }

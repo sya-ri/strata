@@ -27,7 +27,7 @@ internal enum class RemoteProfileComponent(
     Scrollbar("scrollbar"),
     Tooltip("tooltip"),
     ContentTooltip("tooltip_content"),
-    PaddedTooltip("tooltip", 2),
+    DecoratedTooltip("tooltip", 2),
     MenuBackground("menu_background"),
     ContainerBackground("container_background"),
     ImageBackground("image_background"),

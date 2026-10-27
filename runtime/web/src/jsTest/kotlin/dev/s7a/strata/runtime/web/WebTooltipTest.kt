@@ -4,6 +4,8 @@ package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.component.Button
 import dev.s7a.strata.component.Column
+import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
@@ -18,7 +20,10 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.modifier.tooltip
+import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.FrameTime
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -38,6 +43,54 @@ import kotlin.test.assertTrue
  */
 internal class WebTooltipTest {
     @Test
+    fun opaqueContentKeepsItsOriginAndCannotCoverTheFrame() {
+        for (decorated in listOf(true, false)) {
+            val root = document.createElement("div") as HTMLElement
+            document.body?.appendChild(root)
+            val runtime = WebComponentRuntime()
+            val renderer = WebDomRenderer(root, resources = runtime.resources)
+            val session =
+                createRuntimeUiSession {
+                    ComponentRuntimeBridge.evaluate(runtime) {
+                        Stack(Modifier.size(80, 60)) {
+                            Spacer(
+                                Modifier.size(4, 4).tooltip(delayMillis = 0, decorated = decorated) {
+                                    Image(ImageSource.Pixels(createDrawImage(IntSize(1, 1), intArrayOf(-65536))), size = IntSize(8, 6))
+                                },
+                            )
+                        }
+                    }
+                }
+            try {
+                session.attach()
+                val constraints = Constraints.fixed(80, 60)
+                session.frame(constraints)
+                session.dispatchPointer(PointerEvent.Move(IntOffset(1, 1)))
+                val frame = session.frame(constraints)
+                renderer.render(frame)
+                val image = root.querySelector("canvas") as HTMLElement
+                val inset = if (decorated) 3 else 0
+                assertEquals("${inset}px", image.style.left)
+                assertEquals("${8 + inset}px", image.style.top)
+                val edges =
+                    frame.drawCommands.mapIndexedNotNull { index, command ->
+                        if (command is DrawCommand.FillRectangle && command.color == ArgbColor(0xFF808080.toInt())) {
+                            root.querySelector("[data-strata-node='d$index']") as HTMLElement
+                        } else {
+                            null
+                        }
+                    }
+                assertEquals(if (decorated) 4 else 0, edges.size)
+                assertTrue(edges.all { image.style.zIndex.toInt() < it.style.zIndex.toInt() })
+            } finally {
+                session.close()
+                renderer.close()
+                root.remove()
+            }
+        }
+    }
+
+    @Test
     fun componentTooltipUpdatesItsDomWithoutCreatingInteractiveWidgets() {
         val root = document.createElement("div") as HTMLElement
         document.body?.appendChild(root)
@@ -51,7 +104,7 @@ internal class WebTooltipTest {
                 ComponentRuntimeBridge.evaluate(runtime) {
                     Stack(Modifier.size(160, 100)) {
                         Spacer(
-                            Modifier.size(20, 20).tooltip(delayMillis = 0, padding = false) {
+                            Modifier.size(20, 20).tooltip(delayMillis = 0, decorated = false) {
                                 Column {
                                     Text(label.value)
                                     Button("Passive", width = 60, modifier = Modifier.onActivate { activations += 1 })
@@ -96,8 +149,8 @@ internal class WebTooltipTest {
     }
 
     @Test
-    fun stringTooltipHonorsItsDelayAndOptionalInset() {
-        for (padding in listOf(true, false)) {
+    fun stringTooltipHonorsItsDelayAndOptionalDecoration() {
+        for (decorated in listOf(true, false)) {
             val root = document.createElement("div") as HTMLElement
             document.body?.appendChild(root)
             val runtime = WebComponentRuntime()
@@ -105,7 +158,7 @@ internal class WebTooltipTest {
             val session =
                 createRuntimeUiSession {
                     ComponentRuntimeBridge.evaluate(runtime) {
-                        Spacer(Modifier.size(80, 60).tooltip("Tip", padding = padding))
+                        Spacer(Modifier.size(80, 60).tooltip("Tip", decorated = decorated))
                     }
                 }
             try {
@@ -119,7 +172,7 @@ internal class WebTooltipTest {
                 val text = root.querySelector("[data-strata-node^='n']") as HTMLElement
                 assertEquals("Tip", text.textContent)
                 assertEquals("hidden", text.style.getPropertyValue("overflow"))
-                assertEquals(if (padding) "3px" else "0px", text.style.left)
+                assertEquals(if (decorated) "3px" else "0px", text.style.left)
             } finally {
                 session.close()
                 renderer.close()

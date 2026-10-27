@@ -45,8 +45,8 @@ internal class RemoteTooltipTest {
         val codec = RemoteMessageCodec()
         val messages = ArrayList<RemoteMessage>()
         val runtime = RemoteComponentRuntime()
-        val paddingPolicies = ArrayList<Boolean>()
-        val clientRuntime = clientRuntime(paddingPolicies)
+        val decorationPolicies = ArrayList<Boolean>()
+        val clientRuntime = clientRuntime(decorationPolicies)
         val server =
             RemoteServerSession(1, ProjectionValue.Text("tooltip"), registry.types, send = { messages.add(codec.decode(codec.encode(it))) }) {
                 tooltipDefinition(runtime, source)
@@ -78,8 +78,8 @@ internal class RemoteTooltipTest {
                             .single()
                     assertEquals(ArgbColor(9), command.color)
                     assertEquals(IntRect(0, 8, 10, 14), command.bounds)
-                    assertTrue(paddingPolicies.isNotEmpty())
-                    assertFalse(paddingPolicies.any { it })
+                    assertTrue(decorationPolicies.isNotEmpty())
+                    assertFalse(decorationPolicies.any { it })
                     source.publish(11)
                     server.tick()
                     messages.filterIsInstance<RemoteMessage.Update>().forEach(client::receive)
@@ -115,17 +115,17 @@ internal class RemoteTooltipTest {
     /**
      * Isolates transport reconstruction from platform decoration and resource lookup.
      */
-    private fun clientRuntime(paddingPolicies: MutableList<Boolean>): ComponentRuntime =
+    private fun clientRuntime(decorationPolicies: MutableList<Boolean>): ComponentRuntime =
         object : ComponentRuntime by RemoteComponentRuntime() {
             override fun retainEvaluator(): ComponentEvaluator = ComponentEvaluator { ComponentRuntimeBridge.evaluate(this, it) }
 
             override fun tooltip(
                 modifier: Modifier,
                 content: Element,
-                padding: Boolean,
+                decorated: Boolean,
                 delayMillis: Long,
             ): Modifier {
-                paddingPolicies.add(padding)
+                decorationPolicies.add(decorated)
                 return modifier.then(TooltipModifier(content, delayMillis))
             }
         }
@@ -140,7 +140,7 @@ internal class RemoteTooltipTest {
         runtime.evaluate {
             Stack(Modifier.size(40, 30)) {
                 Spacer(
-                    Modifier.size(4, 4).tooltip(delayMillis = 0, padding = false) {
+                    Modifier.size(4, 4).tooltip(delayMillis = 0, decorated = false) {
                         Observe(source) { color -> Spacer(Modifier.size(10, 6).background(ArgbColor(color))) }
                     },
                 )

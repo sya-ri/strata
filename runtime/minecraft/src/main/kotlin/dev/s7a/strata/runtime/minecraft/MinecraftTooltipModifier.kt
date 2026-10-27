@@ -11,6 +11,7 @@ import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.ModifierNode
+import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -34,9 +35,14 @@ private object MinecraftTooltipModifier {
     class Retained(
         var style: MinecraftTooltipStyle,
     ) : ModifierNode(),
-        PaintNode {
+        PaintNode,
+        OverlayPaintNode {
         override fun paint(scope: PaintScope) {
-            style.paint(scope, IntRect(0, 0, scope.size.width, scope.size.height))
+            style.paintBackground(scope, IntRect(0, 0, scope.size.width, scope.size.height))
+        }
+
+        override fun paintOverlay(scope: PaintScope) {
+            style.paintFrame(scope, IntRect(0, 0, scope.size.width, scope.size.height))
         }
     }
 
@@ -54,16 +60,17 @@ private object MinecraftTooltipModifier {
 }
 
 /**
- * Wraps one caller-owned root in the profile's standard tooltip surface and optional inset.
+ * Applies the profile's standard tooltip surface and inset, or retains bare caller content.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal fun createMinecraftTooltipContent(
     content: Element,
     style: MinecraftTooltipStyle,
-    padding: Boolean,
+    decorated: Boolean,
 ): Element =
     evaluateComponentTree {
-        Stack(modifier = Modifier.then(MinecraftTooltipModifier.Description(style)).padding(if (padding) 3 else 0)) {
+        val surface = if (decorated) Modifier.then(MinecraftTooltipModifier.Description(style)).padding(3) else Modifier
+        Stack(modifier = surface) {
             element(content)
         }
     }

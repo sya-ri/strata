@@ -121,18 +121,18 @@ internal object RemoteProfileComponents {
             decode = { value ->
                 val fields = ProjectionFields(value)
                 val delay = fields.long().also { require(it in 0L..Long.MAX_VALUE / 1_000_000L) }
-                val padding = fields.flag()
+                val decorated = fields.flag()
                 fields.finish()
-                delay to padding
+                delay to decorated
             },
         ) { properties, context ->
             ComponentRuntimeBridge.current().tooltip(Modifier, requireNotNull(context.content), properties.second, properties.first)
         }
-        modifier(registry, RemoteProfileComponent.PaddedTooltip) {
+        modifier(registry, RemoteProfileComponent.DecoratedTooltip) {
             val text = RemoteTextCodec.decode(value())
             val delay = long().also { require(it in 0L..Long.MAX_VALUE / 1_000_000L) }
-            val padding = flag()
-            val factory = { ComponentRuntimeBridge.current().tooltip(Modifier, text, padding, delay) }
+            val decorated = flag()
+            val factory = { ComponentRuntimeBridge.current().tooltip(Modifier, text, decorated, delay) }
             factory
         }
         modifier(registry, RemoteProfileComponent.Tooltip) {

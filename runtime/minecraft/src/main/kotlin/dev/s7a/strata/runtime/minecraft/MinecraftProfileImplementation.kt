@@ -852,22 +852,22 @@ internal object MinecraftProfileImplementation {
         override fun tooltip(
             modifier: Modifier,
             text: UiText,
-            padding: Boolean,
+            decorated: Boolean,
             delayMillis: Long,
         ): Modifier =
             tooltip(
                 modifier,
                 createMinecraftTextElement(requireTextRenderer().create(text, TextStyle.Normal), Modifier, null, constrainToViewport = true),
-                padding,
+                decorated,
                 delayMillis,
             )
 
         override fun tooltip(
             modifier: Modifier,
             content: Element,
-            padding: Boolean,
+            decorated: Boolean,
             delayMillis: Long,
-        ): Modifier = modifier.then(TooltipModifier(createMinecraftTooltipContent(content, requireProfile().tooltipStyle, padding), delayMillis))
+        ): Modifier = modifier.then(TooltipModifier(createMinecraftTooltipContent(content, requireProfile().tooltipStyle, decorated), delayMillis))
 
         override fun checkbox(
             label: UiText,

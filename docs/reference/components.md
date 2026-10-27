@@ -680,7 +680,7 @@ internal fun createTextShowcaseScreenDefinition(): UiDefinition =
                     "This paragraph wraps to the available width.\n" +
                     "Explicit newlines stay separate.\n" +
                     "Only four lines are visible; extra text receives an ellipsis.",
-                modifier = Modifier.tooltip("Resource-font text with bounded wrapping", padding = false),
+                modifier = Modifier.tooltip("Resource-font text with bounded wrapping"),
                 layout = TextLayout.Multiline(wrap = TextWrap.Word, maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2),
             )
         }
@@ -689,7 +689,7 @@ internal fun createTextShowcaseScreenDefinition(): UiDefinition =
 
 ### Modifiers
 
-Use `TextLayout.Multiline` to fit reserved text rectangles. Set wrapping, overflow, and line spacing on Text; `UiText.withFont` selects fonts within composed labels, with inner selections taking precedence. Add `Modifier.tooltip` for a delayed explanation or a component preview; `padding = false` removes its content inset.
+Use `TextLayout.Multiline` to fit reserved text rectangles. Set wrapping, overflow, and line spacing on Text; `UiText.withFont` selects fonts within composed labels, with inner selections taking precedence. Add `Modifier.tooltip` for a delayed explanation or a component preview; `decorated = false` displays only the content without the standard tooltip surface or inset.
 
 ### Parent scope
 
@@ -1619,7 +1619,7 @@ internal fun createImageShowcaseScreenDefinition(source: ImageSource): UiDefinit
                 source,
                 size = IntSize(32, 32),
                 modifier =
-                    Modifier.tooltip(padding = false) {
+                    Modifier.tooltip(decorated = false) {
                         Column {
                             Text("Image preview")
                             Image(ImageSource.Pixels(createDrawImage(IntSize(2, 2), intArrayOf(-65536, -16711936, -16776961, -1))), size = IntSize(16, 16))

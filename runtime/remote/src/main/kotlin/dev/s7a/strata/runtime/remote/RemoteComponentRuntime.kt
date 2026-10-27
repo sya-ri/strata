@@ -69,14 +69,14 @@ public class RemoteComponentRuntime : ComponentRuntime {
     override fun tooltip(
         modifier: Modifier,
         text: UiText,
-        padding: Boolean,
+        decorated: Boolean,
         delayMillis: Long,
-    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.PaddedTooltip, record(encode(text), ProjectionValue.Integer(delayMillis), encode(padding))))
+    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.DecoratedTooltip, record(encode(text), ProjectionValue.Integer(delayMillis), encode(decorated))))
 
     override fun tooltip(
         modifier: Modifier,
         content: Element,
-        padding: Boolean,
+        decorated: Boolean,
         delayMillis: Long,
     ): Modifier =
         modifier.then(
@@ -84,7 +84,7 @@ public class RemoteComponentRuntime : ComponentRuntime {
                 content,
                 delayMillis,
                 DeclarationProjection(RemoteProfileComponent.ContentTooltip.type, Unit) { _, _ ->
-                    record(ProjectionValue.Integer(delayMillis), encode(padding))
+                    record(ProjectionValue.Integer(delayMillis), encode(decorated))
                 },
             ),
         )

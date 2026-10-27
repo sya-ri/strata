@@ -583,12 +583,12 @@ dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:Checkbox:Ldev/s
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ContainerBackground:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ContentTooltip:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:CycleButton:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
+dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:DecoratedTooltip:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:Image:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ImageBackground:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:LoadingIndicator:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:MenuBackground:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:NineSliceBackground:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
-dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:PaddedTooltip:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:PlayerHead:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ProgressBar:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ScrollArea:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;

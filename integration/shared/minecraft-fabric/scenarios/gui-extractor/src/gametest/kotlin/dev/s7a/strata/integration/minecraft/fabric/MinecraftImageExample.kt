@@ -35,7 +35,7 @@ internal fun createImageShowcaseScreenDefinition(source: ImageSource): UiDefinit
                 source,
                 size = IntSize(32, 32),
                 modifier =
-                    Modifier.tooltip(padding = false) {
+                    Modifier.tooltip(decorated = false) {
                         Column {
                             Text("Image preview")
                             Image(ImageSource.Pixels(createDrawImage(IntSize(2, 2), intArrayOf(-65536, -16711936, -16776961, -1))), size = IntSize(16, 16))

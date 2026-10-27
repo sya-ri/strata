@@ -13,18 +13,27 @@ import dev.s7a.strata.render.PaintScope
  */
 internal sealed interface MinecraftTooltipStyle {
     /**
-     * Paints one complete tooltip decoration at [bounds].
+     * Paints the tooltip background before its content at [bounds].
      *
      * @param scope active local decoration paint scope.
      * @param bounds complete tooltip surface including the requested content inset.
      */
-    fun paint(
+    fun paintBackground(
+        scope: PaintScope,
+        bounds: IntRect,
+    )
+
+    /**
+     * Paints the frame after content so an opaque root cannot hide its edges.
+     */
+    fun paintFrame(
         scope: PaintScope,
         bounds: IntRect,
     )
 
     /**
      * Resource-backed tooltip treatment used by Minecraft releases with GUI sprites.
+     * The sprites include a nine-pixel outer margin beyond the padded layout surface.
      *
      * @property background immutable 100 by 100 tiled background nine-slice.
      * @property frame immutable 100 by 100 stretched frame nine-slice.
@@ -38,27 +47,42 @@ internal sealed interface MinecraftTooltipStyle {
             require(frame.size == IntSize(100, 100)) { "Tooltip frame sprite must be 100 by 100 pixels." }
         }
 
-        override fun paint(
+        override fun paintBackground(
             scope: PaintScope,
             bounds: IntRect,
         ) {
             paintMinecraftNineSlice(
-                MinecraftRectPaintScope(scope, bounds),
+                MinecraftRectPaintScope(scope, spriteBounds(bounds)),
                 background,
                 Insets.all(BACKGROUND_BORDER),
                 NineSliceCenterMode.Tiled,
             )
+        }
+
+        override fun paintFrame(
+            scope: PaintScope,
+            bounds: IntRect,
+        ) {
             paintMinecraftNineSlice(
-                MinecraftRectPaintScope(scope, bounds),
+                MinecraftRectPaintScope(scope, spriteBounds(bounds)),
                 frame,
                 Insets.all(FRAME_BORDER),
                 NineSliceCenterMode.Stretched,
             )
         }
 
+        private fun spriteBounds(bounds: IntRect): IntRect =
+            IntRect(
+                Math.subtractExact(bounds.left, SPRITE_MARGIN),
+                Math.subtractExact(bounds.top, SPRITE_MARGIN),
+                Math.addExact(bounds.right, SPRITE_MARGIN),
+                Math.addExact(bounds.bottom, SPRITE_MARGIN),
+            )
+
         private companion object {
             private const val BACKGROUND_BORDER = 9
             private const val FRAME_BORDER = 10
+            private const val SPRITE_MARGIN = 9
         }
     }
 
@@ -74,7 +98,7 @@ internal sealed interface MinecraftTooltipStyle {
         private val borderTop: ArgbColor,
         private val borderBottom: ArgbColor,
     ) : MinecraftTooltipStyle {
-        override fun paint(
+        override fun paintBackground(
             scope: PaintScope,
             bounds: IntRect,
         ) {
@@ -83,7 +107,12 @@ internal sealed interface MinecraftTooltipStyle {
             scope.fillRectangle(bounds, backgroundColor)
             scope.fillRectangle(IntRect(bounds.left - 1, bounds.top, bounds.left, bounds.bottom), backgroundColor)
             scope.fillRectangle(IntRect(bounds.right, bounds.top, bounds.right + 1, bounds.bottom), backgroundColor)
+        }
 
+        override fun paintFrame(
+            scope: PaintScope,
+            bounds: IntRect,
+        ) {
             scope.fillRectangle(IntRect(bounds.left, bounds.top, bounds.right, bounds.top + 1), borderTop)
             scope.fillRectangle(IntRect(bounds.left, bounds.bottom - 1, bounds.right, bounds.bottom), borderBottom)
             val sideHeight = bounds.height - 2

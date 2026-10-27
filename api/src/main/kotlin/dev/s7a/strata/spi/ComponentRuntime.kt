@@ -54,23 +54,23 @@ public interface ComponentRuntime {
     ): Modifier
 
     /**
-     * Adds a text tooltip with an explicit content-padding policy.
+     * Adds a text tooltip with an explicit standard-decoration policy.
      */
     public fun tooltip(
         modifier: Modifier,
         text: UiText,
-        padding: Boolean,
+        decorated: Boolean,
         delayMillis: Long,
-    ): Modifier = tooltip(modifier, text(text, TextStyle.Normal, Modifier, null), padding, delayMillis)
+    ): Modifier = tooltip(modifier, text(text, TextStyle.Normal, Modifier, null), decorated, delayMillis)
 
     /**
-     * Decorates one display-only root and adds common retained tooltip behavior.
+     * Adds common retained tooltip behavior, optionally applying the standard surface and inset.
      * The supplied immutable content is evaluated before this boundary and must not be invoked from paint.
      */
     public fun tooltip(
         modifier: Modifier,
         content: Element,
-        padding: Boolean,
+        decorated: Boolean,
         delayMillis: Long,
     ): Modifier = throw UnsupportedOperationException("Component tooltips are unavailable in this runtime.")
 

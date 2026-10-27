@@ -21,7 +21,7 @@ internal class TooltipContractTest {
             }
         }
         assertEquals(0, calls)
-        assertThrows(IllegalArgumentException::class.java) { Modifier.tooltip("text", padding = false, delayMillis = -1) }
+        assertThrows(IllegalArgumentException::class.java) { Modifier.tooltip("text", decorated = false, delayMillis = -1) }
     }
 
     @Test

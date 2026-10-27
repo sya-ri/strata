@@ -50,7 +50,7 @@ The 72 compiled overloads below form 44 top-level extension groups.
 | `semantics` | 1 | Semantics | Adds unresolved accessible semantics without coupling them to rendering. |
 | `size` | 1 | Size | Requires one exact logical width and height. |
 | `sizeIn` | 1 | Size | Constrains logical width and height to optional minimums and maximums. |
-| `tooltip` | 5 | Semantics | Shows delayed display-only text or component content above the screen; `padding = false` removes the standard inset while preserving its frame. |
+| `tooltip` | 5 | Semantics | Shows delayed display-only text or component content above the screen; `decorated = false` removes the standard background, frame, and inset. |
 | `width` | 1 | Size | Requires one exact logical width. |
 | `widthIn` | 1 | Size | Constrains logical width to an optional minimum and maximum. |
 
@@ -329,11 +329,11 @@ fun Modifier.sizeIn(minWidth: Int = 0, minHeight: Int = 0, maxWidth: Int = Int.M
 ### `tooltip`
 
 ```kotlin
-fun Modifier.tooltip(delayMillis: Long = 500L, padding: Boolean = true, content: UiScope.() -> Unit): Modifier
+fun Modifier.tooltip(delayMillis: Long = 500L, decorated: Boolean = true, content: UiScope.() -> Unit): Modifier
+fun Modifier.tooltip(text: String, decorated: Boolean, delayMillis: Long = 500L): Modifier
 fun Modifier.tooltip(text: String, delayMillis: Long = 500L): Modifier
-fun Modifier.tooltip(text: String, padding: Boolean, delayMillis: Long = 500L): Modifier
+fun Modifier.tooltip(text: UiText, decorated: Boolean, delayMillis: Long = 500L): Modifier
 fun Modifier.tooltip(text: UiText, delayMillis: Long = 500L): Modifier
-fun Modifier.tooltip(text: UiText, padding: Boolean, delayMillis: Long = 500L): Modifier
 ```
 
 ### `width`

@@ -142,7 +142,7 @@ fun <V1> UiScope.Observe(state1: StateSource<V1>, modifier: Modifier = Modifier,
 Text renders Unicode literals and composed text from the selected resource pack. Use `TextLayout.Multiline` for hard breaks, wrapping, line limits, and overflow.
 
 - Compiled overloads: 12
-- Modifiers: Use `TextLayout.Multiline` to fit reserved text rectangles. Set wrapping, overflow, and line spacing on Text; `UiText.withFont` selects fonts within composed labels, with inner selections taking precedence. Add `Modifier.tooltip` for a delayed explanation or a component preview; `padding = false` removes its content inset.
+- Modifiers: Use `TextLayout.Multiline` to fit reserved text rectangles. Set wrapping, overflow, and line spacing on Text; `UiText.withFont` selects fonts within composed labels, with inner selections taking precedence. Add `Modifier.tooltip` for a delayed explanation or a component preview; `decorated = false` displays only the content without the standard tooltip surface or inset.
 - Parent scope: No children. Fixed and source-backed labels share font and geometry rules; source values commit at frame boundaries.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text)
 

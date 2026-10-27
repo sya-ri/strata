@@ -65,16 +65,17 @@ internal class WebComponentRuntime(
     override fun tooltip(
         modifier: Modifier,
         content: Element,
-        padding: Boolean,
+        decorated: Boolean,
         delayMillis: Long,
     ): Modifier {
-        val decorated =
+        val tooltipContent =
             evaluateComponentTree {
-                Stack(modifier = Modifier.then(WebTooltipSurface(theme)).padding(if (padding) 3 else 0)) {
+                val surface = if (decorated) Modifier.then(WebTooltipSurface(theme)).padding(3) else Modifier
+                Stack(modifier = surface) {
                     element(content)
                 }
             }
-        return modifier.then(TooltipModifier(decorated, delayMillis))
+        return modifier.then(TooltipModifier(tooltipContent, delayMillis))
     }
 
     override fun progressBar(

@@ -82,7 +82,7 @@ The callback runs during declaration and must emit exactly one root; group multi
 ```kotlin
 Text("Status", modifier = Modifier.tooltip("Current connection status"))
 
-Text("Preview", modifier = Modifier.tooltip(padding = false) {
+Text("Preview", modifier = Modifier.tooltip(decorated = false) {
     Column {
         Text("Preview title")
         Text("Additional details")
@@ -90,8 +90,11 @@ Text("Preview", modifier = Modifier.tooltip(padding = false) {
 })
 ```
 
-Both forms apply the runtime's standard background, frame, and three-pixel content inset.
-`padding = false` removes only that inset; decoration and the four-pixel gap from the target remain.
+Both forms default to `decorated = true`, applying the runtime's standard tooltip background, frame, and three-pixel content inset.
+Minecraft uses its native tooltip design; Web uses the active theme's standard surface.
+`decorated = false` displays only the supplied text or component tree, without the background, frame, or inset.
+The four-pixel gap from the target remains in either mode.
+The decorated frame paints above the content so opaque components cannot cover it.
 The default `delayMillis` is 500; zero shows the tooltip immediately on hover.
 The tooltip appears below the target, moves above it when needed, and is constrained and clipped to the viewport independently of ancestor clips.
 It does not change the target's layout size.
