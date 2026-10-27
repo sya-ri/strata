@@ -92,7 +92,7 @@ public class UiTree(
             declarationId(entry),
             entry.element,
             (entry.node as? DeclarationProjectionNode)?.declarationProjection ?: entry.element.projection,
-            entry.modifiers.snapshotMap { modifier -> RuntimeDeclaration.Modifier(declarationId(modifier), modifier.element, (modifier.node as? DeclarationProjectionNode)?.declarationProjection ?: modifier.element.projection) },
+            entry.modifiers.snapshotMap { modifier -> RuntimeDeclaration.Modifier(declarationId(modifier), modifier.element, (modifier.node as? DeclarationProjectionNode)?.declarationProjection ?: modifier.element.projection, modifier.overlay?.let(::declaration)) },
             entry.children.snapshotMap(::declaration),
         )
 

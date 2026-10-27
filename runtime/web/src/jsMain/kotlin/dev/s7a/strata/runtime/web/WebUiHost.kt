@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.spi.RuntimeUiController
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -84,7 +85,7 @@ public class WebUiHost internal constructor(
         check(closed.not()) { "The web host is closed." }
         this.viewport = viewport
         guarded {
-            val frame = session.frame(Constraints.fixed(viewport.width, viewport.height))
+            val frame = session.frame(Constraints.fixed(viewport.width, viewport.height), FrameTime((window.performance.now() * 1_000_000.0).toLong()))
             if (frame !== lastFrame || pixelRatio != window.devicePixelRatio) {
                 pixelRatio = window.devicePixelRatio
                 rendering = true

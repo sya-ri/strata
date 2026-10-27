@@ -6,7 +6,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.render.RootOverlayPaintScope
+import dev.s7a.strata.render.PaintScope
 
 /**
  * Immutable version-profile strategy for painting a tooltip background and frame.
@@ -15,11 +15,11 @@ internal sealed interface MinecraftTooltipStyle {
     /**
      * Paints one complete tooltip decoration at [bounds].
      *
-     * @param scope active root-overlay paint scope.
-     * @param bounds complete six-pixel-padded tooltip bounds.
+     * @param scope active local decoration paint scope.
+     * @param bounds complete tooltip surface including the requested content inset.
      */
     fun paint(
-        scope: RootOverlayPaintScope,
+        scope: PaintScope,
         bounds: IntRect,
     )
 
@@ -39,7 +39,7 @@ internal sealed interface MinecraftTooltipStyle {
         }
 
         override fun paint(
-            scope: RootOverlayPaintScope,
+            scope: PaintScope,
             bounds: IntRect,
         ) {
             paintMinecraftNineSlice(
@@ -75,7 +75,7 @@ internal sealed interface MinecraftTooltipStyle {
         private val borderBottom: ArgbColor,
     ) : MinecraftTooltipStyle {
         override fun paint(
-            scope: RootOverlayPaintScope,
+            scope: PaintScope,
             bounds: IntRect,
         ) {
             scope.fillRectangle(IntRect(bounds.left, bounds.top - 1, bounds.right, bounds.top), backgroundColor)

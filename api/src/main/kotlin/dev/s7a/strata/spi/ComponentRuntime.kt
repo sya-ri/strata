@@ -54,6 +54,27 @@ public interface ComponentRuntime {
     ): Modifier
 
     /**
+     * Adds a text tooltip with an explicit content-padding policy.
+     */
+    public fun tooltip(
+        modifier: Modifier,
+        text: UiText,
+        padding: Boolean,
+        delayMillis: Long,
+    ): Modifier = tooltip(modifier, text(text, TextStyle.Normal, Modifier, null), padding, delayMillis)
+
+    /**
+     * Decorates one display-only root and adds common retained tooltip behavior.
+     * The supplied immutable content is evaluated before this boundary and must not be invoked from paint.
+     */
+    public fun tooltip(
+        modifier: Modifier,
+        content: Element,
+        padding: Boolean,
+        delayMillis: Long,
+    ): Modifier = throw UnsupportedOperationException("Component tooltips are unavailable in this runtime.")
+
+    /**
      * Creates one profile-backed determinate progress bar.
      */
     public fun progressBar(

@@ -22,7 +22,10 @@ internal data class WebPresentation(
     val font: String? = null,
     val focused: Boolean = false,
     val lineHeight: Int? = null,
+    val displayOnly: Boolean = false,
 ) : PlatformDrawCommand {
+    override fun withoutInput(): PlatformDrawCommand = copy(displayOnly = true)
+
     override fun transformed(
         source: IntRect,
         destination: FloatRect,

@@ -34,6 +34,7 @@ import dev.s7a.strata.spi.ComponentEvaluator
 import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.TooltipModifier
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
@@ -846,17 +847,27 @@ internal object MinecraftProfileImplementation {
             modifier: Modifier,
             text: UiText,
             delayMillis: Long,
-        ): Modifier {
-            val currentProfile = requireProfile()
-            val delayNanos = Math.multiplyExact(delayMillis, 1_000_000L)
-            return modifier.then(
-                createMinecraftTooltipModifier(
-                    requireTextRenderer().create(text, TextStyle.Normal),
-                    currentProfile.tooltipStyle,
-                    delayNanos,
-                ),
+        ): Modifier = tooltip(modifier, text, true, delayMillis)
+
+        override fun tooltip(
+            modifier: Modifier,
+            text: UiText,
+            padding: Boolean,
+            delayMillis: Long,
+        ): Modifier =
+            tooltip(
+                modifier,
+                createMinecraftTextElement(requireTextRenderer().create(text, TextStyle.Normal), Modifier, null, constrainToViewport = true),
+                padding,
+                delayMillis,
             )
-        }
+
+        override fun tooltip(
+            modifier: Modifier,
+            content: Element,
+            padding: Boolean,
+            delayMillis: Long,
+        ): Modifier = modifier.then(TooltipModifier(createMinecraftTooltipContent(content, requireProfile().tooltipStyle, padding), delayMillis))
 
         override fun checkbox(
             label: UiText,

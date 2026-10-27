@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.modifier.RootOverlayModifierElement
 import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -45,7 +46,10 @@ internal class DescriptionValidator {
     ) {
         require(active.add(element)) { "An element description contains a cycle." }
         element.type.validateErased(element)
-        element.modifier.elements().forEach { modifier -> modifier.type.validateErased(modifier) }
+        element.modifier.elements().forEach { modifier ->
+            modifier.type.validateErased(modifier)
+            (modifier as? RootOverlayModifierElement)?.let { visit(it.content, active) }
+        }
         var keys: HashSet<ElementKey<*>>? = null
         element.children.forEach { child ->
             val identity = child.identity

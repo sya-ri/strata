@@ -116,6 +116,25 @@ internal object RemoteProfileComponents {
     }
 
     private fun backgrounds(registry: RemoteRegistry) {
+        registry.statefulModifier(
+            RemoteProfileComponent.ContentTooltip.type,
+            decode = { value ->
+                val fields = ProjectionFields(value)
+                val delay = fields.long().also { require(it in 0L..Long.MAX_VALUE / 1_000_000L) }
+                val padding = fields.flag()
+                fields.finish()
+                delay to padding
+            },
+        ) { properties, context ->
+            ComponentRuntimeBridge.current().tooltip(Modifier, requireNotNull(context.content), properties.second, properties.first)
+        }
+        modifier(registry, RemoteProfileComponent.PaddedTooltip) {
+            val text = RemoteTextCodec.decode(value())
+            val delay = long().also { require(it in 0L..Long.MAX_VALUE / 1_000_000L) }
+            val padding = flag()
+            val factory = { ComponentRuntimeBridge.current().tooltip(Modifier, text, padding, delay) }
+            factory
+        }
         modifier(registry, RemoteProfileComponent.Tooltip) {
             val text = RemoteTextCodec.decode(value())
             val delay = long().also { require(0 <= it) }

@@ -68,6 +68,7 @@ internal class WebDomRenderer(
             element.setAttribute("data-strata-theme", theme.token)
             update(element, entry, frame.size)
             WebSemanticsDom.update(element, entry.semantic, entry.proxy)
+            applyInputPolicy(element, entry)
             element.style.zIndex = entry.order.toString()
             val activeEditor = entry.editor != null && (root.ownerDocument?.activeElement === element || element.hasAttribute("data-strata-composing"))
             if (element === cursor) {
@@ -88,7 +89,20 @@ internal class WebDomRenderer(
         }
     }
 
-    private fun focusedEntry(entry: Entry): Boolean = entry.semantic?.let { it.owner?.let { owner -> owner.focused && owner.focusable } == true && it.semantics.disabled.not() } ?: (entry.editor?.focused == true || entry.presentation?.focused == true)
+    private fun applyInputPolicy(
+        element: HTMLElement,
+        entry: Entry,
+    ) {
+        val displayOnly = entry.presentation?.displayOnly == true || entry.editor?.displayOnly == true
+        element.asDynamic().inert = displayOnly
+        element.style.setProperty("overflow", if (displayOnly) "hidden" else "")
+        if (displayOnly) {
+            element.tabIndex = -1
+            element.style.setProperty("pointer-events", "none")
+        }
+    }
+
+    private fun focusedEntry(entry: Entry): Boolean = entry.presentation?.displayOnly != true && entry.editor?.displayOnly != true && (entry.semantic?.let { it.owner?.let { owner -> owner.focused && owner.focusable } == true && it.semantics.disabled.not() } ?: (entry.editor?.focused == true || entry.presentation?.focused == true))
 
     override fun close() {
         editors.close()

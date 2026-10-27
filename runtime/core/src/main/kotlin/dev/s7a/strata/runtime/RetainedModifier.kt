@@ -15,6 +15,11 @@ internal class RetainedModifier(
     var element: ModifierElement,
     val modifierNode: ModifierNode,
 ) : RetainedEntry(modifierNode) {
+    /**
+     * Sole auxiliary root, independent from the virtual child.
+     */
+    var overlay: RetainedNode? = null
+
     override val effectiveChildCount: Int
         get() = 1
 

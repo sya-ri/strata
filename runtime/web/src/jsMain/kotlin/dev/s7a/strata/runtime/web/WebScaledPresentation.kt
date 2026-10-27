@@ -13,4 +13,6 @@ internal data class WebScaledPresentation(
     val presentation: PlatformDrawCommand,
     val source: IntRect,
     val destination: FloatRect,
-) : PlatformDrawCommand
+) : PlatformDrawCommand {
+    override fun withoutInput(): PlatformDrawCommand = copy(presentation = presentation.withoutInput())
+}

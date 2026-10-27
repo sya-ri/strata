@@ -24,6 +24,7 @@ import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.remote.RemoteProperties.encode
@@ -34,6 +35,7 @@ import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
+import dev.s7a.strata.spi.TooltipModifier
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.UiText
@@ -63,6 +65,29 @@ public class RemoteComponentRuntime : ComponentRuntime {
         text: UiText,
         delayMillis: Long,
     ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.Tooltip, record(encode(text), ProjectionValue.Integer(delayMillis))))
+
+    override fun tooltip(
+        modifier: Modifier,
+        text: UiText,
+        padding: Boolean,
+        delayMillis: Long,
+    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.PaddedTooltip, record(encode(text), ProjectionValue.Integer(delayMillis), encode(padding))))
+
+    override fun tooltip(
+        modifier: Modifier,
+        content: Element,
+        padding: Boolean,
+        delayMillis: Long,
+    ): Modifier =
+        modifier.then(
+            TooltipModifier(
+                content,
+                delayMillis,
+                DeclarationProjection(RemoteProfileComponent.ContentTooltip.type, Unit) { _, _ ->
+                    record(ProjectionValue.Integer(delayMillis), encode(padding))
+                },
+            ),
+        )
 
     override fun progressBar(
         progress: Double,

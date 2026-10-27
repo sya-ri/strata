@@ -121,7 +121,9 @@ public final class dev/s7a/strata/runtime/remote/RemoteComponentRuntime : dev/s7
 	public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/Element;ZJ)Ldev/s7a/strata/modifier/Modifier;
 	public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
+	public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteConnection : java/lang/AutoCloseable {
@@ -555,6 +557,7 @@ public final class dev/s7a/strata/runtime/remote/RemoteMessageCodec {
 
 public final class dev/s7a/strata/runtime/remote/RemoteModifierContext {
 	public final fun getActions ()Ldev/s7a/strata/runtime/remote/RemoteClientActions;
+	public final fun getContent ()Ldev/s7a/strata/element/Element;
 	public final fun getIdentity ()J
 	public final fun getStates ()Ldev/s7a/strata/runtime/remote/RemoteClientStates;
 }
@@ -562,10 +565,12 @@ public final class dev/s7a/strata/runtime/remote/RemoteModifierContext {
 public final class dev/s7a/strata/runtime/remote/RemoteNode {
 	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;)V
 	public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;Ljava/util/Map;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public final fun getDeclaration ()Ldev/s7a/strata/runtime/remote/RemoteDeclaration;
 	public final fun getModifiers ()Ljava/util/List;
+	public final fun getOverlays ()Ljava/util/Map;
 	public fun hashCode ()I
 }
 

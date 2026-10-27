@@ -5,6 +5,7 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
@@ -23,11 +24,13 @@ import dev.s7a.strata.node.Node as RetainedNode
  * Internal immutable description for one profile-backed single-line Minecraft text run.
  *
  * @param run validated literal and immutable glyph layers retained by this description.
+ * @param constrainToViewport allows a tooltip label to be clipped to its allocated viewport.
  * @param modifier active behavior applied to the component.
  * @param key optional stable identity among direct siblings.
  */
 private class MinecraftTextElement private constructor(
     private val run: MinecraftTextRun,
+    private val constrainToViewport: Boolean,
     modifier: Modifier,
     key: ElementKey<*>?,
 ) : Element(
@@ -40,6 +43,7 @@ private class MinecraftTextElement private constructor(
      */
     private class Node(
         var run: MinecraftTextRun,
+        var constrainToViewport: Boolean,
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
@@ -48,6 +52,7 @@ private class MinecraftTextElement private constructor(
             scope: MeasureScope,
             constraints: Constraints,
         ): IntSize {
+            if (constrainToViewport) return constraints.constrain(run.size)
             require(constraints.isSatisfiedBy(run.size)) {
                 "Minecraft text constraints must contain the natural text size."
             }
@@ -55,7 +60,11 @@ private class MinecraftTextElement private constructor(
         }
 
         override fun paint(scope: PaintScope) {
-            run.paint(scope, originX = 0, originY = 0)
+            if (constrainToViewport) {
+                scope.withClip(IntRect(0, 0, scope.size.width, scope.size.height)) { run.paint(scope, originX = 0, originY = 0) }
+            } else {
+                run.paint(scope, originX = 0, originY = 0)
+            }
         }
 
         override fun semantics(scope: SemanticsScope) {
@@ -72,12 +81,13 @@ private class MinecraftTextElement private constructor(
                 elementClass = MinecraftTextElement::class,
                 nodeClass = Node::class,
                 validateLocal = { _ -> },
-                createNode = { element -> Node(element.run) },
+                createNode = { element -> Node(element.run, element.constrainToViewport) },
                 updateNode = { previous, current, node ->
-                    if (previous.run.equivalentTo(current.run)) {
+                    if (previous.run.equivalentTo(current.run) && previous.constrainToViewport == current.constrainToViewport) {
                         DirtyMask.None
                     } else {
                         node.run = current.run
+                        node.constrainToViewport = current.constrainToViewport
                         DirtyMask.of(DirtyPhase.Measure)
                     }
                 },
@@ -89,6 +99,7 @@ private class MinecraftTextElement private constructor(
          * @param run validated literal and selected immutable glyph layers.
          * @param modifier active component behavior.
          * @param key optional stable sibling identity.
+         * @param constrainToViewport whether the allocated viewport may be smaller than the natural text.
          * @return a profile-backed single-line text element.
          */
         @JvmSynthetic
@@ -96,7 +107,8 @@ private class MinecraftTextElement private constructor(
             run: MinecraftTextRun,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = MinecraftTextElement(run, modifier, key)
+            constrainToViewport: Boolean,
+        ): Element = MinecraftTextElement(run, constrainToViewport, modifier, key)
     }
 }
 
@@ -106,6 +118,7 @@ private class MinecraftTextElement private constructor(
  * @param run validated literal and selected immutable glyph layers.
  * @param modifier active component behavior.
  * @param key optional stable sibling identity.
+ * @param constrainToViewport whether the allocated viewport may be smaller than the natural text.
  * @return a profile-backed single-line text element.
  */
 @JvmSynthetic
@@ -113,4 +126,5 @@ internal fun createMinecraftTextElement(
     run: MinecraftTextRun,
     modifier: Modifier,
     key: ElementKey<*>?,
-): Element = MinecraftTextElement.create(run, modifier, key)
+    constrainToViewport: Boolean = false,
+): Element = MinecraftTextElement.create(run, modifier, key, constrainToViewport)

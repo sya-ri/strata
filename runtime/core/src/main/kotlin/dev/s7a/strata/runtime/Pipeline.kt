@@ -18,6 +18,7 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
+import dev.s7a.strata.node.RootOverlayContentNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
@@ -74,6 +75,7 @@ internal class Pipeline(
         effective.bounds = effective.localToTree.enclosing(effective.measuredSize)
         effective.placed = true
         layoutEntry(effective, transformChanged)
+        layoutOverlays(effective, effective.measuredSize, true)
         inputPipeline.layoutCommitted(root)
         focusedInputPipeline.layoutCommitted(root)
     }
@@ -457,6 +459,33 @@ internal class Pipeline(
         }
     }
 
+    private fun layoutOverlays(
+        entry: RetainedEntry,
+        viewport: IntSize,
+        ancestorPlaced: Boolean,
+    ) {
+        val placed = ancestorPlaced && entry.placed
+        for (index in 0 until entry.effectiveChildCount) {
+            layoutOverlays(entry.effectiveChildAt(index), viewport, placed)
+        }
+        if (entry !is RetainedModifier) return
+        val overlay = entry.overlay?.effectiveRoot ?: return
+        overlay.placed = placed && (entry.node as? RootOverlayContentNode)?.overlayVisible == true
+        if (overlay.placed.not()) return
+        val size = measureEntry(overlay, Constraints(maxWidth = viewport.width, maxHeight = viewport.height))
+        val left = entry.bounds.left.coerceIn(0, maxOf(0, viewport.width - size.width))
+        val below = entry.bounds.bottom.toLong() + 4L
+        val above = entry.bounds.top.toLong() - 4L - size.height
+        val preferred = if (below + size.height <= viewport.height) below else above
+        val top = preferred.coerceIn(0L, maxOf(0, viewport.height - size.height).toLong()).toInt()
+        val transform = TreeTransform.Identity.descend(IntOffset(left, top), ChildTransform.Identity)
+        val changed = overlay.localToTree != transform
+        overlay.localToTree = transform
+        overlay.bounds = transform.enclosing(size)
+        layoutEntry(overlay, changed)
+        layoutOverlays(overlay, viewport, true)
+    }
+
     private fun updateChildGeometry(
         parent: RetainedEntry,
         child: RetainedEntry,
@@ -529,6 +558,7 @@ internal class Pipeline(
         for (index in 0 until retained.effectiveChildCount) {
             visitEntries(retained.effectiveChildAt(index), callback)
         }
+        if (retained is RetainedModifier) retained.overlay?.let { visitEntries(it.effectiveRoot, callback) }
     }
 
     private fun detachSessionEntry(
@@ -538,6 +568,7 @@ internal class Pipeline(
         for (index in retained.effectiveChildCount - 1 downTo 0) {
             detachSessionEntry(retained.effectiveChildAt(index), failures)
         }
+        if (retained is RetainedModifier) retained.overlay?.let { detachSessionEntry(it.effectiveRoot, failures) }
         val capability = retained.node as? SessionAttachmentNode ?: return
         failures.capture(capability::sessionDetached)
     }

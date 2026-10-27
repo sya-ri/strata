@@ -27,5 +27,9 @@ public class RuntimeDeclaration internal constructor(
         public val identity: Long,
         public val element: ModifierElement,
         public val projection: DeclarationProjection<*>?,
+        /**
+         * Independently retained overlay root, outside the component's logical children.
+         */
+        public val content: RuntimeDeclaration?,
     )
 }

@@ -258,6 +258,8 @@ final class dev.s7a.strata.runtime.spi/RuntimeDeclaration { // dev.s7a.strata.ru
         final fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.runtime.spi/RuntimeDeclaration.projection.<get-projection>|<get-projection>(){}[0]
 
     final class Modifier { // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier|null[0]
+        final val content // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.content|{}content[0]
+            final fun <get-content>(): dev.s7a.strata.runtime.spi/RuntimeDeclaration? // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.content.<get-content>|<get-content>(){}[0]
         final val element // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.element|{}element[0]
             final fun <get-element>(): dev.s7a.strata.modifier/ModifierElement // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.element.<get-element>|<get-element>(){}[0]
         final val identity // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.identity|{}identity[0]

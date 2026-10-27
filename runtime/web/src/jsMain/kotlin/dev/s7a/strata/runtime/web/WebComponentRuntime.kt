@@ -27,6 +27,7 @@ import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
@@ -34,6 +35,7 @@ import dev.s7a.strata.spi.ComponentEvaluator
 import dev.s7a.strata.spi.ComponentRuntime
 import dev.s7a.strata.spi.ComponentRuntimeBridge
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.spi.TooltipModifier
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextWrap
 import dev.s7a.strata.text.TranslationFallback
@@ -58,7 +60,22 @@ internal class WebComponentRuntime(
         modifier: Modifier,
         text: UiText,
         delayMillis: Long,
-    ): Modifier = throw UnsupportedOperationException("Web capability is unavailable: tooltip")
+    ): Modifier = tooltip(modifier, text, true, delayMillis)
+
+    override fun tooltip(
+        modifier: Modifier,
+        content: Element,
+        padding: Boolean,
+        delayMillis: Long,
+    ): Modifier {
+        val decorated =
+            evaluateComponentTree {
+                Stack(modifier = Modifier.then(WebTooltipSurface(theme)).padding(if (padding) 3 else 0)) {
+                    element(content)
+                }
+            }
+        return modifier.then(TooltipModifier(decorated, delayMillis))
+    }
 
     override fun progressBar(
         progress: Double,

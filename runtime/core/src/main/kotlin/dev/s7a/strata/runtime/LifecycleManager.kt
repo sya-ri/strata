@@ -62,11 +62,11 @@ internal class LifecycleManager(
      * @param retained the modifier to attach.
      */
     fun attachModifier(retained: RetainedModifier) {
-        if (retained.attachAttempted) {
-            return
+        if (retained.attachAttempted.not()) {
+            retained.attachAttempted = true
+            (retained.node as? LifecycleNode)?.attach()
         }
-        retained.attachAttempted = true
-        (retained.node as? LifecycleNode)?.attach()
+        retained.overlay?.let(::attachPending)
     }
 
     /**
@@ -106,6 +106,7 @@ internal class LifecycleManager(
      */
     fun cleanupModifier(retained: RetainedModifier): Throwable? {
         markCleanupStarted(retained)
+        retained.overlay?.let(::prepareCleanup)
         val failures = FailureAccumulator()
         cleanupNode(retained, failures)
         return failures.first
@@ -123,7 +124,10 @@ internal class LifecycleManager(
         retained.clearTraversalSummary()
         val parent = retained.logicalParent
         if (parent != null && parent.cleanupStarted.not()) parent.refreshTraversalSummary()
-        retained.modifiers.forEach(::markCleanupStarted)
+        retained.modifiers.forEach { modifier ->
+            markCleanupStarted(modifier)
+            modifier.overlay?.let(::prepareCleanup)
+        }
         retained.children.forEach(::prepareCleanup)
     }
 
@@ -158,6 +162,8 @@ internal class LifecycleManager(
         retained: RetainedModifier,
         failures: FailureAccumulator,
     ) {
+        retained.overlay?.let { cleanupNode(it, failures) }
+        retained.overlay = null
         cleanupNodeEntry(retained, failures)
     }
 

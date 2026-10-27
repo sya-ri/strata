@@ -6,13 +6,27 @@ package dev.s7a.strata.runtime.remote
  */
 public class RemoteNode(
     public val declaration: RemoteDeclaration,
-    modifiers: List<RemoteDeclaration> = emptyList(),
-    children: List<Long> = emptyList(),
+    modifiers: List<RemoteDeclaration>,
+    children: List<Long>,
+    overlays: Map<Long, Long>,
 ) {
+    /**
+     * Compatibility constructor for nodes without auxiliary roots.
+     */
+    public constructor(
+        declaration: RemoteDeclaration,
+        modifiers: List<RemoteDeclaration> = emptyList(),
+        children: List<Long> = emptyList(),
+    ) : this(declaration, modifiers, children, emptyMap())
+
+    /**
+     * Modifier identity to independently retained root identity.
+     */
+    public val overlays: Map<Long, Long> = overlays.toMap()
     public val modifiers: List<RemoteDeclaration> = modifiers.toList()
     public val children: List<Long> = children.toList()
 
-    override fun equals(other: Any?): Boolean = other is RemoteNode && declaration == other.declaration && modifiers == other.modifiers && children == other.children
+    override fun equals(other: Any?): Boolean = other is RemoteNode && declaration == other.declaration && modifiers == other.modifiers && children == other.children && overlays == other.overlays
 
-    override fun hashCode(): Int = 31 * (31 * declaration.hashCode() + modifiers.hashCode()) + children.hashCode()
+    override fun hashCode(): Int = 31 * (31 * declaration.hashCode() + modifiers.hashCode()) + children.hashCode() + 31 * overlays.hashCode()
 }
