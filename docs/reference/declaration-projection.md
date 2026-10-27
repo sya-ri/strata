@@ -19,6 +19,12 @@ It must not measure, draw, mutate session state, or invoke business handlers.
 CPU Canvas uses its existing committed source binding; virtual lists use their existing bounded row generation and keyed reconciliation.
 No second resource subscription or alternate row model is created by the projection SPI.
 
+Modifier-owned root content is exposed through `RuntimeDeclaration.Modifier.content`, separately from a component's logical children.
+The remote tree links each auxiliary root to its owning modifier and applies the same identity, depth, size, and capability checks as ordinary descendants.
+Tooltip content uses the negotiated `strata:profile/tooltip_content` schema; the existing text-only schema and its wire representation remain supported.
+Explicit text decoration uses version 2 of `strata:profile/tooltip`; original text calls retain version 1, and component tooltips include the `decorated` flag in their content schema.
+Auxiliary tooltip actions are disabled on the server, and hover timing and placement remain client-owned.
+
 ## Scoped actions and bindings
 
 The encoder receives a callback-lifetime `ProjectionScope`.

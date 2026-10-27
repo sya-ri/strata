@@ -81,5 +81,6 @@ internal class FrameCallbackIndex {
         (entry.node as? FrameCutoffNode)?.let(cutoff::add)
         (entry.node as? FrameTimeNode)?.let(timed::add)
         for (index in 0 until entry.effectiveChildCount) collect(entry.effectiveChildAt(index), cutoff, timed)
+        if (entry is RetainedModifier) entry.overlay?.let { collect(it.effectiveRoot, cutoff, timed) }
     }
 }

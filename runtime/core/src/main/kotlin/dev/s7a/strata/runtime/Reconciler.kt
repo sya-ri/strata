@@ -5,6 +5,7 @@ import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.modifier.ModifierElement
+import dev.s7a.strata.modifier.RootOverlayModifierElement
 import dev.s7a.strata.node.ConstrainedChildrenNode
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DeferredContentNode
@@ -60,6 +61,7 @@ internal class Reconciler(
         }
         val children = root.refreshChildren
         for (index in children.indices) refreshDeferred(children[index], validator)
+        root.modifiers.forEach { modifier -> modifier.overlay?.let { refreshDeferred(it, validator) } }
         if (root.hasPendingAttachments || root.traversalSummaryDirty) root.refreshTraversalSummary(propagate = false)
     }
 
@@ -143,6 +145,7 @@ internal class Reconciler(
         }
         val children = root.refreshChildren
         for (index in children.indices) refreshDynamicChildren(children[index], validator)
+        root.modifiers.forEach { modifier -> modifier.overlay?.let { refreshDynamicChildren(it, validator) } }
         if (root.hasPendingAttachments || root.traversalSummaryDirty) root.refreshTraversalSummary(propagate = false)
     }
 
@@ -163,6 +166,7 @@ internal class Reconciler(
         }
         val children = root.refreshChildren
         for (index in children.indices) refreshProjectedChildren(children[index], validator)
+        root.modifiers.forEach { modifier -> modifier.overlay?.let { refreshProjectedChildren(it, validator) } }
         if (root.hasPendingAttachments || root.traversalSummaryDirty) root.refreshTraversalSummary(propagate = false)
     }
 
@@ -185,6 +189,7 @@ internal class Reconciler(
         reconcileDynamicChildren(root, descriptions, validator, propagateSummary = true)
         val children = root.refreshChildren
         for (index in children.indices) refreshDynamicChildren(children[index], validator)
+        root.modifiers.forEach { modifier -> modifier.overlay?.let { refreshDynamicChildren(it, validator) } }
         lifecycle.attachPending(root)
         measuringAncestors.forEach { it.dirty -= DirtyMask.of(DirtyPhase.Measure) }
     }
@@ -296,6 +301,7 @@ internal class Reconciler(
             val modifier = RetainedModifier(description, node)
             lifecycle.bind(modifier)
             retained.modifiers.add(modifier)
+            reconcileOverlay(retained, modifier, description)
         }
     }
 
@@ -320,6 +326,7 @@ internal class Reconciler(
                             description.type.updateErased(previous.element, description, previous.modifierNode)
                         }
                     previous.element = description
+                    reconcileOverlay(retained, previous, description)
                     reused.add(previous)
                     nextModifiers.add(previous)
                     updates.add(ModifierMask(previous, mask))
@@ -329,6 +336,7 @@ internal class Reconciler(
                     lifecycle.bind(modifier)
                     created.add(modifier)
                     nextModifiers.add(modifier)
+                    reconcileOverlay(retained, modifier, description)
                 }
             }
             removed = oldModifiers.filter { modifier -> reused.contains(modifier).not() }
@@ -359,12 +367,33 @@ internal class Reconciler(
         }
     }
 
+    private fun reconcileOverlay(
+        owner: RetainedNode,
+        modifier: RetainedModifier,
+        description: ModifierElement,
+    ) {
+        val content = (description as? RootOverlayModifierElement)?.content
+        val previous = modifier.overlay
+        if (content == null) {
+            modifier.overlay = null
+            previous?.let { lifecycle.cleanup(it)?.let { failure -> throw failure } }
+        } else {
+            val overlay = reconcileRoot(previous, content)
+            modifier.overlay = overlay
+            overlay.logicalParent = owner
+            overlay.overlayOwner = modifier
+            linkEntries(overlay)
+            markInstalled(overlay)
+        }
+        if (previous !== modifier.overlay) dirtyTracker.structural(modifier)
+    }
+
     private fun linkEntries(retained: RetainedNode) {
         retained.modifiers.forEachIndexed { index, modifier ->
-            modifier.parent = if (0 < index) retained.modifiers[index - 1] else retained.logicalParent
+            modifier.parent = if (0 < index) retained.modifiers[index - 1] else retained.overlayOwner ?: retained.logicalParent
             modifier.virtualChild = retained.modifiers.getOrNull(index + 1) ?: retained
         }
-        retained.parent = retained.modifiers.lastOrNull() ?: retained.logicalParent
+        retained.parent = retained.modifiers.lastOrNull() ?: retained.overlayOwner ?: retained.logicalParent
         retained.refreshTraversalSummary()
     }
 

@@ -652,6 +652,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.modifier.tooltip
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.text.TextLayout
 import dev.s7a.strata.text.TextOverflow
@@ -679,6 +680,7 @@ internal fun createTextShowcaseScreenDefinition(): UiDefinition =
                     "This paragraph wraps to the available width.\n" +
                     "Explicit newlines stay separate.\n" +
                     "Only four lines are visible; extra text receives an ellipsis.",
+                modifier = Modifier.tooltip("Resource-font text with bounded wrapping"),
                 layout = TextLayout.Multiline(wrap = TextWrap.Word, maxLines = 4, overflow = TextOverflow.Ellipsis, lineSpacing = 2),
             )
         }
@@ -687,7 +689,7 @@ internal fun createTextShowcaseScreenDefinition(): UiDefinition =
 
 ### Modifiers
 
-Use `TextLayout.Multiline` to fit reserved text rectangles. Set wrapping, overflow, and line spacing on Text; `UiText.withFont` selects fonts within composed labels, with inner selections taking precedence.
+Use `TextLayout.Multiline` to fit reserved text rectangles. Set wrapping, overflow, and line spacing on Text; `UiText.withFont` selects fonts within composed labels, with inner selections taking precedence. Add `Modifier.tooltip` for a delayed explanation or a component preview; `decorated = false` displays only the content without the standard tooltip surface or inset.
 
 ### Parent scope
 
@@ -1583,15 +1585,19 @@ Image maps one immutable resource-pack image to an exact logical size with deter
 ### Compiled example
 
 ```kotlin
+import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Stack
+import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.modifier.tooltip
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.ui.UiDefinition
 
 /**
@@ -1609,7 +1615,17 @@ internal fun createImageShowcaseScreenDefinition(source: ImageSource): UiDefinit
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
-            Image(source, size = IntSize(32, 32))
+            Image(
+                source,
+                size = IntSize(32, 32),
+                modifier =
+                    Modifier.tooltip(decorated = false) {
+                        Column {
+                            Text("Image preview")
+                            Image(ImageSource.Pixels(createDrawImage(IntSize(2, 2), intArrayOf(-65536, -16711936, -16776961, -1))), size = IntSize(16, 16))
+                        }
+                    },
+            )
         }
     }
 ```

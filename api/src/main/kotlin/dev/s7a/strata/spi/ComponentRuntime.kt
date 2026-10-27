@@ -54,6 +54,27 @@ public interface ComponentRuntime {
     ): Modifier
 
     /**
+     * Adds a text tooltip with an explicit standard-decoration policy.
+     */
+    public fun tooltip(
+        modifier: Modifier,
+        text: UiText,
+        decorated: Boolean,
+        delayMillis: Long,
+    ): Modifier = tooltip(modifier, text(text, TextStyle.Normal, Modifier, null), decorated, delayMillis)
+
+    /**
+     * Adds common retained tooltip behavior, optionally applying the standard surface and inset.
+     * The supplied immutable content is evaluated before this boundary and must not be invoked from paint.
+     */
+    public fun tooltip(
+        modifier: Modifier,
+        content: Element,
+        decorated: Boolean,
+        delayMillis: Long,
+    ): Modifier = throw UnsupportedOperationException("Component tooltips are unavailable in this runtime.")
+
+    /**
      * Creates one profile-backed determinate progress bar.
      */
     public fun progressBar(

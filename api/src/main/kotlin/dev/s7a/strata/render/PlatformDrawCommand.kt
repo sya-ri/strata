@@ -14,6 +14,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 @InternalStrataRuntimeApi
 public interface PlatformDrawCommand {
     /**
+     * Returns a presentation snapshot that cannot acquire native input or focus.
+     * Drawing-only backends can retain the default; native widgets must disable their event surfaces.
+     */
+    public fun withoutInput(): PlatformDrawCommand = this
+
+    /**
      * Optionally returns an immutable payload for fractional placement or scale.
      * Source contains the original local bounds; destination preserves exact transformed edges.
      * Core passes the result to the same backend inside enclosing integer bounds without interpreting it.

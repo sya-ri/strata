@@ -144,7 +144,7 @@ internal object StrataSkillPipeline {
             }
         }
         require(compiledModifiers.modifiers.size == 44) { "Expected 44 top-level modifier groups, found ${compiledModifiers.modifiers.size}." }
-        require(compiledModifiers.modifiers.values.sum() == 69) { "Expected 69 top-level modifier overloads, found ${compiledModifiers.modifiers.values.sum()}." }
+        require(compiledModifiers.modifiers.values.sum() == 72) { "Expected 72 top-level modifier overloads, found ${compiledModifiers.modifiers.values.sum()}." }
         require(compiledModifiers.modifiers.keys == ModifierDocumentationCatalog.entries.keys) {
             "Modifier guidance differs from the compiled modifier surface."
         }

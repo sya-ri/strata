@@ -186,12 +186,23 @@ public class RemoteMessageCodec(
             RemoteDeclaration(positive(long()), readType(value()), value())
         }
 
-    private fun projectNode(value: RemoteNode): ProjectionValue = fields(projectDeclaration(value.declaration), sequence(value.modifiers.map(::projectDeclaration)), sequence(value.children.map(::number)))
+    private fun projectNode(value: RemoteNode): ProjectionValue {
+        val ordinary = listOf(projectDeclaration(value.declaration), sequence(value.modifiers.map(::projectDeclaration)), sequence(value.children.map(::number)))
+        return sequence(if (value.overlays.isEmpty()) ordinary else ordinary + sequence(value.overlays.map { (owner, root) -> fields(number(owner), number(root)) }))
+    }
 
-    private fun readNode(value: ProjectionValue): RemoteNode =
-        read(value) {
-            RemoteNode(readDeclaration(value()), values().map(::readDeclaration), values().map { field -> positive(requireNotNull(field as? ProjectionValue.Integer).value) })
+    private fun readNode(value: ProjectionValue): RemoteNode {
+        val count = requireNotNull(value as? ProjectionValue.Sequence).values.size
+        require(count in 3..4) { "Invalid remote node fields." }
+        return read(value) {
+            val declaration = readDeclaration(value())
+            val modifiers = values().map(::readDeclaration)
+            val children = values().map { field -> positive(requireNotNull(field as? ProjectionValue.Integer).value) }
+            val overlays = if (count == 4) values().map { field -> read(field) { positive(long()) to positive(long()) } } else emptyList()
+            require(overlays.map { it.first }.distinct().size == overlays.size) { "Duplicate overlay owner." }
+            RemoteNode(declaration, modifiers, children, overlays.toMap())
         }
+    }
 
     private fun projectTree(value: RemoteTree): ProjectionValue = fields(number(value.root), sequence(value.nodes.values.map(::projectNode)))
 

@@ -24,7 +24,10 @@ internal data class WebEditorPresentation(
     val wrap: Boolean,
     val lineSpacing: Int,
     val scrollOffset: Double,
+    val displayOnly: Boolean = false,
 ) : PlatformDrawCommand {
+    override fun withoutInput(): PlatformDrawCommand = copy(displayOnly = true)
+
     override fun transformed(
         source: IntRect,
         destination: FloatRect,

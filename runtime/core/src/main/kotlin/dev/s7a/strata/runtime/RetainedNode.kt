@@ -28,6 +28,11 @@ internal class RetainedNode(
     var semanticsId: Long = 0L
 
     /**
+     * Modifier owning this root; logicalParent propagates traversal summaries.
+     */
+    var overlayOwner: RetainedModifier? = null
+
+    /**
      * Last immutable dynamic-child list already validated and reconciled; cached access requires no sibling diff.
      */
     var dynamicDescriptions: List<Element>? = null
@@ -172,13 +177,13 @@ internal class RetainedNode(
 
     private fun localContentParticipant(): Boolean =
         node is DynamicChildrenNode || node is StateObserverNode || node is DeclarationProjectionNode ||
-            (modifiers.isNotEmpty() && modifiers.any { it.node is StateObserverNode })
+            (modifiers.isNotEmpty() && modifiers.any { it.node is StateObserverNode || it.overlay != null })
 
     private fun localFocusParticipant(): Boolean = node is FocusTargetNode || (modifiers.isNotEmpty() && modifiers.any { it.node is FocusTargetNode })
 
     private fun localSemanticsParticipant(): Boolean = node is SemanticsNode || (modifiers.isNotEmpty() && modifiers.any { it.node is SemanticsNode })
 
-    private fun localAttachmentPending(): Boolean = attachAttempted.not() || (modifiers.isNotEmpty() && modifiers.any { it.attachAttempted.not() })
+    private fun localAttachmentPending(): Boolean = attachAttempted.not() || (modifiers.isNotEmpty() && modifiers.any { it.attachAttempted.not() || it.overlay?.hasPendingAttachments == true })
 
     /**
      * Borrows the owner list when no filtering is needed; reconciliation finishes before its traversal starts.

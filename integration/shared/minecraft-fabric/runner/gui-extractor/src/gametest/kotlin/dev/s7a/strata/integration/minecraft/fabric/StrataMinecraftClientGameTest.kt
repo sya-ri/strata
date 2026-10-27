@@ -100,6 +100,7 @@ internal class StrataMinecraftClientGameTest {
         verifyContinuousInput(context, profile, output)
         verifyReactiveRendering(context, profile, output)
         runMinecraftCanvasTest(context, profile, output)
+        MinecraftComponentTooltipParity.run(context, profile, output)
         runSampledImagePixelParity(context, profile, output)
         MinecraftResourceImageMemoizationGameTest.run(context, profile)
 

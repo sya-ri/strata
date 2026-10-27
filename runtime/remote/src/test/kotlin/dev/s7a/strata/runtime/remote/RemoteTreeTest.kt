@@ -14,6 +14,22 @@ internal class RemoteTreeTest {
     private val type = ProjectionType(ResourceId("test", "node"))
 
     @Test
+    fun auxiliaryRootsShareTopologyAndResourceLimitsWithOrdinaryChildren() {
+        val modifier = RemoteDeclaration(2, type, ProjectionValue.Absent)
+        val root = RemoteNode(RemoteDeclaration(1, type, ProjectionValue.Absent), listOf(modifier), emptyList(), mapOf(2L to 3L))
+        val valid = RemoteTree(1, listOf(root, node(3)))
+        assertEquals(2, valid.nodes.size)
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(root, node(3)), RemoteLimits(treeNodes = 1)) }
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(root, node(3)), RemoteLimits(valueDepth = 1)) }
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(root)) }
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(root, node(3, listOf(1)))) }
+        val shared = RemoteNode(root.declaration, root.modifiers, listOf(3), root.overlays)
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(shared, node(3))) }
+        val unowned = RemoteNode(root.declaration, root.modifiers, emptyList(), mapOf(4L to 3L))
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(unowned, node(3))) }
+    }
+
+    @Test
     fun `diff preserves identity while changing ordered children`() {
         val before = RemoteTree(1, listOf(node(1, listOf(2, 3)), node(2), node(3)))
         val after = RemoteTree(1, listOf(node(1, listOf(3, 4)), node(3), node(4)))

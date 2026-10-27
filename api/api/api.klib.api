@@ -472,6 +472,11 @@ abstract interface dev.s7a.strata.modifier/ModifierElement { // dev.s7a.strata.m
         open fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.modifier/ModifierElement.projection.<get-projection>|<get-projection>(){}[0]
 }
 
+abstract interface dev.s7a.strata.modifier/RootOverlayModifierElement : dev.s7a.strata.modifier/ModifierElement { // dev.s7a.strata.modifier/RootOverlayModifierElement|null[0]
+    abstract val content // dev.s7a.strata.modifier/RootOverlayModifierElement.content|{}content[0]
+        abstract fun <get-content>(): dev.s7a.strata.element/Element // dev.s7a.strata.modifier/RootOverlayModifierElement.content.<get-content>|<get-content>(){}[0]
+}
+
 abstract interface dev.s7a.strata.node/ChildTransformNode { // dev.s7a.strata.node/ChildTransformNode|null[0]
     abstract fun childTransform(kotlin/Int): dev.s7a.strata.node/ChildTransform // dev.s7a.strata.node/ChildTransformNode.childTransform|childTransform(kotlin.Int){}[0]
 }
@@ -559,6 +564,11 @@ abstract interface dev.s7a.strata.node/ReactiveContentNode : dev.s7a.strata.node
     abstract fun invalidateObservedContent() // dev.s7a.strata.node/ReactiveContentNode.invalidateObservedContent|invalidateObservedContent(){}[0]
 }
 
+abstract interface dev.s7a.strata.node/RootOverlayContentNode { // dev.s7a.strata.node/RootOverlayContentNode|null[0]
+    abstract val overlayVisible // dev.s7a.strata.node/RootOverlayContentNode.overlayVisible|{}overlayVisible[0]
+        abstract fun <get-overlayVisible>(): kotlin/Boolean // dev.s7a.strata.node/RootOverlayContentNode.overlayVisible.<get-overlayVisible>|<get-overlayVisible>(){}[0]
+}
+
 abstract interface dev.s7a.strata.node/RootOverlayPaintNode { // dev.s7a.strata.node/RootOverlayPaintNode|null[0]
     abstract fun paintRootOverlay(dev.s7a.strata.render/RootOverlayPaintScope) // dev.s7a.strata.node/RootOverlayPaintNode.paintRootOverlay|paintRootOverlay(dev.s7a.strata.render.RootOverlayPaintScope){}[0]
 }
@@ -605,6 +615,7 @@ abstract interface dev.s7a.strata.render/PaintScope { // dev.s7a.strata.render/P
 
 abstract interface dev.s7a.strata.render/PlatformDrawCommand { // dev.s7a.strata.render/PlatformDrawCommand|null[0]
     open fun transformed(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.geometry/FloatRect): dev.s7a.strata.render/PlatformDrawCommand? // dev.s7a.strata.render/PlatformDrawCommand.transformed|transformed(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.FloatRect){}[0]
+    open fun withoutInput(): dev.s7a.strata.render/PlatformDrawCommand // dev.s7a.strata.render/PlatformDrawCommand.withoutInput|withoutInput(){}[0]
 }
 
 abstract interface dev.s7a.strata.render/RootOverlayPaintScope : dev.s7a.strata.render/PaintScope { // dev.s7a.strata.render/RootOverlayPaintScope|null[0]
@@ -740,6 +751,8 @@ abstract interface dev.s7a.strata.spi/ComponentRuntime { // dev.s7a.strata.spi/C
     open fun textField(dev.s7a.strata.component/TextFieldState, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.component/TextInputAppearance, kotlin/Boolean, dev.s7a.strata.component/TextStyle, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.textField|textField(dev.s7a.strata.component.TextFieldState;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.component.TextInputAppearance;kotlin.Boolean;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     open fun textField(dev.s7a.strata.component/TextFieldState, dev.s7a.strata.geometry/IntSize, dev.s7a.strata.component/TextInputAppearance, kotlin/Boolean, dev.s7a.strata.component/TextStyle, dev.s7a.strata.resource/ResourceId, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.textField|textField(dev.s7a.strata.component.TextFieldState;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.component.TextInputAppearance;kotlin.Boolean;dev.s7a.strata.component.TextStyle;dev.s7a.strata.resource.ResourceId;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     open fun textField(dev.s7a.strata.component/TextFieldState, dev.s7a.strata.geometry/IntSize, kotlin/Boolean, dev.s7a.strata.component/TextStyle, dev.s7a.strata.resource/ResourceId, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.textField|textField(dev.s7a.strata.component.TextFieldState;dev.s7a.strata.geometry.IntSize;kotlin.Boolean;dev.s7a.strata.component.TextStyle;dev.s7a.strata.resource.ResourceId;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
+    open fun tooltip(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/Element, kotlin/Boolean, kotlin/Long): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.spi/ComponentRuntime.tooltip|tooltip(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.Element;kotlin.Boolean;kotlin.Long){}[0]
+    open fun tooltip(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.text/UiText, kotlin/Boolean, kotlin/Long): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.spi/ComponentRuntime.tooltip|tooltip(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.text.UiText;kotlin.Boolean;kotlin.Long){}[0]
 }
 
 abstract interface dev.s7a.strata.spi/ScreenPresenterRegistration : kotlin/AutoCloseable { // dev.s7a.strata.spi/ScreenPresenterRegistration|null[0]
@@ -2558,6 +2571,19 @@ final class dev.s7a.strata.spi/RuntimeExecutionOwner { // dev.s7a.strata.spi/Run
     }
 }
 
+final class dev.s7a.strata.spi/TooltipModifier : dev.s7a.strata.modifier/RootOverlayModifierElement { // dev.s7a.strata.spi/TooltipModifier|null[0]
+    constructor <init>(dev.s7a.strata.element/Element, kotlin/Long, dev.s7a.strata.projection/DeclarationProjection<*>? = ...) // dev.s7a.strata.spi/TooltipModifier.<init>|<init>(dev.s7a.strata.element.Element;kotlin.Long;dev.s7a.strata.projection.DeclarationProjection<*>?){}[0]
+
+    final val content // dev.s7a.strata.spi/TooltipModifier.content|{}content[0]
+        final fun <get-content>(): dev.s7a.strata.element/Element // dev.s7a.strata.spi/TooltipModifier.content.<get-content>|<get-content>(){}[0]
+    final val delayMillis // dev.s7a.strata.spi/TooltipModifier.delayMillis|{}delayMillis[0]
+        final fun <get-delayMillis>(): kotlin/Long // dev.s7a.strata.spi/TooltipModifier.delayMillis.<get-delayMillis>|<get-delayMillis>(){}[0]
+    final val projection // dev.s7a.strata.spi/TooltipModifier.projection|{}projection[0]
+        final fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.spi/TooltipModifier.projection.<get-projection>|<get-projection>(){}[0]
+    final val type // dev.s7a.strata.spi/TooltipModifier.type|{}type[0]
+        final fun <get-type>(): dev.s7a.strata.modifier/ModifierNodeType<*, *> // dev.s7a.strata.spi/TooltipModifier.type.<get-type>|<get-type>(){}[0]
+}
+
 final class dev.s7a.strata.state/StateObservation : kotlin/AutoCloseable { // dev.s7a.strata.state/StateObservation|null[0]
     constructor <init>(kotlin/Function0<kotlin/Unit>, kotlin/Function0<kotlin/Unit>, kotlin/Function0<kotlin/Unit>, kotlin/Function0<kotlin/Unit>) // dev.s7a.strata.state/StateObservation.<init>|<init>(kotlin.Function0<kotlin.Unit>;kotlin.Function0<kotlin.Unit>;kotlin.Function0<kotlin.Unit>;kotlin.Function0<kotlin.Unit>){}[0]
 
@@ -3017,7 +3043,10 @@ final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/scaleToFit(
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/semantics(dev.s7a.strata.semantics/Semantics): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/semantics|semantics@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.semantics.Semantics){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/size(kotlin/Int, kotlin/Int): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/size|size@dev.s7a.strata.modifier.Modifier(kotlin.Int;kotlin.Int){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/sizeIn(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/sizeIn|sizeIn@dev.s7a.strata.modifier.Modifier(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(dev.s7a.strata.text/UiText, kotlin/Boolean, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.text.UiText;kotlin.Boolean;kotlin.Long){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(dev.s7a.strata.text/UiText, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.text.UiText;kotlin.Long){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(kotlin/Long = ..., kotlin/Boolean = ..., kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(kotlin.Long;kotlin.Boolean;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]
+final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(kotlin/String, kotlin/Boolean, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(kotlin.String;kotlin.Boolean;kotlin.Long){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(kotlin/String, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(kotlin.String;kotlin.Long){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/width(kotlin/Int): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/width|width@dev.s7a.strata.modifier.Modifier(kotlin.Int){}[0]
 final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/widthIn(kotlin/Int = ..., kotlin/Int = ...): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/widthIn|widthIn@dev.s7a.strata.modifier.Modifier(kotlin.Int;kotlin.Int){}[0]

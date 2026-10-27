@@ -10,6 +10,16 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
+## Unreleased
+
+- `Modifier.tooltip { ... }` accepts a component tree, allowing text, images and layouts to form a display-only tooltip that preserves the target's layout size and never receives input or focus.
+- Text and component tooltips use the runtime's standard tooltip background, frame and content inset by default; `decorated = false` displays only the content.
+- The Web runtime supports text and component tooltips with shared hover timing and viewport-aware placement.
+- Minecraft tooltip sprites retain their native outer margin, keeping the background and frame visible for short, single-line content.
+
+Remote component tooltips and explicit decoration settings require clients supporting the new negotiated tooltip schemas.
+See [tooltips](docs/guides/modifiers.md#tooltips) for usage and composition examples.
+
 ## 0.3.2 - 2026-10-26
 
 - Fabric screens and interactive HUDs preserve permitted movement, jump, sneak and sprint bindings already held when acquiring input from gameplay.

@@ -198,6 +198,7 @@ public final class dev/s7a/strata/runtime/spi/RuntimeDeclaration {
 }
 
 public final class dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier {
+	public final fun getContent ()Ldev/s7a/strata/runtime/spi/RuntimeDeclaration;
 	public final fun getElement ()Ldev/s7a/strata/modifier/ModifierElement;
 	public final fun getIdentity ()J
 	public final fun getProjection ()Ldev/s7a/strata/projection/DeclarationProjection;

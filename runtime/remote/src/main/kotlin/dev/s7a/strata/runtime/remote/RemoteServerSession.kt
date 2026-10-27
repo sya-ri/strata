@@ -269,7 +269,9 @@ public class RemoteServerSession(
             val inputEnabled = enabled && projection?.inputEnabled != false
             val component = export(declaration.identity, projection, inputEnabled)
             val modifiers = declaration.modifiers.map { export(it.identity, it.projection, inputEnabled) }
-            nodes.add(RemoteNode(component, modifiers, declaration.children.map { it.identity }))
+            val overlays = declaration.modifiers.mapNotNull { modifier -> modifier.content?.let { modifier.identity to it.identity } }.toMap()
+            nodes.add(RemoteNode(component, modifiers, declaration.children.map { it.identity }, overlays))
+            declaration.modifiers.forEach { modifier -> modifier.content?.let { visit(it, depth + 1, false) } }
             declaration.children.forEach { visit(it, depth + 1, inputEnabled) }
         }
         visit(root, 0, true)

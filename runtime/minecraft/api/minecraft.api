@@ -198,6 +198,7 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeCa
 
 public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasRequest : dev/s7a/strata/render/PlatformDrawCommand {
 	public fun transformed (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+	public fun withoutInput ()Ldev/s7a/strata/render/PlatformDrawCommand;
 }
 
 public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSnapshot {
@@ -221,6 +222,7 @@ public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasTarget$De
 public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken : dev/s7a/strata/render/PlatformDrawCommand {
 	public final fun getPhysicalSize ()Ldev/s7a/strata/geometry/IntSize;
 	public fun transformed (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+	public fun withoutInput ()Ldev/s7a/strata/render/PlatformDrawCommand;
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource : java/lang/AutoCloseable {

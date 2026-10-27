@@ -1590,6 +1590,10 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/PointerInputExtensionsKt#public static final fun onRelease (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/PointerInputExtensionsKt#public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/PointerInputExtensionsKt#public static final fun onScroll (Ldev/s7a/strata/modifier/Modifier;Lkotlin/jvm/functions/Function3;)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/RootOverlayModifierElement#public abstract fun getContent ()Ldev/s7a/strata/element/Element;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/RootOverlayModifierElement#public abstract interface class dev/s7a/strata/modifier/RootOverlayModifierElement : dev/s7a/strata/modifier/ModifierElement {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/RootOverlayModifierElement$DefaultImpls#public final class dev/s7a/strata/modifier/RootOverlayModifierElement$DefaultImpls {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/RootOverlayModifierElement$DefaultImpls#public static fun getProjection (Ldev/s7a/strata/modifier/RootOverlayModifierElement;)Ldev/s7a/strata/projection/DeclarationProjection;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/ScaleToFitExtensionsKt#public final class dev/s7a/strata/modifier/ScaleToFitExtensionsKt {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/ScaleToFitExtensionsKt#public static final fun scaleToFit (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/layout/Alignment;Z)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/ScaleToFitExtensionsKt#public static synthetic fun scaleToFit$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/layout/Alignment;ZILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
@@ -1609,10 +1613,16 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/SizeExtensionsKt#public static synthetic fun sizeIn$default (Ldev/s7a/strata/modifier/Modifier;IIIIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/SizeExtensionsKt#public static synthetic fun widthIn$default (Ldev/s7a/strata/modifier/Modifier;IIILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public final class dev/s7a/strata/modifier/TooltipModifiers {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;JZLkotlin/jvm/functions/Function1;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;J)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static final fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;ZJ)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;JZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;JILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;JILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/modifier/TooltipModifiers#public static synthetic fun tooltip$default (Ldev/s7a/strata/modifier/Modifier;Ljava/lang/String;ZJILjava/lang/Object;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ChildTransform#public final class dev/s7a/strata/node/ChildTransform {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ChildTransform#public final fun component1 ()D
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ChildTransform#public final fun component2 ()Ldev/s7a/strata/geometry/DoubleOffset;
@@ -1733,6 +1743,8 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/PointerInputNode$DefaultImpls#public static fun onPointerGesture (Ldev/s7a/strata/node/PointerInputNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ReactiveContentNode#public abstract fun invalidateObservedContent ()V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/ReactiveContentNode#public abstract interface class dev/s7a/strata/node/ReactiveContentNode : dev/s7a/strata/node/DeferredContentNode {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/RootOverlayContentNode#public abstract fun getOverlayVisible ()Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/RootOverlayContentNode#public abstract interface class dev/s7a/strata/node/RootOverlayContentNode {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/RootOverlayPaintNode#public abstract fun paintRootOverlay (Ldev/s7a/strata/render/RootOverlayPaintScope;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/RootOverlayPaintNode#public abstract interface class dev/s7a/strata/node/RootOverlayPaintNode {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/node/SemanticsNode#public abstract fun semantics (Ldev/s7a/strata/semantics/SemanticsScope;)V
@@ -1960,8 +1972,10 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PaintScope$DefaultImpls#public static synthetic fun sampledImage-wyvhK5Q$default (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/render/SampledImageOrientation;IFILjava/lang/Object;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PlatformDrawCommand#public abstract interface class dev/s7a/strata/render/PlatformDrawCommand {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PlatformDrawCommand#public fun transformed (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PlatformDrawCommand#public fun withoutInput ()Ldev/s7a/strata/render/PlatformDrawCommand;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PlatformDrawCommand$DefaultImpls#public final class dev/s7a/strata/render/PlatformDrawCommand$DefaultImpls {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PlatformDrawCommand$DefaultImpls#public static fun transformed (Ldev/s7a/strata/render/PlatformDrawCommand;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PlatformDrawCommand$DefaultImpls#public static fun withoutInput (Ldev/s7a/strata/render/PlatformDrawCommand;)Ldev/s7a/strata/render/PlatformDrawCommand;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/RootOverlayPaintScope#public abstract fun getAnchorBounds ()Ldev/s7a/strata/geometry/IntRect;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/RootOverlayPaintScope#public abstract interface class dev/s7a/strata/render/RootOverlayPaintScope : dev/s7a/strata/render/PaintScope {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/RootOverlayPaintScope$DefaultImpls#public final class dev/s7a/strata/render/RootOverlayPaintScope$DefaultImpls {
@@ -2140,6 +2154,8 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime#public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime#public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime#public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime#public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/Element;ZJ)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime#public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public final class dev/s7a/strata/spi/ComponentRuntime$DefaultImpls {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public static fun text (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/text/TextLayout;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public static fun textArea (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextAreaState;Ldev/s7a/strata/component/TextAreaViewport;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/text/TextWrap;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
@@ -2149,6 +2165,8 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public static fun textField (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public static fun textField (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public static fun textField (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public static fun tooltip (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/Element;ZJ)Ldev/s7a/strata/modifier/Modifier;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntime$DefaultImpls#public static fun tooltip (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntimeBridge#public final class dev/s7a/strata/spi/ComponentRuntimeBridge {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntimeBridge#public final fun current ()Ldev/s7a/strata/spi/ComponentRuntime;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ComponentRuntimeBridge#public final fun evaluate (Ldev/s7a/strata/spi/ComponentRuntime;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/element/Element;
@@ -2178,6 +2196,13 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ScreenPresenters#public final fun install (Ldev/s7a/strata/spi/ScreenPresenter;)Ldev/s7a/strata/spi/ScreenPresenterRegistration;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ScreenPresenters#public final fun present (Ldev/s7a/strata/screen/ScreenDefinition;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/ScreenPresenters#public static final field INSTANCE Ldev/s7a/strata/spi/ScreenPresenters;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/TooltipModifier#public final class dev/s7a/strata/spi/TooltipModifier : dev/s7a/strata/modifier/RootOverlayModifierElement {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/TooltipModifier#public final fun getDelayMillis ()J
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/TooltipModifier#public fun <init> (Ldev/s7a/strata/element/Element;JLdev/s7a/strata/projection/DeclarationProjection;)V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/TooltipModifier#public fun getContent ()Ldev/s7a/strata/element/Element;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/TooltipModifier#public fun getProjection ()Ldev/s7a/strata/projection/DeclarationProjection;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/TooltipModifier#public fun getType ()Ldev/s7a/strata/modifier/ModifierNodeType;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/TooltipModifier#public synthetic fun <init> (Ldev/s7a/strata/element/Element;JLdev/s7a/strata/projection/DeclarationProjection;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/UiPresenter#public abstract fun present (Ldev/s7a/strata/ui/UiDefinition;)Ldev/s7a/strata/ui/UiSession;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/UiPresenter#public abstract interface class dev/s7a/strata/spi/UiPresenter {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/spi/UiPresenters#public final class dev/s7a/strata/spi/UiPresenters {
@@ -3834,6 +3859,9 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/ModifierNodeType.validateErased|validateErased(dev.s7a.strata.modifier.ModifierElement){}[0]#final fun validateErased(dev.s7a.strata.modifier/ModifierElement)
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/ModifierNodeType|null[0]#final class <#A: dev.s7a.strata.modifier/ModifierElement, #B: dev.s7a.strata.node/ModifierNode> dev.s7a.strata.modifier/ModifierNodeType {
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/Modifier|null[0]#abstract interface dev.s7a.strata.modifier/Modifier {
+:api@Web	:api@Web	klib:dev.s7a.strata.modifier/RootOverlayModifierElement.content.<get-content>|<get-content>(){}[0]#abstract fun <get-content>(): dev.s7a.strata.element/Element
+:api@Web	:api@Web	klib:dev.s7a.strata.modifier/RootOverlayModifierElement.content|{}content[0]#abstract val content
+:api@Web	:api@Web	klib:dev.s7a.strata.modifier/RootOverlayModifierElement|null[0]#abstract interface dev.s7a.strata.modifier/RootOverlayModifierElement : dev.s7a.strata.modifier/ModifierElement {
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/actionDispatcher|actionDispatcher@dev.s7a.strata.modifier.Modifier(){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/actionDispatcher(): dev.s7a.strata.action/ActionDispatcher
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/background|background@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.render.ArgbColor){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/background(dev.s7a.strata.render/ArgbColor): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/containerBackground|containerBackground@dev.s7a.strata.modifier.Modifier(kotlin.Int){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/containerBackground(kotlin/Int = ...): dev.s7a.strata.modifier/Modifier
@@ -3899,7 +3927,10 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/semantics|semantics@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.semantics.Semantics){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/semantics(dev.s7a.strata.semantics/Semantics): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/sizeIn|sizeIn@dev.s7a.strata.modifier.Modifier(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Int){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/sizeIn(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ...): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/size|size@dev.s7a.strata.modifier.Modifier(kotlin.Int;kotlin.Int){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/size(kotlin/Int, kotlin/Int): dev.s7a.strata.modifier/Modifier
+:api@Web	:api@Web	klib:dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.text.UiText;kotlin.Boolean;kotlin.Long){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(dev.s7a.strata.text/UiText, kotlin/Boolean, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.text.UiText;kotlin.Long){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(dev.s7a.strata.text/UiText, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier
+:api@Web	:api@Web	klib:dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(kotlin.Long;kotlin.Boolean;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(kotlin/Long = ..., kotlin/Boolean = ..., kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>): dev.s7a.strata.modifier/Modifier
+:api@Web	:api@Web	klib:dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(kotlin.String;kotlin.Boolean;kotlin.Long){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(kotlin/String, kotlin/Boolean, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/tooltip|tooltip@dev.s7a.strata.modifier.Modifier(kotlin.String;kotlin.Long){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/tooltip(kotlin/String, kotlin/Long = ...): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/widthIn|widthIn@dev.s7a.strata.modifier.Modifier(kotlin.Int;kotlin.Int){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/widthIn(kotlin/Int = ..., kotlin/Int = ...): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.modifier/width|width@dev.s7a.strata.modifier.Modifier(kotlin.Int){}[0]#final fun (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/width(kotlin/Int): dev.s7a.strata.modifier/Modifier
@@ -4017,6 +4048,9 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.node/PointerInputNode|null[0]#abstract interface dev.s7a.strata.node/PointerInputNode {
 :api@Web	:api@Web	klib:dev.s7a.strata.node/ReactiveContentNode.invalidateObservedContent|invalidateObservedContent(){}[0]#abstract fun invalidateObservedContent()
 :api@Web	:api@Web	klib:dev.s7a.strata.node/ReactiveContentNode|null[0]#abstract interface dev.s7a.strata.node/ReactiveContentNode : dev.s7a.strata.node/DeferredContentNode {
+:api@Web	:api@Web	klib:dev.s7a.strata.node/RootOverlayContentNode.overlayVisible.<get-overlayVisible>|<get-overlayVisible>(){}[0]#abstract fun <get-overlayVisible>(): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.node/RootOverlayContentNode.overlayVisible|{}overlayVisible[0]#abstract val overlayVisible
+:api@Web	:api@Web	klib:dev.s7a.strata.node/RootOverlayContentNode|null[0]#abstract interface dev.s7a.strata.node/RootOverlayContentNode {
 :api@Web	:api@Web	klib:dev.s7a.strata.node/RootOverlayPaintNode.paintRootOverlay|paintRootOverlay(dev.s7a.strata.render.RootOverlayPaintScope){}[0]#abstract fun paintRootOverlay(dev.s7a.strata.render/RootOverlayPaintScope)
 :api@Web	:api@Web	klib:dev.s7a.strata.node/RootOverlayPaintNode|null[0]#abstract interface dev.s7a.strata.node/RootOverlayPaintNode {
 :api@Web	:api@Web	klib:dev.s7a.strata.node/SemanticsNode.semantics|semantics(dev.s7a.strata.semantics.SemanticsScope){}[0]#abstract fun semantics(dev.s7a.strata.semantics/SemanticsScope)
@@ -4231,6 +4265,7 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.render/PaintScope.withClip|withClip(dev.s7a.strata.geometry.IntRect;kotlin.Function0<kotlin.Unit>){}[0]#open fun withClip(dev.s7a.strata.geometry/IntRect, kotlin/Function0<kotlin/Unit>)
 :api@Web	:api@Web	klib:dev.s7a.strata.render/PaintScope|null[0]#abstract interface dev.s7a.strata.render/PaintScope {
 :api@Web	:api@Web	klib:dev.s7a.strata.render/PlatformDrawCommand.transformed|transformed(dev.s7a.strata.geometry.IntRect;dev.s7a.strata.geometry.FloatRect){}[0]#open fun transformed(dev.s7a.strata.geometry/IntRect, dev.s7a.strata.geometry/FloatRect): dev.s7a.strata.render/PlatformDrawCommand?
+:api@Web	:api@Web	klib:dev.s7a.strata.render/PlatformDrawCommand.withoutInput|withoutInput(){}[0]#open fun withoutInput(): dev.s7a.strata.render/PlatformDrawCommand
 :api@Web	:api@Web	klib:dev.s7a.strata.render/PlatformDrawCommand|null[0]#abstract interface dev.s7a.strata.render/PlatformDrawCommand {
 :api@Web	:api@Web	klib:dev.s7a.strata.render/RootOverlayPaintScope.anchorBounds.<get-anchorBounds>|<get-anchorBounds>(){}[0]#abstract fun <get-anchorBounds>(): dev.s7a.strata.geometry/IntRect
 :api@Web	:api@Web	klib:dev.s7a.strata.render/RootOverlayPaintScope.anchorBounds|{}anchorBounds[0]#abstract val anchorBounds
@@ -4413,6 +4448,8 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntime.textField|textField(dev.s7a.strata.component.TextFieldState;dev.s7a.strata.geometry.IntSize;kotlin.Boolean;dev.s7a.strata.component.TextStyle;dev.s7a.strata.resource.ResourceId;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]#open fun textField(dev.s7a.strata.component/TextFieldState, dev.s7a.strata.geometry/IntSize, kotlin/Boolean, dev.s7a.strata.component/TextStyle, dev.s7a.strata.resource/ResourceId, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntime.text|text(dev.s7a.strata.text.UiText;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]#abstract fun text(dev.s7a.strata.text/UiText, dev.s7a.strata.component/TextStyle, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntime.text|text(dev.s7a.strata.text.UiText;dev.s7a.strata.text.TextLayout;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]#open fun text(dev.s7a.strata.text/UiText, dev.s7a.strata.text/TextLayout, dev.s7a.strata.component/TextStyle, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntime.tooltip|tooltip(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.Element;kotlin.Boolean;kotlin.Long){}[0]#open fun tooltip(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/Element, kotlin/Boolean, kotlin/Long): dev.s7a.strata.modifier/Modifier
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntime.tooltip|tooltip(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.text.UiText;kotlin.Boolean;kotlin.Long){}[0]#open fun tooltip(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.text/UiText, kotlin/Boolean, kotlin/Long): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntime.tooltip|tooltip(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.text.UiText;kotlin.Long){}[0]#abstract fun tooltip(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.text/UiText, kotlin/Long): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntimeBridge.current|current(){}[0]#final fun current(): dev.s7a.strata.spi/ComponentRuntime
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ComponentRuntimeBridge.evaluate|evaluate(dev.s7a.strata.spi.ComponentRuntime;kotlin.Function1<dev.s7a.strata.component.UiScope,kotlin.Unit>){}[0]#final fun evaluate(dev.s7a.strata.spi/ComponentRuntime, kotlin/Function1<dev.s7a.strata.component/UiScope, kotlin/Unit>): dev.s7a.strata.element/Element
@@ -4436,6 +4473,16 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ScreenPresenters.present|present(dev.s7a.strata.screen.ScreenDefinition){}[0]#final fun present(dev.s7a.strata.screen/ScreenDefinition)
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ScreenPresenters|null[0]#final object dev.s7a.strata.spi/ScreenPresenters {
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/ScreenPresenter|null[0]#abstract fun interface dev.s7a.strata.spi/ScreenPresenter {
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.<init>|<init>(dev.s7a.strata.element.Element;kotlin.Long;dev.s7a.strata.projection.DeclarationProjection<*>?){}[0]#constructor <init>(dev.s7a.strata.element/Element, kotlin/Long, dev.s7a.strata.projection/DeclarationProjection<*>? = ...)
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.content.<get-content>|<get-content>(){}[0]#final fun <get-content>(): dev.s7a.strata.element/Element
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.content|{}content[0]#final val content
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.delayMillis.<get-delayMillis>|<get-delayMillis>(){}[0]#final fun <get-delayMillis>(): kotlin/Long
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.delayMillis|{}delayMillis[0]#final val delayMillis
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.projection.<get-projection>|<get-projection>(){}[0]#final fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>?
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.projection|{}projection[0]#final val projection
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.type.<get-type>|<get-type>(){}[0]#final fun <get-type>(): dev.s7a.strata.modifier/ModifierNodeType<*, *>
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier.type|{}type[0]#final val type
+:api@Web	:api@Web	klib:dev.s7a.strata.spi/TooltipModifier|null[0]#final class dev.s7a.strata.spi/TooltipModifier : dev.s7a.strata.modifier/RootOverlayModifierElement {
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/UiPresenter.present|present(dev.s7a.strata.ui.UiDefinition){}[0]#abstract fun present(dev.s7a.strata.ui/UiDefinition): dev.s7a.strata.ui/UiSession
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/UiPresenters.install|install(dev.s7a.strata.spi.UiPresenter){}[0]#final fun install(dev.s7a.strata.spi/UiPresenter): kotlin/AutoCloseable
 :api@Web	:api@Web	klib:dev.s7a.strata.spi/UiPresenters.present|present(dev.s7a.strata.ui.UiDefinition){}[0]#final fun present(dev.s7a.strata.ui/UiDefinition): dev.s7a.strata.ui/UiSession
@@ -5722,6 +5769,7 @@
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeDeclaration#public final fun getModifiers ()Ljava/util/List;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeDeclaration#public final fun getProjection ()Ldev/s7a/strata/projection/DeclarationProjection;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier#public final class dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier {
+:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier#public final fun getContent ()Ldev/s7a/strata/runtime/spi/RuntimeDeclaration;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier#public final fun getElement ()Ldev/s7a/strata/modifier/ModifierElement;
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier#public final fun getIdentity ()J
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/spi/RuntimeDeclaration$Modifier#public final fun getProjection ()Ldev/s7a/strata/projection/DeclarationProjection;
@@ -5928,6 +5976,8 @@
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.semantics/SemanticsOwner.visibleBounds.<get-visibleBounds>|<get-visibleBounds>(){}[0]#final fun <get-visibleBounds>(): dev.s7a.strata.geometry/IntRect
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.semantics/SemanticsOwner.visibleBounds|{}visibleBounds[0]#final val visibleBounds
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.semantics/SemanticsOwner|null[0]#final class dev.s7a.strata.runtime.semantics/SemanticsOwner {
+:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.content.<get-content>|<get-content>(){}[0]#final fun <get-content>(): dev.s7a.strata.runtime.spi/RuntimeDeclaration?
+:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.content|{}content[0]#final val content
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.element.<get-element>|<get-element>(){}[0]#final fun <get-element>(): dev.s7a.strata.modifier/ModifierElement
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.element|{}element[0]#final val element
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.identity.<get-identity>|<get-identity>(){}[0]#final fun <get-identity>(): kotlin/Long
@@ -6148,7 +6198,9 @@
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteComponentRuntime#public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteComponentRuntime#public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteComponentRuntime#public fun textField (Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteComponentRuntime#public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/Element;ZJ)Ldev/s7a/strata/modifier/Modifier;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteComponentRuntime#public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteComponentRuntime#public fun tooltip (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection#public final class dev/s7a/strata/runtime/remote/RemoteConnection : java/lang/AutoCloseable {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection#public final fun discardSession (J)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection#public final fun flush (I)V
@@ -6514,13 +6566,16 @@
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteMessageCodec#public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteLimits;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteModifierContext#public final class dev/s7a/strata/runtime/remote/RemoteModifierContext {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteModifierContext#public final fun getActions ()Ldev/s7a/strata/runtime/remote/RemoteClientActions;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteModifierContext#public final fun getContent ()Ldev/s7a/strata/element/Element;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteModifierContext#public final fun getIdentity ()J
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteModifierContext#public final fun getStates ()Ldev/s7a/strata/runtime/remote/RemoteClientStates;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public final class dev/s7a/strata/runtime/remote/RemoteNode {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public final fun getChildren ()Ljava/util/List;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public final fun getDeclaration ()Ldev/s7a/strata/runtime/remote/RemoteDeclaration;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public final fun getModifiers ()Ljava/util/List;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public final fun getOverlays ()Ljava/util/Map;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;)V
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;Ljava/util/Map;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public fun equals (Ljava/lang/Object;)Z
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public fun hashCode ()I
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteNode#public synthetic fun <init> (Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -6957,6 +7012,7 @@
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasProducer#public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasProducer : java/lang/AutoCloseable {
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasRequest#public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasRequest : dev/s7a/strata/render/PlatformDrawCommand {
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasRequest#public fun transformed (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+:runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasRequest#public fun withoutInput ()Ldev/s7a/strata/render/PlatformDrawCommand;
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSnapshot#public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSnapshot {
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSources#public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSources {
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasSources#public static final fun nativeCanvasSource (Ldev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDriver;Lkotlin/jvm/functions/Function0;Z)Ldev/s7a/strata/component/CanvasSource;
@@ -6970,6 +7026,7 @@
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken#public final class dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken : dev/s7a/strata/render/PlatformDrawCommand {
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken#public final fun getPhysicalSize ()Ldev/s7a/strata/geometry/IntSize;
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken#public fun transformed (Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/FloatRect;)Ldev/s7a/strata/render/PlatformDrawCommand;
+:runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasToken#public fun withoutInput ()Ldev/s7a/strata/render/PlatformDrawCommand;
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource#public abstract fun close ()V
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource#public abstract interface class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource : java/lang/AutoCloseable {
 :runtime:minecraft@Jvm	:runtime:minecraft@Jvm	jvm:dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResource#public fun isDestroyed ()Z

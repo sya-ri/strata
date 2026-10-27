@@ -68,6 +68,16 @@ internal class PaintPipeline(
             overlays.add(commands.rootOverlays)
             rootOverlays = overlays
         }
+        val overlay = (retained as? RetainedModifier)?.overlay?.effectiveRoot
+        if (overlay?.placed == true) {
+            val snapshot = paintNode(overlay, viewport)
+            val layers = rootOverlays ?: ArrayList()
+            layers.add(listOf(DrawCommand.PushClip(IntRect(0, 0, viewport.width, viewport.height))))
+            layers.add(snapshot.commands.map(DrawCommand::withoutInput))
+            layers.add(snapshot.rootOverlays.map(DrawCommand::withoutInput))
+            layers.add(listOf(DrawCommand.PopClip))
+            rootOverlays = layers
+        }
         val overlays = rootOverlays?.let(::RetainedDrawCommands) ?: emptyList()
         return RetainedPaintSnapshot(commands, viewport, RetainedDrawCommands(parts), overlays).also { retained.paintSnapshot = it }
     }

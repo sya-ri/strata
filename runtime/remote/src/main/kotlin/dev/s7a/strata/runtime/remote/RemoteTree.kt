@@ -32,9 +32,11 @@ public class RemoteTree(
             require(node.modifiers.size <= limits.collectionEntries) { "Remote modifier count exceeds its limit." }
             node.modifiers.forEach { require(identities.add(it.identity)) { "Duplicate remote modifier identity." } }
             require(identities.size <= limits.collectionEntries) { "Remote declaration count exceeds its limit." }
-            require(node.children.size <= limits.treeNodes) { "Remote child count exceeds its limit." }
-            require(node.children.size <= index.size - visited - pending) { "Remote tree has excess child references." }
-            node.children.forEach { child ->
+            require(node.overlays.keys.all { key -> node.modifiers.any { it.identity == key } }) { "Overlay owner is not a modifier of this node." }
+            val descendants = node.children + node.overlays.values
+            require(descendants.size <= limits.treeNodes) { "Remote child count exceeds its limit." }
+            require(descendants.size <= index.size - visited - pending) { "Remote tree has excess child references." }
+            descendants.forEach { child ->
                 pendingIdentities[pending] = child
                 pendingDepths[pending] = depth + 1
                 pending += 1

@@ -97,7 +97,9 @@ dev.s7a.strata.runtime.remote.RemoteComponentRuntime#method:1:textField:(Ldev/s7
 dev.s7a.strata.runtime.remote.RemoteComponentRuntime#method:1:textField:(Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 dev.s7a.strata.runtime.remote.RemoteComponentRuntime#method:1:textField:(Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 dev.s7a.strata.runtime.remote.RemoteComponentRuntime#method:1:textField:(Ldev/s7a/strata/component/TextFieldState;Ldev/s7a/strata/geometry/IntSize;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+dev.s7a.strata.runtime.remote.RemoteComponentRuntime#method:1:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/Element;ZJ)Ldev/s7a/strata/modifier/Modifier;
 dev.s7a.strata.runtime.remote.RemoteComponentRuntime#method:1:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;J)Ldev/s7a/strata/modifier/Modifier;
+dev.s7a.strata.runtime.remote.RemoteComponentRuntime#method:1:tooltip:(Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/text/UiText;ZJ)Ldev/s7a/strata/modifier/Modifier;
 dev.s7a.strata.runtime.remote.RemoteComponentRuntime#type:17:java.lang.Object:dev.s7a.strata.spi.ComponentRuntime
 dev.s7a.strata.runtime.remote.RemoteConnection#constructor:1:(Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;)V
 dev.s7a.strata.runtime.remote.RemoteConnection#field:25:CHANNEL:Ljava/lang/String;
@@ -467,8 +469,9 @@ dev.s7a.strata.runtime.remote.RemoteMessageCodec#method:17:decode:([B)Ldev/s7a/s
 dev.s7a.strata.runtime.remote.RemoteMessageCodec#method:17:encode:(Ldev/s7a/strata/runtime/remote/RemoteMessage;)[B
 dev.s7a.strata.runtime.remote.RemoteMessageCodec#type:17:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemoteMessageCodec$WhenMappings#type:4121:java.lang.Object:
-dev.s7a.strata.runtime.remote.RemoteModifierContext#constructor:1:(JLdev/s7a/strata/runtime/remote/RemoteClientActions;Ldev/s7a/strata/runtime/remote/RemoteClientStates;)V
+dev.s7a.strata.runtime.remote.RemoteModifierContext#constructor:1:(JLdev/s7a/strata/runtime/remote/RemoteClientActions;Ldev/s7a/strata/runtime/remote/RemoteClientStates;Ldev/s7a/strata/element/Element;)V
 dev.s7a.strata.runtime.remote.RemoteModifierContext#method:17:getActions:()Ldev/s7a/strata/runtime/remote/RemoteClientActions;
+dev.s7a.strata.runtime.remote.RemoteModifierContext#method:17:getContent:()Ldev/s7a/strata/element/Element;
 dev.s7a.strata.runtime.remote.RemoteModifierContext#method:17:getIdentity:()J
 dev.s7a.strata.runtime.remote.RemoteModifierContext#method:17:getStates:()Ldev/s7a/strata/runtime/remote/RemoteClientStates;
 dev.s7a.strata.runtime.remote.RemoteModifierContext#type:17:java.lang.Object:
@@ -476,9 +479,11 @@ dev.s7a.strata.runtime.remote.RemoteModifiers#field:25:INSTANCE:Ldev/s7a/strata/
 dev.s7a.strata.runtime.remote.RemoteModifiers#method:17:register:(Ldev/s7a/strata/runtime/remote/RemoteRegistry;)V
 dev.s7a.strata.runtime.remote.RemoteModifiers#type:17:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemoteNode#constructor:1:(Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;)V
+dev.s7a.strata.runtime.remote.RemoteNode#constructor:1:(Ldev/s7a/strata/runtime/remote/RemoteDeclaration;Ljava/util/List;Ljava/util/List;Ljava/util/Map;)V
 dev.s7a.strata.runtime.remote.RemoteNode#method:17:getChildren:()Ljava/util/List;
 dev.s7a.strata.runtime.remote.RemoteNode#method:17:getDeclaration:()Ldev/s7a/strata/runtime/remote/RemoteDeclaration;
 dev.s7a.strata.runtime.remote.RemoteNode#method:17:getModifiers:()Ljava/util/List;
+dev.s7a.strata.runtime.remote.RemoteNode#method:17:getOverlays:()Ljava/util/Map;
 dev.s7a.strata.runtime.remote.RemoteNode#method:1:equals:(Ljava/lang/Object;)Z
 dev.s7a.strata.runtime.remote.RemoteNode#method:1:hashCode:()I
 dev.s7a.strata.runtime.remote.RemoteNode#type:17:java.lang.Object:
@@ -576,7 +581,9 @@ dev.s7a.strata.runtime.remote.RemotePreparedTree$Node#type:25:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:Button:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:Checkbox:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ContainerBackground:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
+dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ContentTooltip:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:CycleButton:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
+dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:DecoratedTooltip:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:Image:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:ImageBackground:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
 dev.s7a.strata.runtime.remote.RemoteProfileComponent#field:16409:LoadingIndicator:Ldev/s7a/strata/runtime/remote/RemoteProfileComponent;
