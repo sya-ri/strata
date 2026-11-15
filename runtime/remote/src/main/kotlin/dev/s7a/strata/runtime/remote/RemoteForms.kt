@@ -12,6 +12,7 @@ import dev.s7a.strata.modifier.onCheckedChange
 import dev.s7a.strata.modifier.onCycle
 import dev.s7a.strata.modifier.onSliderChange
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.ProjectionDragScrollOptions
 import dev.s7a.strata.projection.ProjectionFields
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.runtime.remote.RemoteProperties.enumeration
@@ -89,10 +90,11 @@ internal object RemoteForms {
             require(labels.isNotEmpty() && integer(binding.value) in labels.indices)
             val width = int(1..Int.MAX_VALUE)
             val enabled = flag()
+            val scrollEnabled = flag()
             control.specification(binding, { CycleButtonState(labels.indices.toList(), it) }, { state, context ->
                 require(context.children.isEmpty())
                 val modifier = context.modifier.onCycle<Int> { context.states.flushEdits(context.actions) }
-                ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, context.key)
+                ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, context.key, scrollEnabled)
             })
         }
     }
@@ -160,7 +162,8 @@ internal object RemoteForms {
             val binding = RemoteBindingSnapshot.decode(value())
             require(0.0 <= real(binding.value))
             val rate = int(1..Int.MAX_VALUE)
-            control.specification(binding, ::ScrollState, { state, context ->
+            val options = ProjectionDragScrollOptions.decode(value())
+            control.specification(binding, { offset -> ScrollState(options, offset) }, { state, context ->
                 ComponentRuntimeBridge.current().scrollArea(state, context.children.single(), rate, context.modifier, context.key)
             })
         }

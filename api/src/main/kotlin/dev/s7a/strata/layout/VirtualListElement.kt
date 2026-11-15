@@ -5,6 +5,7 @@ package dev.s7a.strata.layout
 import dev.s7a.strata.action.ActionDispatcher
 import dev.s7a.strata.action.ComponentActions
 import dev.s7a.strata.action.ListLoadRequest
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.component.VirtualListController
 import dev.s7a.strata.component.VirtualListJump
@@ -17,6 +18,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.internal.toIntExact
@@ -26,13 +28,14 @@ import dev.s7a.strata.node.ConstrainedChildrenNode
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.DragScrollNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionDragScrollOptions
 import dev.s7a.strata.projection.ProjectionScrollBinding
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -77,7 +80,7 @@ internal class VirtualListElement(
         ConstrainedChildrenNode,
         MeasureNode,
         LayoutNode,
-        PointerInputNode,
+        DragScrollNode,
         ClipChildrenNode,
         SessionAttachmentNode,
         DeclarationProjectionNode,
@@ -130,6 +133,7 @@ internal class VirtualListElement(
                                     }) { delta -> node.requestBoundaryItems(delta) },
                                 ),
                             ),
+                            ProjectionDragScrollOptions.encode(node.state.scrollState.dragScroll),
                         ),
                     )
                 }
@@ -232,24 +236,46 @@ internal class VirtualListElement(
             event: PointerEvent,
             localPosition: IntOffset,
         ): InputResult =
-            if (event is PointerEvent.Scroll) {
-                val delta = event.deltaY * scrollRate.toDouble()
-                if (delta.isFinite()) {
-                    state.scrollState.scrollBy(delta, checkNotNull(observer))
-                    rememberCurrentAnchor()
+            when {
+                event is PointerEvent.Scroll || (event is PointerEvent.Drag && event.button === PointerButton.Primary && dragScrollOptions is DragScrollOptions.Enabled) -> {
+                    val delta = if (event is PointerEvent.Scroll) event.deltaY * scrollRate.toDouble() else -(event as PointerEvent.Drag).deltaY
+                    if (delta.isFinite()) {
+                        state.scrollState.scrollBy(delta, checkNotNull(observer))
+                        rememberCurrentAnchor()
+                    }
+                    requestBoundaryItems(delta)
+                    invalidate(DirtyMask.of(DirtyPhase.Measure))
+                    InputResult.Consumed
                 }
-                requestBoundaryItems(delta)
-                invalidate(DirtyMask.of(DirtyPhase.Measure))
-                InputResult.Consumed
-            } else {
-                InputResult.Ignored
+
+                else -> {
+                    InputResult.Ignored
+                }
             }
+
+        override val dragScrollOptions: DragScrollOptions
+            get() = state.scrollState.dragScroll
+
+        override val dragScrollIdentity: Any
+            get() = state
+
+        override val canDragScroll: Boolean
+            get() = state.scrollState.metrics.canScroll
+
+        override fun scrollByDrag(delta: Double): Double {
+            val previous = state.scrollState.metrics.offset
+            state.scrollState.scrollBy(delta, checkNotNull(observer))
+            rememberCurrentAnchor()
+            requestBoundaryItems(delta)
+            invalidate(DirtyMask.of(DirtyPhase.Measure))
+            return state.scrollState.metrics.offset - previous
+        }
 
         override fun onPointerGesture(
             gesture: PointerGesture,
             localPosition: IntOffset,
         ): InputResult =
-            if (gesture is PointerGesture.Pan) {
+            if (gesture is PointerGesture.Pan && dragScrollOptions is DragScrollOptions.Enabled) {
                 onPointerEvent(PointerEvent.Scroll(gesture.position, 0.0, -gesture.deltaY / scrollRate), localPosition)
             } else {
                 InputResult.Ignored

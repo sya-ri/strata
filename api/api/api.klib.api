@@ -499,6 +499,17 @@ abstract interface dev.s7a.strata.node/DeferredContentNode : dev.s7a.strata.node
         abstract fun <get-pendingContentReasons>(): kotlin.collections/Set<dev.s7a.strata.node/ContentInvalidation> // dev.s7a.strata.node/DeferredContentNode.pendingContentReasons.<get-pendingContentReasons>|<get-pendingContentReasons>(){}[0]
 }
 
+abstract interface dev.s7a.strata.node/DragScrollNode : dev.s7a.strata.node/PointerInputNode { // dev.s7a.strata.node/DragScrollNode|null[0]
+    abstract val canDragScroll // dev.s7a.strata.node/DragScrollNode.canDragScroll|{}canDragScroll[0]
+        abstract fun <get-canDragScroll>(): kotlin/Boolean // dev.s7a.strata.node/DragScrollNode.canDragScroll.<get-canDragScroll>|<get-canDragScroll>(){}[0]
+    open val dragScrollIdentity // dev.s7a.strata.node/DragScrollNode.dragScrollIdentity|{}dragScrollIdentity[0]
+        open fun <get-dragScrollIdentity>(): kotlin/Any // dev.s7a.strata.node/DragScrollNode.dragScrollIdentity.<get-dragScrollIdentity>|<get-dragScrollIdentity>(){}[0]
+    open val dragScrollOptions // dev.s7a.strata.node/DragScrollNode.dragScrollOptions|{}dragScrollOptions[0]
+        open fun <get-dragScrollOptions>(): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.node/DragScrollNode.dragScrollOptions.<get-dragScrollOptions>|<get-dragScrollOptions>(){}[0]
+
+    abstract fun scrollByDrag(kotlin/Double): kotlin/Double // dev.s7a.strata.node/DragScrollNode.scrollByDrag|scrollByDrag(kotlin.Double){}[0]
+}
+
 abstract interface dev.s7a.strata.node/FocusTargetNode { // dev.s7a.strata.node/FocusTargetNode|null[0]
     abstract val acceptsFocus // dev.s7a.strata.node/FocusTargetNode.acceptsFocus|{}acceptsFocus[0]
         abstract fun <get-acceptsFocus>(): kotlin/Boolean // dev.s7a.strata.node/FocusTargetNode.acceptsFocus.<get-acceptsFocus>|<get-acceptsFocus>(){}[0]
@@ -514,6 +525,8 @@ abstract interface dev.s7a.strata.node/FrameCutoffNode { // dev.s7a.strata.node/
     abstract fun captureFrameState() // dev.s7a.strata.node/FrameCutoffNode.captureFrameState|captureFrameState(){}[0]
     abstract fun commitFrameState() // dev.s7a.strata.node/FrameCutoffNode.commitFrameState|commitFrameState(){}[0]
 }
+
+abstract interface dev.s7a.strata.node/HorizontalDragNode : dev.s7a.strata.node/PointerCaptureNode // dev.s7a.strata.node/HorizontalDragNode|null[0]
 
 abstract interface dev.s7a.strata.node/KeyboardInputNode { // dev.s7a.strata.node/KeyboardInputNode|null[0]
     abstract fun onKeyboardEvent(dev.s7a.strata.input/KeyboardEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.node/KeyboardInputNode.onKeyboardEvent|onKeyboardEvent(dev.s7a.strata.input.KeyboardEvent){}[0]
@@ -726,7 +739,7 @@ abstract interface dev.s7a.strata.spi/ComponentRuntime { // dev.s7a.strata.spi/C
     abstract fun button(dev.s7a.strata.text/UiText, kotlin/Int, kotlin/Boolean, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.button|button(dev.s7a.strata.text.UiText;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     abstract fun checkbox(dev.s7a.strata.text/UiText, dev.s7a.strata.component/CheckboxState, kotlin/Int, kotlin/Boolean, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.checkbox|checkbox(dev.s7a.strata.text.UiText;dev.s7a.strata.component.CheckboxState;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     abstract fun containerBackground(dev.s7a.strata.modifier/Modifier, kotlin/Int): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.spi/ComponentRuntime.containerBackground|containerBackground(dev.s7a.strata.modifier.Modifier;kotlin.Int){}[0]
-    abstract fun cycleButton(dev.s7a.strata.component/CycleButtonState<*>, kotlin.collections/List<dev.s7a.strata.text/UiText>, kotlin/Int, kotlin/Boolean, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.cycleButton|cycleButton(dev.s7a.strata.component.CycleButtonState<*>;kotlin.collections.List<dev.s7a.strata.text.UiText>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
+    abstract fun cycleButton(dev.s7a.strata.component/CycleButtonState<*>, kotlin.collections/List<dev.s7a.strata.text/UiText>, kotlin/Int, kotlin/Boolean, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?, kotlin/Boolean): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.cycleButton|cycleButton(dev.s7a.strata.component.CycleButtonState<*>;kotlin.collections.List<dev.s7a.strata.text.UiText>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Boolean){}[0]
     abstract fun image(dev.s7a.strata.component/ImageSource, dev.s7a.strata.geometry/IntRect?, dev.s7a.strata.geometry/IntSize?, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.image|image(dev.s7a.strata.component.ImageSource;dev.s7a.strata.geometry.IntRect?;dev.s7a.strata.geometry.IntSize?;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     abstract fun imageBackground(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.component/ImageSource, dev.s7a.strata.component/ImageScale): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.spi/ComponentRuntime.imageBackground|imageBackground(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.component.ImageSource;dev.s7a.strata.component.ImageScale){}[0]
     abstract fun imageBackground(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.component/ImageSource, dev.s7a.strata.geometry/Insets, dev.s7a.strata.component/NineSliceCenterMode): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.spi/ComponentRuntime.imageBackground|imageBackground(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.component.ImageSource;dev.s7a.strata.geometry.Insets;dev.s7a.strata.component.NineSliceCenterMode){}[0]
@@ -743,6 +756,7 @@ abstract interface dev.s7a.strata.spi/ComponentRuntime { // dev.s7a.strata.spi/C
     abstract fun text(dev.s7a.strata.text/UiText, dev.s7a.strata.component/TextStyle, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.text|text(dev.s7a.strata.text.UiText;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     abstract fun textField(dev.s7a.strata.component/TextFieldState, dev.s7a.strata.geometry/IntSize, kotlin/Boolean, dev.s7a.strata.component/TextStyle, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.textField|textField(dev.s7a.strata.component.TextFieldState;dev.s7a.strata.geometry.IntSize;kotlin.Boolean;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     abstract fun tooltip(dev.s7a.strata.modifier/Modifier, dev.s7a.strata.text/UiText, kotlin/Long): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.spi/ComponentRuntime.tooltip|tooltip(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.text.UiText;kotlin.Long){}[0]
+    open fun cycleButton(dev.s7a.strata.component/CycleButtonState<*>, kotlin.collections/List<dev.s7a.strata.text/UiText>, kotlin/Int, kotlin/Boolean, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.cycleButton|cycleButton(dev.s7a.strata.component.CycleButtonState<*>;kotlin.collections.List<dev.s7a.strata.text.UiText>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     open fun text(dev.s7a.strata.text/UiText, dev.s7a.strata.text/TextLayout, dev.s7a.strata.component/TextStyle, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.text|text(dev.s7a.strata.text.UiText;dev.s7a.strata.text.TextLayout;dev.s7a.strata.component.TextStyle;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     open fun textArea(dev.s7a.strata.component/TextAreaState, dev.s7a.strata.component/TextAreaViewport, dev.s7a.strata.component/TextInputAppearance, kotlin/Boolean, dev.s7a.strata.component/TextStyle, dev.s7a.strata.resource/ResourceId, dev.s7a.strata.text/TextWrap, kotlin/Int, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.textArea|textArea(dev.s7a.strata.component.TextAreaState;dev.s7a.strata.component.TextAreaViewport;dev.s7a.strata.component.TextInputAppearance;kotlin.Boolean;dev.s7a.strata.component.TextStyle;dev.s7a.strata.resource.ResourceId;dev.s7a.strata.text.TextWrap;kotlin.Int;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
     open fun textArea(dev.s7a.strata.component/TextAreaState, dev.s7a.strata.component/TextAreaViewport, dev.s7a.strata.component/TextInputAppearance, kotlin/Boolean, dev.s7a.strata.component/TextStyle, dev.s7a.strata.text/TextWrap, kotlin/Int, dev.s7a.strata.modifier/Modifier, dev.s7a.strata.element/ElementKey<*>?): dev.s7a.strata.element/Element // dev.s7a.strata.spi/ComponentRuntime.textArea|textArea(dev.s7a.strata.component.TextAreaState;dev.s7a.strata.component.TextAreaViewport;dev.s7a.strata.component.TextInputAppearance;kotlin.Boolean;dev.s7a.strata.component.TextStyle;dev.s7a.strata.text.TextWrap;kotlin.Int;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?){}[0]
@@ -775,6 +789,56 @@ abstract interface dev.s7a.strata.ui/UiSession : kotlin/AutoCloseable { // dev.s
     abstract fun setInputPolicy(dev.s7a.strata.ui/UiInputPolicy): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.ui/UiSession.setInputPolicy|setInputPolicy(dev.s7a.strata.ui.UiInputPolicy){}[0]
     abstract fun setInteractionMode(dev.s7a.strata.ui/UiInteractionMode): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.ui/UiSession.setInteractionMode|setInteractionMode(dev.s7a.strata.ui.UiInteractionMode){}[0]
     abstract fun switch(dev.s7a.strata.ui/UiPresentation): dev.s7a.strata.ui/UiOperationResult // dev.s7a.strata.ui/UiSession.switch|switch(dev.s7a.strata.ui.UiPresentation){}[0]
+}
+
+sealed interface dev.s7a.strata.component/DragScrollOptions { // dev.s7a.strata.component/DragScrollOptions|null[0]
+    sealed interface Inertia { // dev.s7a.strata.component/DragScrollOptions.Inertia|null[0]
+        final class Enabled : dev.s7a.strata.component/DragScrollOptions.Inertia { // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled|null[0]
+            constructor <init>(kotlin/Double = ...) // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.<init>|<init>(kotlin.Double){}[0]
+
+            final val deceleration // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.deceleration|{}deceleration[0]
+                final fun <get-deceleration>(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.deceleration.<get-deceleration>|<get-deceleration>(){}[0]
+
+            final fun component1(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.component1|component1(){}[0]
+            final fun copy(kotlin/Double = ...): dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.copy|copy(kotlin.Double){}[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.toString|toString(){}[0]
+        }
+
+        final object Disabled : dev.s7a.strata.component/DragScrollOptions.Inertia { // dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled|null[0]
+            final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled.equals|equals(kotlin.Any?){}[0]
+            final fun hashCode(): kotlin/Int // dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled.hashCode|hashCode(){}[0]
+            final fun toString(): kotlin/String // dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled.toString|toString(){}[0]
+        }
+    }
+
+    final class Enabled : dev.s7a.strata.component/DragScrollOptions { // dev.s7a.strata.component/DragScrollOptions.Enabled|null[0]
+        constructor <init>(kotlin/Double = ..., dev.s7a.strata.component/DragScrollOptions.Inertia = ...) // dev.s7a.strata.component/DragScrollOptions.Enabled.<init>|<init>(kotlin.Double;dev.s7a.strata.component.DragScrollOptions.Inertia){}[0]
+
+        final val dragThreshold // dev.s7a.strata.component/DragScrollOptions.Enabled.dragThreshold|{}dragThreshold[0]
+            final fun <get-dragThreshold>(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.Enabled.dragThreshold.<get-dragThreshold>|<get-dragThreshold>(){}[0]
+        final val inertia // dev.s7a.strata.component/DragScrollOptions.Enabled.inertia|{}inertia[0]
+            final fun <get-inertia>(): dev.s7a.strata.component/DragScrollOptions.Inertia // dev.s7a.strata.component/DragScrollOptions.Enabled.inertia.<get-inertia>|<get-inertia>(){}[0]
+
+        final fun component1(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.Enabled.component1|component1(){}[0]
+        final fun component2(): dev.s7a.strata.component/DragScrollOptions.Inertia // dev.s7a.strata.component/DragScrollOptions.Enabled.component2|component2(){}[0]
+        final fun copy(kotlin/Double = ..., dev.s7a.strata.component/DragScrollOptions.Inertia = ...): dev.s7a.strata.component/DragScrollOptions.Enabled // dev.s7a.strata.component/DragScrollOptions.Enabled.copy|copy(kotlin.Double;dev.s7a.strata.component.DragScrollOptions.Inertia){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.Enabled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.component/DragScrollOptions.Enabled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.component/DragScrollOptions.Enabled.toString|toString(){}[0]
+    }
+
+    final object Companion { // dev.s7a.strata.component/DragScrollOptions.Companion|null[0]
+        final val Default // dev.s7a.strata.component/DragScrollOptions.Companion.Default|{}Default[0]
+            final fun <get-Default>(): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.component/DragScrollOptions.Companion.Default.<get-Default>|<get-Default>(){}[0]
+    }
+
+    final object Disabled : dev.s7a.strata.component/DragScrollOptions { // dev.s7a.strata.component/DragScrollOptions.Disabled|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.Disabled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.component/DragScrollOptions.Disabled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.component/DragScrollOptions.Disabled.toString|toString(){}[0]
+    }
 }
 
 sealed interface dev.s7a.strata.component/ImageSource { // dev.s7a.strata.component/ImageSource|null[0]
@@ -1969,8 +2033,11 @@ final class dev.s7a.strata.component/ScrollMetrics { // dev.s7a.strata.component
 }
 
 final class dev.s7a.strata.component/ScrollState { // dev.s7a.strata.component/ScrollState|null[0]
+    constructor <init>(dev.s7a.strata.component/DragScrollOptions, kotlin/Double = ...) // dev.s7a.strata.component/ScrollState.<init>|<init>(dev.s7a.strata.component.DragScrollOptions;kotlin.Double){}[0]
     constructor <init>(kotlin/Double = ...) // dev.s7a.strata.component/ScrollState.<init>|<init>(kotlin.Double){}[0]
 
+    final val dragScroll // dev.s7a.strata.component/ScrollState.dragScroll|{}dragScroll[0]
+        final fun <get-dragScroll>(): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.component/ScrollState.dragScroll.<get-dragScroll>|<get-dragScroll>(){}[0]
     final val metrics // dev.s7a.strata.component/ScrollState.metrics|{}metrics[0]
         final fun <get-metrics>(): dev.s7a.strata.component/ScrollMetrics // dev.s7a.strata.component/ScrollState.metrics.<get-metrics>|<get-metrics>(){}[0]
 
@@ -2833,6 +2900,11 @@ final object dev.s7a.strata.component/Slots { // dev.s7a.strata.component/Slots|
     final fun playerInventory(kotlin/Int): dev.s7a.strata.component/SlotBinding // dev.s7a.strata.component/Slots.playerInventory|playerInventory(kotlin.Int){}[0]
 }
 
+final object dev.s7a.strata.projection/ProjectionDragScrollOptions { // dev.s7a.strata.projection/ProjectionDragScrollOptions|null[0]
+    final fun decode(dev.s7a.strata.projection/ProjectionValue): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.projection/ProjectionDragScrollOptions.decode|decode(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun encode(dev.s7a.strata.component/DragScrollOptions): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionDragScrollOptions.encode|encode(dev.s7a.strata.component.DragScrollOptions){}[0]
+}
+
 final object dev.s7a.strata.projection/ProjectionInputCodec { // dev.s7a.strata.projection/ProjectionInputCodec|null[0]
     final fun button(dev.s7a.strata.input/PointerButton): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionInputCodec.button|button(dev.s7a.strata.input.PointerButton){}[0]
     final fun button(dev.s7a.strata.projection/ProjectionValue): dev.s7a.strata.input/PointerButton // dev.s7a.strata.projection/ProjectionInputCodec.button|button(dev.s7a.strata.projection.ProjectionValue){}[0]
@@ -3092,8 +3164,12 @@ final fun <#A: kotlin/Any, #B: kotlin/Any> (dev.s7a.strata.component/UiScope).de
 final fun <#A: kotlin/Any, #B: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/VirtualList(kotlin/Int, kotlin/Function1<kotlin/Int, #A>, kotlin/Function1<kotlin/Int, #B>, dev.s7a.strata.component/VirtualListState<#B>, kotlin/Int, kotlin/Function1<#B, kotlin/Int?> = ..., kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function2<dev.s7a.strata.component/UiScope, #A, kotlin/Unit>) // dev.s7a.strata.component/VirtualList|VirtualList@dev.s7a.strata.component.UiScope(kotlin.Int;kotlin.Function1<kotlin.Int,0:0>;kotlin.Function1<kotlin.Int,0:1>;dev.s7a.strata.component.VirtualListState<0:1>;kotlin.Int;kotlin.Function1<0:1,kotlin.Int?>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function2<dev.s7a.strata.component.UiScope,0:0,kotlin.Unit>){0§<kotlin.Any>;1§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any, #B: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/VirtualList(kotlin/Int, kotlin/Function1<kotlin/Int, #A>, kotlin/Function1<kotlin/Int, #B>, dev.s7a.strata.component/VirtualListState<#B>, kotlin/Int, kotlin/Function1<#B, kotlin/Int?> = ..., kotlin/Int = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function2<dev.s7a.strata.component/UiScope, #A, kotlin/Unit>) // dev.s7a.strata.component/VirtualList|VirtualList@dev.s7a.strata.component.UiScope(kotlin.Int;kotlin.Function1<kotlin.Int,0:0>;kotlin.Function1<kotlin.Int,0:1>;dev.s7a.strata.component.VirtualListState<0:1>;kotlin.Int;kotlin.Function1<0:1,kotlin.Int?>;kotlin.Int;kotlin.Boolean;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function2<dev.s7a.strata.component.UiScope,0:0,kotlin.Unit>){0§<kotlin.Any>;1§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., dev.s7a.strata.state/StateSource<kotlin/Function1<#A, dev.s7a.strata.text/UiText>>) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;dev.s7a.strata.state.StateSource<kotlin.Function1<0:0,dev.s7a.strata.text.UiText>>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Boolean, dev.s7a.strata.state/StateSource<kotlin/Function1<#A, dev.s7a.strata.text/UiText>>) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Boolean;dev.s7a.strata.state.StateSource<kotlin.Function1<0:0,dev.s7a.strata.text.UiText>>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Boolean, kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Boolean;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., dev.s7a.strata.state/StateSource<kotlin/Boolean>, dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;dev.s7a.strata.state.StateSource<kotlin.Boolean>;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., dev.s7a.strata.state/StateSource<kotlin/Function1<#A, dev.s7a.strata.text/UiText>>) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;dev.s7a.strata.state.StateSource<kotlin.Function1<0:0,dev.s7a.strata.text.UiText>>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Boolean, dev.s7a.strata.state/StateSource<kotlin/Function1<#A, dev.s7a.strata.text/UiText>>) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Boolean;dev.s7a.strata.state.StateSource<kotlin.Function1<0:0,dev.s7a.strata.text.UiText>>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Boolean, kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Boolean;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...) // dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onAction(dev.s7a.strata.action/ActionKey<#A>, kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, dev.s7a.strata.action/ActionResult>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onAction|onAction@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.action.ActionKey<0:0>;kotlin.Function2<dev.s7a.strata.ui.UiSession,0:0,dev.s7a.strata.action.ActionResult>){0§<kotlin.Any>}[0]
 final fun <#A: kotlin/Any> (dev.s7a.strata.modifier/Modifier).dev.s7a.strata.modifier/onCycle(kotlin/Function2<dev.s7a.strata.ui/UiSession, #A, kotlin/Unit>): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/onCycle|onCycle@dev.s7a.strata.modifier.Modifier(kotlin.Function2<dev.s7a.strata.ui.UiSession,0:0,kotlin.Unit>){0§<kotlin.Any>}[0]

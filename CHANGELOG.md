@@ -12,6 +12,17 @@ Keep all Strata artifacts on the same release version.
 
 ## Unreleased
 
+## 0.3.4 - 2026-11-15
+
+- `ScrollArea` and `VirtualList` support content dragging from actionable rows and buttons, deferred taps, and inertia after release by default.
+- `ScrollState` accepts a sealed drag policy for disabling content dragging, stopping on release, or tuning the drag threshold and inertia decay.
+- Independent scrollbars support track clicks and thumb dragging, including pointer movement outside the viewport.
+- `CycleButton` keeps Minecraft wheel cycling enabled by default and accepts `scrollEnabled = false` so ancestor containers can scroll instead.
+
+Remote CycleButton, ScrollArea and VirtualList require clients supporting their version 2 schemas.
+
+[Detailed changes and upgrade notes](docs/releases/v0.3.4.md)
+
 ## 0.3.3 - 2026-10-27
 
 - `Modifier.tooltip { ... }` accepts a component tree, allowing text, images and layouts to form a display-only tooltip that preserves the target's layout size and never receives input or focus.

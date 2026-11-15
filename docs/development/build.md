@@ -126,6 +126,7 @@ Source archive verification also requires source files and rejects compiled clas
 The published `detekt-rules` module uses the same signed binary, sources, Javadoc, license, metadata, and ABI checks as other JVM publications.
 Run `./gradlew verifyPublishedAuthoringChecks` to resolve the plugin through `detektPlugins` and compile and analyze the [authoring guide](../guides/authoring-checks.md) examples in a standalone build.
 This check is also part of the release's `verifyPublishedConsumer` gate.
+For local consumer verification, pass `-PstrataLocalVersion=<candidate-version>` to the required modules' `publishToMavenLocal` tasks to publish an explicit candidate without changing the default release version.
 The [release procedure](release.md) defines external publication and credentials.
 
 Each versioned Fabric artifact packages the `api`, `runtime:core`, `runtime:remote`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.

@@ -68,7 +68,7 @@ internal class MinecraftSingleTexelNineSliceTest {
             scroll.scrollTo(10.0)
             val before = host.frame(size)
             assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(5, 5), PointerButton.Primary)))
-            assertEquals(1, presses)
+            assertEquals(0, presses)
             source.publish(createDrawImage(IntSize(4, 4), IntArray(16) { 0x80442211.toInt() }))
             val after = host.frame(size)
             assertNotSame(before, after)
@@ -76,7 +76,10 @@ internal class MinecraftSingleTexelNineSliceTest {
             assertEquals(before.semantics.map { it.semantics }, after.semantics.map { it.semantics })
             assertEquals(10.0, scroll.metrics.offset)
             assertSame(after, host.frame(size))
+            host.dispatchPointer(PointerEvent.Release(IntOffset(5, 5), PointerButton.Primary))
+            assertEquals(1, presses)
             assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(5, 5), PointerButton.Primary)))
+            host.dispatchPointer(PointerEvent.Release(IntOffset(5, 5), PointerButton.Primary))
             assertEquals(2, presses)
         }
     }

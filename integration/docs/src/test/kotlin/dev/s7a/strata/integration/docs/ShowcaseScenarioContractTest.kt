@@ -253,7 +253,7 @@ internal class ShowcaseScenarioContractTest {
             profileType("text_field", 2) to DocumentedComponent.TextField,
             profileType("text_area", 2) to DocumentedComponent.TextArea,
             profileType("checkbox") to DocumentedComponent.Checkbox,
-            profileType("cycle_button") to DocumentedComponent.CycleButton,
+            profileType("cycle_button", 2) to DocumentedComponent.CycleButton,
             profileType("slider") to DocumentedComponent.Slider,
             profileType("tab") to DocumentedComponent.Tab,
             profileType("progress_bar") to DocumentedComponent.ProgressBar,
@@ -261,7 +261,7 @@ internal class ShowcaseScenarioContractTest {
             profileType("image") to DocumentedComponent.Image,
             profileType("player_head") to DocumentedComponent.PlayerHead,
             profileType("slot") to DocumentedComponent.Slot,
-            profileType("scroll_area") to DocumentedComponent.ScrollArea,
+            profileType("scroll_area", 2) to DocumentedComponent.ScrollArea,
             profileType("scrollbar") to DocumentedComponent.Scrollbar,
         )
 

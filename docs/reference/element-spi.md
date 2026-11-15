@@ -158,6 +158,14 @@ If acquisition confirmation fails, terminal tree cleanup follows the same cancel
 Cleanup continues if cancellation throws, preserving the primary failure and suppressing independent cleanup failures.
 Applications and third-party primitives can use the same capability directly or compose `onCapturedPointerEvent`; see [Modifiers](../guides/modifiers.md#pointer-input-and-capture).
 
+`DragScrollNode` opts a viewport into deferred tap recognition, vertical content dragging, and kinetic scrolling.
+Its `dragScrollOptions` supplies the immutable `ScrollState.dragScroll` policy; disabled viewports do not defer presses or intercept content drags.
+The runtime retains one pending item identity until release or drag recognition and cancels it if that item is removed; dragging never replays the item's press.
+`scrollByDrag` receives viewport-local offset displacement and returns the finite displacement actually consumed, allowing motion to stop at a content boundary.
+The reference-stable `dragScrollIdentity` ends pending taps, drags, and momentum when a retained viewport switches to another navigation state.
+Exclusive `PointerCaptureNode` descendants retain their direct input protocol; `HorizontalDragNode` descendants defer their press and choose their own captured drag only after horizontal motion wins.
+Explicitly timed kinetic frames run at the session's input boundary before its frame cutoff, preserving ordinary action and row-loading ownership.
+
 ## Keys and reconciliation
 
 Keys are scoped to one direct-sibling list.

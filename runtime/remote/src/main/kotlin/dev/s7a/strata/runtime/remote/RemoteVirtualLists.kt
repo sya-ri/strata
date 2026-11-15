@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.remote
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.projection.BuiltinProjection
+import dev.s7a.strata.projection.ProjectionDragScrollOptions
 import dev.s7a.strata.projection.ProjectionFields
 
 /**
@@ -26,9 +27,10 @@ internal object RemoteVirtualLists {
             val start = fields.int(0..count)
             val binding = RemoteBindingSnapshot.decode(fields.value())
             val demand = fields.long().also { require(0 < it) }
+            val options = ProjectionDragScrollOptions.decode(fields.value())
             fields.finish()
             val properties = Properties(size, rowHeight, rate, count, start, demand)
-            scroll.specification(binding, ::ScrollState, { state, context ->
+            scroll.specification(binding, { offset -> ScrollState(options, offset) }, { state, context ->
                 val maximumRows = (size.height.toLong() + rowHeight - 1) / rowHeight + 3
                 require(context.children.size.toLong() <= maximumRows && context.children.size <= count - start)
                 RemoteVirtualListElement(properties, state, context)

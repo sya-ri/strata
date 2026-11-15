@@ -24,12 +24,12 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.FocusTargetNode
+import dev.s7a.strata.node.HorizontalDragNode
 import dev.s7a.strata.node.KeyboardInputNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.PointerHoverNode
-import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
@@ -69,7 +69,7 @@ private class MinecraftSliderElement private constructor(
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
-        PointerInputNode,
+        HorizontalDragNode,
         PointerHoverNode,
         KeyboardInputNode,
         FocusTargetNode,
@@ -122,7 +122,6 @@ private class MinecraftSliderElement private constructor(
                 }
 
                 event is PointerEvent.Press && event.button === PointerButton.Primary -> {
-                    dragging = true
                     setFromPointer(localPosition.x)
                     InputResult.Consumed
                 }
@@ -149,6 +148,14 @@ private class MinecraftSliderElement private constructor(
                 this.hovered = next
                 invalidate(DirtyMask.of(DirtyPhase.Paint))
             }
+        }
+
+        override fun onPointerCaptureAcquired(button: PointerButton) {
+            dragging = true
+        }
+
+        override fun onPointerCaptureCancelled(button: PointerButton) {
+            dragging = false
         }
 
         override val acceptsFocus: Boolean

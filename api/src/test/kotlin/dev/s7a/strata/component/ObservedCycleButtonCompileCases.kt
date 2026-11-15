@@ -61,3 +61,63 @@ private fun <T : Any> UiScope.compileCycleButton454065400fd3_3(
         label = label,
     )
 }
+
+private fun <T : Any> UiScope.compileCycleButtonc6887b9f95dc_1(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
+) {
+    CycleButton(
+        state = state,
+        width = width,
+        enabled = enabled,
+        modifier = modifier,
+        key = key,
+        scrollEnabled = scrollEnabled,
+        label = label,
+    )
+}
+
+private fun <T : Any> UiScope.compileCycleButtonc6887b9f95dc_2(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: StateSource<(T) -> UiText>,
+) {
+    CycleButton(
+        state = state,
+        width = width,
+        enabled = enabled,
+        modifier = modifier,
+        key = key,
+        scrollEnabled = scrollEnabled,
+        label = label,
+    )
+}
+
+private fun <T : Any> UiScope.compileCycleButtonc6887b9f95dc_3(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: StateSource<(T) -> UiText>,
+) {
+    CycleButton(
+        state = state,
+        width = width,
+        enabled = enabled,
+        modifier = modifier,
+        key = key,
+        scrollEnabled = scrollEnabled,
+        label = label,
+    )
+}

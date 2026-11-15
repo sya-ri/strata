@@ -263,7 +263,7 @@ fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enab
 
 CycleButton reuses the verified button surface for a finite generic option sequence with forward, backward, wheel, and keyboard navigation.
 
-- Compiled overloads: 4
+- Compiled overloads: 8
 - Modifiers: Use typed change modifiers with an immutable finite option set.
 - Parent scope: No children. Labels are snapshotted for the validated option set.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#cycle-button)
@@ -271,8 +271,12 @@ CycleButton reuses the verified button surface for a finite generic option seque
 ```kotlin
 fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
 fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, scrollEnabled: Boolean, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, scrollEnabled: Boolean, label: StateSource<(T) -> UiText>)
 fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
 fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, scrollEnabled: Boolean, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, scrollEnabled: Boolean, label: StateSource<(T) -> UiText>)
 ```
 
 <a id="slider"></a>

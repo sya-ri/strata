@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.element.Element
@@ -13,6 +14,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
@@ -20,12 +22,12 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.DragScrollNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
-import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -83,7 +85,7 @@ private class MinecraftScrollElement private constructor(
         PaintNode,
         OverlayPaintNode,
         ClipChildrenNode,
-        PointerInputNode,
+        DragScrollNode,
         LifecycleNode {
         private val separatorSize = IntSize(32, 2)
         private var listBackground: DrawImage? = initialListBackground
@@ -165,14 +167,39 @@ private class MinecraftScrollElement private constructor(
                     InputResult.Consumed
                 }
 
+                is PointerEvent.Drag -> {
+                    if (event.button === PointerButton.Primary && dragScrollOptions is DragScrollOptions.Enabled && checkNotNull(state).metrics.canScroll) {
+                        scrollByDrag(-event.deltaY)
+                        InputResult.Consumed
+                    } else {
+                        InputResult.Ignored
+                    }
+                }
+
                 is PointerEvent.Press,
-                is PointerEvent.Drag,
                 is PointerEvent.Release,
                 is PointerEvent.Move,
                 -> {
                     InputResult.Ignored
                 }
             }
+
+        override val dragScrollOptions: DragScrollOptions
+            get() = checkNotNull(state).dragScroll
+
+        override val dragScrollIdentity: Any
+            get() = checkNotNull(state)
+
+        override val canDragScroll: Boolean
+            get() = checkNotNull(state).metrics.canScroll
+
+        override fun scrollByDrag(delta: Double): Double {
+            val current = checkNotNull(state)
+            val previous = current.metrics.offset
+            current.scrollBy(delta, checkNotNull(stateObserver))
+            invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
+            return current.metrics.offset - previous
+        }
 
         override fun attach() {
             stateObserver =
@@ -197,22 +224,23 @@ private class MinecraftScrollElement private constructor(
         /**
          * Updates the retained viewport from one reconciled immutable description.
          *
-         * Equal values preserve cached output and scroll position, asset changes repaint, and a rate-only change affects future input without geometry work.
+         * Equal values preserve cached output and scroll position, asset changes repaint, and replacing the state republishes geometry through measurement.
+         * A rate-only change affects future input without geometry work.
          *
          * @param current next immutable description.
          * @return exact dirty phases required by the update.
          */
         @JvmSynthetic
         fun updateFrom(current: MinecraftScrollElement): DirtyMask {
+            val stateChanged = state !== current.state
             val imagesChanged =
                 listBackground != current.listBackground ||
                     headerSeparator != current.headerSeparator ||
-                    footerSeparator != current.footerSeparator ||
-                    state !== current.state
+                    footerSeparator != current.footerSeparator
             listBackground = current.listBackground
             headerSeparator = current.headerSeparator
             footerSeparator = current.footerSeparator
-            if (state !== current.state) {
+            if (stateChanged) {
                 stateObserver?.close()
                 state = current.state
                 stateObserver =
@@ -221,7 +249,11 @@ private class MinecraftScrollElement private constructor(
                     }
             }
             scrollRate = current.scrollRate
-            return if (imagesChanged) DirtyMask.of(DirtyPhase.Paint) else DirtyMask.None
+            return when {
+                stateChanged -> DirtyMask.of(DirtyPhase.Measure)
+                imagesChanged -> DirtyMask.of(DirtyPhase.Paint)
+                else -> DirtyMask.None
+            }
         }
 
         private fun paintHorizontalRepeat(

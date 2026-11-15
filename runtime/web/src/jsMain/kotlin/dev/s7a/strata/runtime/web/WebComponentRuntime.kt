@@ -116,6 +116,7 @@ internal class WebComponentRuntime(
         enabled: Boolean,
         modifier: Modifier,
         key: ElementKey<*>?,
+        scrollEnabled: Boolean,
     ): Element = throw UnsupportedOperationException("Web capability is unavailable: cycleButton")
 
     override fun slider(

@@ -13,6 +13,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Emits a fixed-row virtual viewport backed by a known finite indexed source.
+ * Primary content presses become taps on release or vertical dragging with decelerating momentum.
+ * Drag scrolling preserves the same row anchoring and loading policy as wheel input without activating dragged rows.
+ * Configure dragging and inertia through [ScrollState.dragScroll] on [VirtualListState.scrollState].
  *
  * Only visible rows plus one overscan row on each edge are constructed and retained.
  * [state] supports index and key jumps and exposes its [ScrollState] for a separately placed optional Scrollbar.

@@ -51,6 +51,7 @@ private class MinecraftCycleButtonElement private constructor(
     val actions: ActionDispatcher,
     modifier: Modifier,
     key: ElementKey<*>?,
+    val scrollEnabled: Boolean,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,
@@ -78,6 +79,7 @@ private class MinecraftCycleButtonElement private constructor(
         private var labels: List<Pair<MinecraftTextRun, MinecraftTextRun>>? = initial.labels
         private var width = initial.width
         private var enabled = initial.enabled
+        private var scrollEnabled = initial.scrollEnabled
         private var actions = initial.actions
         private var observer: ComponentStateSubscription? = null
         private var selectedValue: Any? = null
@@ -123,7 +125,7 @@ private class MinecraftCycleButtonElement private constructor(
                     InputResult.Consumed
                 }
 
-                event is PointerEvent.Scroll && event.deltaY != 0.0 -> {
+                scrollEnabled && event is PointerEvent.Scroll && event.deltaY != 0.0 -> {
                     if (event.deltaY < 0.0) cycleBackward() else cycleForward()
                     InputResult.Consumed
                 }
@@ -215,6 +217,7 @@ private class MinecraftCycleButtonElement private constructor(
             labels = current.labels
             width = current.width
             enabled = current.enabled
+            scrollEnabled = current.scrollEnabled
             actions = current.actions
             if (enabled.not()) {
                 hovered = false
@@ -278,7 +281,8 @@ private class MinecraftCycleButtonElement private constructor(
             actions: ActionDispatcher,
             modifier: Modifier,
             key: ElementKey<*>?,
-        ): Element = MinecraftCycleButtonElement(normalSprite, highlightedSprite, disabledSprite, state, labels, width, enabled, actions, modifier, key)
+            scrollEnabled: Boolean,
+        ): Element = MinecraftCycleButtonElement(normalSprite, highlightedSprite, disabledSprite, state, labels, width, enabled, actions, modifier, key, scrollEnabled)
     }
 }
 
@@ -296,4 +300,5 @@ internal fun createMinecraftCycleButtonElement(
     actions: ActionDispatcher,
     modifier: Modifier,
     key: ElementKey<*>?,
-): Element = MinecraftCycleButtonElement.create(normalSprite, highlightedSprite, disabledSprite, state, labels, width, enabled, actions, modifier, key)
+    scrollEnabled: Boolean = true,
+): Element = MinecraftCycleButtonElement.create(normalSprite, highlightedSprite, disabledSprite, state, labels, width, enabled, actions, modifier, key, scrollEnabled)

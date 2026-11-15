@@ -8,6 +8,7 @@ import dev.s7a.strata.resource.ResourceId
  */
 public enum class BuiltinProjection(
     path: String,
+    version: Int = 1,
 ) {
     Row("row"),
     Column("column"),
@@ -27,7 +28,7 @@ public enum class BuiltinProjection(
     StackAlignment("stack_alignment"),
     ComponentAction("component_action"),
     CanvasPixels("canvas_pixels"),
-    VirtualList("virtual_list"),
+    VirtualList("virtual_list", 2),
     ScrollPosition("scroll_position"),
     Semantics("semantics"),
     ObservedActivation("observed_activation"),
@@ -54,7 +55,7 @@ public enum class BuiltinProjection(
     PreeditInput("preedit_input"),
     ;
 
-    public val type: ProjectionType = ProjectionType(ResourceId("strata", path))
+    public val type: ProjectionType = ProjectionType(ResourceId("strata", path), version)
 
     /**
      * Creates a detached positional property snapshot without a server event endpoint.

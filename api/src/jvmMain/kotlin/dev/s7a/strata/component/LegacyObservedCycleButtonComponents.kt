@@ -92,3 +92,90 @@ public fun <T : Any> UiScope.legacyCycleButton454065400fd3Variant3(
         label = label,
     )
 }
+
+/**
+ * JVM binary compatibility bridge for [CycleButton], scheduled for removal in 1.0.0.
+ */
+@Deprecated(
+    message = "Recompile against the CycleButton overloads. Scheduled for removal in 1.0.0.",
+    replaceWith = ReplaceWith("CycleButton(state = state, width = width, enabled = enabled, modifier = modifier, key = key, scrollEnabled = scrollEnabled, label = label)", "dev.s7a.strata.component.CycleButton"),
+    level = DeprecationLevel.HIDDEN,
+)
+@JvmName("CycleButtonStatec6887b9f95dc_1")
+public fun <T : Any> UiScope.legacyCycleButtonc6887b9f95dcVariant1(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
+) {
+    CycleButton(
+        state = state,
+        width = width,
+        enabled = enabled,
+        modifier = modifier,
+        key = key,
+        scrollEnabled = scrollEnabled,
+        label = label,
+    )
+}
+
+/**
+ * JVM binary compatibility bridge for [CycleButton], scheduled for removal in 1.0.0.
+ */
+@Deprecated(
+    message = "Recompile against the CycleButton overloads. Scheduled for removal in 1.0.0.",
+    replaceWith = ReplaceWith("CycleButton(state = state, width = width, enabled = enabled, modifier = modifier, key = key, scrollEnabled = scrollEnabled, label = label)", "dev.s7a.strata.component.CycleButton"),
+    level = DeprecationLevel.HIDDEN,
+)
+@JvmName("CycleButtonStatec6887b9f95dc_2")
+public fun <T : Any> UiScope.legacyCycleButtonc6887b9f95dcVariant2(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: StateSource<(T) -> UiText>,
+) {
+    CycleButton(
+        state = state,
+        width = width,
+        enabled = enabled,
+        modifier = modifier,
+        key = key,
+        scrollEnabled = scrollEnabled,
+        label = label,
+    )
+}
+
+/**
+ * JVM binary compatibility bridge for [CycleButton], scheduled for removal in 1.0.0.
+ */
+@Deprecated(
+    message = "Recompile against the CycleButton overloads. Scheduled for removal in 1.0.0.",
+    replaceWith = ReplaceWith("CycleButton(state = state, width = width, enabled = enabled, modifier = modifier, key = key, scrollEnabled = scrollEnabled, label = label)", "dev.s7a.strata.component.CycleButton"),
+    level = DeprecationLevel.HIDDEN,
+)
+@JvmName("CycleButtonStatec6887b9f95dc_3")
+public fun <T : Any> UiScope.legacyCycleButtonc6887b9f95dcVariant3(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: StateSource<(T) -> UiText>,
+) {
+    CycleButton(
+        state = state,
+        width = width,
+        enabled = enabled,
+        modifier = modifier,
+        key = key,
+        scrollEnabled = scrollEnabled,
+        label = label,
+    )
+}

@@ -115,6 +115,59 @@ public final class dev/s7a/strata/component/CycleButtonState {
 public final class dev/s7a/strata/component/CycleButtonState$Companion {
 }
 
+public abstract interface class dev/s7a/strata/component/DragScrollOptions {
+	public static final field Companion Ldev/s7a/strata/component/DragScrollOptions$Companion;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Companion {
+	public final fun getDefault ()Ldev/s7a/strata/component/DragScrollOptions;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Disabled : dev/s7a/strata/component/DragScrollOptions {
+	public static final field INSTANCE Ldev/s7a/strata/component/DragScrollOptions$Disabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Enabled : dev/s7a/strata/component/DragScrollOptions {
+	public fun <init> ()V
+	public fun <init> (DLdev/s7a/strata/component/DragScrollOptions$Inertia;)V
+	public synthetic fun <init> (DLdev/s7a/strata/component/DragScrollOptions$Inertia;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()Ldev/s7a/strata/component/DragScrollOptions$Inertia;
+	public final fun copy (DLdev/s7a/strata/component/DragScrollOptions$Inertia;)Ldev/s7a/strata/component/DragScrollOptions$Enabled;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions$Enabled;DLdev/s7a/strata/component/DragScrollOptions$Inertia;ILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions$Enabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDragThreshold ()D
+	public final fun getInertia ()Ldev/s7a/strata/component/DragScrollOptions$Inertia;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/component/DragScrollOptions$Inertia {
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled : dev/s7a/strata/component/DragScrollOptions$Inertia {
+	public static final field INSTANCE Ldev/s7a/strata/component/DragScrollOptions$Inertia$Disabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled : dev/s7a/strata/component/DragScrollOptions$Inertia {
+	public fun <init> ()V
+	public fun <init> (D)V
+	public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun copy (D)Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;DILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeceleration ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract class dev/s7a/strata/component/FlowRowScope : dev/s7a/strata/component/UiScope {
 	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/VerticalAlignment;)Ldev/s7a/strata/modifier/Modifier;
 }
@@ -288,6 +341,12 @@ public final class dev/s7a/strata/component/ObservedComponentsKt {
 	public static synthetic fun CycleButtonState454065400fd3_2$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
 	public static final synthetic fun CycleButtonState454065400fd3_3 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/state/StateSource;)V
 	public static synthetic fun CycleButtonState454065400fd3_3$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
+	public static final synthetic fun CycleButtonStatec6887b9f95dc_1 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLkotlin/jvm/functions/Function1;)V
+	public static synthetic fun CycleButtonStatec6887b9f95dc_1$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final synthetic fun CycleButtonStatec6887b9f95dc_2 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;)V
+	public static synthetic fun CycleButtonStatec6887b9f95dc_2$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
+	public static final synthetic fun CycleButtonStatec6887b9f95dc_3 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;)V
+	public static synthetic fun CycleButtonStatec6887b9f95dc_3$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
 	public static final synthetic fun ImageState386405e1017f_1 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/state/StateSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun ImageState386405e1017f_1$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/state/StateSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final synthetic fun ImageState6751db0e9723_1 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/state/StateSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
@@ -443,6 +502,12 @@ public final class dev/s7a/strata/component/ObservedCycleButtonComponentsKt {
 	public static synthetic fun CycleButtonState454065400fd3_2$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
 	public static final fun CycleButtonState454065400fd3_3 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/state/StateSource;)V
 	public static synthetic fun CycleButtonState454065400fd3_3$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Ldev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
+	public static final fun CycleButtonStatec6887b9f95dc_1 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLkotlin/jvm/functions/Function1;)V
+	public static synthetic fun CycleButtonStatec6887b9f95dc_1$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun CycleButtonStatec6887b9f95dc_2 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;)V
+	public static synthetic fun CycleButtonStatec6887b9f95dc_2$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
+	public static final fun CycleButtonStatec6887b9f95dc_3 (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;)V
+	public static synthetic fun CycleButtonStatec6887b9f95dc_3$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;ILdev/s7a/strata/state/StateSource;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLdev/s7a/strata/state/StateSource;ILjava/lang/Object;)V
 }
 
 public final class dev/s7a/strata/component/ObservedImageComponentsKt {
@@ -757,7 +822,9 @@ public final class dev/s7a/strata/component/ProfileComponents {
 	public static synthetic fun Checkbox$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static synthetic fun Checkbox$default (Ldev/s7a/strata/component/UiScope;Ljava/lang/String;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
 	public static final fun CycleButton (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;)V
+	public static final fun CycleButton (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLkotlin/jvm/functions/Function1;)V
 	public static synthetic fun CycleButton$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static synthetic fun CycleButton$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/CycleButtonState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun Image (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static final fun Image (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)V
 	public static synthetic fun Image$default (Ldev/s7a/strata/component/UiScope;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;ILjava/lang/Object;)V
@@ -843,6 +910,9 @@ public final class dev/s7a/strata/component/ScrollState {
 	public fun <init> ()V
 	public fun <init> (D)V
 	public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ldev/s7a/strata/component/DragScrollOptions;D)V
+	public synthetic fun <init> (Ldev/s7a/strata/component/DragScrollOptions;DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDragScroll ()Ldev/s7a/strata/component/DragScrollOptions;
 	public final fun getMetrics ()Ldev/s7a/strata/component/ScrollMetrics;
 	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/ScrollStateObserver;
 	public final fun scrollBy (D)D
@@ -2064,6 +2134,19 @@ public final class dev/s7a/strata/node/DirtyPhase : java/lang/Enum {
 	public static fun values ()[Ldev/s7a/strata/node/DirtyPhase;
 }
 
+public abstract interface class dev/s7a/strata/node/DragScrollNode : dev/s7a/strata/node/PointerInputNode {
+	public abstract fun getCanDragScroll ()Z
+	public fun getDragScrollIdentity ()Ljava/lang/Object;
+	public fun getDragScrollOptions ()Ldev/s7a/strata/component/DragScrollOptions;
+	public abstract fun scrollByDrag (D)D
+}
+
+public final class dev/s7a/strata/node/DragScrollNode$DefaultImpls {
+	public static fun getDragScrollIdentity (Ldev/s7a/strata/node/DragScrollNode;)Ljava/lang/Object;
+	public static fun getDragScrollOptions (Ldev/s7a/strata/node/DragScrollNode;)Ldev/s7a/strata/component/DragScrollOptions;
+	public static fun onPointerGesture (Ldev/s7a/strata/node/DragScrollNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
+}
+
 public abstract interface class dev/s7a/strata/node/DynamicChildrenNode {
 	public abstract fun dynamicChildren ()Ljava/util/List;
 }
@@ -2087,6 +2170,14 @@ public abstract interface class dev/s7a/strata/node/FrameCutoffNode {
 
 public abstract interface class dev/s7a/strata/node/FrameTimeNode {
 	public abstract fun onFrame (Ldev/s7a/strata/runtime/FrameTime;)V
+}
+
+public abstract interface class dev/s7a/strata/node/HorizontalDragNode : dev/s7a/strata/node/PointerCaptureNode {
+}
+
+public final class dev/s7a/strata/node/HorizontalDragNode$DefaultImpls {
+	public static fun onPointerCaptureAcquired (Ldev/s7a/strata/node/HorizontalDragNode;Ldev/s7a/strata/input/PointerButton;)V
+	public static fun onPointerGesture (Ldev/s7a/strata/node/HorizontalDragNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 }
 
 public abstract interface class dev/s7a/strata/node/KeyboardInputNode {
@@ -2265,6 +2356,12 @@ public final class dev/s7a/strata/projection/ProjectionBinding {
 	public final fun getRead ()Lkotlin/jvm/functions/Function0;
 	public final fun getType ()Ldev/s7a/strata/projection/ProjectionType;
 	public final fun getWrite ()Lkotlin/jvm/functions/Function2;
+}
+
+public final class dev/s7a/strata/projection/ProjectionDragScrollOptions {
+	public static final field INSTANCE Ldev/s7a/strata/projection/ProjectionDragScrollOptions;
+	public final fun decode (Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/component/DragScrollOptions;
+	public final fun encode (Ldev/s7a/strata/component/DragScrollOptions;)Ldev/s7a/strata/projection/ProjectionValue;
 }
 
 public final class dev/s7a/strata/projection/ProjectionFields {
@@ -2671,7 +2768,8 @@ public abstract interface class dev/s7a/strata/spi/ComponentRuntime {
 	public abstract fun button (Ldev/s7a/strata/text/UiText;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun checkbox (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun containerBackground (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
-	public abstract fun cycleButton (Ldev/s7a/strata/component/CycleButtonState;Ljava/util/List;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public fun cycleButton (Ldev/s7a/strata/component/CycleButtonState;Ljava/util/List;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public abstract fun cycleButton (Ldev/s7a/strata/component/CycleButtonState;Ljava/util/List;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Z)Ldev/s7a/strata/element/Element;
 	public abstract fun image (Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public abstract fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/component/ImageScale;)Ldev/s7a/strata/modifier/Modifier;
 	public abstract fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/Insets;Ldev/s7a/strata/component/NineSliceCenterMode;)Ldev/s7a/strata/modifier/Modifier;
@@ -2701,6 +2799,7 @@ public abstract interface class dev/s7a/strata/spi/ComponentRuntime {
 }
 
 public final class dev/s7a/strata/spi/ComponentRuntime$DefaultImpls {
+	public static fun cycleButton (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/CycleButtonState;Ljava/util/List;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public static fun text (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/text/TextLayout;Ldev/s7a/strata/component/TextStyle;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public static fun textArea (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextAreaState;Ldev/s7a/strata/component/TextAreaViewport;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/resource/ResourceId;Ldev/s7a/strata/text/TextWrap;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public static fun textArea (Ldev/s7a/strata/spi/ComponentRuntime;Ldev/s7a/strata/component/TextAreaState;Ldev/s7a/strata/component/TextAreaViewport;Ldev/s7a/strata/component/TextInputAppearance;ZLdev/s7a/strata/component/TextStyle;Ldev/s7a/strata/text/TextWrap;ILdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;

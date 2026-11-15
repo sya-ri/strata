@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.remote
 
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.element.Element
@@ -11,17 +12,18 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.DragScrollNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
-import dev.s7a.strata.node.PointerInputNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -40,7 +42,7 @@ internal class RemoteVirtualListElement(
     ) : Node(),
         MeasureNode,
         LayoutNode,
-        PointerInputNode,
+        DragScrollNode,
         ClipChildrenNode,
         LifecycleNode {
         private var retained: RemoteVirtualListElement? = initial
@@ -87,8 +89,21 @@ internal class RemoteVirtualListElement(
             event: PointerEvent,
             localPosition: IntOffset,
         ): InputResult {
-            if (event !is PointerEvent.Scroll) return InputResult.Ignored
-            val delta = event.deltaY * current.properties.rate.toDouble()
+            val delta =
+                when (event) {
+                    is PointerEvent.Scroll -> {
+                        event.deltaY * current.properties.rate.toDouble()
+                    }
+
+                    is PointerEvent.Drag -> {
+                        if (event.button !== PointerButton.Primary || dragScrollOptions !is DragScrollOptions.Enabled) return InputResult.Ignored
+                        -event.deltaY
+                    }
+
+                    else -> {
+                        return InputResult.Ignored
+                    }
+                }
             if (delta.isFinite()) {
                 current.state.scrollBy(delta)
                 val context = current.context
@@ -96,6 +111,24 @@ internal class RemoteVirtualListElement(
                 context.actions.send(current.properties.demand, BuiltinProjection.VirtualList.type, ProjectionValue.Real(delta.coerceIn(-Int.MAX_VALUE.toDouble(), Int.MAX_VALUE.toDouble())))
             }
             return InputResult.Consumed
+        }
+
+        override val dragScrollOptions: DragScrollOptions
+            get() = current.state.dragScroll
+
+        override val dragScrollIdentity: Any
+            get() = current.state
+
+        override val canDragScroll: Boolean
+            get() = current.state.metrics.canScroll
+
+        override fun scrollByDrag(delta: Double): Double {
+            val previous = current.state.metrics.offset
+            current.state.scrollBy(delta)
+            val context = current.context
+            context.states.flushEdits(context.actions)
+            context.actions.send(current.properties.demand, BuiltinProjection.VirtualList.type, ProjectionValue.Real(delta.coerceIn(-Int.MAX_VALUE.toDouble(), Int.MAX_VALUE.toDouble())))
+            return current.state.metrics.offset - previous
         }
 
         fun update(next: RemoteVirtualListElement): DirtyMask {

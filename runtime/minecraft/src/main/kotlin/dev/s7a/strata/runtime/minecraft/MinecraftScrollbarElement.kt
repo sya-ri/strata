@@ -23,7 +23,7 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
-import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -46,6 +46,7 @@ private class MinecraftScrollbarElement private constructor(
         children = emptyList(),
         modifier = modifier,
     ) {
+    @Suppress("TooManyFunctions") // One retained scrollbar owns drawing, captured input, geometry, and lifecycle callbacks.
     private class Node(
         initialBackground: DrawImage,
         initialThumb: DrawImage,
@@ -53,7 +54,7 @@ private class MinecraftScrollbarElement private constructor(
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
-        PointerInputNode,
+        PointerCaptureNode,
         LifecycleNode {
         private val spriteSize = IntSize(6, 32)
         private var background: DrawImage? = initialBackground
@@ -62,6 +63,7 @@ private class MinecraftScrollbarElement private constructor(
         private var observer: ScrollStateObserver? = null
         private var size = IntSize.Zero
         private var dragging = false
+        private var grabOffset = 0.0
         private var disposed = false
 
         override fun measure(
@@ -93,7 +95,16 @@ private class MinecraftScrollbarElement private constructor(
             when (event) {
                 is PointerEvent.Press -> {
                     if (event.button === PointerButton.Primary && checkNotNull(state).metrics.canScroll) {
-                        dragging = true
+                        val metrics = checkNotNull(state).metrics
+                        val height = thumbHeight(size.height, metrics)
+                        val top = thumbTop(size.height, height, metrics)
+                        if (localPosition.y in top until top + height) {
+                            val exactTop = metrics.offset / metrics.maximumOffset * (size.height - height)
+                            grabOffset = localPosition.y - exactTop
+                        } else {
+                            grabOffset = height / 2.0
+                            scrollToPointer(localPosition)
+                        }
                         InputResult.Consumed
                     } else {
                         InputResult.Ignored
@@ -102,7 +113,7 @@ private class MinecraftScrollbarElement private constructor(
 
                 is PointerEvent.Drag -> {
                     if (dragging && event.button === PointerButton.Primary) {
-                        drag(event, localPosition)
+                        scrollToPointer(localPosition)
                         InputResult.Consumed
                     } else {
                         InputResult.Ignored
@@ -124,6 +135,14 @@ private class MinecraftScrollbarElement private constructor(
                     InputResult.Ignored
                 }
             }
+
+        override fun onPointerCaptureAcquired(button: PointerButton) {
+            dragging = true
+        }
+
+        override fun onPointerCaptureCancelled(button: PointerButton) {
+            dragging = false
+        }
 
         override fun attach() {
             observer = checkNotNull(state).observe { invalidate(DirtyMask.of(DirtyPhase.Paint)) }
@@ -156,26 +175,14 @@ private class MinecraftScrollbarElement private constructor(
             return if (imagesChanged) DirtyMask.of(DirtyPhase.Paint) else DirtyMask.None
         }
 
-        private fun drag(
-            event: PointerEvent.Drag,
-            localPosition: IntOffset,
-        ) {
+        private fun scrollToPointer(localPosition: IntOffset) {
             val currentState = checkNotNull(state)
             val currentObserver = checkNotNull(observer)
             val metrics = currentState.metrics
-            if (localPosition.y < 0) {
-                currentState.scrollTo(0.0, currentObserver)
-                invalidate(DirtyMask.of(DirtyPhase.Paint))
-                return
-            }
-            if (size.height < localPosition.y) {
-                currentState.scrollTo(metrics.maximumOffset, currentObserver)
-                invalidate(DirtyMask.of(DirtyPhase.Paint))
-                return
-            }
+            if (metrics.canScroll.not()) return
             val travel = Math.subtractExact(size.height, thumbHeight(size.height, metrics))
-            val multiplier = max(1.0, metrics.maximumOffset / travel.toDouble())
-            currentState.scrollBy(event.deltaY * multiplier, currentObserver)
+            val fraction = ((localPosition.y - grabOffset) / travel).coerceIn(0.0, 1.0)
+            currentState.scrollTo(metrics.maximumOffset * fraction, currentObserver)
             invalidate(DirtyMask.of(DirtyPhase.Paint))
         }
 
