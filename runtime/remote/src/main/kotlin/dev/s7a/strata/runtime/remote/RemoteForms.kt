@@ -89,10 +89,11 @@ internal object RemoteForms {
             require(labels.isNotEmpty() && integer(binding.value) in labels.indices)
             val width = int(1..Int.MAX_VALUE)
             val enabled = flag()
+            val scrollEnabled = flag()
             control.specification(binding, { CycleButtonState(labels.indices.toList(), it) }, { state, context ->
                 require(context.children.isEmpty())
                 val modifier = context.modifier.onCycle<Int> { context.states.flushEdits(context.actions) }
-                ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, context.key)
+                ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, context.key, scrollEnabled)
             })
         }
     }

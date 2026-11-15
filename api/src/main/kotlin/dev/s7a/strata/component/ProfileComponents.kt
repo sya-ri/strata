@@ -114,9 +114,33 @@ public fun <T : Any> UiScope.CycleButton(
     key: ElementKey<*>? = null,
     label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
 ) {
+    CycleButton(state, width, enabled, modifier, key, scrollEnabled = true, label)
+}
+
+/**
+ * Emits a [CycleButton] with explicit wheel navigation policy while preserving pointer and keyboard activation.
+ *
+ * @param state caller-owned finite option state.
+ * @param width fixed logical button width.
+ * @param enabled whether input and enabled appearance are active.
+ * @param modifier active layout, input, and typed action behavior.
+ * @param key optional stable sibling identity.
+ * @param scrollEnabled whether wheel input cycles options; false leaves it available to ancestor scroll containers.
+ * @param label maps each option to its visible unresolved label.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+public fun <T : Any> UiScope.CycleButton(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
+) {
     checkUsable()
     val labels = state.values.map(label)
-    element(ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, key))
+    element(ComponentRuntimeBridge.current().cycleButton(state, labels, width, enabled, modifier, key, scrollEnabled))
 }
 
 /**
@@ -791,6 +815,7 @@ public fun UiScope.Tab(
 
 /**
  * Emits one profile-backed scroll viewport containing exactly one root.
+ * Primary dragging scrolls in logical pixels; unhandled presses acquire pointer capture until release or cancellation.
  *
  * @receiver active owner-thread screen scope.
  * @param modifier active behavior applied to the viewport.
@@ -818,6 +843,7 @@ public fun UiScope.ScrollArea(
  * Emits one independently placed profile-backed vertical scrollbar linked to [state].
  *
  * The scrollbar may be omitted or placed anywhere in the surrounding layout without changing its linked [ScrollArea].
+ * Primary track presses reposition the thumb; captured thumb drags continue outside the scrollbar bounds until release.
  * Its height must be bounded by its parent or modifier.
  *
  * @receiver active owner-thread screen scope.

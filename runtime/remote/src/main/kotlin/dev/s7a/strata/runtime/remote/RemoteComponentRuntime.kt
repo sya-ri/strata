@@ -127,9 +127,10 @@ public class RemoteComponentRuntime : ComponentRuntime {
         enabled: Boolean,
         modifier: Modifier,
         key: ElementKey<*>?,
+        scrollEnabled: Boolean,
     ): Element =
         RemoteProfileElement(RemoteProfileComponent.CycleButton, modifier, key, enabled = enabled) { scope ->
-            record(RemoteFormBindings.cycle(scope, state, modifier), ProjectionValue.Sequence(labels.map(::encode)), encode(width), encode(enabled))
+            record(RemoteFormBindings.cycle(scope, state, modifier), ProjectionValue.Sequence(labels.map(::encode)), encode(width), encode(enabled), encode(scrollEnabled))
         }
 
     override fun slider(

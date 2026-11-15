@@ -905,6 +905,7 @@ internal object MinecraftProfileImplementation {
             enabled: Boolean,
             modifier: Modifier,
             key: ElementKey<*>?,
+            scrollEnabled: Boolean,
         ): Element {
             val currentProfile = requireProfile()
             require(width in 1..200) { "Minecraft CycleButton width must be positive and no larger than 200." }
@@ -925,6 +926,7 @@ internal object MinecraftProfileImplementation {
                 modifier.actionDispatcher(),
                 modifier,
                 key,
+                scrollEnabled,
             )
         }
 

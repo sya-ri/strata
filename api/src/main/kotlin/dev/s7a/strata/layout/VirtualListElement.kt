@@ -17,6 +17,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.PointerGesture
 import dev.s7a.strata.internal.toIntExact
@@ -28,7 +29,7 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
@@ -77,7 +78,7 @@ internal class VirtualListElement(
         ConstrainedChildrenNode,
         MeasureNode,
         LayoutNode,
-        PointerInputNode,
+        PointerCaptureNode,
         ClipChildrenNode,
         SessionAttachmentNode,
         DeclarationProjectionNode,
@@ -232,18 +233,28 @@ internal class VirtualListElement(
             event: PointerEvent,
             localPosition: IntOffset,
         ): InputResult =
-            if (event is PointerEvent.Scroll) {
-                val delta = event.deltaY * scrollRate.toDouble()
-                if (delta.isFinite()) {
-                    state.scrollState.scrollBy(delta, checkNotNull(observer))
-                    rememberCurrentAnchor()
+            when {
+                event is PointerEvent.Press && event.button === PointerButton.Primary && state.scrollState.metrics.canScroll -> {
+                    InputResult.Consumed
                 }
-                requestBoundaryItems(delta)
-                invalidate(DirtyMask.of(DirtyPhase.Measure))
-                InputResult.Consumed
-            } else {
-                InputResult.Ignored
+
+                event is PointerEvent.Scroll || (event is PointerEvent.Drag && event.button === PointerButton.Primary) -> {
+                    val delta = if (event is PointerEvent.Scroll) event.deltaY * scrollRate.toDouble() else -(event as PointerEvent.Drag).deltaY
+                    if (delta.isFinite()) {
+                        state.scrollState.scrollBy(delta, checkNotNull(observer))
+                        rememberCurrentAnchor()
+                    }
+                    requestBoundaryItems(delta)
+                    invalidate(DirtyMask.of(DirtyPhase.Measure))
+                    InputResult.Consumed
+                }
+
+                else -> {
+                    InputResult.Ignored
+                }
             }
+
+        override fun onPointerCaptureCancelled(button: PointerButton) = Unit
 
         override fun onPointerGesture(
             gesture: PointerGesture,

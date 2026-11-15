@@ -123,6 +123,19 @@ public interface ComponentRuntime {
         enabled: Boolean,
         modifier: Modifier,
         key: ElementKey<*>?,
+    ): Element = cycleButton(state, labels, width, enabled, modifier, key, scrollEnabled = true)
+
+    /**
+     * Creates a finite-option button with explicit wheel navigation policy.
+     */
+    public fun cycleButton(
+        state: CycleButtonState<*>,
+        labels: List<UiText>,
+        width: Int,
+        enabled: Boolean,
+        modifier: Modifier,
+        key: ElementKey<*>?,
+        scrollEnabled: Boolean,
     ): Element
 
     /**

@@ -92,3 +92,93 @@ public fun <T : Any> UiScope.CycleButton(
         )
     }
 }
+
+/**
+ * Observes enabled for [CycleButton] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [CycleButton].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("CycleButtonStatec6887b9f95dc_1")
+public fun <T : Any> UiScope.CycleButton(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
+) {
+    emitObservedComponent(listOf(enabled), key) { values ->
+        CycleButton(
+            state = state,
+            width = width,
+            enabled = values[0] as Boolean,
+            modifier = modifier,
+            key = null,
+            scrollEnabled = scrollEnabled,
+            label = label,
+        )
+    }
+}
+
+/**
+ * Observes label for [CycleButton] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [CycleButton].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("CycleButtonStatec6887b9f95dc_2")
+public fun <T : Any> UiScope.CycleButton(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: StateSource<(T) -> UiText>,
+) {
+    emitObservedComponent(listOf(label), key) { values ->
+        CycleButton(
+            state = state,
+            width = width,
+            enabled = enabled,
+            modifier = modifier,
+            key = null,
+            scrollEnabled = scrollEnabled,
+            label = values[0] as (T) -> UiText,
+        )
+    }
+}
+
+/**
+ * Observes enabled, label for [CycleButton] at the next owner-thread frame cutoff.
+ *
+ * Retain caller-owned sources and editing state outside reevaluation.
+ * See [Observe] for shared snapshots, equal-value suppression, and cleanup; literal arguments follow [CycleButton].
+ * Modifiers and parent data apply to the actual component, while the binding owns its sibling key.
+ */
+@JvmName("CycleButtonStatec6887b9f95dc_3")
+public fun <T : Any> UiScope.CycleButton(
+    state: CycleButtonState<T>,
+    width: Int = 150,
+    enabled: StateSource<Boolean>,
+    modifier: Modifier = Modifier,
+    key: ElementKey<*>? = null,
+    scrollEnabled: Boolean,
+    label: StateSource<(T) -> UiText>,
+) {
+    emitObservedComponent(listOf(enabled, label), key) { values ->
+        CycleButton(
+            state = state,
+            width = width,
+            enabled = values[0] as Boolean,
+            modifier = modifier,
+            key = null,
+            scrollEnabled = scrollEnabled,
+            label = values[1] as (T) -> UiText,
+        )
+    }
+}

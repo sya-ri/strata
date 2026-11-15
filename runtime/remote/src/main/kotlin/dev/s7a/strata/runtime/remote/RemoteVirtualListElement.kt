@@ -11,6 +11,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
@@ -21,7 +22,7 @@ import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
-import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -40,7 +41,7 @@ internal class RemoteVirtualListElement(
     ) : Node(),
         MeasureNode,
         LayoutNode,
-        PointerInputNode,
+        PointerCaptureNode,
         ClipChildrenNode,
         LifecycleNode {
         private var retained: RemoteVirtualListElement? = initial
@@ -87,8 +88,13 @@ internal class RemoteVirtualListElement(
             event: PointerEvent,
             localPosition: IntOffset,
         ): InputResult {
-            if (event !is PointerEvent.Scroll) return InputResult.Ignored
-            val delta = event.deltaY * current.properties.rate.toDouble()
+            if (event is PointerEvent.Press && event.button === PointerButton.Primary && current.state.metrics.canScroll) return InputResult.Consumed
+            val delta =
+                when {
+                    event is PointerEvent.Scroll -> event.deltaY * current.properties.rate.toDouble()
+                    event is PointerEvent.Drag && event.button === PointerButton.Primary -> -event.deltaY
+                    else -> return InputResult.Ignored
+                }
             if (delta.isFinite()) {
                 current.state.scrollBy(delta)
                 val context = current.context
@@ -97,6 +103,8 @@ internal class RemoteVirtualListElement(
             }
             return InputResult.Consumed
         }
+
+        override fun onPointerCaptureCancelled(button: PointerButton) = Unit
 
         fun update(next: RemoteVirtualListElement): DirtyMask {
             if (current.state !== next.state) {

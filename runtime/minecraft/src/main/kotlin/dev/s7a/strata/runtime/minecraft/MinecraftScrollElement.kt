@@ -13,6 +13,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.layout.LayoutScope
 import dev.s7a.strata.layout.MeasureScope
@@ -25,7 +26,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.OverlayPaintNode
 import dev.s7a.strata.node.PaintNode
-import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -83,7 +84,7 @@ private class MinecraftScrollElement private constructor(
         PaintNode,
         OverlayPaintNode,
         ClipChildrenNode,
-        PointerInputNode,
+        PointerCaptureNode,
         LifecycleNode {
         private val separatorSize = IntSize(32, 2)
         private var listBackground: DrawImage? = initialListBackground
@@ -165,14 +166,28 @@ private class MinecraftScrollElement private constructor(
                     InputResult.Consumed
                 }
 
-                is PointerEvent.Press,
-                is PointerEvent.Drag,
+                is PointerEvent.Press -> {
+                    if (event.button === PointerButton.Primary && checkNotNull(state).metrics.canScroll) InputResult.Consumed else InputResult.Ignored
+                }
+
+                is PointerEvent.Drag -> {
+                    if (event.button === PointerButton.Primary && checkNotNull(state).metrics.canScroll) {
+                        checkNotNull(state).scrollBy(-event.deltaY, checkNotNull(stateObserver))
+                        invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
+                        InputResult.Consumed
+                    } else {
+                        InputResult.Ignored
+                    }
+                }
+
                 is PointerEvent.Release,
                 is PointerEvent.Move,
                 -> {
                     InputResult.Ignored
                 }
             }
+
+        override fun onPointerCaptureCancelled(button: PointerButton) = Unit
 
         override fun attach() {
             stateObserver =

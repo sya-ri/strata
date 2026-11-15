@@ -118,6 +118,11 @@ For external publishers, use `StateSource` and the queued observation paths belo
 | `TextAreaState.scrollState` | Add an external scrollbar to an editor. |
 | `PanZoomState` | Control one [tiled-image viewport](tiled-images.md) and its observing controls. |
 
+Minecraft `CycleButton` enables wheel navigation by default.
+Pass `scrollEnabled = false` to keep pointer and keyboard activation while allowing wheel input to reach an enclosing scroll container.
+`ScrollArea` and `VirtualList` also accept primary-button drags in logical pixels; child controls keep input priority, and an unhandled primary press captures the viewport so dragging continues beyond its clip until release or cancellation.
+An independent `Scrollbar` supports track clicks and captures thumb drags, including movement outside its bounds.
+
 The [compiled application screen](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyScreenDefinition.kt) creates state before returning its definition.
 See each state's [API contract](https://gh.s7a.dev/strata/) for attachment and update rules.
 

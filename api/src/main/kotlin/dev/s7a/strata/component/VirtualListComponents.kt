@@ -13,6 +13,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Emits a fixed-row virtual viewport backed by a known finite indexed source.
+ * Primary dragging scrolls in logical pixels and preserves the same row anchoring and loading policy as wheel input.
  *
  * Only visible rows plus one overscan row on each edge are constructed and retained.
  * [state] supports index and key jumps and exposes its [ScrollState] for a separately placed optional Scrollbar.

@@ -19,7 +19,7 @@ internal enum class RemoteProfileComponent(
     PlayerHead("player_head"),
     Slot("slot"),
     Checkbox("checkbox"),
-    CycleButton("cycle_button"),
+    CycleButton("cycle_button", 2),
     Slider("slider"),
     TextField("text_field", 2),
     TextArea("text_area", 2),

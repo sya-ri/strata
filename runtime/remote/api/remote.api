@@ -97,6 +97,7 @@ public final class dev/s7a/strata/runtime/remote/RemoteComponentRuntime : dev/s7
 	public fun checkbox (Ldev/s7a/strata/text/UiText;Ldev/s7a/strata/component/CheckboxState;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public fun containerBackground (Ldev/s7a/strata/modifier/Modifier;I)Ldev/s7a/strata/modifier/Modifier;
 	public fun cycleButton (Ldev/s7a/strata/component/CycleButtonState;Ljava/util/List;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
+	public fun cycleButton (Ldev/s7a/strata/component/CycleButtonState;Ljava/util/List;IZLdev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;Z)Ldev/s7a/strata/element/Element;
 	public final fun evaluate (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/element/Element;
 	public fun image (Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/element/ElementKey;)Ldev/s7a/strata/element/Element;
 	public fun imageBackground (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/component/ImageSource;Ldev/s7a/strata/component/ImageScale;)Ldev/s7a/strata/modifier/Modifier;
