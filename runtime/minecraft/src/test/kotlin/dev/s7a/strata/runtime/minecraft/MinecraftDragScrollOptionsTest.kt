@@ -95,7 +95,7 @@ internal class MinecraftDragScrollOptionsTest {
     @Test
     fun disabledDraggingKeepsImmediateActionsWheelAndScrollbarForBothViewportKinds() {
         for (virtual in listOf(false, true)) {
-            val scroll = ScrollState(DragScrollOptions(enabled = false))
+            val scroll = ScrollState(DragScrollOptions.Disabled)
             val list = VirtualListState<Int>(scrollState = scroll)
             var clicks = 0
             val definition =
@@ -141,7 +141,7 @@ internal class MinecraftDragScrollOptionsTest {
 
     @Test
     fun inertiaCanBeDisabledWhileDraggingStillMovesTheContent() {
-        val state = ScrollState(DragScrollOptions(inertiaEnabled = false))
+        val state = ScrollState(DragScrollOptions.Enabled(inertia = DragScrollOptions.Inertia.Disabled))
         host(state).use { host ->
             flick(host)
             assertEquals(20.0, state.metrics.offset)
@@ -153,7 +153,7 @@ internal class MinecraftDragScrollOptionsTest {
 
     @Test
     fun customThresholdSeparatesATapFromAScrollAtTheConfiguredDistance() {
-        val state = ScrollState(DragScrollOptions(dragThreshold = 8.0))
+        val state = ScrollState(DragScrollOptions.Enabled(dragThreshold = 8.0))
         var clicks = 0
         host(state) { clicks++ }.use { host ->
             host.attach()
@@ -174,7 +174,7 @@ internal class MinecraftDragScrollOptionsTest {
     @Test
     fun largerDecayRatesReduceTheDistanceTraveledByTheSameFlick() {
         fun distance(deceleration: Double): Double {
-            val state = ScrollState(DragScrollOptions(deceleration = deceleration))
+            val state = ScrollState(DragScrollOptions.Enabled(inertia = DragScrollOptions.Inertia.Enabled(deceleration = deceleration)))
             host(state).use { host ->
                 flick(host)
                 host.frame(size, FrameTime(80_000_000))

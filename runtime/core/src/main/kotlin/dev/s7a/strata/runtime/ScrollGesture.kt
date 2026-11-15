@@ -12,7 +12,7 @@ import kotlin.math.abs
  */
 internal class ScrollGesture(
     val identity: Any,
-    private val options: DragScrollOptions,
+    private val options: DragScrollOptions.Enabled,
     press: PointerEvent.Press,
     hit: RetainedEntry,
     time: Long?,

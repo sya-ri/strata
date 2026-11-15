@@ -115,28 +115,57 @@ public final class dev/s7a/strata/component/CycleButtonState {
 public final class dev/s7a/strata/component/CycleButtonState$Companion {
 }
 
-public final class dev/s7a/strata/component/DragScrollOptions {
+public abstract interface class dev/s7a/strata/component/DragScrollOptions {
 	public static final field Companion Ldev/s7a/strata/component/DragScrollOptions$Companion;
-	public fun <init> ()V
-	public fun <init> (ZZDD)V
-	public synthetic fun <init> (ZZDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Z
-	public final fun component2 ()Z
-	public final fun component3 ()D
-	public final fun component4 ()D
-	public final fun copy (ZZDD)Ldev/s7a/strata/component/DragScrollOptions;
-	public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions;ZZDDILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDeceleration ()D
-	public final fun getDragThreshold ()D
-	public final fun getEnabled ()Z
-	public final fun getInertiaEnabled ()Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class dev/s7a/strata/component/DragScrollOptions$Companion {
 	public final fun getDefault ()Ldev/s7a/strata/component/DragScrollOptions;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Disabled : dev/s7a/strata/component/DragScrollOptions {
+	public static final field INSTANCE Ldev/s7a/strata/component/DragScrollOptions$Disabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Enabled : dev/s7a/strata/component/DragScrollOptions {
+	public fun <init> ()V
+	public fun <init> (DLdev/s7a/strata/component/DragScrollOptions$Inertia;)V
+	public synthetic fun <init> (DLdev/s7a/strata/component/DragScrollOptions$Inertia;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()Ldev/s7a/strata/component/DragScrollOptions$Inertia;
+	public final fun copy (DLdev/s7a/strata/component/DragScrollOptions$Inertia;)Ldev/s7a/strata/component/DragScrollOptions$Enabled;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions$Enabled;DLdev/s7a/strata/component/DragScrollOptions$Inertia;ILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions$Enabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDragThreshold ()D
+	public final fun getInertia ()Ldev/s7a/strata/component/DragScrollOptions$Inertia;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/s7a/strata/component/DragScrollOptions$Inertia {
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled : dev/s7a/strata/component/DragScrollOptions$Inertia {
+	public static final field INSTANCE Ldev/s7a/strata/component/DragScrollOptions$Inertia$Disabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled : dev/s7a/strata/component/DragScrollOptions$Inertia {
+	public fun <init> ()V
+	public fun <init> (D)V
+	public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun copy (D)Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;DILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeceleration ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract class dev/s7a/strata/component/FlowRowScope : dev/s7a/strata/component/UiScope {

@@ -17,11 +17,11 @@ import dev.s7a.strata.ui.UiDefinition
  * Navigation state is retained outside reevaluated content and shared through the existing component parameters.
  */
 public fun createConfiguredScrollDefinition(): UiDefinition {
-    val wheelOnly = ScrollState(dragScroll = DragScrollOptions(enabled = false))
-    val dragOnly = ScrollState(dragScroll = DragScrollOptions(inertiaEnabled = false))
+    val wheelOnly = ScrollState(dragScroll = DragScrollOptions.Disabled)
+    val dragOnly = ScrollState(dragScroll = DragScrollOptions.Enabled(inertia = DragScrollOptions.Inertia.Disabled))
     val list =
         VirtualListState<Int>(
-            scrollState = ScrollState(dragScroll = DragScrollOptions(dragThreshold = 8.0, deceleration = 12.0)),
+            scrollState = ScrollState(dragScroll = DragScrollOptions.Enabled(dragThreshold = 8.0, inertia = DragScrollOptions.Inertia.Enabled(deceleration = 12.0))),
         )
     return UiDefinition("Configured scrolling") {
         Column(spacing = 8) {

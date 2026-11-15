@@ -11,12 +11,10 @@ public object ProjectionDragScrollOptions {
      */
     public fun encode(options: DragScrollOptions): ProjectionValue =
         ProjectionValue.Sequence(
-            listOf(
-                ProjectionValue.Flag(options.enabled),
-                ProjectionValue.Flag(options.inertiaEnabled),
-                ProjectionValue.Real(options.dragThreshold),
-                ProjectionValue.Real(options.deceleration),
-            ),
+            when (options) {
+                DragScrollOptions.Disabled -> listOf(ProjectionValue.Flag(false))
+                is DragScrollOptions.Enabled -> listOf(ProjectionValue.Flag(true), ProjectionValue.Real(options.dragThreshold), encodeInertia(options.inertia))
+            },
         )
 
     /**
@@ -24,8 +22,28 @@ public object ProjectionDragScrollOptions {
      */
     public fun decode(value: ProjectionValue): DragScrollOptions {
         val fields = ProjectionFields(value)
-        val options = DragScrollOptions(fields.flag(), fields.flag(), fields.real(), fields.real())
+        val options =
+            if (fields.flag()) {
+                DragScrollOptions.Enabled(dragThreshold = fields.real(), inertia = decodeInertia(fields.value()))
+            } else {
+                DragScrollOptions.Disabled
+            }
         fields.finish()
         return options
+    }
+
+    private fun encodeInertia(inertia: DragScrollOptions.Inertia): ProjectionValue =
+        ProjectionValue.Sequence(
+            when (inertia) {
+                DragScrollOptions.Inertia.Disabled -> listOf(ProjectionValue.Flag(false))
+                is DragScrollOptions.Inertia.Enabled -> listOf(ProjectionValue.Flag(true), ProjectionValue.Real(inertia.deceleration))
+            },
+        )
+
+    private fun decodeInertia(value: ProjectionValue): DragScrollOptions.Inertia {
+        val fields = ProjectionFields(value)
+        val inertia = if (fields.flag()) DragScrollOptions.Inertia.Enabled(fields.real()) else DragScrollOptions.Inertia.Disabled
+        fields.finish()
+        return inertia
     }
 }

@@ -58,7 +58,7 @@ internal class WebScrollElement(
             gesture: PointerGesture,
             localPosition: IntOffset,
         ): InputResult =
-            if (gesture is PointerGesture.Pan && dragScrollOptions.enabled) {
+            if (gesture is PointerGesture.Pan && dragScrollOptions is DragScrollOptions.Enabled) {
                 move(-gesture.deltaY)
                 InputResult.Consumed
             } else {
@@ -92,7 +92,7 @@ internal class WebScrollElement(
                 }
 
                 is PointerEvent.Drag -> {
-                    if (event.button == PointerButton.Primary && dragScrollOptions.enabled) {
+                    if (event.button == PointerButton.Primary && dragScrollOptions is DragScrollOptions.Enabled) {
                         move(-event.deltaY)
                         InputResult.Consumed
                     } else {

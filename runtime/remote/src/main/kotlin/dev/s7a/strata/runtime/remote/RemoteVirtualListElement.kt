@@ -96,7 +96,7 @@ internal class RemoteVirtualListElement(
                     }
 
                     is PointerEvent.Drag -> {
-                        if (event.button !== PointerButton.Primary || dragScrollOptions.enabled.not()) return InputResult.Ignored
+                        if (event.button !== PointerButton.Primary || dragScrollOptions !is DragScrollOptions.Enabled) return InputResult.Ignored
                         -event.deltaY
                     }
 

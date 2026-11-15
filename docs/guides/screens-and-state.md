@@ -127,21 +127,28 @@ Dragging continues outside the clip, and explicitly timed frames continue a rele
 A new press, wheel input, keyboard navigation, input reset, scroll-state replacement, removal, or session detachment stops momentum; touching a moving viewport stops it without activating the touched item.
 An independent `Scrollbar` supports track clicks and captures thumb drags, including movement outside its bounds.
 
-Configure primary-pointer dragging through immutable `DragScrollOptions` when constructing `ScrollState`.
+Configure primary-pointer dragging through the immutable sealed `DragScrollOptions` policy when constructing `ScrollState`.
 The existing `ScrollState()` and `ScrollState(initialOffset)` calls retain their defaults: dragging and inertia enabled, a four-local-pixel drag threshold, and an exponential decay rate of 9 per second.
 Larger decay rates stop sooner; the threshold and decay rate must be finite and positive.
+`Disabled` has no threshold or inertia fields; `Enabled` owns a threshold and an `Inertia.Disabled` or `Inertia.Enabled` policy.
+Only `Inertia.Enabled` carries a decay rate, so disabled dragging cannot be combined with enabled inertia.
 State and options belong outside reevaluated content, and replacing the state cancels gestures and inertia from the previous owner.
 
 ```kotlin
 // Disable content dragging; wheel input and independent scrollbars still work.
-val wheelOnly = ScrollState(dragScroll = DragScrollOptions(enabled = false))
+val wheelOnly = ScrollState(dragScroll = DragScrollOptions.Disabled)
 
 // Keep content dragging, but stop immediately on release.
-val dragOnly = ScrollState(dragScroll = DragScrollOptions(inertiaEnabled = false))
+val dragOnly = ScrollState(
+    dragScroll = DragScrollOptions.Enabled(inertia = DragScrollOptions.Inertia.Disabled),
+)
 
 // Require more motion before scrolling and decelerate faster after release.
 val tuned = ScrollState(
-    dragScroll = DragScrollOptions(dragThreshold = 8.0, deceleration = 12.0),
+    dragScroll = DragScrollOptions.Enabled(
+        dragThreshold = 8.0,
+        inertia = DragScrollOptions.Inertia.Enabled(deceleration = 12.0),
+    ),
 )
 val listState = VirtualListState<Int>(scrollState = tuned)
 ```

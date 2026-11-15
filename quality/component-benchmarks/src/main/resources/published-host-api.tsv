@@ -83,26 +83,45 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/CycleButtonState#public fun <init> (Ljava/util/List;Ljava/lang/Object;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/CycleButtonState#public static final field Companion Ldev/s7a/strata/component/CycleButtonState$Companion;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/CycleButtonState$Companion#public final class dev/s7a/strata/component/CycleButtonState$Companion {
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final class dev/s7a/strata/component/DragScrollOptions {
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun component1 ()Z
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun component2 ()Z
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun component3 ()D
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun component4 ()D
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun copy (ZZDD)Ldev/s7a/strata/component/DragScrollOptions;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun getDeceleration ()D
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun getDragThreshold ()D
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun getEnabled ()Z
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public final fun getInertiaEnabled ()Z
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public fun <init> ()V
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public fun <init> (ZZDD)V
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public fun equals (Ljava/lang/Object;)Z
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public fun hashCode ()I
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public abstract interface class dev/s7a/strata/component/DragScrollOptions {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public static final field Companion Ldev/s7a/strata/component/DragScrollOptions$Companion;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions;ZZDDILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions;
-:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions#public synthetic fun <init> (ZZDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Companion#public final class dev/s7a/strata/component/DragScrollOptions$Companion {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Companion#public final fun getDefault ()Ldev/s7a/strata/component/DragScrollOptions;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Disabled#public final class dev/s7a/strata/component/DragScrollOptions$Disabled : dev/s7a/strata/component/DragScrollOptions {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Disabled#public fun equals (Ljava/lang/Object;)Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Disabled#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Disabled#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Disabled#public static final field INSTANCE Ldev/s7a/strata/component/DragScrollOptions$Disabled;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public final class dev/s7a/strata/component/DragScrollOptions$Enabled : dev/s7a/strata/component/DragScrollOptions {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public final fun component1 ()D
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public final fun component2 ()Ldev/s7a/strata/component/DragScrollOptions$Inertia;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public final fun copy (DLdev/s7a/strata/component/DragScrollOptions$Inertia;)Ldev/s7a/strata/component/DragScrollOptions$Enabled;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public final fun getDragThreshold ()D
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public final fun getInertia ()Ldev/s7a/strata/component/DragScrollOptions$Inertia;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public fun <init> ()V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public fun <init> (DLdev/s7a/strata/component/DragScrollOptions$Inertia;)V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public fun equals (Ljava/lang/Object;)Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions$Enabled;DLdev/s7a/strata/component/DragScrollOptions$Inertia;ILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions$Enabled;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Enabled#public synthetic fun <init> (DLdev/s7a/strata/component/DragScrollOptions$Inertia;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia#public abstract interface class dev/s7a/strata/component/DragScrollOptions$Inertia {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled#public final class dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled : dev/s7a/strata/component/DragScrollOptions$Inertia {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled#public fun equals (Ljava/lang/Object;)Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Disabled#public static final field INSTANCE Ldev/s7a/strata/component/DragScrollOptions$Inertia$Disabled;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public final class dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled : dev/s7a/strata/component/DragScrollOptions$Inertia {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public final fun component1 ()D
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public final fun copy (D)Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public final fun getDeceleration ()D
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public fun <init> ()V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public fun <init> (D)V
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public fun equals (Ljava/lang/Object;)Z
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public fun toString ()Ljava/lang/String;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;DILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions$Inertia$Enabled;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/DragScrollOptions$Inertia$Enabled#public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/FlowRowScope#public abstract class dev/s7a/strata/component/FlowRowScope : dev/s7a/strata/component/UiScope {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/FlowRowScope#public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/VerticalAlignment;)Ldev/s7a/strata/modifier/Modifier;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/component/GridScope#public abstract class dev/s7a/strata/component/GridScope : dev/s7a/strata/component/UiScope {
@@ -2799,27 +2818,40 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Boolean;dev.s7a.strata.state.StateSource<kotlin.Function1<0:0,dev.s7a.strata.text.UiText>>){0§<kotlin.Any>}[0]#final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Boolean, dev.s7a.strata.state/StateSource<kotlin/Function1<#A, dev.s7a.strata.text/UiText>>)
 :api@Web	:api@Web	klib:dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Boolean;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]#final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Boolean, kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...)
 :api@Web	:api@Web	klib:dev.s7a.strata.component/CycleButton|CycleButton@dev.s7a.strata.component.UiScope(dev.s7a.strata.component.CycleButtonState<0:0>;kotlin.Int;kotlin.Boolean;dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Function1<0:0,dev.s7a.strata.text.UiText>){0§<kotlin.Any>}[0]#final fun <#A: kotlin/Any> (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/CycleButton(dev.s7a.strata.component/CycleButtonState<#A>, kotlin/Int = ..., kotlin/Boolean = ..., dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Function1<#A, dev.s7a.strata.text/UiText> = ...)
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Double;kotlin.Double){}[0]#constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Double = ..., kotlin/Double = ...)
 :api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Companion.Default.<get-Default>|<get-Default>(){}[0]#final fun <get-Default>(): dev.s7a.strata.component/DragScrollOptions
 :api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Companion.Default|{}Default[0]#final val Default
 :api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Companion|null[0]#final object Companion {
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.component1|component1(){}[0]#final fun component1(): kotlin/Boolean
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.component2|component2(){}[0]#final fun component2(): kotlin/Boolean
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.component3|component3(){}[0]#final fun component3(): kotlin/Double
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.component4|component4(){}[0]#final fun component4(): kotlin/Double
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.copy|copy(kotlin.Boolean;kotlin.Boolean;kotlin.Double;kotlin.Double){}[0]#final fun copy(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Double = ..., kotlin/Double = ...): dev.s7a.strata.component/DragScrollOptions
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.deceleration.<get-deceleration>|<get-deceleration>(){}[0]#final fun <get-deceleration>(): kotlin/Double
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.deceleration|{}deceleration[0]#final val deceleration
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.dragThreshold.<get-dragThreshold>|<get-dragThreshold>(){}[0]#final fun <get-dragThreshold>(): kotlin/Double
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.dragThreshold|{}dragThreshold[0]#final val dragThreshold
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.enabled.<get-enabled>|<get-enabled>(){}[0]#final fun <get-enabled>(): kotlin/Boolean
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.enabled|{}enabled[0]#final val enabled
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.inertiaEnabled.<get-inertiaEnabled>|<get-inertiaEnabled>(){}[0]#final fun <get-inertiaEnabled>(): kotlin/Boolean
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.inertiaEnabled|{}inertiaEnabled[0]#final val inertiaEnabled
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.toString|toString(){}[0]#final fun toString(): kotlin/String
-:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions|null[0]#final class dev.s7a.strata.component/DragScrollOptions {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Disabled.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Disabled.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Disabled.toString|toString(){}[0]#final fun toString(): kotlin/String
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Disabled|null[0]#final object Disabled : dev.s7a.strata.component/DragScrollOptions {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.<init>|<init>(kotlin.Double;dev.s7a.strata.component.DragScrollOptions.Inertia){}[0]#constructor <init>(kotlin/Double = ..., dev.s7a.strata.component/DragScrollOptions.Inertia = ...)
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.component1|component1(){}[0]#final fun component1(): kotlin/Double
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.component2|component2(){}[0]#final fun component2(): dev.s7a.strata.component/DragScrollOptions.Inertia
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.copy|copy(kotlin.Double;dev.s7a.strata.component.DragScrollOptions.Inertia){}[0]#final fun copy(kotlin/Double = ..., dev.s7a.strata.component/DragScrollOptions.Inertia = ...): dev.s7a.strata.component/DragScrollOptions.Enabled
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.dragThreshold.<get-dragThreshold>|<get-dragThreshold>(){}[0]#final fun <get-dragThreshold>(): kotlin/Double
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.dragThreshold|{}dragThreshold[0]#final val dragThreshold
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.inertia.<get-inertia>|<get-inertia>(){}[0]#final fun <get-inertia>(): dev.s7a.strata.component/DragScrollOptions.Inertia
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.inertia|{}inertia[0]#final val inertia
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled.toString|toString(){}[0]#final fun toString(): kotlin/String
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Enabled|null[0]#final class Enabled : dev.s7a.strata.component/DragScrollOptions {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled.toString|toString(){}[0]#final fun toString(): kotlin/String
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Disabled|null[0]#final object Disabled : dev.s7a.strata.component/DragScrollOptions.Inertia {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.<init>|<init>(kotlin.Double){}[0]#constructor <init>(kotlin/Double = ...)
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.component1|component1(){}[0]#final fun component1(): kotlin/Double
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.copy|copy(kotlin.Double){}[0]#final fun copy(kotlin/Double = ...): dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.deceleration.<get-deceleration>|<get-deceleration>(){}[0]#final fun <get-deceleration>(): kotlin/Double
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.deceleration|{}deceleration[0]#final val deceleration
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled.toString|toString(){}[0]#final fun toString(): kotlin/String
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia.Enabled|null[0]#final class Enabled : dev.s7a.strata.component/DragScrollOptions.Inertia {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions.Inertia|null[0]#sealed interface Inertia {
+:api@Web	:api@Web	klib:dev.s7a.strata.component/DragScrollOptions|null[0]#sealed interface dev.s7a.strata.component/DragScrollOptions {
 :api@Web	:api@Web	klib:dev.s7a.strata.component/FlowRowScope.align|align@dev.s7a.strata.modifier.Modifier(dev.s7a.strata.layout.VerticalAlignment){}[0]#final fun (dev.s7a.strata.modifier/Modifier).align(dev.s7a.strata.layout/VerticalAlignment): dev.s7a.strata.modifier/Modifier
 :api@Web	:api@Web	klib:dev.s7a.strata.component/FlowRowScope|null[0]#sealed class dev.s7a.strata.component/FlowRowScope : dev.s7a.strata.component/UiScope {
 :api@Web	:api@Web	klib:dev.s7a.strata.component/FlowRow|FlowRow@dev.s7a.strata.component.UiScope(dev.s7a.strata.modifier.Modifier;dev.s7a.strata.element.ElementKey<*>?;kotlin.Int;kotlin.Int;dev.s7a.strata.layout.Arrangement;dev.s7a.strata.layout.VerticalAlignment;kotlin.Function1<dev.s7a.strata.component.FlowRowScope,kotlin.Unit>){}[0]#final fun (dev.s7a.strata.component/UiScope).dev.s7a.strata.component/FlowRow(dev.s7a.strata.modifier/Modifier = ..., dev.s7a.strata.element/ElementKey<*>? = ..., kotlin/Int = ..., kotlin/Int = ..., dev.s7a.strata.layout/Arrangement = ..., dev.s7a.strata.layout/VerticalAlignment = ..., kotlin/Function1<dev.s7a.strata.component/FlowRowScope, kotlin/Unit>)

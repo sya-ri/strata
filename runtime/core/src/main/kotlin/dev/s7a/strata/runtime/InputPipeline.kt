@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
@@ -53,8 +54,8 @@ internal class InputPipeline(
             stopMomentum()
             return
         }
-        val options = input.dragScrollOptions
-        val inactive = input.canDragScroll.not() || options.enabled.not() || options.inertiaEnabled.not()
+        val options = input.dragScrollOptions as? DragScrollOptions.Enabled
+        val inactive = input.canDragScroll.not() || options?.inertia !is DragScrollOptions.Inertia.Enabled
         if (inactive) {
             momentum = null
             return
@@ -153,7 +154,8 @@ internal class InputPipeline(
         val hit = inputHit(root.effectiveRoot, press.position, true) ?: return false
         val viewport = scrollAncestor(hit, press.position) ?: return false
         val input = viewport.node as DragScrollNode
-        capture = Capture(viewport, press.button, ScrollGesture(input.dragScrollIdentity, input.dragScrollOptions, press, hit, frameTime?.nanoseconds, stopped !== viewport))
+        val options = checkNotNull(input.dragScrollOptions as? DragScrollOptions.Enabled)
+        capture = Capture(viewport, press.button, ScrollGesture(input.dragScrollIdentity, options, press, hit, frameTime?.nanoseconds, stopped !== viewport))
         return true
     }
 
@@ -225,8 +227,9 @@ internal class InputPipeline(
 
             is ScrollGesture.Release.Momentum -> {
                 val time = frameTime?.nanoseconds
-                if (time != null && input.canDragScroll && input.dragScrollOptions.inertiaEnabled) {
-                    val motion = ScrollMomentum(release.velocity, time, input.dragScrollOptions.deceleration)
+                val inertia = (input.dragScrollOptions as? DragScrollOptions.Enabled)?.inertia
+                if (time != null && input.canDragScroll && inertia is DragScrollOptions.Inertia.Enabled) {
+                    val motion = ScrollMomentum(release.velocity, time, inertia.deceleration)
                     if (motion.active) momentum = Momentum(captured.owner, input.dragScrollIdentity, motion)
                 }
             }
@@ -259,7 +262,7 @@ internal class InputPipeline(
         var fallback: RetainedEntry? = null
         while (entry != null) {
             val input = entry.node as? DragScrollNode
-            if (input != null && input.dragScrollOptions.enabled && entry.contains(position)) {
+            if (input != null && input.dragScrollOptions is DragScrollOptions.Enabled && entry.contains(position)) {
                 if (fallback == null) fallback = entry
                 if (input.canDragScroll) return entry
             }

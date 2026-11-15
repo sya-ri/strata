@@ -100,7 +100,7 @@ internal class MinecraftRemoteScreenTest {
     @Test
     fun remoteViewportsPreserveDisabledDragPolicyAndOrdinaryWheelInput() {
         for (virtual in listOf(false, true)) {
-            val scroll = ScrollState(DragScrollOptions(enabled = false))
+            val scroll = ScrollState(DragScrollOptions.Disabled)
             val list = VirtualListState<Int>(scrollState = scroll)
             var clicks = 0
             Pairing {

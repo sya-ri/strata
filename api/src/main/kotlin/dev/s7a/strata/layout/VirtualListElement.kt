@@ -237,7 +237,7 @@ internal class VirtualListElement(
             localPosition: IntOffset,
         ): InputResult =
             when {
-                event is PointerEvent.Scroll || (event is PointerEvent.Drag && event.button === PointerButton.Primary && dragScrollOptions.enabled) -> {
+                event is PointerEvent.Scroll || (event is PointerEvent.Drag && event.button === PointerButton.Primary && dragScrollOptions is DragScrollOptions.Enabled) -> {
                     val delta = if (event is PointerEvent.Scroll) event.deltaY * scrollRate.toDouble() else -(event as PointerEvent.Drag).deltaY
                     if (delta.isFinite()) {
                         state.scrollState.scrollBy(delta, checkNotNull(observer))
@@ -275,7 +275,7 @@ internal class VirtualListElement(
             gesture: PointerGesture,
             localPosition: IntOffset,
         ): InputResult =
-            if (gesture is PointerGesture.Pan && dragScrollOptions.enabled) {
+            if (gesture is PointerGesture.Pan && dragScrollOptions is DragScrollOptions.Enabled) {
                 onPointerEvent(PointerEvent.Scroll(gesture.position, 0.0, -gesture.deltaY / scrollRate), localPosition)
             } else {
                 InputResult.Ignored

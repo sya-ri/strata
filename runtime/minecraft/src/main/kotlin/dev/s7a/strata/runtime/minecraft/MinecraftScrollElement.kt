@@ -168,7 +168,7 @@ private class MinecraftScrollElement private constructor(
                 }
 
                 is PointerEvent.Drag -> {
-                    if (event.button === PointerButton.Primary && dragScrollOptions.enabled && checkNotNull(state).metrics.canScroll) {
+                    if (event.button === PointerButton.Primary && dragScrollOptions is DragScrollOptions.Enabled && checkNotNull(state).metrics.canScroll) {
                         scrollByDrag(-event.deltaY)
                         InputResult.Consumed
                     } else {
