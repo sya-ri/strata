@@ -79,7 +79,8 @@ plugins {
 }
 
 group = "dev.s7a.strata"
-version = providers.gradleProperty("strataLocalVersion").getOrElse("0.3.3")
+version = "0.3.4"
+providers.gradleProperty("strataLocalVersion").orNull?.let { version = it }
 
 plugins.withType<YarnPlugin> {
     extensions.configure<YarnRootExtension> {
