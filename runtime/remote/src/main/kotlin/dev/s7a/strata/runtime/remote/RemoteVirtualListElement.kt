@@ -18,11 +18,11 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.DragScrollNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
-import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -41,7 +41,7 @@ internal class RemoteVirtualListElement(
     ) : Node(),
         MeasureNode,
         LayoutNode,
-        PointerCaptureNode,
+        DragScrollNode,
         ClipChildrenNode,
         LifecycleNode {
         private var retained: RemoteVirtualListElement? = initial
@@ -88,7 +88,6 @@ internal class RemoteVirtualListElement(
             event: PointerEvent,
             localPosition: IntOffset,
         ): InputResult {
-            if (event is PointerEvent.Press && event.button === PointerButton.Primary && current.state.metrics.canScroll) return InputResult.Consumed
             val delta =
                 when {
                     event is PointerEvent.Scroll -> event.deltaY * current.properties.rate.toDouble()
@@ -104,7 +103,20 @@ internal class RemoteVirtualListElement(
             return InputResult.Consumed
         }
 
-        override fun onPointerCaptureCancelled(button: PointerButton) = Unit
+        override val dragScrollIdentity: Any
+            get() = current.state
+
+        override val canDragScroll: Boolean
+            get() = current.state.metrics.canScroll
+
+        override fun scrollByDrag(delta: Double): Double {
+            val previous = current.state.metrics.offset
+            current.state.scrollBy(delta)
+            val context = current.context
+            context.states.flushEdits(context.actions)
+            context.actions.send(current.properties.demand, BuiltinProjection.VirtualList.type, ProjectionValue.Real(delta.coerceIn(-Int.MAX_VALUE.toDouble(), Int.MAX_VALUE.toDouble())))
+            return current.state.metrics.offset - previous
+        }
 
         fun update(next: RemoteVirtualListElement): DirtyMask {
             if (current.state !== next.state) {

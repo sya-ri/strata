@@ -10,6 +10,7 @@ import dev.s7a.strata.input.PointerGesture
  *
  * The runtime visits the deepest and latest-painted hit node first.
  * Returning [InputResult.Ignored] allows bubbling to continue, while [InputResult.Consumed] stops dispatch.
+ * A [DragScrollNode] ancestor may defer a primary press until tap recognition instead of delivering it immediately.
  */
 public interface PointerInputNode {
     /**

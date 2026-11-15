@@ -120,7 +120,11 @@ For external publishers, use `StateSource` and the queued observation paths belo
 
 Minecraft `CycleButton` enables wheel navigation by default.
 Pass `scrollEnabled = false` to keep pointer and keyboard activation while allowing wheel input to reach an enclosing scroll container.
-`ScrollArea` and `VirtualList` also accept primary-button drags in logical pixels; child controls keep input priority, and an unhandled primary press captures the viewport so dragging continues beyond its clip until release or cancellation.
+`ScrollArea` and `VirtualList` support touch-style primary-button dragging from their content, including actionable rows and buttons.
+A press waits for release before activating the same item; vertical motion of four local logical pixels chooses scrolling and cancels that tap.
+Horizontal movement beyond the same threshold cancels an ordinary tap, while horizontal controls such as Slider take over a horizontal drag and yield a vertical drag to the viewport.
+Dragging continues outside the clip, and explicitly timed frames continue a released flick with exponential deceleration until it reaches a boundary or stops.
+A new press, wheel input, keyboard navigation, input reset, scroll-state replacement, removal, or session detachment stops momentum; touching a moving viewport stops it without activating the touched item.
 An independent `Scrollbar` supports track clicks and captures thumb drags, including movement outside its bounds.
 
 The [compiled application screen](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyScreenDefinition.kt) creates state before returning its definition.

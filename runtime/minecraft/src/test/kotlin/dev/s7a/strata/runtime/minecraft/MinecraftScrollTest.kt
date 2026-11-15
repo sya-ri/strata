@@ -25,6 +25,7 @@ import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.mutableStateOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -34,6 +35,42 @@ import org.junit.jupiter.api.Test
  * Verifies independent profile-backed ScrollArea and Scrollbar components.
  */
 internal class MinecraftScrollTest {
+    @Test
+    fun replacingTheStatePublishesGeometryBeforeFurtherInput() {
+        val state = mutableStateOf(ScrollState(initialOffset = 18.0))
+        val host =
+            createMinecraftUiHost(
+                ScreenDefinition("replaced scroll state") {
+                    ScrollArea(state.value, modifier = Modifier.size(100, 60)) {
+                        Spacer(Modifier.size(80, 180).background(contentColor))
+                    }
+                },
+                MinecraftProfileFixture.create(),
+            )
+        host.use {
+            host.attach()
+            host.frame(IntSize(100, 60))
+            val replacement = ScrollState(initialOffset = 80.0)
+            state.value = replacement
+            val frame = host.frame(IntSize(100, 60))
+            assertEquals(60, replacement.metrics.viewportExtent)
+            assertEquals(184, replacement.metrics.contentExtent)
+            assertEquals(
+                -78,
+                frame.drawCommands
+                    .filterIsInstance<DrawCommand.FillRectangle>()
+                    .single()
+                    .bounds.top,
+            )
+            host.dispatchPointer(PointerEvent.Scroll(IntOffset(20, 20), 0.0, -1_000.0))
+            assertEquals(0.0, replacement.metrics.offset)
+            host.dispatchPointer(PointerEvent.Press(IntOffset(20, 20), PointerButton.Primary))
+            host.dispatchPointer(PointerEvent.Drag(IntOffset(20, 0), PointerButton.Primary, 0.0, -20.0))
+            host.dispatchPointer(PointerEvent.Release(IntOffset(20, 0), PointerButton.Primary))
+            assertEquals(20.0, replacement.metrics.offset)
+        }
+    }
+
     @Test
     fun consecutiveScrollThenMoveOrPressUsesFreshHitGeometryWithoutAFrame() {
         val position = IntOffset(20, 20)
@@ -65,11 +102,14 @@ internal class MinecraftScrollTest {
             assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Scroll(position, 0.0, 1.0)))
             assertEquals(9.0, state.metrics.offset)
             assertEquals(InputResult.Consumed, host.dispatchPointer(next))
-            assertEquals(next to IntOffset(10, 27), observed.last())
             if (next is PointerEvent.Press) {
+                assertTrue(observed.isEmpty())
                 val release = PointerEvent.Release(position, PointerButton.Primary)
                 assertEquals(InputResult.Consumed, host.dispatchPointer(release))
+                assertEquals(next to IntOffset(10, 27), observed.first())
                 assertEquals(release to IntOffset(10, 18), observed.last())
+            } else {
+                assertEquals(next to IntOffset(10, 27), observed.last())
             }
             val committed = host.frame(IntSize(100, 50))
             assertEquals(

@@ -2078,6 +2078,17 @@ public final class dev/s7a/strata/node/DirtyPhase : java/lang/Enum {
 	public static fun values ()[Ldev/s7a/strata/node/DirtyPhase;
 }
 
+public abstract interface class dev/s7a/strata/node/DragScrollNode : dev/s7a/strata/node/PointerInputNode {
+	public abstract fun getCanDragScroll ()Z
+	public fun getDragScrollIdentity ()Ljava/lang/Object;
+	public abstract fun scrollByDrag (D)D
+}
+
+public final class dev/s7a/strata/node/DragScrollNode$DefaultImpls {
+	public static fun getDragScrollIdentity (Ldev/s7a/strata/node/DragScrollNode;)Ljava/lang/Object;
+	public static fun onPointerGesture (Ldev/s7a/strata/node/DragScrollNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
+}
+
 public abstract interface class dev/s7a/strata/node/DynamicChildrenNode {
 	public abstract fun dynamicChildren ()Ljava/util/List;
 }
@@ -2101,6 +2112,14 @@ public abstract interface class dev/s7a/strata/node/FrameCutoffNode {
 
 public abstract interface class dev/s7a/strata/node/FrameTimeNode {
 	public abstract fun onFrame (Ldev/s7a/strata/runtime/FrameTime;)V
+}
+
+public abstract interface class dev/s7a/strata/node/HorizontalDragNode : dev/s7a/strata/node/PointerCaptureNode {
+}
+
+public final class dev/s7a/strata/node/HorizontalDragNode$DefaultImpls {
+	public static fun onPointerCaptureAcquired (Ldev/s7a/strata/node/HorizontalDragNode;Ldev/s7a/strata/input/PointerButton;)V
+	public static fun onPointerGesture (Ldev/s7a/strata/node/HorizontalDragNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 }
 
 public abstract interface class dev/s7a/strata/node/KeyboardInputNode {

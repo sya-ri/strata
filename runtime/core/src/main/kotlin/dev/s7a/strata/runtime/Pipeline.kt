@@ -41,7 +41,10 @@ internal class Pipeline(
     private val frameCallbacks = FrameCallbackIndex()
     private val paintPipeline = PaintPipeline(ownerGuard)
     private val focusedInputPipeline = FocusedInputPipeline(dirtyTracker)
-    private val inputPipeline = InputPipeline(focusedInputPipeline)
+    private val inputPipeline =
+        InputPipeline(focusedInputPipeline) { root ->
+            synchronizeInputGeometry(root, checkNotNull(root.effectiveRoot.measuredConstraints))
+        }
     private val semanticsPipeline = SemanticsPipeline(ownerGuard, focusedInputPipeline)
 
     /**
@@ -128,7 +131,10 @@ internal class Pipeline(
     fun dispatchKeyboard(
         root: RetainedNode,
         event: KeyboardEvent,
-    ): InputResult = focusedInputPipeline.dispatchKeyboard(root, event)
+    ): InputResult {
+        inputPipeline.stopMomentum()
+        return focusedInputPipeline.dispatchKeyboard(root, event)
+    }
 
     /**
      * Dispatches [event] through the focused logical component.
@@ -136,7 +142,10 @@ internal class Pipeline(
      * @param event immutable committed-character or preedit event.
      * @return consumed when focused behavior handles it, otherwise ignored.
      */
-    fun dispatchTextInput(event: TextInputEvent): InputResult = focusedInputPipeline.dispatchTextInput(event)
+    fun dispatchTextInput(event: TextInputEvent): InputResult {
+        inputPipeline.stopMomentum()
+        return focusedInputPipeline.dispatchTextInput(event)
+    }
 
     /**
      * Clears capture, hover, and focus from the retained tree rooted at [root], including unplaced hover observers.
@@ -251,6 +260,16 @@ internal class Pipeline(
         time: FrameTime,
     ) {
         frameCallbacks.advance(root, dirtyTracker.structureRevision, time)
+    }
+
+    /**
+     * Advances pointer-derived kinetic motion under the session's input boundary before frame cutoffs.
+     */
+    fun advancePointerScroll(
+        root: RetainedNode?,
+        time: FrameTime,
+    ) {
+        inputPipeline.advanceScroll(root, time)
     }
 
     /**

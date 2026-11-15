@@ -328,6 +328,7 @@ internal class UiSession(
                 "A session can produce a frame only while Attached."
             }
             return runCatching {
+                if (time != null) advanceScrollInput(time)
                 applyBindingCutoff()
                 var contentRebuilt = false
                 if (dirty) {
@@ -481,6 +482,15 @@ internal class UiSession(
             }.getOrElse { failure -> fail(failure) }
         } finally {
             endOperation()
+        }
+    }
+
+    private fun advanceScrollInput(time: FrameTime) {
+        operationKind = SessionOperation.Input
+        try {
+            checkNotNull(tree).advancePointerScroll(time)
+        } finally {
+            operationKind = SessionOperation.Frame
         }
     }
 

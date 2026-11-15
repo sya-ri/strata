@@ -815,7 +815,8 @@ public fun UiScope.Tab(
 
 /**
  * Emits one profile-backed scroll viewport containing exactly one root.
- * Primary dragging scrolls in logical pixels; unhandled presses acquire pointer capture until release or cancellation.
+ * Primary content presses become taps on release or scrolling after the vertical drag threshold.
+ * Dragging continues outside the viewport, and explicitly timed frames advance decelerating momentum after release.
  *
  * @receiver active owner-thread screen scope.
  * @param modifier active behavior applied to the viewport.

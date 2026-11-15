@@ -499,6 +499,15 @@ abstract interface dev.s7a.strata.node/DeferredContentNode : dev.s7a.strata.node
         abstract fun <get-pendingContentReasons>(): kotlin.collections/Set<dev.s7a.strata.node/ContentInvalidation> // dev.s7a.strata.node/DeferredContentNode.pendingContentReasons.<get-pendingContentReasons>|<get-pendingContentReasons>(){}[0]
 }
 
+abstract interface dev.s7a.strata.node/DragScrollNode : dev.s7a.strata.node/PointerInputNode { // dev.s7a.strata.node/DragScrollNode|null[0]
+    abstract val canDragScroll // dev.s7a.strata.node/DragScrollNode.canDragScroll|{}canDragScroll[0]
+        abstract fun <get-canDragScroll>(): kotlin/Boolean // dev.s7a.strata.node/DragScrollNode.canDragScroll.<get-canDragScroll>|<get-canDragScroll>(){}[0]
+    open val dragScrollIdentity // dev.s7a.strata.node/DragScrollNode.dragScrollIdentity|{}dragScrollIdentity[0]
+        open fun <get-dragScrollIdentity>(): kotlin/Any // dev.s7a.strata.node/DragScrollNode.dragScrollIdentity.<get-dragScrollIdentity>|<get-dragScrollIdentity>(){}[0]
+
+    abstract fun scrollByDrag(kotlin/Double): kotlin/Double // dev.s7a.strata.node/DragScrollNode.scrollByDrag|scrollByDrag(kotlin.Double){}[0]
+}
+
 abstract interface dev.s7a.strata.node/FocusTargetNode { // dev.s7a.strata.node/FocusTargetNode|null[0]
     abstract val acceptsFocus // dev.s7a.strata.node/FocusTargetNode.acceptsFocus|{}acceptsFocus[0]
         abstract fun <get-acceptsFocus>(): kotlin/Boolean // dev.s7a.strata.node/FocusTargetNode.acceptsFocus.<get-acceptsFocus>|<get-acceptsFocus>(){}[0]
@@ -514,6 +523,8 @@ abstract interface dev.s7a.strata.node/FrameCutoffNode { // dev.s7a.strata.node/
     abstract fun captureFrameState() // dev.s7a.strata.node/FrameCutoffNode.captureFrameState|captureFrameState(){}[0]
     abstract fun commitFrameState() // dev.s7a.strata.node/FrameCutoffNode.commitFrameState|commitFrameState(){}[0]
 }
+
+abstract interface dev.s7a.strata.node/HorizontalDragNode : dev.s7a.strata.node/PointerCaptureNode // dev.s7a.strata.node/HorizontalDragNode|null[0]
 
 abstract interface dev.s7a.strata.node/KeyboardInputNode { // dev.s7a.strata.node/KeyboardInputNode|null[0]
     abstract fun onKeyboardEvent(dev.s7a.strata.input/KeyboardEvent): dev.s7a.strata.input/InputResult // dev.s7a.strata.node/KeyboardInputNode.onKeyboardEvent|onKeyboardEvent(dev.s7a.strata.input.KeyboardEvent){}[0]

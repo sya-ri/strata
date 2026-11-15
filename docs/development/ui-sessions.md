@@ -76,6 +76,9 @@ Before each event, the session resolves only pending retained measurement and la
 Dirty measurement also refreshes the retained dynamic children needed by virtual viewports.
 Queued source revisions and session content evaluation advance through `frame` or the declaration-only projection boundary.
 Animation timestamps, paint, semantics, and frame snapshots advance only through `frame`.
+Timed frames first advance pointer-owned kinetic scrolling through the input boundary, before applying the frame's observation cutoff.
+This lets scroll-driven row loading follow ordinary input ownership while keeping `FrameTimeNode` presentation callbacks free of session mutation.
+Tap replay resolves retained geometry between its synthetic press and release; a removed or replaced initial hit cancels activation.
 A future resize is not visible until its frame commits, and a pre-input geometry failure prevents event dispatch and follows the existing poison and cleanup contract.
 This shared behavior applies to Minecraft hosts in both headless tests and Fabric event bursts; low-level `UiTree` users still explicitly measure and lay out dirty geometry before dispatch.
 The bridge delegates exact primary-failure identity, suppression order, lifecycle transitions, and cleanup-once behavior to the retained session.

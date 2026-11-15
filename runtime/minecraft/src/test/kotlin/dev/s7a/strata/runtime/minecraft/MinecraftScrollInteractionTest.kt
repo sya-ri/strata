@@ -61,6 +61,8 @@ internal class MinecraftScrollInteractionTest {
             assertEquals("B", selection.value)
             assertEquals(9.0, scroll.metrics.offset)
             host.dispatchPointer(PointerEvent.Press(position, PointerButton.Primary))
+            assertEquals("B", selection.value)
+            host.dispatchPointer(PointerEvent.Release(position, PointerButton.Primary))
             assertEquals("A", selection.value)
         }
     }

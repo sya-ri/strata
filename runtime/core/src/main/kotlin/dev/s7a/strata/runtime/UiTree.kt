@@ -165,6 +165,13 @@ public class UiTree(
     }
 
     /**
+     * Advances input-owned momentum before frame evaluation without painting or committing external sources.
+     */
+    internal fun advancePointerScroll(time: FrameTime) {
+        pipelineOperation { pipeline.advancePointerScroll(root, time) }
+    }
+
+    /**
      * Synchronizes only pending retained geometry for an owning session with an already successful frame.
      *
      * Dirty measurement refreshes retained dynamic children as ordinary measurement does.
@@ -365,7 +372,8 @@ public class UiTree(
      * [InputResult.Ignored] bubbles to earlier candidates.
      * [InputResult.Consumed] stops dispatch.
      * A captured move or matching-button drag or release bypasses bounds and ancestor clips and stops propagation even when the owner returns ignored.
-     * Capture is acquired only by a capable node's consumed press and is cleared before the matching release callback.
+     * Exclusive capture is acquired by a PointerCaptureNode's consumed press and cleared before its matching release callback.
+     * DragScrollNode viewports reserve primary presses for tap-or-drag recognition; a tap replays the original press and release only to the still-current hit.
      * A callback failure poisons the tree only when it escapes the callback.
      *
      * @param event the event in tree coordinates.

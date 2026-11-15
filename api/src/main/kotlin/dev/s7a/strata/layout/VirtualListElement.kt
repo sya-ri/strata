@@ -27,9 +27,9 @@ import dev.s7a.strata.node.ConstrainedChildrenNode
 import dev.s7a.strata.node.DeclarationProjectionNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.DragScrollNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
@@ -78,7 +78,7 @@ internal class VirtualListElement(
         ConstrainedChildrenNode,
         MeasureNode,
         LayoutNode,
-        PointerCaptureNode,
+        DragScrollNode,
         ClipChildrenNode,
         SessionAttachmentNode,
         DeclarationProjectionNode,
@@ -234,10 +234,6 @@ internal class VirtualListElement(
             localPosition: IntOffset,
         ): InputResult =
             when {
-                event is PointerEvent.Press && event.button === PointerButton.Primary && state.scrollState.metrics.canScroll -> {
-                    InputResult.Consumed
-                }
-
                 event is PointerEvent.Scroll || (event is PointerEvent.Drag && event.button === PointerButton.Primary) -> {
                     val delta = if (event is PointerEvent.Scroll) event.deltaY * scrollRate.toDouble() else -(event as PointerEvent.Drag).deltaY
                     if (delta.isFinite()) {
@@ -254,7 +250,20 @@ internal class VirtualListElement(
                 }
             }
 
-        override fun onPointerCaptureCancelled(button: PointerButton) = Unit
+        override val dragScrollIdentity: Any
+            get() = state
+
+        override val canDragScroll: Boolean
+            get() = state.scrollState.metrics.canScroll
+
+        override fun scrollByDrag(delta: Double): Double {
+            val previous = state.scrollState.metrics.offset
+            state.scrollState.scrollBy(delta, checkNotNull(observer))
+            rememberCurrentAnchor()
+            requestBoundaryItems(delta)
+            invalidate(DirtyMask.of(DirtyPhase.Measure))
+            return state.scrollState.metrics.offset - previous
+        }
 
         override fun onPointerGesture(
             gesture: PointerGesture,

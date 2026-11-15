@@ -131,6 +131,8 @@ internal class MinecraftRemoteScreenTest {
             }
         }.use { pair ->
             pair.click(10, 25)
+            assertEquals(null, state.selectedKey)
+            pair.host.dispatchPointer(PointerEvent.Release(IntOffset(10, 25), PointerButton.Primary))
             pair.synchronize()
             assertEquals(1, state.selectedKey)
             assertEquals(listOf(1), selected)
