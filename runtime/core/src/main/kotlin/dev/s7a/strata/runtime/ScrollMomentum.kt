@@ -10,6 +10,7 @@ import kotlin.math.exp
 internal class ScrollMomentum(
     initialVelocity: Double,
     initialTime: Long,
+    private val deceleration: Double,
 ) {
     private var velocity = initialVelocity
     private var time = initialTime
@@ -30,18 +31,13 @@ internal class ScrollMomentum(
         }
         val seconds = secondsBetween(time, nextTime)
         time = nextTime
-        val decay = exp(-DECELERATION * seconds)
-        val distance = velocity * (1.0 - decay) / DECELERATION
+        val decay = exp(-deceleration * seconds)
+        val distance = velocity * (1.0 - decay) / deceleration
         velocity *= decay
         return distance
     }
 
     private companion object {
-        /**
-         * Exponential rate of velocity loss per second.
-         */
-        const val DECELERATION = 9.0
-
         /**
          * Logical pixels per second below which motion stops.
          */

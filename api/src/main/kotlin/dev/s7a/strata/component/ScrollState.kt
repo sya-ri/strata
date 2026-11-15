@@ -2,6 +2,7 @@ package dev.s7a.strata.component
 
 import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmOverloads
 
 /**
  * Caller-owned mutable position shared by a scroll area and zero or more independent scrollbars.
@@ -11,11 +12,20 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Requested positions are clamped whenever current geometry is known.
  * The state owns no retained nodes and does not own its observers.
  *
+ * @property dragScroll immutable content-drag policy; retain this state outside reevaluated content.
  * @param initialOffset initial non-negative finite logical displacement.
  */
 public class ScrollState(
+    public val dragScroll: DragScrollOptions,
     initialOffset: Double = 0.0,
 ) {
+    /**
+     * Creates navigation state with the standard touch-style content-drag policy.
+     * Existing JVM constructor entry points remain available.
+     */
+    @JvmOverloads
+    public constructor(initialOffset: Double = 0.0) : this(DragScrollOptions.Default, initialOffset)
+
     private val owner = currentOwner()
     private val observers: MutableMap<Any, (ScrollMetrics) -> Unit> = LinkedHashMap()
     private var currentMetrics = ScrollMetrics(offset = validateOffset(initialOffset))

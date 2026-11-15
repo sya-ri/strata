@@ -115,6 +115,30 @@ public final class dev/s7a/strata/component/CycleButtonState {
 public final class dev/s7a/strata/component/CycleButtonState$Companion {
 }
 
+public final class dev/s7a/strata/component/DragScrollOptions {
+	public static final field Companion Ldev/s7a/strata/component/DragScrollOptions$Companion;
+	public fun <init> ()V
+	public fun <init> (ZZDD)V
+	public synthetic fun <init> (ZZDDILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()D
+	public final fun component4 ()D
+	public final fun copy (ZZDD)Ldev/s7a/strata/component/DragScrollOptions;
+	public static synthetic fun copy$default (Ldev/s7a/strata/component/DragScrollOptions;ZZDDILjava/lang/Object;)Ldev/s7a/strata/component/DragScrollOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeceleration ()D
+	public final fun getDragThreshold ()D
+	public final fun getEnabled ()Z
+	public final fun getInertiaEnabled ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/component/DragScrollOptions$Companion {
+	public final fun getDefault ()Ldev/s7a/strata/component/DragScrollOptions;
+}
+
 public abstract class dev/s7a/strata/component/FlowRowScope : dev/s7a/strata/component/UiScope {
 	public final fun align (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/layout/VerticalAlignment;)Ldev/s7a/strata/modifier/Modifier;
 }
@@ -857,6 +881,9 @@ public final class dev/s7a/strata/component/ScrollState {
 	public fun <init> ()V
 	public fun <init> (D)V
 	public synthetic fun <init> (DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ldev/s7a/strata/component/DragScrollOptions;D)V
+	public synthetic fun <init> (Ldev/s7a/strata/component/DragScrollOptions;DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDragScroll ()Ldev/s7a/strata/component/DragScrollOptions;
 	public final fun getMetrics ()Ldev/s7a/strata/component/ScrollMetrics;
 	public final fun observe (Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/component/ScrollStateObserver;
 	public final fun scrollBy (D)D
@@ -2081,11 +2108,13 @@ public final class dev/s7a/strata/node/DirtyPhase : java/lang/Enum {
 public abstract interface class dev/s7a/strata/node/DragScrollNode : dev/s7a/strata/node/PointerInputNode {
 	public abstract fun getCanDragScroll ()Z
 	public fun getDragScrollIdentity ()Ljava/lang/Object;
+	public fun getDragScrollOptions ()Ldev/s7a/strata/component/DragScrollOptions;
 	public abstract fun scrollByDrag (D)D
 }
 
 public final class dev/s7a/strata/node/DragScrollNode$DefaultImpls {
 	public static fun getDragScrollIdentity (Ldev/s7a/strata/node/DragScrollNode;)Ljava/lang/Object;
+	public static fun getDragScrollOptions (Ldev/s7a/strata/node/DragScrollNode;)Ldev/s7a/strata/component/DragScrollOptions;
 	public static fun onPointerGesture (Ldev/s7a/strata/node/DragScrollNode;Ldev/s7a/strata/input/PointerGesture;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 }
 
@@ -2298,6 +2327,12 @@ public final class dev/s7a/strata/projection/ProjectionBinding {
 	public final fun getRead ()Lkotlin/jvm/functions/Function0;
 	public final fun getType ()Ldev/s7a/strata/projection/ProjectionType;
 	public final fun getWrite ()Lkotlin/jvm/functions/Function2;
+}
+
+public final class dev/s7a/strata/projection/ProjectionDragScrollOptions {
+	public static final field INSTANCE Ldev/s7a/strata/projection/ProjectionDragScrollOptions;
+	public final fun decode (Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/component/DragScrollOptions;
+	public final fun encode (Ldev/s7a/strata/component/DragScrollOptions;)Ldev/s7a/strata/projection/ProjectionValue;
 }
 
 public final class dev/s7a/strata/projection/ProjectionFields {

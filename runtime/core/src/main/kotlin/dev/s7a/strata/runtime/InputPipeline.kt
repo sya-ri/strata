@@ -48,7 +48,14 @@ internal class InputPipeline(
         }
         synchronizeGeometry(root)
         val input = current.owner.node as DragScrollNode
-        if (containsPlaced(root.effectiveRoot, current.owner).not() || scrollIdentityChanged(current.owner, current.identity) || input.canDragScroll.not()) {
+        val invalidOwner = containsPlaced(root.effectiveRoot, current.owner).not() || scrollIdentityChanged(current.owner, current.identity)
+        if (invalidOwner) {
+            stopMomentum()
+            return
+        }
+        val options = input.dragScrollOptions
+        val inactive = input.canDragScroll.not() || options.enabled.not() || options.inertiaEnabled.not()
+        if (inactive) {
             momentum = null
             return
         }
@@ -145,8 +152,8 @@ internal class InputPipeline(
     ): Boolean {
         val hit = inputHit(root.effectiveRoot, press.position, true) ?: return false
         val viewport = scrollAncestor(hit, press.position) ?: return false
-        val identity = (viewport.node as DragScrollNode).dragScrollIdentity
-        capture = Capture(viewport, press.button, ScrollGesture(identity, press, hit, frameTime?.nanoseconds, stopped !== viewport))
+        val input = viewport.node as DragScrollNode
+        capture = Capture(viewport, press.button, ScrollGesture(input.dragScrollIdentity, input.dragScrollOptions, press, hit, frameTime?.nanoseconds, stopped !== viewport))
         return true
     }
 
@@ -212,14 +219,14 @@ internal class InputPipeline(
                 if (inputHit(root.effectiveRoot, event.position, true) === release.hit && captured.owner.contains(event.position)) {
                     dispatchDirect(root, release.press)
                     synchronizeGeometry(root)
-                    dispatchDirect(root, event)
+                    dispatch(root, event)
                 }
             }
 
             is ScrollGesture.Release.Momentum -> {
                 val time = frameTime?.nanoseconds
-                if (time != null && input.canDragScroll) {
-                    val motion = ScrollMomentum(release.velocity, time)
+                if (time != null && input.canDragScroll && input.dragScrollOptions.inertiaEnabled) {
+                    val motion = ScrollMomentum(release.velocity, time, input.dragScrollOptions.deceleration)
                     if (motion.active) momentum = Momentum(captured.owner, input.dragScrollIdentity, motion)
                 }
             }
@@ -252,7 +259,7 @@ internal class InputPipeline(
         var fallback: RetainedEntry? = null
         while (entry != null) {
             val input = entry.node as? DragScrollNode
-            if (input != null && entry.contains(position)) {
+            if (input != null && input.dragScrollOptions.enabled && entry.contains(position)) {
                 if (fallback == null) fallback = entry
                 if (input.canDragScroll) return entry
             }

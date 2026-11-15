@@ -1,5 +1,7 @@
 package dev.s7a.strata.node
 
+import dev.s7a.strata.component.DragScrollOptions
+
 /**
  * A scroll viewport whose content supports tap-or-drag recognition and kinetic scrolling.
  *
@@ -9,6 +11,12 @@ package dev.s7a.strata.node
  * Gesture ownership and momentum end on input reset, removal, unplacement, detachment, or close.
  */
 public interface DragScrollNode : PointerInputNode {
+    /**
+     * Content-drag recognition and inertia policy for this viewport.
+     */
+    public val dragScrollOptions: DragScrollOptions
+        get() = DragScrollOptions.Default
+
     /**
      * Stable identity of the current navigation state, compared by reference.
      *

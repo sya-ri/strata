@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.web
 
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.element.Element
@@ -21,10 +22,10 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.DragScrollNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
-import dev.s7a.strata.node.PointerCaptureNode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -39,7 +40,7 @@ internal class WebScrollElement(
     key: ElementKey<*>?,
 ) : Element(key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional, TYPE, listOf(content), modifier) {
     /**
-     * Owns one scroll observation and a captured drag until detach.
+     * Owns one scroll observation and delegates content-drag recognition to the shared runtime.
      */
     private class Node(
         initial: WebScrollElement,
@@ -47,18 +48,17 @@ internal class WebScrollElement(
         MeasureNode,
         LayoutNode,
         ClipChildrenNode,
-        PointerCaptureNode,
+        DragScrollNode,
         LifecycleNode {
         private var state: ScrollState? = initial.state
         private var observer: ScrollStateObserver? = null
         private var rate = initial.rate
-        private var dragging = false
 
         override fun onPointerGesture(
             gesture: PointerGesture,
             localPosition: IntOffset,
         ): InputResult =
-            if (gesture is PointerGesture.Pan) {
+            if (gesture is PointerGesture.Pan && dragScrollOptions.enabled) {
                 move(-gesture.deltaY)
                 InputResult.Consumed
             } else {
@@ -91,12 +91,8 @@ internal class WebScrollElement(
                     InputResult.Consumed
                 }
 
-                is PointerEvent.Press -> {
-                    if (event.button == PointerButton.Primary) InputResult.Consumed else InputResult.Ignored
-                }
-
                 is PointerEvent.Drag -> {
-                    if (dragging) {
+                    if (event.button == PointerButton.Primary && dragScrollOptions.enabled) {
                         move(-event.deltaY)
                         InputResult.Consumed
                     } else {
@@ -104,22 +100,27 @@ internal class WebScrollElement(
                     }
                 }
 
-                is PointerEvent.Release -> {
-                    dragging = false
-                    InputResult.Ignored
-                }
-
-                is PointerEvent.Move -> {
+                is PointerEvent.Press,
+                is PointerEvent.Release,
+                is PointerEvent.Move,
+                -> {
                     InputResult.Ignored
                 }
             }
 
-        override fun onPointerCaptureAcquired(button: PointerButton) {
-            dragging = true
-        }
+        override val dragScrollOptions: DragScrollOptions
+            get() = checkNotNull(state).dragScroll
 
-        override fun onPointerCaptureCancelled(button: PointerButton) {
-            dragging = false
+        override val dragScrollIdentity: Any
+            get() = checkNotNull(state)
+
+        override val canDragScroll: Boolean
+            get() = checkNotNull(state).metrics.canScroll
+
+        override fun scrollByDrag(delta: Double): Double {
+            val previous = checkNotNull(state).metrics.offset
+            move(delta)
+            return checkNotNull(state).metrics.offset - previous
         }
 
         override fun attach() {
@@ -129,7 +130,6 @@ internal class WebScrollElement(
         override fun detach() {
             observer?.close()
             observer = null
-            dragging = false
         }
 
         override fun dispose() {

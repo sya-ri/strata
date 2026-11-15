@@ -23,7 +23,7 @@ internal enum class RemoteProfileComponent(
     Slider("slider"),
     TextField("text_field", 2),
     TextArea("text_area", 2),
-    ScrollArea("scroll_area"),
+    ScrollArea("scroll_area", 2),
     Scrollbar("scrollbar"),
     Tooltip("tooltip"),
     ContentTooltip("tooltip_content"),

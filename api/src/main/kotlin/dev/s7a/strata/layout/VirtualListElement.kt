@@ -5,6 +5,7 @@ package dev.s7a.strata.layout
 import dev.s7a.strata.action.ActionDispatcher
 import dev.s7a.strata.action.ComponentActions
 import dev.s7a.strata.action.ListLoadRequest
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.component.VirtualListController
 import dev.s7a.strata.component.VirtualListJump
@@ -34,6 +35,7 @@ import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionDragScrollOptions
 import dev.s7a.strata.projection.ProjectionScrollBinding
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -131,6 +133,7 @@ internal class VirtualListElement(
                                     }) { delta -> node.requestBoundaryItems(delta) },
                                 ),
                             ),
+                            ProjectionDragScrollOptions.encode(node.state.scrollState.dragScroll),
                         ),
                     )
                 }
@@ -234,7 +237,7 @@ internal class VirtualListElement(
             localPosition: IntOffset,
         ): InputResult =
             when {
-                event is PointerEvent.Scroll || (event is PointerEvent.Drag && event.button === PointerButton.Primary) -> {
+                event is PointerEvent.Scroll || (event is PointerEvent.Drag && event.button === PointerButton.Primary && dragScrollOptions.enabled) -> {
                     val delta = if (event is PointerEvent.Scroll) event.deltaY * scrollRate.toDouble() else -(event as PointerEvent.Drag).deltaY
                     if (delta.isFinite()) {
                         state.scrollState.scrollBy(delta, checkNotNull(observer))
@@ -249,6 +252,9 @@ internal class VirtualListElement(
                     InputResult.Ignored
                 }
             }
+
+        override val dragScrollOptions: DragScrollOptions
+            get() = state.scrollState.dragScroll
 
         override val dragScrollIdentity: Any
             get() = state
@@ -269,7 +275,7 @@ internal class VirtualListElement(
             gesture: PointerGesture,
             localPosition: IntOffset,
         ): InputResult =
-            if (gesture is PointerGesture.Pan) {
+            if (gesture is PointerGesture.Pan && dragScrollOptions.enabled) {
                 onPointerEvent(PointerEvent.Scroll(gesture.position, 0.0, -gesture.deltaY / scrollRate), localPosition)
             } else {
                 InputResult.Ignored

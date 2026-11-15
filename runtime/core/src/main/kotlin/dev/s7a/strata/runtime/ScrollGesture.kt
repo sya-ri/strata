@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime
 
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.node.HorizontalDragNode
@@ -11,6 +12,7 @@ import kotlin.math.abs
  */
 internal class ScrollGesture(
     val identity: Any,
+    private val options: DragScrollOptions,
     press: PointerEvent.Press,
     hit: RetainedEntry,
     time: Long?,
@@ -30,12 +32,12 @@ internal class ScrollGesture(
             is Phase.Pending -> {
                 val dx = (position.x.toDouble() - current.press.position.x) / scale
                 val dy = (position.y.toDouble() - current.press.position.y) / scale
-                if (DRAG_THRESHOLD <= abs(dx) || DRAG_THRESHOLD <= abs(dy)) current.tapEnabled = false
-                if (current.hit.node is HorizontalDragNode && DRAG_THRESHOLD <= abs(dx) && abs(dy) < abs(dx)) {
+                if (options.dragThreshold <= abs(dx) || options.dragThreshold <= abs(dy)) current.tapEnabled = false
+                if (current.hit.node is HorizontalDragNode && options.dragThreshold <= abs(dx) && abs(dy) < abs(dx)) {
                     phase = Phase.Finished
                     return Drag.Horizontal(current.press, current.hit)
                 }
-                if (abs(dy) < DRAG_THRESHOLD) return null
+                if (abs(dy) < options.dragThreshold) return null
                 val velocity = Velocity(current.time)
                 velocity.add(-dy, time)
                 phase = Phase.Dragging(position, velocity)
@@ -70,7 +72,7 @@ internal class ScrollGesture(
             is Phase.Pending -> {
                 val dx = abs(position.x.toDouble() - current.press.position.x) / scale
                 val dy = abs(position.y.toDouble() - current.press.position.y) / scale
-                if (current.tapEnabled && dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
+                if (current.tapEnabled && dx < options.dragThreshold && dy < options.dragThreshold) {
                     Release.Tap(current.press, current.hit)
                 } else {
                     Release.Cancelled
@@ -192,11 +194,6 @@ internal class ScrollGesture(
     }
 
     private companion object {
-        /**
-         * Logical pixels of vertical motion required to choose scrolling over a tap.
-         */
-        const val DRAG_THRESHOLD = 4.0
-
         /**
          * Maximum pointer speed retained for kinetic scrolling, in logical pixels per second.
          */

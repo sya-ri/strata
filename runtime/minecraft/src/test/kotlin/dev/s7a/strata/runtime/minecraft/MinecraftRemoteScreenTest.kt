@@ -11,12 +11,15 @@ import dev.s7a.strata.component.CheckboxState
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.CycleButton
 import dev.s7a.strata.component.CycleButtonState
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.LoadingIndicator
 import dev.s7a.strata.component.PanZoomState
 import dev.s7a.strata.component.ProgressBar
 import dev.s7a.strata.component.Row
+import dev.s7a.strata.component.ScrollArea
+import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.Scrollbar
 import dev.s7a.strata.component.SelectionList
 import dev.s7a.strata.component.SelectionListState
@@ -94,6 +97,40 @@ import org.junit.jupiter.api.Test
  * Uses real Minecraft profile nodes and encoded messages to compare local and remote pixels and input behavior.
  */
 internal class MinecraftRemoteScreenTest {
+    @Test
+    fun remoteViewportsPreserveDisabledDragPolicyAndOrdinaryWheelInput() {
+        for (virtual in listOf(false, true)) {
+            val scroll = ScrollState(DragScrollOptions(enabled = false))
+            val list = VirtualListState<Int>(scrollState = scroll)
+            var clicks = 0
+            Pairing {
+                if (virtual) {
+                    VirtualList(100, { it }, { it }, list, IntSize(100, 60), 20) {
+                        Button("Row $it", width = 80, modifier = Modifier.onActivate { clicks++ })
+                    }
+                } else {
+                    ScrollArea(scroll, Modifier.size(100, 60)) {
+                        Column {
+                            Button("Row", width = 80, modifier = Modifier.onActivate { clicks++ })
+                            Spacer(Modifier.size(80, 180))
+                        }
+                    }
+                }
+            }.use { pair ->
+                pair.click(20, 10)
+                pair.synchronize()
+                assertEquals(1, clicks)
+                pair.host.dispatchPointer(PointerEvent.Drag(IntOffset(20, -30), PointerButton.Primary, 0.0, -40.0))
+                pair.host.dispatchPointer(PointerEvent.Release(IntOffset(20, -30), PointerButton.Primary))
+                pair.synchronize()
+                assertEquals(0.0, scroll.metrics.offset)
+                pair.host.dispatchPointer(PointerEvent.Scroll(IntOffset(20, 10), 0.0, 1.0))
+                pair.synchronize()
+                assertTrue(0.0 < scroll.metrics.offset)
+            }
+        }
+    }
+
     @Test
     fun standardNotificationsKeepClientFocusAndServerCallbacks() {
         val focus = mutableListOf<FocusEvent>()

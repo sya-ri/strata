@@ -121,11 +121,33 @@ For external publishers, use `StateSource` and the queued observation paths belo
 Minecraft `CycleButton` enables wheel navigation by default.
 Pass `scrollEnabled = false` to keep pointer and keyboard activation while allowing wheel input to reach an enclosing scroll container.
 `ScrollArea` and `VirtualList` support touch-style primary-button dragging from their content, including actionable rows and buttons.
-A press waits for release before activating the same item; vertical motion of four local logical pixels chooses scrolling and cancels that tap.
+A press waits for release before activating the same item; vertical motion at the configured threshold chooses scrolling and cancels that tap.
 Horizontal movement beyond the same threshold cancels an ordinary tap, while horizontal controls such as Slider take over a horizontal drag and yield a vertical drag to the viewport.
 Dragging continues outside the clip, and explicitly timed frames continue a released flick with exponential deceleration until it reaches a boundary or stops.
 A new press, wheel input, keyboard navigation, input reset, scroll-state replacement, removal, or session detachment stops momentum; touching a moving viewport stops it without activating the touched item.
 An independent `Scrollbar` supports track clicks and captures thumb drags, including movement outside its bounds.
+
+Configure primary-pointer dragging through immutable `DragScrollOptions` when constructing `ScrollState`.
+The existing `ScrollState()` and `ScrollState(initialOffset)` calls retain their defaults: dragging and inertia enabled, a four-local-pixel drag threshold, and an exponential decay rate of 9 per second.
+Larger decay rates stop sooner; the threshold and decay rate must be finite and positive.
+State and options belong outside reevaluated content, and replacing the state cancels gestures and inertia from the previous owner.
+
+```kotlin
+// Disable content dragging; wheel input and independent scrollbars still work.
+val wheelOnly = ScrollState(dragScroll = DragScrollOptions(enabled = false))
+
+// Keep content dragging, but stop immediately on release.
+val dragOnly = ScrollState(dragScroll = DragScrollOptions(inertiaEnabled = false))
+
+// Require more motion before scrolling and decelerate faster after release.
+val tuned = ScrollState(
+    dragScroll = DragScrollOptions(dragThreshold = 8.0, deceleration = 12.0),
+)
+val listState = VirtualListState<Int>(scrollState = tuned)
+```
+
+Pass these states through the existing `ScrollArea(state = wheelOnly, ...)` and `VirtualList(state = listState, ...)` parameters.
+The [API-only configured scrolling example](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ConfiguredScrollDefinition.kt) compiles all three policies with complete component calls.
 
 The [compiled application screen](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyScreenDefinition.kt) creates state before returning its definition.
 See each state's [API contract](https://gh.s7a.dev/strata/) for attachment and update rules.

@@ -504,6 +504,8 @@ abstract interface dev.s7a.strata.node/DragScrollNode : dev.s7a.strata.node/Poin
         abstract fun <get-canDragScroll>(): kotlin/Boolean // dev.s7a.strata.node/DragScrollNode.canDragScroll.<get-canDragScroll>|<get-canDragScroll>(){}[0]
     open val dragScrollIdentity // dev.s7a.strata.node/DragScrollNode.dragScrollIdentity|{}dragScrollIdentity[0]
         open fun <get-dragScrollIdentity>(): kotlin/Any // dev.s7a.strata.node/DragScrollNode.dragScrollIdentity.<get-dragScrollIdentity>|<get-dragScrollIdentity>(){}[0]
+    open val dragScrollOptions // dev.s7a.strata.node/DragScrollNode.dragScrollOptions|{}dragScrollOptions[0]
+        open fun <get-dragScrollOptions>(): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.node/DragScrollNode.dragScrollOptions.<get-dragScrollOptions>|<get-dragScrollOptions>(){}[0]
 
     abstract fun scrollByDrag(kotlin/Double): kotlin/Double // dev.s7a.strata.node/DragScrollNode.scrollByDrag|scrollByDrag(kotlin.Double){}[0]
 }
@@ -1886,6 +1888,33 @@ final class dev.s7a.strata.component/ComponentStateSubscription : kotlin/AutoClo
     final fun close() // dev.s7a.strata.component/ComponentStateSubscription.close|close(){}[0]
 }
 
+final class dev.s7a.strata.component/DragScrollOptions { // dev.s7a.strata.component/DragScrollOptions|null[0]
+    constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Double = ..., kotlin/Double = ...) // dev.s7a.strata.component/DragScrollOptions.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Double;kotlin.Double){}[0]
+
+    final val deceleration // dev.s7a.strata.component/DragScrollOptions.deceleration|{}deceleration[0]
+        final fun <get-deceleration>(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.deceleration.<get-deceleration>|<get-deceleration>(){}[0]
+    final val dragThreshold // dev.s7a.strata.component/DragScrollOptions.dragThreshold|{}dragThreshold[0]
+        final fun <get-dragThreshold>(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.dragThreshold.<get-dragThreshold>|<get-dragThreshold>(){}[0]
+    final val enabled // dev.s7a.strata.component/DragScrollOptions.enabled|{}enabled[0]
+        final fun <get-enabled>(): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.enabled.<get-enabled>|<get-enabled>(){}[0]
+    final val inertiaEnabled // dev.s7a.strata.component/DragScrollOptions.inertiaEnabled|{}inertiaEnabled[0]
+        final fun <get-inertiaEnabled>(): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.inertiaEnabled.<get-inertiaEnabled>|<get-inertiaEnabled>(){}[0]
+
+    final fun component1(): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.component1|component1(){}[0]
+    final fun component2(): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.component2|component2(){}[0]
+    final fun component3(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.component3|component3(){}[0]
+    final fun component4(): kotlin/Double // dev.s7a.strata.component/DragScrollOptions.component4|component4(){}[0]
+    final fun copy(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Double = ..., kotlin/Double = ...): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.component/DragScrollOptions.copy|copy(kotlin.Boolean;kotlin.Boolean;kotlin.Double;kotlin.Double){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.component/DragScrollOptions.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.component/DragScrollOptions.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.component/DragScrollOptions.toString|toString(){}[0]
+
+    final object Companion { // dev.s7a.strata.component/DragScrollOptions.Companion|null[0]
+        final val Default // dev.s7a.strata.component/DragScrollOptions.Companion.Default|{}Default[0]
+            final fun <get-Default>(): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.component/DragScrollOptions.Companion.Default.<get-Default>|<get-Default>(){}[0]
+    }
+}
+
 final class dev.s7a.strata.component/PanZoomMetrics { // dev.s7a.strata.component/PanZoomMetrics|null[0]
     constructor <init>(dev.s7a.strata.geometry/DoubleOffset = ..., kotlin/Double = ..., kotlin/Double = ..., dev.s7a.strata.geometry/IntSize = ..., dev.s7a.strata.geometry/LongRect = ..., dev.s7a.strata.component/PanZoomFit = ..., kotlin/Boolean = ...) // dev.s7a.strata.component/PanZoomMetrics.<init>|<init>(dev.s7a.strata.geometry.DoubleOffset;kotlin.Double;kotlin.Double;dev.s7a.strata.geometry.IntSize;dev.s7a.strata.geometry.LongRect;dev.s7a.strata.component.PanZoomFit;kotlin.Boolean){}[0]
 
@@ -1981,8 +2010,11 @@ final class dev.s7a.strata.component/ScrollMetrics { // dev.s7a.strata.component
 }
 
 final class dev.s7a.strata.component/ScrollState { // dev.s7a.strata.component/ScrollState|null[0]
+    constructor <init>(dev.s7a.strata.component/DragScrollOptions, kotlin/Double = ...) // dev.s7a.strata.component/ScrollState.<init>|<init>(dev.s7a.strata.component.DragScrollOptions;kotlin.Double){}[0]
     constructor <init>(kotlin/Double = ...) // dev.s7a.strata.component/ScrollState.<init>|<init>(kotlin.Double){}[0]
 
+    final val dragScroll // dev.s7a.strata.component/ScrollState.dragScroll|{}dragScroll[0]
+        final fun <get-dragScroll>(): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.component/ScrollState.dragScroll.<get-dragScroll>|<get-dragScroll>(){}[0]
     final val metrics // dev.s7a.strata.component/ScrollState.metrics|{}metrics[0]
         final fun <get-metrics>(): dev.s7a.strata.component/ScrollMetrics // dev.s7a.strata.component/ScrollState.metrics.<get-metrics>|<get-metrics>(){}[0]
 
@@ -2843,6 +2875,11 @@ final object dev.s7a.strata.component/Slots { // dev.s7a.strata.component/Slots|
     final fun activeMenu(kotlin/Int): dev.s7a.strata.component/SlotBinding // dev.s7a.strata.component/Slots.activeMenu|activeMenu(kotlin.Int){}[0]
     final fun container(kotlin/Int): dev.s7a.strata.component/SlotBinding // dev.s7a.strata.component/Slots.container|container(kotlin.Int){}[0]
     final fun playerInventory(kotlin/Int): dev.s7a.strata.component/SlotBinding // dev.s7a.strata.component/Slots.playerInventory|playerInventory(kotlin.Int){}[0]
+}
+
+final object dev.s7a.strata.projection/ProjectionDragScrollOptions { // dev.s7a.strata.projection/ProjectionDragScrollOptions|null[0]
+    final fun decode(dev.s7a.strata.projection/ProjectionValue): dev.s7a.strata.component/DragScrollOptions // dev.s7a.strata.projection/ProjectionDragScrollOptions.decode|decode(dev.s7a.strata.projection.ProjectionValue){}[0]
+    final fun encode(dev.s7a.strata.component/DragScrollOptions): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/ProjectionDragScrollOptions.encode|encode(dev.s7a.strata.component.DragScrollOptions){}[0]
 }
 
 final object dev.s7a.strata.projection/ProjectionInputCodec { // dev.s7a.strata.projection/ProjectionInputCodec|null[0]

@@ -1005,9 +1005,11 @@ Shared scroll metrics, mutation, observation, and geometry updates linking a vie
 #### `ScrollState`
 
 ```kotlin
-class ScrollState(initialOffset: Double = 0.0)
+class ScrollState(public val dragScroll: DragScrollOptions, initialOffset: Double = 0.0)
+constructor(initialOffset: Double = 0.0) : this(DragScrollOptions.Default, initialOffset)
 fun scrollBy(delta: Double): Double
 fun scrollTo(offset: Double): Double
+val dragScroll: DragScrollOptions
 val metrics: ScrollMetrics
 ```
 
@@ -1016,8 +1018,11 @@ val metrics: ScrollMetrics
 ```text
 class dev.s7a.strata.component.ScrollState
 constructor dev.s7a.strata.component.ScrollState()
+constructor dev.s7a.strata.component.ScrollState(dev.s7a.strata.component.DragScrollOptions, double)
+constructor dev.s7a.strata.component.ScrollState(dev.s7a.strata.component.DragScrollOptions, double, int, kotlin.jvm.internal.DefaultConstructorMarker)
 constructor dev.s7a.strata.component.ScrollState(double)
 constructor dev.s7a.strata.component.ScrollState(double, int, kotlin.jvm.internal.DefaultConstructorMarker)
+method dev.s7a.strata.component.ScrollState.getDragScroll(): dev.s7a.strata.component.DragScrollOptions
 method dev.s7a.strata.component.ScrollState.getMetrics(): dev.s7a.strata.component.ScrollMetrics
 method dev.s7a.strata.component.ScrollState.observe(kotlin.jvm.functions.Function1): dev.s7a.strata.component.ScrollStateObserver
 method dev.s7a.strata.component.ScrollState.scrollBy(double): double

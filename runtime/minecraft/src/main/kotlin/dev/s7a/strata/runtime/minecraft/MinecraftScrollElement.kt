@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.minecraft
 
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.element.Element
@@ -167,7 +168,7 @@ private class MinecraftScrollElement private constructor(
                 }
 
                 is PointerEvent.Drag -> {
-                    if (event.button === PointerButton.Primary && checkNotNull(state).metrics.canScroll) {
+                    if (event.button === PointerButton.Primary && dragScrollOptions.enabled && checkNotNull(state).metrics.canScroll) {
                         scrollByDrag(-event.deltaY)
                         InputResult.Consumed
                     } else {
@@ -182,6 +183,9 @@ private class MinecraftScrollElement private constructor(
                     InputResult.Ignored
                 }
             }
+
+        override val dragScrollOptions: DragScrollOptions
+            get() = checkNotNull(state).dragScroll
 
         override val dragScrollIdentity: Any
             get() = checkNotNull(state)

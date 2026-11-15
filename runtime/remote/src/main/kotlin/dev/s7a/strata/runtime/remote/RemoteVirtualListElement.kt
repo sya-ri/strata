@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.remote
 
+import dev.s7a.strata.component.DragScrollOptions
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.ScrollStateObserver
 import dev.s7a.strata.element.Element
@@ -89,10 +90,19 @@ internal class RemoteVirtualListElement(
             localPosition: IntOffset,
         ): InputResult {
             val delta =
-                when {
-                    event is PointerEvent.Scroll -> event.deltaY * current.properties.rate.toDouble()
-                    event is PointerEvent.Drag && event.button === PointerButton.Primary -> -event.deltaY
-                    else -> return InputResult.Ignored
+                when (event) {
+                    is PointerEvent.Scroll -> {
+                        event.deltaY * current.properties.rate.toDouble()
+                    }
+
+                    is PointerEvent.Drag -> {
+                        if (event.button !== PointerButton.Primary || dragScrollOptions.enabled.not()) return InputResult.Ignored
+                        -event.deltaY
+                    }
+
+                    else -> {
+                        return InputResult.Ignored
+                    }
                 }
             if (delta.isFinite()) {
                 current.state.scrollBy(delta)
@@ -102,6 +112,9 @@ internal class RemoteVirtualListElement(
             }
             return InputResult.Consumed
         }
+
+        override val dragScrollOptions: DragScrollOptions
+            get() = current.state.dragScroll
 
         override val dragScrollIdentity: Any
             get() = current.state

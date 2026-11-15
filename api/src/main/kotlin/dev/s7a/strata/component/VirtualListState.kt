@@ -11,7 +11,7 @@ import dev.s7a.strata.internal.platform.currentOwner
  * Only one retained VirtualList may attach at a time, while any number of Scrollbars may observe [VirtualListState.scrollState].
  *
  * @param K stable item key type.
- * @property scrollState position and geometry shared with independent scrollbars.
+ * @property scrollState position, geometry and immutable content-drag policy; independent scrollbars share its position.
  * @param initialIndex optional initial zero-based item target.
  */
 public class VirtualListState<K : Any>(

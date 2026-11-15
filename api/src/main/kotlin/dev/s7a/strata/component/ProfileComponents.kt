@@ -105,7 +105,6 @@ public fun UiScope.Checkbox(
  * @param label maps each option to its visible unresolved label, defaulting to the state-owned display conversion.
  * @throws IllegalStateException when the scope is unavailable, no profile runtime is active, or the default conversion is evaluated outside the state-owning thread.
  */
-@OptIn(InternalStrataRuntimeApi::class)
 public fun <T : Any> UiScope.CycleButton(
     state: CycleButtonState<T>,
     width: Int = 150,
@@ -817,6 +816,7 @@ public fun UiScope.Tab(
  * Emits one profile-backed scroll viewport containing exactly one root.
  * Primary content presses become taps on release or scrolling after the vertical drag threshold.
  * Dragging continues outside the viewport, and explicitly timed frames advance decelerating momentum after release.
+ * Configure dragging and inertia through [ScrollState.dragScroll]; wheel input and independent scrollbars are unaffected.
  *
  * @receiver active owner-thread screen scope.
  * @param modifier active behavior applied to the viewport.

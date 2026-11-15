@@ -25,6 +25,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionDragScrollOptions
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.remote.RemoteProperties.encode
@@ -322,7 +323,7 @@ public class RemoteComponentRuntime : ComponentRuntime {
         key: ElementKey<*>?,
     ): Element =
         RemoteProfileElement(RemoteProfileComponent.ScrollArea, modifier, key, children = listOf(content)) { scope ->
-            record(RemoteFormBindings.scroll(scope, state), encode(scrollRate))
+            record(RemoteFormBindings.scroll(scope, state), encode(scrollRate), ProjectionDragScrollOptions.encode(state.dragScroll))
         }
 
     override fun scrollbar(
