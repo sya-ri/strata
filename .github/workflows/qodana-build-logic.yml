@@ -49,7 +49,7 @@ jobs:
       run: bash ./gradlew -p build-logic :wrapper :pluginUnderTestMetadata
       working-directory: product
     - name: Analyze the included Gradle build
-      uses: JetBrains/qodana-action@v2026.2
+      uses: JetBrains/qodana-action@v2026.3
       env:
         QODANA_REVISION: ${{ steps.identity.outputs.source_commit }}
       with:
